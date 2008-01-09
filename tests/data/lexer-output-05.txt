@@ -1,0 +1,5 @@
+4
+TOKEN_COMMENT		a valid identifier (Bengali letters) and an invalid identifier (Bengali digits, we only accept arabic digits)
+TOKEN_IDENTIFIER	ঐওঔকখগঝজছচঙঘ
+TOKEN_INVALID
+TOKEN_COMMENT		some weird invisible unicode control, whitespace characters

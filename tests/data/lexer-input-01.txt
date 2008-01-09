@@ -1,0 +1,13 @@
+fibonacci
+	(self = 1) | (self = 0)
+		ifTrue: [ ^ 1]
+		ifFalse: [^ (self-1) fibonacci + (self-2) fibonacci].
+		
+     #(1 2 3 4 (523525253253e-2422342+3)) collect:[:x :y| x <y].
+     
+     self respondsTo:#hello i_______7092342abce
+     
+     "the second symbol constant below is actually contains an invalid keyword selector pattern (need a ':' at the end of '#at:put')" 
+     #at:put: #at:put #at :put
+
+

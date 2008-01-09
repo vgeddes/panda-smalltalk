@@ -1,0 +1,4 @@
+"a valid identifier (Bengali letters) and an invalid identifier (Bengali digits, we only accept arabic digits)
+ঐওঔকখগঝজছচঙঘ ০১৭৩
+
+"some weird invisible unicode control, whitespace characters"

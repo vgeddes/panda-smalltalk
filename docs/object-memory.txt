@@ -1,0 +1,50 @@
+Object Memory Layout
+----------------------
+
+Legend
+-------
+Mark: GC book-keeping (12 bits), Hash (20 bits), Tag (2 bits)
+Class oop: Oop to class object of instance
+Fixed Size: Number of fixed fields in object
+
+Object with only fixed fields:
+
+[ mark             ]
+[ class            ]
+[ instance vars    ] *
+
+
+Object with fixed and indexed fields:
+
+[ mark               ]
+[ class              ]
+[ instance vars      ] *
+[ length             ]
+[ elements           ] *
+
+
+Object that stores only bytes:
+
+[ mark                ]
+[ class               ]
+[ instance vars       ] *
+[ length              ]
+[ bytes               ] *
+
+
+Class Object
+
+
+[ mark                ]
+[ class               ]
+[ instance size       ]
+[ instance variables  ]
+[ class pool          ]
+[ name                ]
+[ superclass          ]
+[ method dictionary   ]
+
+
+
+
+

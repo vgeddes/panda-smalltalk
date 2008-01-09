@@ -1,0 +1,107 @@
+Bootstrapping an initial image is a tricky process, a real chicken-and-egg
+problem, since the image must consist of serialized Smalltalk objects and bytecode.
+
+
+Plan:
+
+1.) Design Object Memory (Mostly Done)
+
+
+2.)
+
+Create C interfaces to some Smalltalk classes. These are needed for bootstrapping 
+an initial image. For example, we need to manipulate method dictionaries at the
+C level in order to initialize class objects.
+
+  Object
+    Class
+    Array
+    Dictionary
+    Symbol
+    Association
+    String
+    SmallInteger
+    Float
+    Character
+    CompiledMethod
+
+4.)
+
+Allocate important Smalltalk objects, which are only half-initialized at this
+point. Set up rather complicated Class/Superclass/Metaclass hierarchy. Set
+the instance size for each class.
+
+Classes:
+
+  Object
+  True
+  False
+  UndefinedObject
+  MetaClass
+  Class
+  Array
+  ByteArray
+  Dictionary
+  Symbol
+  Association
+  String
+  CompiledMethod
+  BlockClosure
+  ...
+  
+Instances:
+
+  nil
+  true
+  false
+  SymbolTable
+  Smalltalk (SystemDictionary)
+
+Basic Class/Metaclass hierarchy:
+
+  Instance          Class               Metaclass
+  -------------------------------------------------------------
+  
+  Object            nil                  Object class
+  Behaviour         Object               Behaviour class
+  ClassDescription  Behaviour            ClassDescription class
+  Metaclass         ClassDescription     Metaclass class
+  Class             ClassDescription     Class class
+
+3.)
+
+Write a bootstrap lexer (Done) and parser in C. test lexer and parser as much as possible.
+
+4.) 
+
+Parse class descriptions, and properly initialize the class objects which were
+allocated previously. This includes setting up the complicated Metaclass hierarchy.
+
+Parse methods and add them to the class methodDictionaries.
+
+5.)
+
+Write a simple and minimal interpreter just for evaluating "3 + 4"
+
+6.)
+
+Testing! The Big Moment!
+
+Does "3 + 4" actually evaluate without a crash? Does the result equal "7"?
+
+After improving interpreter, do more complex tests
+
+7.)
+
+Write heap out to an image file. 
+
+Ensure image loads correctly and that the tests in (6) pass.
+
+8.)
+
+Refactor Bootstrapping process. Consider whether to keep bootstrapping code or not.
+
+9.)
+
+Done! Now finish interpreter
+
