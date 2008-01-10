@@ -3,7 +3,7 @@ SUBDIRS = libs goo tests
 
 
 EXTRA_DIST = \
-	COPYING \
+	COPYING.GPL \
 	COPYING.LGPL \
 	autogen.sh
 
