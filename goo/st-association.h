@@ -2,7 +2,7 @@
 /* 
  * st-association.h
  *
- * Copyright (C) 2008 Vincent Geddes
+ * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
  *
  * This library is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #ifndef __ST_ASSOCIATION_H__
 #define __ST_ASSOCIATION_H__
 
@@ -28,23 +28,23 @@
 typedef struct
 {
     st_header_t header;
-	
-    st_oop_t     key;
-    st_oop_t     value;
-	
+
+    st_oop_t key;
+    st_oop_t value;
+
 } st_association_t;
 
-st_oop_t         st_association_new       (st_oop_t key, st_oop_t value);
+st_oop_t st_association_new (st_oop_t key, st_oop_t value);
 
-INLINE st_oop_t  st_association_key       (st_oop_t assoc);
+INLINE st_oop_t st_association_key (st_oop_t assoc);
 
-INLINE st_oop_t  st_association_value     (st_oop_t assoc);
+INLINE st_oop_t st_association_value (st_oop_t assoc);
 
-INLINE void      st_association_set_key   (st_oop_t assoc, st_oop_t key);
+INLINE void st_association_set_key (st_oop_t assoc, st_oop_t key);
 
-INLINE void      st_association_set_value (st_oop_t assoc, st_oop_t value);
+INLINE void st_association_set_value (st_oop_t assoc, st_oop_t value);
 
-st_vtable_t     *st_association_vtable    (void);
+st_vtable_t *st_association_vtable (void);
 
 /* inline definitions */
 #define _ST_ASSOCIATION(oop) ((st_association_t *) ST_POINTER (oop))

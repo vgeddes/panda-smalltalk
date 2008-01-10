@@ -1,28 +1,23 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
-/* 
+/*
  * st-class.h
  *
- * Copyright (C) 2008 Vincent Geddes
+ * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
-
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
-
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This library is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation, either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 /* Definition of Class objects
  *
  * Inspired by Strongtalk, we include a vtable in each class object
@@ -31,7 +26,7 @@
  * to work with oops's in an object-orientated way.
  *
  */
- 
+
 #ifndef __ST_CLASS_H__
 #define __ST_CLASS_H__
 
@@ -44,15 +39,15 @@
 
 typedef struct
 {
-    st_header_t   header;
+    st_header_t header;
 
-    st_vtable_t  *vtable;
-    
-    st_oop_t      superclass;
-    st_oop_t      instance_size;
-    st_oop_t      method_dictionary;
-    st_oop_t      instance_variables;
-	
+    st_vtable_t *vtable;
+
+    st_oop_t superclass;
+    st_oop_t instance_size;
+    st_oop_t method_dictionary;
+    st_oop_t instance_variables;
+
 } st_behavior_t;
 
 typedef struct
@@ -61,7 +56,7 @@ typedef struct
 
     st_oop_t class_name;
     st_oop_t class_pool;
-	
+
 } st_class_t;
 
 typedef struct
@@ -69,42 +64,42 @@ typedef struct
     st_behavior_t parent;
 
     st_oop_t instance_class;
-	
+
 } st_metaclass_t;
 
-INLINE st_oop_t   st_behavior_instance_size        (st_oop_t klass);
+INLINE st_oop_t st_behavior_instance_size (st_oop_t klass);
 
-INLINE st_oop_t   st_behavior_superclass           (st_oop_t klass);
+INLINE st_oop_t st_behavior_superclass (st_oop_t klass);
 
-INLINE st_oop_t   st_behavior_method_dictionary    (st_oop_t klass);
+INLINE st_oop_t st_behavior_method_dictionary (st_oop_t klass);
 
-INLINE st_oop_t   st_behavior_instance_variables   (st_oop_t klass);
+INLINE st_oop_t st_behavior_instance_variables (st_oop_t klass);
 
-INLINE void       st_behavior_set_instance_size    (st_oop_t klass, st_smi_t instance_size);
+INLINE void st_behavior_set_instance_size (st_oop_t klass, st_smi_t instance_size);
 
-INLINE void       st_behavior_set_superclass       (st_oop_t klass, st_oop_t superclass);
+INLINE void st_behavior_set_superclass (st_oop_t klass, st_oop_t superclass);
 
-INLINE void       st_behavior_set_method_dictionary  (st_oop_t klass, st_oop_t method_dictionary);
+INLINE void st_behavior_set_method_dictionary (st_oop_t klass, st_oop_t method_dictionary);
 
-INLINE void       st_behavior_set_instance_variables (st_oop_t klass, st_oop_t instance_variables);
-
-
-INLINE st_oop_t   st_class_name     (st_oop_t klass);
-
-INLINE st_oop_t   st_class_pool     (st_oop_t klass);
-
-INLINE void       st_class_set_name (st_oop_t klass, st_oop_t name);
-
-INLINE void       st_class_set_pool (st_oop_t klass, st_oop_t class_pool);
-
-st_vtable_t      *st_class_vtable   (void);
+INLINE void st_behavior_set_instance_variables (st_oop_t klass, st_oop_t instance_variables);
 
 
-INLINE st_oop_t   st_metaclass_instance_class     (st_oop_t metaclass);
+INLINE st_oop_t st_class_name (st_oop_t klass);
 
-INLINE void       st_metaclass_set_instance_class (st_oop_t metaclass, st_oop_t instance_class);
+INLINE st_oop_t st_class_pool (st_oop_t klass);
 
-st_vtable_t      *st_metaclass_vtable (void);
+INLINE void st_class_set_name (st_oop_t klass, st_oop_t name);
+
+INLINE void st_class_set_pool (st_oop_t klass, st_oop_t class_pool);
+
+st_vtable_t *st_class_vtable (void);
+
+
+INLINE st_oop_t st_metaclass_instance_class (st_oop_t metaclass);
+
+INLINE void st_metaclass_set_instance_class (st_oop_t metaclass, st_oop_t instance_class);
+
+st_vtable_t *st_metaclass_vtable (void);
 
 
 /* inline definitions */
