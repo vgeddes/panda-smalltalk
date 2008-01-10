@@ -31,13 +31,13 @@ static const char * const token_names[] =
 };
 
 static void
-print_token (GooLexer *lexer, GooLexerToken *token)
+print_token (st_lexer_t *lexer, st_lexer_token_t *token)
 {
-	GooTokenType type;
+	st_lexer_token_type_t type;
 	
 	char *string;
 
-	GooLexerError *error;
+	st_lexer_error_t *error;
 	type = st_lexer_token_type (token);
 
 	switch (type) {
@@ -66,7 +66,7 @@ print_token (GooLexer *lexer, GooLexerToken *token)
 	
 		error = st_lexer_last_error (lexer);
 		
-		printf ("%s\n", st_lexer_error_create_message (error));
+		printf ("%s\n", st_lexer_error_message (error));
 		break;
 		
 		
@@ -84,8 +84,8 @@ print_token (GooLexer *lexer, GooLexerToken *token)
 int
 main (int argc, char *argv[])
 {
-	GooLexer      *lexer;
-	GooLexerToken *token;
+	st_lexer_t      *lexer;
+	st_lexer_token_t *token;
 	
 	/* read input from stdin */
 	char buffer[BUF_SIZE];
@@ -97,7 +97,7 @@ main (int argc, char *argv[])
 	
 	lexer = st_lexer_new (buffer);
 	
-	GooTokenType type;
+	st_lexer_token_type_t type;
 			
 	do {
 	
