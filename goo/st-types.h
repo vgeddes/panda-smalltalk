@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_TYPES_H__
-#define __ST_TYPES_H__
+#ifndef _ST_TYPES_H__
+#define _ST_TYPES_H__
 
 #include <glib.h>
 #include <stdbool.h>
@@ -63,7 +63,7 @@ typedef uintptr_t st_oop_t;
 
 /* signed integral type which can hold the value of a smi immediate
  */
-#if (ST_HOST32 == 1)
+#if ST_HOST32 == 1
 typedef int32_t st_smi_t;
 #else
 typedef int64_t st_smi_t;
@@ -79,4 +79,4 @@ typedef int64_t st_smi_t;
 #define ST_POINTER(oop)          ((st_header_t *) ((oop) - ST_POINTER_TAG))
 #define ST_OOP(ptr)              (((st_oop_t) (ptr)) + ST_POINTER_TAG)
 
-#endif /* __ST_TYPES_H__ */
+#endif /* _ST_TYPES_H__ */

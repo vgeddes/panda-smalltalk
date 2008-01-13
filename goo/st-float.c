@@ -21,12 +21,13 @@
 #include <st-float.h>
 #include <st-object.h>
 
-#include <st-mini.h>
+#include <st-vtable.h>
 
 
-ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ());
 
-     static bool is_float (void)
+static bool
+is_float (void)
 {
     return true;
 }
@@ -34,9 +35,7 @@ ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ())
 static st_oop_t
 float_allocate (st_oop_t klass)
 {
-    int object_size = sizeof (st_float_t) / sizeof (st_oop_t);
-
-    st_oop_t f = st_allocate_object (object_size);
+    st_oop_t f = st_allocate_object (ST_TYPE_SIZE (st_float_t));
 
     st_object_initialize_header (f, st_float_class);
 
@@ -63,3 +62,4 @@ st_float_new (double value)
 
     return f;
 }
+

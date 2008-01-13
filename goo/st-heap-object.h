@@ -18,11 +18,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_HEAP_OBJECT_H__
-#define __ST_HEAP_OBJECT_H__
+#ifndef _ST_HEAP_OBJECT_H__
+#define _ST_HEAP_OBJECT_H__
 
 #include <st-types.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 #include <st-mark.h>
 
 /* Each heap object starts with this layout */
@@ -55,7 +55,7 @@ INLINE void st_heap_object_set_mark (st_oop_t object, st_oop_t mark);
 
 INLINE st_oop_t *st_heap_object_instvars (st_oop_t object);
 
-st_vtable_t *st_heap_object_vtable (void);
+const st_vtable_t *st_heap_object_vtable (void);
 
 
 INLINE st_oop_t
@@ -94,4 +94,4 @@ st_heap_object_instvars (st_oop_t object)
     return ((st_heap_object_t *) ST_POINTER (object))->instvars;
 }
 
-#endif /* __ST_HEAP_OBJECT_H__ */
+#endif /* _ST_HEAP_OBJECT_H__ */

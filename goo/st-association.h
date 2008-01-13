@@ -18,12 +18,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_ASSOCIATION_H__
-#define __ST_ASSOCIATION_H__
+#ifndef _ST_ASSOCIATION_H__
+#define _ST_ASSOCIATION_H__
 
 #include <st-heap-object.h>
 #include <st-types.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 
 typedef struct
 {
@@ -44,33 +44,33 @@ INLINE void st_association_set_key (st_oop_t assoc, st_oop_t key);
 
 INLINE void st_association_set_value (st_oop_t assoc, st_oop_t value);
 
-st_vtable_t *st_association_vtable (void);
+const st_vtable_t *st_association_vtable (void);
 
 /* inline definitions */
-#define _ST_ASSOCIATION(oop) ((st_association_t *) ST_POINTER (oop))
+#define ST_ASSOCIATION(oop) ((st_association_t *) ST_POINTER (oop))
 
 INLINE st_oop_t
 st_association_key (st_oop_t assoc)
 {
-    return _ST_ASSOCIATION (assoc)->key;
+    return ST_ASSOCIATION (assoc)->key;
 }
 
 INLINE st_oop_t
 st_association_value (st_oop_t assoc)
 {
-    return _ST_ASSOCIATION (assoc)->value;
+    return ST_ASSOCIATION (assoc)->value;
 }
 
 INLINE void
 st_association_set_key (st_oop_t assoc, st_oop_t key)
 {
-    _ST_ASSOCIATION (assoc)->key = key;
+    ST_ASSOCIATION (assoc)->key = key;
 }
 
 INLINE void
 st_association_set_value (st_oop_t assoc, st_oop_t value)
 {
-    _ST_ASSOCIATION (assoc)->value = value;
+    ST_ASSOCIATION (assoc)->value = value;
 }
 
-#endif /* __ST_ASSOCIATION_H__ */
+#endif /* _ST_ASSOCIATION_H__ */

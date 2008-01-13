@@ -21,12 +21,13 @@
 #include <st-association.h>
 #include <st-object.h>
 
-ST_DEFINE_VTABLE (st_association, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_association, st_heap_object_vtable ());
 
 
-     static guint association_hash (st_oop_t object)
+static guint
+association_hash (st_oop_t object)
 {
-    st_association_t *a = _ST_ASSOCIATION (object);
+    st_association_t *a = ST_ASSOCIATION (object);
 
     return st_object_hash (a->key) ^ st_object_hash (a->value);
 }
@@ -37,8 +38,8 @@ association_equal (st_oop_t object, st_oop_t another)
     if (!st_object_is_association (another))
 	return false;
 
-    st_association_t *a = _ST_ASSOCIATION (object);
-    st_association_t *b = _ST_ASSOCIATION (another);
+    st_association_t *a = ST_ASSOCIATION (object);
+    st_association_t *b = ST_ASSOCIATION (another);
 
     return st_object_equal (a->key, b->key) && st_object_equal (a->value, b->value);
 }
@@ -47,13 +48,6 @@ static bool
 is_association (void)
 {
     return true;
-}
-
-static const char *
-association_name (void)
-{
-    static const char name[] = "Association";
-    return name;
 }
 
 static void
@@ -66,7 +60,6 @@ st_association_vtable_init (st_vtable_t * table)
 
     table->equal = association_equal;
     table->hash = association_hash;
-    table->name = association_name;
 }
 
 st_oop_t

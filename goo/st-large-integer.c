@@ -22,14 +22,14 @@
 #include "st-universe.h"
 #include "st-types.h"
 
-ST_DEFINE_VTABLE (st_large_integer, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_large_integer, st_heap_object_vtable ());
 
-     static st_oop_t large_integer_new (mp_int * value);
+static st_oop_t large_integer_new (mp_int * value);
 
 /* TODO: Move these functions to the primitive interface
  */
 
-#define VALUE(oop)             (&(_ST_LARGE_INTEGER(oop)->value))
+#define VALUE(oop)             (&(ST_LARGE_INTEGER(oop)->value))
 
 
 /* useful macros to avoid duplication of error-handling code */

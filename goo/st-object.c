@@ -57,9 +57,10 @@ st_object_new_arrayed (st_oop_t klass, st_smi_t size)
 
 /* Meta table */
 
-ST_DEFINE_VTABLE (st_object, NULL)
+ST_DEFINE_VTABLE (st_object, NULL);
 
-     static bool is_not_type (void)
+static bool
+is_not_type (void)
 {
     return false;
 }
@@ -98,7 +99,7 @@ allocate_arrayed (st_oop_t klass, st_smi_t size)
 }
 
 static void
-st_object_vtable_init (st_vtable_t * table)
+st_object_vtable_init (st_vtable_t *table)
 {
     table->allocate = allocate;
     table->allocate_arrayed = allocate_arrayed;

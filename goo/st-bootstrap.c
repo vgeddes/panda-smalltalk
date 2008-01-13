@@ -35,7 +35,7 @@
 #include <st-universe.h>
 #include <st-heap-object.h>
 #include <st-lexer.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -67,9 +67,9 @@ enum
 static GList *classes = NULL;
 
 static st_oop_t
-st_class_new (st_vtable_t * table)
+st_class_new (const st_vtable_t * table)
 {
-    st_oop_t klass = st_allocate_object (sizeof (st_class_t) / sizeof (st_oop_t));
+    st_oop_t klass = st_allocate_object (ST_TYPE_SIZE (st_class_t));
 
     /* TODO refactor this initialising */
 
@@ -371,6 +371,7 @@ bootstrap_universe (void)
     st_byte_array_class = st_class_new (st_byte_array_vtable ());
     st_dictionary_class = st_class_new (st_dictionary_vtable ());
     st_set_class = st_class_new (st_set_vtable ());
+    st_tuple_class = st_class_new (st_array_vtable ());
     st_string_class = st_class_new (st_byte_array_vtable ());
     st_symbol_class = st_class_new (st_symbol_vtable ());
     st_association_class = st_class_new (st_association_vtable ());
@@ -390,6 +391,7 @@ bootstrap_universe (void)
     st_behavior_set_instance_size (st_string_class, 0);
     st_behavior_set_instance_size (st_byte_array_class, 0);
     st_behavior_set_instance_size (st_array_class, 0);
+    st_behavior_set_instance_size (st_tuple_class, 0);
     st_behavior_set_instance_size (st_true_class, 0);
     st_behavior_set_instance_size (st_false_class, 0);
     st_behavior_set_instance_size (st_set_class, 2);
@@ -417,6 +419,7 @@ bootstrap_universe (void)
     declare_class ("String", st_string_class);
     declare_class ("Symbol", st_symbol_class);
     declare_class ("Set", st_set_class);
+    declare_class ("Tuple", st_tuple_class);
     declare_class ("Dictionary", st_dictionary_class);
     declare_class ("Association", st_association_class);
     declare_class ("CompiledMethod", st_compiled_method_class);

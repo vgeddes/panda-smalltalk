@@ -3,40 +3,51 @@ Object Memory Layout
 
 Legend
 -------
-Mark: GC book-keeping (12 bits), Hash (20 bits), Tag (2 bits)
+Mark: GC book-keeping (12 bits), Readonly (1 bit) Hash (20 bits), Tag (2 bits)
 Class oop: Oop to class object of instance
 Fixed Size: Number of fixed fields in object
 
-Object with only fixed fields:
+Normal Object
 
 [ mark             ]
 [ class            ]
 [ instance vars    ] *
 
 
-Object with fixed and indexed fields:
+Array Object
 
 [ mark               ]
 [ class              ]
-[ instance vars      ] *
-[ length             ]
+[ size               ]
 [ elements           ] *
 
 
-Object that stores only bytes:
+ByteArray Object
 
 [ mark                ]
 [ class               ]
-[ instance vars       ] *
-[ length              ]
-[ bytes               ] *
+[ size                ]
+[ bytes               ] * (padded to oop size)
 
-
-Class Object
-
+FloatArray Object
 
 [ mark                ]
 [ class               ]
+[ size                ]
+[ C `double'          ] *
+
+LargeInteger Object
+
+[ mark                ]
+[ class               ]
+[ size                ]
+[ C `mp_int' struct   ]
+
+Class/Metaclass Object
+
+[ mark                ]
+[ class               ]
+[ vtable              ]
 [ instance size       ]
 [ instance variables  ]
 [ class pool          ]

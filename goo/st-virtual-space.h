@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_VIRTUAL_SPACE__
-#define __ST_VIRTUAL_SPACE__
+#ifndef _ST_VIRTUAL_SPACE__
+#define _ST_VIRTUAL_SPACE__
 
 #include <glib.h>
 
@@ -42,4 +42,4 @@ st_virtual_space_get_end (GooVirtualSpace * space)
 void st_virtual_space_destroy (GooVirtualSpace * space);
 
 
-#endif /* __ST_VIRTUAL_SPACE__ */
+#endif /* _ST_VIRTUAL_SPACE__ */

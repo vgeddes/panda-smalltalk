@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_MARK_H__
-#define __ST_MARK_H__
+#ifndef _ST_MARK_H__
+#define _ST_MARK_H__
 
 #include <st-types.h>
 #include <st-utils.h>
@@ -38,7 +38,7 @@ INLINE st_oop_t st_mark_set_readonly (st_oop_t mark, bool readonly);
 /* format of mark oop
  * [ unused: 9 | non-pointer: 1 | readonly: 1 | hash: 20 | tag: 2 ]
  *
- * unused: 	not used yet (haven't implemented GC yet)
+ * unused: 	not used yet (haven't implemented GC)
  * non-pointer:	object body contains native C types
  * readonly:	object cannot be modified
  * hash:	identity hash for use in Collections
@@ -121,4 +121,4 @@ st_mark_new (void)
     return mark;
 }
 
-#endif /* __ST_MARK_H__ */
+#endif /* _ST_MARK_H__ */

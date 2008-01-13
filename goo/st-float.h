@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_FLOAT_H__
-#define __ST_FLOAT_H__
+#ifndef _ST_FLOAT_H__
+#define _ST_FLOAT_H__
 
 #include <st-types.h>
 #include <st-heap-object.h>
@@ -39,22 +39,22 @@ INLINE double st_float_value (st_oop_t f);
 
 INLINE void st_float_set_value (st_oop_t f, double value);
 
-st_vtable_t *st_float_vtable (void);
+const st_vtable_t *st_float_vtable (void);
 
 
 /* inline definitions */
-#define _ST_FLOAT(oop) ((st_float_t *) ST_POINTER (oop))
+#define ST_FLOAT(oop) ((st_float_t *) ST_POINTER (oop))
 
 INLINE double
 st_float_value (st_oop_t f)
 {
-    return _ST_FLOAT (f)->value;
+    return ST_FLOAT (f)->value;
 }
 
 INLINE void
 st_float_set_value (st_oop_t f, double value)
 {
-    _ST_FLOAT (f)->value = value;
+    ST_FLOAT (f)->value = value;
 }
 
-#endif /* __ST_FLOAT_H__ */
+#endif /* _ST_FLOAT_H__ */

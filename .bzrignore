@@ -32,3 +32,4 @@ goo/bootstrap
 libs/libtommath/test
 tests/test-string-stream
 config.h
+*.loT

@@ -32,7 +32,7 @@ st_allocate_object (gsize size)
     /* no gc fanciness yet */
 
     st_oop_t object = ST_OOP (g_malloc (size * sizeof (st_oop_t)));
-    objects = g_list_append (objects, object);
+    objects = g_list_append (objects, (void*) object);
 
     return object;
 }

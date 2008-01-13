@@ -4,8 +4,8 @@ AM_CPPFLAGS = -DG_LOG_DOMAIN=\"Smalltalk\"
 lib_LTLIBRARIES = libgoo.la
 
 libgoo_la_SOURCES = \
-	st-string-stream.h \
-	st-string-stream.c \
+	st-input.h \
+	st-input.c \
 	st-heap-object.c \
 	st-heap-object.h \
  	st-lexer.c \
@@ -37,8 +37,9 @@ libgoo_la_SOURCES = \
 	st-class.c \
 	st-object.h \
 	st-object.c \
-	st-mini.c \
-	st-mini.h \
+	st-vtable.c \
+	st-vtable.h \
+	st-parser.c \
  	st-types.h
 	
 libgoo_la_CPPFLAGS =      \

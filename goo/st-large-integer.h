@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_LARGE_INTEGER__
-#define __ST_LARGE_INTEGER__
+#ifndef _ST_LARGE_INTEGER__
+#define _ST_LARGE_INTEGER__
 
 #include <tommath.h>
 #include <st-heap-object.h>
@@ -41,16 +41,16 @@ char *st_large_integer_to_string (st_oop_t integer, guint radix);
 
 INLINE mp_int *st_large_integer_value (st_oop_t integer);
 
-st_vtable_t *st_large_integer_vtable (void);
+const st_vtable_t *st_large_integer_vtable (void);
 
 
 /* inline definitions */
-#define _ST_LARGE_INTEGER(oop) ((st_large_integer_t *) ST_POINTER (oop))
+#define ST_LARGE_INTEGER(oop) ((st_large_integer_t *) ST_POINTER (oop))
 
 mp_int *
 st_large_integer_value (st_oop_t integer)
 {
-    return &_ST_LARGE_INTEGER (integer)->value;
+    return &ST_LARGE_INTEGER (integer)->value;
 }
 
-#endif /* __ST_LARGE_INTEGER */
+#endif /* _ST_LARGE_INTEGER */

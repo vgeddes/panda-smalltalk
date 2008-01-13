@@ -18,13 +18,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_OBJECT_H__
-#define __ST_OBJECT_H__
+#ifndef _ST_OBJECT_H__
+#define _ST_OBJECT_H__
 
 #include <st-types.h>
 #include <st-small-integer.h>
 #include <st-utils.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 #include <st-class.h>
 #include <st-universe.h>
 #include <glib.h>
@@ -44,8 +44,7 @@ INLINE bool st_object_is_smi (st_oop_t object);
 
 INLINE st_oop_t st_object_class (st_oop_t object);
 INLINE guint st_object_hash (st_oop_t object);
-INLINE st_vtable_t *st_object_virtual (st_oop_t object);
-INLINE st_vtable_t *st_object_super_virtual (st_oop_t object);
+INLINE const st_vtable_t *st_object_virtual (st_oop_t object);
 INLINE bool st_object_equal (st_oop_t object, st_oop_t another);
 INLINE bool st_object_verify (st_oop_t object);
 
@@ -63,7 +62,7 @@ INLINE bool st_object_is_arrayed (st_oop_t object);
 INLINE bool st_object_is_array (st_oop_t object);
 INLINE bool st_object_is_byte_array (st_oop_t object);
 
-st_vtable_t *st_object_vtable (void);
+const st_vtable_t *st_object_vtable (void);
 
 
 /* inline definitions */
@@ -103,24 +102,14 @@ st_object_class (st_oop_t object)
     return st_heap_object_class (object);
 }
 
-INLINE st_vtable_t *
+INLINE const st_vtable_t *
 st_object_virtual (st_oop_t object)
 {
     if (G_UNLIKELY (st_object_is_smi (object)))
 	return st_smi_vtable ();
 
-    return (ST_CLASS_VTABLE (st_object_class (object)));
+    return ST_CLASS_VTABLE (st_object_class (object));
 }
-
-INLINE st_vtable_t *
-st_object_super_virtual (st_oop_t object)
-{
-    if (G_UNLIKELY (st_object_is_smi (object)))
-	return st_smi_vtable ()->parent_table;
-
-    return ST_CLASS_VTABLE (st_object_class (object))->parent_table;
-}
-
 
 INLINE bool
 st_object_equal (st_oop_t object, st_oop_t another)
@@ -243,4 +232,4 @@ st_object_is_byte_array (st_oop_t object)
     return st_object_is_heap (object) && st_object_virtual (object)->is_byte_array ();
 }
 
-#endif /* __ST_OBJECT_H__ */
+#endif /* _ST_OBJECT_H__ */

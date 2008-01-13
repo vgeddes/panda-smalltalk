@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_ARRAY_H__
-#define __ST_ARRAY_H__
+#ifndef _ST_ARRAY_H__
+#define _ST_ARRAY_H__
 
 #include <st-types.h>
 #include <st-class.h>
@@ -47,16 +47,16 @@ INLINE st_oop_t st_array_at (st_oop_t object, st_smi_t i);
 
 INLINE void st_array_at_put (st_oop_t object, st_smi_t i, st_oop_t value);
 
-st_vtable_t *st_array_vtable (void);
+const st_vtable_t *st_array_vtable (void);
 
 
 /* inline definitions */
-#define _ST_ARRAY(oop) ((st_array_t *) ST_POINTER (oop))
+#define ST_ARRAY(oop) ((st_array_t *) ST_POINTER (oop))
 
 INLINE st_oop_t
 st_array_size (st_oop_t object)
 {
-    return _ST_ARRAY (object)->size;
+    return ST_ARRAY (object)->size;
 }
 
 INLINE bool
@@ -74,7 +74,7 @@ st_array_element (st_oop_t object, st_smi_t i)
     /* by obtaining the element address as an offset from `&array->size',
      * we avoid the slight overhead of subtraction if we had used `&array->elements[i - 1]' instead.
      */
-    return (&_ST_ARRAY (object)->size) + i;
+    return (&ST_ARRAY (object)->size) + i;
 }
 
 INLINE st_oop_t
@@ -93,4 +93,4 @@ st_array_at_put (st_oop_t object, st_smi_t i, st_oop_t value)
     *st_array_element (object, i) = value;
 }
 
-#endif /* __ST_ARRAY_H__ */
+#endif /* _ST_ARRAY_H__ */

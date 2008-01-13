@@ -18,25 +18,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_UTILS_H__
-#define __ST_UTILS_H__
+#ifndef _ST_UTILS_H__
+#define _ST_UTILS_H__
 
 #include <glib.h>
 #include <st-types.h>
 #include <stdio.h>
 
-G_BEGIN_DECLS
-#define ST_ADD_BITS(n, m)   ((n) | (m))
-#define ST_SET_BITS(n, m)   ((n) |= (m))
-#define ST_MASK_BITS(n, m)  ((n) & (m))
+/* bit utilities */
 #define ST_NTH_BIT(n)       (1 << (n))
 #define ST_NTH_MASK(n)      (ST_NTH_BIT(n) - 1)
+
+/* an assertion that is checked at compile time */
 #define assert_static(e)                \
    do {                                 \
       enum { assert_static__ = 1/(e) }; \
    } while (0)
+   
 #define streq(a,b)  (strcmp ((a),(b)) == 0)
-    enum
+
+/* returns the size of a type, in oop's */
+#define ST_TYPE_SIZE(type) (sizeof (type) / sizeof (st_oop_t))
+
+enum
 {
     st_tag_mask = ST_NTH_MASK (2),
 };
@@ -47,4 +51,4 @@ st_oop_t st_allocate_object (gsize size);
 
 
 G_END_DECLS
-#endif /* __ST_UTILS_H__ */
+#endif /* _ST_UTILS_H__ */

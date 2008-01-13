@@ -20,9 +20,10 @@
 
 #include <st-float-array.h>
 
-ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ());
 
-     static bool is_arrayed (void)
+static bool
+is_arrayed (void)
 {
     return true;
 }
@@ -32,12 +33,13 @@ allocate_arrayed (st_oop_t klass, st_smi_t size)
 {
     g_assert (size > 0);
 
-    st_oop_t object = st_allocate_object ((sizeof (st_float_array_t) / sizeof (st_oop_t)) + size);
+    st_oop_t object = st_allocate_object (ST_TYPE_SIZE (st_float_array_t) + size);
+    
     st_object_initialize_header (object, klass);
 
-    st_arrayed_object_set_size (object, size);
+    ST_FLOAT_ARRAY (object)->size = size;
 
-    double *elements = _ST_FLOAT_ARRAY (object)->elements;
+    double *elements = ST_FLOAT_ARRAY (object)->elements;
 
     for (st_smi_t i = 0; i < size; i++)
 	elements[i] = (double) 0;

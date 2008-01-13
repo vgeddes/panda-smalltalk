@@ -24,14 +24,15 @@
 #include <st-universe.h>
 #include <st-symbol.h>
 #include <st-object.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 
 
 /* Class */
 
-ST_DEFINE_VTABLE (st_class, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_class, st_heap_object_vtable ());
 
-     static bool is_class (void)
+static bool
+is_class (void)
 {
     return true;
 }
@@ -42,7 +43,7 @@ class_verify (st_oop_t object)
     bool verified = true;
 
     /* verify header */
-    if (!st_object_super_virtual (object)->verify (object))
+    if (!st_heap_object_vtable ()->verify (object))
 	return false;
 
     verified = verified && (ST_CLASS_VTABLE (object) != NULL);
@@ -81,10 +82,11 @@ st_class_vtable_init (st_vtable_t * table)
 
 /* Metaclass */
 
-ST_DEFINE_VTABLE (st_metaclass, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_metaclass, st_heap_object_vtable ());
 
 
-     static bool is_metaclass (void)
+static bool
+is_metaclass (void)
 {
     return true;
 }
@@ -95,7 +97,7 @@ metaclass_verify (st_oop_t object)
     bool verified = true;
 
     /* verify header */
-    if (!st_object_super_virtual (object)->verify (object))
+    if (!st_heap_object_vtable ()->verify (object))
 	return false;
 
     verified = verified && (ST_CLASS_VTABLE (object) != NULL);
@@ -119,9 +121,7 @@ metaclass_verify (st_oop_t object)
 static st_oop_t
 metaclass_allocate (st_oop_t klass)
 {
-    int object_size = sizeof (st_metaclass_t) / sizeof (st_oop_t);
-
-    st_oop_t object = st_allocate_object (object_size);
+    st_oop_t object = st_allocate_object (ST_TYPE_SIZE (st_metaclass_t));
 
     st_object_initialize_header (object, st_metaclass_class);
 

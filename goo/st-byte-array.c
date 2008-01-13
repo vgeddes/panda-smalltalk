@@ -21,39 +21,17 @@
 #include <st-byte-array.h>
 #include <st-object.h>
 #include <st-utils.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 #include <string.h>
 
 ST_DEFINE_VTABLE (st_byte_array, st_heap_object_vtable ());
 
 static bool
 byte_array_verify (st_oop_t object)
-{
+{    
+    if (!st_heap_object_vtable ()->verify (object))
+	return false;
 
-//      printf ("%p %p %p %p\n", st_object_virtual (object), st_object_virtual (object)->parent_table,
-//              st_object_virtual (object)->verify, st_object_virtual (object)->parent_table->verify);
-
-
-//      printf ("%i ", st_object_virtual (object) == st_symbol_vtable ());
-
-    if (st_object_is_symbol (object)) {
-
-	if (!st_object_virtual (object)->parent_table->parent_table->verify (object))
-	    return false;
-
-    } else {
-
-
-	if (!st_object_virtual (object)->parent_table->verify (object))
-	    return false;
-
-    }
-
-
-//      if (!st_object_super_virtual (object)->verify (object))
-//              return false;
-
-    // variable size
     st_oop_t size = st_byte_array_size (object);
     if (!st_object_is_smi (size) || !(st_smi_value (size) > 0))
 	return false;
@@ -89,12 +67,10 @@ allocate_arrayed (st_oop_t klass, st_smi_t size)
     g_assert (size > 0);
 
     st_smi_t size_rounded = round_size (size);
-    st_oop_t array =
-	st_allocate_object ((sizeof (st_byte_array_t) / sizeof (st_oop_t)) +
-			    size_rounded / sizeof (st_oop_t));
+    st_oop_t array = st_allocate_object (ST_TYPE_SIZE (st_byte_array_t) + (size_rounded / sizeof (st_oop_t)));
 
     st_object_initialize_header (array, klass);
-    _ST_BYTE_ARRAY (array)->size = st_smi_new (size);
+    ST_BYTE_ARRAY (array)->size = st_smi_new (size);
 
     memset (st_byte_array_bytes (array), 0, size_rounded);
 

@@ -18,14 +18,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_LEXER_H__
-#define __ST_LEXER_H__
+#ifndef _ST_LEXER_H__
+#define _ST_LEXER_H__
 
 #include <glib.h>
 
-typedef struct _st_lexer_t st_lexer_t;
-typedef struct _st_lexer_token_t st_lexer_token_t;
-typedef struct _st_lexer_error_t st_lexer_error_t;
+#define ST_NUMBER_TOKEN(token) ((st_number_token_t *) token)
+
+typedef struct st_lexer_t         st_lexer_t;
+typedef struct st_token_t         st_token_t;
+typedef struct st_number_token_t  st_number_token_t;
 
 typedef enum
 {
@@ -40,7 +42,7 @@ typedef enum
     ST_TOKEN_RETURN,
     ST_TOKEN_COLON,
     ST_TOKEN_ASSIGN,
-    ST_TOKEN_ARRAY_BEGIN,
+    ST_TOKEN_TUPLE_BEGIN,
     ST_TOKEN_IDENTIFIER,
     ST_TOKEN_CHAR_CONST,
     ST_TOKEN_STRING_CONST,
@@ -50,33 +52,39 @@ typedef enum
     ST_TOKEN_BINARY_SELECTOR,
     ST_TOKEN_KEYWORD_SELECTOR,
     ST_TOKEN_EOF
-} st_lexer_token_type_t;
-
-st_lexer_t *st_lexer_new (const char *text);
-
-st_lexer_token_t *st_lexer_next_token (st_lexer_t *lexer);
-
-st_lexer_error_t *st_lexer_last_error (st_lexer_t *lexer);
-
-void st_lexer_destroy (st_lexer_t *lexer);
+    
+} st_token_type_t;
 
 
+st_lexer_t       *st_lexer_new           (const char *text);
 
-st_lexer_token_type_t st_lexer_token_type (st_lexer_token_t *token);
+st_token_t       *st_lexer_next_token    (st_lexer_t *lexer);
 
-char *st_lexer_token_text (st_lexer_token_t *token);
+st_token_t       *st_lexer_current_token (st_lexer_t *lexer);
 
-guint st_lexer_token_line (st_lexer_token_t *token);
-
-guint st_lexer_token_column (st_lexer_token_t *token);
+void              st_lexer_destroy       (st_lexer_t *lexer);
 
 
-gunichar st_lexer_error_char (st_lexer_error_t *error);
+st_token_type_t   st_token_type   (st_token_t *token);
 
-guint st_lexer_error_line (st_lexer_error_t *error);
+char             *st_token_text   (st_token_t *token);
 
-guint st_lexer_error_column (st_lexer_error_t *error);
+guint             st_token_line   (st_token_t *token);
 
-char *st_lexer_error_message (st_lexer_error_t *error);
+guint             st_token_column (st_token_t *token);
 
-#endif /* __ST_LEXER_H__ */
+
+guint             st_number_token_radix    (st_number_token_t *token);
+
+int               st_number_token_exponent (st_number_token_t *token);
+
+
+gunichar          st_lexer_error_char    (st_lexer_t *lexer);
+
+guint             st_lexer_error_line    (st_lexer_t *lexer);
+
+guint             st_lexer_error_column  (st_lexer_t *lexer);
+
+char *            st_lexer_error_message (st_lexer_t *lexer);
+
+#endif /* _ST_LEXER_H__ */

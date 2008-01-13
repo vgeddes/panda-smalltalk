@@ -28,13 +28,13 @@
  *
  */
 
-#ifndef __ST_BYTECODE_H__
-#define __ST_BYTECODE_H__
+#ifndef _ST_BYTECODE_H__
+#define _ST_BYTECODE_H__
 
 #include <glib.h>
 #include <st-types.h>
 
-G_BEGIN_DECLS typedef _GooBytecode GooBytecode;
+G_BEGIN_DECLS typedef _st_bytecode_t st_bytecode_t;
 
 typedef enum
 {
@@ -46,8 +46,9 @@ typedef enum
     ST_SPECIAL_ONE,
     ST_SPECIAL_ZERO,
     ST_SPECIAL_TWO,
+    ST_SPECIAL_TWO,
 
-} GooSpecialConstant;
+} st_special_constant_t;
 
 typedef enum
 {
@@ -84,82 +85,82 @@ typedef enum
 } GooSpecialMessage;
 
 
-GooBytecode *st_bytecode_new (void);
+st_bytecode_t *st_bytecode_new (void);
 
-char *st_bytecode_get_bytes (GooBytecode * code);
+char *st_bytecode_get_bytes (st_bytecode_t * code);
 
-guint st_bytecode_get_size (GooBytecode * code);
+guint st_bytecode_get_size (st_bytecode_t * code);
 
-void st_bytecode_append (GooBytecode * code, GooBytecode * another);
+void st_bytecode_append (st_bytecode_t * code, st_bytecode_t * another);
 
-void st_bytecode_destroy (GooBytecode * code);
+void st_bytecode_destroy (st_bytecode_t * code);
 
 /* Pushes */
 
-void st_bytecode_push_instvar (GooBytecode * code, guint index);
+void st_bytecode_push_instvar (st_bytecode_t * code, guint index);
 
-void st_bytecode_push_temporary (GooBytecode * code, guint index);
+void st_bytecode_push_temporary (st_bytecode_t * code, guint index);
 
-void st_bytecode_push_literal_const (GooBytecode * code, guint index);
+void st_bytecode_push_literal_const (st_bytecode_t * code, guint index);
 
-void st_bytecode_push_literal_var (GooBytecode * code, guint index);
+void st_bytecode_push_literal_var (st_bytecode_t * code, guint index);
 
-void st_bytecode_push_special (GooBytecode * code, GooSpecialConstant constant);
+void st_bytecode_push_special (st_bytecode_t * code, GooSpecialConstant constant);
 
-void st_bytecode_push_active_context (GooBytecode * code);
+void st_bytecode_push_active_context (st_bytecode_t * code);
 
-void st_bytecode_push_block_closure (GooBytecode * code, guint index);
+void st_bytecode_push_block_closure (st_bytecode_t * code, guint index);
 
 
 /* Stores & Pops */
 
-void st_bytecode_store_pop_instvar (GooBytecode * code, guint index);
+void st_bytecode_store_pop_instvar (st_bytecode_t * code, guint index);
 
-void st_bytecode_store_pop_temporary (GooBytecode * code, guint index);
+void st_bytecode_store_pop_temporary (st_bytecode_t * code, guint index);
 
-void st_bytecode_store_pop_literal_var (GooBytecode * code, guint index);
+void st_bytecode_store_pop_literal_var (st_bytecode_t * code, guint index);
 
 
 /* Stores */
 
-void st_bytecode_store_instvar (GooBytecode * code, guint index);
+void st_bytecode_store_instvar (st_bytecode_t * code, guint index);
 
-void st_bytecode_store_temporary (GooBytecode * code, guint index);
+void st_bytecode_store_temporary (st_bytecode_t * code, guint index);
 
-void st_bytecode_store_literal_var (GooBytecode * code, guint index);
+void st_bytecode_store_literal_var (st_bytecode_t * code, guint index);
 
 
 /* Returns */
 
-void st_bytecode_return_stack_top (GooBytecode * code);
+void st_bytecode_return_stack_top (st_bytecode_t * code);
 
-void st_bytecode_return_special (GooBytecode * code, GooSpecialConstant constant);
+void st_bytecode_return_special (st_bytecode_t * code, GooSpecialConstant constant);
 
 
 /* Jumps */
 
-void st_bytecode_jump (GooBytecode * code, short offset);
+void st_bytecode_jump (st_bytecode_t * code, short offset);
 
-void st_bytecode_jump_true (GooBytecode * code, gushort offset);
+void st_bytecode_jump_true (st_bytecode_t * code, gushort offset);
 
-void st_bytecode_jump_false (GooBytecode * code, gushort offset);
+void st_bytecode_jump_false (st_bytecode_t * code, gushort offset);
 
 
 
 /* Misc */
 
-void st_bytecode_pop (GooBytecode * code);
+void st_bytecode_pop (st_bytecode_t * code);
 
-void st_bytecode_duplicate_stack_top (GooBytecode * code);
+void st_bytecode_duplicate_stack_top (st_bytecode_t * code);
 
 
 /* Sends */
 
-void st_bytecode_super_send_selector (GooBytecode * code, guint index, guint num_args);
+void st_bytecode_super_send_selector (st_bytecode_t * code, guint index, guint num_args);
 
-void st_bytecode_send_selector (GooBytecode * code, guint index, guint num_args);
+void st_bytecode_send_selector (st_bytecode_t * code, guint index, guint num_args);
 
-void st_bytecode_send_message_special (GooBytecode * code, GooSpecialMessage message);
+void st_bytecode_send_message_special (st_bytecode_t * code, GooSpecialMessage message);
 
 
 /* Info */
@@ -169,4 +170,4 @@ void st_bytecode_is_code (guchar c);
 void st_bytecode_print_code (guchar c);
 
 
-#endif /* __ST_BYTECODE_H__ */
+#endif /* _ST_BYTECODE_H__ */

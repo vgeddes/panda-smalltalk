@@ -22,7 +22,7 @@
 
 /* CompiledMethod */
 
-ST_DEFINE_VTABLE (st_compiled_method, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_compiled_method, st_heap_object_vtable ());
 
 
      static bool is_compiled_method (void)
@@ -39,7 +39,7 @@ st_compiled_method_vtable_init (st_vtable_t * table)
 
 /* CompiledBlock */
 
-ST_DEFINE_VTABLE (st_compiled_block, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_compiled_block, st_heap_object_vtable ());
 
      static bool is_compiled_block (void)
 {

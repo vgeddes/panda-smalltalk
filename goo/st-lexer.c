@@ -11,7 +11,7 @@
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICUlookaheadR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
@@ -40,14 +40,15 @@
 #define obstack_chunk_alloc g_malloc
 #define obstack_chunk_free  g_free
 
-#define LA(self, k)   (st_string_stream_look_ahead (self->input, (k)))
-#define CONSUME(self) (st_string_stream_consume (self->input))
-#define MARK(self)    (st_string_stream_mark (self->input))
-#define REWIND(self)  (st_string_stream_rewind (self->input))
 
-struct _st_lexer_t
+#define lookahead(self, k)   (st_input_look_ahead (self->input, (k)))
+#define consume(self)        (st_input_consume (self->input))
+#define mark(self)           (st_input_mark (self->input))
+#define rewind(self)         (st_input_rewind (self->input))
+
+struct st_lexer_t
 {
-    GooStringStream *input;
+    st_input_t *input;
 
     bool token_matched;
 
@@ -55,108 +56,136 @@ struct _st_lexer_t
     guint line;
     guint column;
     guint start;
-    st_lexer_token_t *token;
+    st_token_t *token;
 
     /* error control */
     bool failed;
-    st_lexer_error_t *last_error;
     jmp_buf main_loop;
+    
+    /* last error information */
+    error_code_t error_code;
+    guint        error_line;
+    guint        error_column;
+    gunichar     error_char;
 
     /* token allocator */
     struct obstack allocator;
 };
 
-struct _st_lexer_token_t
+struct st_token_t
 {
-    st_lexer_token_type_t type;
+    st_token_type_t type;
     char *text;
-    int line;
-    int column;
+    int   line;
+    int   column;
+};
+
+struct st_number_token_t
+{
+    st_token_t parent;
+    
+    int   radix;
+    int   exponent;
+    char *number;
 };
 
 typedef enum
 {
-    ST_LEXER_ERROR_NONE,
-    ST_LEXER_ERROR_MISMATCHED_CHAR,
-    ST_LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
-    ST_LEXER_ERROR_ILLEGAL_CHAR,
-    ST_LEXER_ERROR_UNTERMINATED_COMMENT,
-    ST_LEXER_ERROR_UNTERMINATED_STRING_LITERAL,
-    ST_LEXER_ERROR_INVALID_CHAR_CONST,
-    ST_LEXER_ERROR_NO_ALT_FOR_POUND,
+    LEXER_ERROR_MISMATCHED_CHAR,
+    LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
+    LEXER_ERROR_ILLEGAL_CHAR,
+    LEXER_ERROR_UNTERMINATED_COMMENT,
+    LEXER_ERROR_UNTERMINATED_STRING_LITERAL,
+    LEXER_ERROR_INVALID_RADIX,
+    LEXER_ERROR_INVALID_CHAR_CONST,
+    LEXER_ERROR_NO_ALT_FOR_POUND,
 
-} st_lexer_error_code_t;
-
-struct _st_lexer_error_t
-{
-    st_lexer_error_code_t code;
-    gunichar c;
-    guint line;
-    guint column;
-};
-
+} error_code_t;
 
 static void
-raise_error (st_lexer_t *lexer,
-	     st_lexer_error_code_t error_code, gunichar c, guint line, guint column)
+raise_error (st_lexer_t   *lexer,
+	     error_code_t  error_code)
 {
     lexer->failed = true;
 
-    if (lexer->last_error == NULL)
-	lexer->last_error = g_slice_new (st_lexer_error_t);
+    lexer->error_code   = error_code;
+    lexer->error_char   = c;
+    lexer->error_line   = lexer->line;
+    lexer->error_column = lexer->column;
 
-    lexer->last_error->code = error_code;
-    lexer->last_error->c = c;
-    lexer->last_error->line = line;
-    lexer->last_error->column = column;
+    /* create an token of type invalid */
+    make_token (lexer, ST_TOKEN_INVALID, NULL);    
 
     /* hopefully recover after consuming char */
-    CONSUME (lexer);
+    consume (lexer);
 
+    /* go back to main loop */
     longjmp (lexer->main_loop, 0);
 }
 
-st_lexer_error_t *
-st_lexer_last_error (st_lexer_t *lexer)
+static void
+make_number_token (int radix, int exponent, char* number)
 {
-    g_assert (lexer != NULL);
+    st_token_t *token;
 
-    return lexer->last_error;
+    token = obstack_alloc (&lexer->allocator, sizeof (st_number_token_t));
+    
+    token->type   = type;
+    token->text   = number;
+    token->type   = type;
+    token->line   = lexer->line;
+    token->column = lexer->column;
+
+    st_number_token_t *number_token = ST_NUMBER_TOKEN (token);
+    number_token->radix    = radix;
+    number_token->exponent = exponent;
+
+    lexer->token = token;
+    lexer->token_matched = true;
+    
+    return token;
+
 }
 
-static inline void
-make_token (st_lexer_t *lexer, st_lexer_token_type_t type, char *text)
+static void
+make_token (st_lexer_t      *lexer,
+	    st_token_type_t  type,
+	    char            *text)
 {
-    g_assert (lexer->token != NULL);
+    st_token_t *token;
 
+    token = obstack_alloc (&lexer->allocator, sizeof (st_token_t));
+    
+    token->type   = type;
+    token->text   = text;
+    token->type   = type;
+    token->line   = lexer->line;
+    token->column = lexer->column;
+
+    lexer->token = token;
     lexer->token_matched = true;
-
-    lexer->token->text = text;
-    lexer->token->type = type;
-    lexer->token->line = lexer->line;
-    lexer->token->column = lexer->column;
+    
+    return token;
 }
 
 static void
 match_range (st_lexer_t *lexer, gunichar a, gunichar b)
 {
-    if (LA (lexer, 1) < a || LA (lexer, 1) > b) {
+    if (lookahead (lexer, 1) < a || lookahead (lexer, 1) > b) {
 	// mismatch error
-	raise_error (lexer,
-		     ST_LEXER_ERROR_MISMATCHED_CHAR, LA (lexer, 1), lexer->line, lexer->column);
+	raise_error (lexer, LEXER_ERROR_MISMATCHED_CHAR);
     }
-    CONSUME (lexer);
+    consume (lexer);
 }
 
 static void
 match (st_lexer_t *lexer, gunichar c)
 {
-    if (LA (lexer, 1) != c) {
+    if (lookahead (lexer, 1) != c) {
 	// mismatch error
-	raise_error (lexer,
-		     ST_LEXER_ERROR_MISMATCHED_CHAR, LA (lexer, 1), lexer->line, lexer->column);
+	raise_error (lexer, LEXER_ERROR_MISMATCHED_CHAR);
     }
-    CONSUME (lexer);
+    consume (lexer);
 }
 
 static bool
@@ -164,20 +193,9 @@ is_special_char (gunichar c)
 {
     switch (c) {
 
-    case '+':
-    case '/':
-    case '\\':
-    case '*':
-    case '~':
-    case '<':
-    case '>':
-    case '=':
-    case '@':
-    case '%':
-    case '|':
-    case '&':
-    case '?':
-    case '!':
+    case '+': case '/': case '\\': case '*': case '~':
+    case '<': case '>': case '=': case '@': case '%':
+    case '|': case '&': case '?': case '!':
 	return true;
 
     default:
@@ -186,145 +204,158 @@ is_special_char (gunichar c)
     }
 }
 
-
-#define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
-#define IS_XDIGIT(c) ((IS_DIGIT (c)) || ((c) >= 'a' && (c) <= 'f') || ((c) >= 'A' && (c) <= 'F'))
+/* check if a char is valid numeral identifier for a given radix */
+bool
+is_radix_numeral (guint radix, gunichar c)
+{
+    g_assert (radix >= 2 && radix <= 36);
+    
+    if (radix > 10)
+	return (c >= '0' && c <= '9') || (c >= 'A' && c <= ('A' - 1 + (radix - 10)));
+    else
+	return c >= '0' && c <= ('0' - 1 + radix);
+}
 
 /* Numbers. We do just do basic matching here. Actual parsing and conversion can
  * be done in the parser. 
  */
 static void
-match_number (st_lexer_t *lexer, bool create_token)
+match_number (st_lexer_t *lexer)
 {
     /* We don't match any leading '-'. The parser will resolve whether a '-'
      * specifies a negative number or a binary selector
      */
 
-    /* either match radix value or most significant digits of number */
+    radix = 10;
+    exponent = 0;
+    int start, end;
+    
     do {
+    
 	match_range (lexer, '0', '9');
-    } while (IS_DIGIT (LA (lexer, 1)));
-
-    /* radix specified, so accept hex values */
-    if (LA (lexer, 1) == 'r') {
-
-	CONSUME (lexer);
-
-	if (LA (lexer, 1) == '-')
-	    CONSUME (lexer);
-
-	while (IS_XDIGIT (LA (lexer, 1)))
-	    CONSUME (lexer);
-
-	if (LA (lexer, 1) == '.' && IS_XDIGIT (LA (lexer, 2))) {
-	    CONSUME (lexer);
-
-	    do {
-		CONSUME (lexer);
-	    } while (IS_XDIGIT (LA (lexer, 1)));
+	
+    } while (isdigit (lookahead (lexer, 1)));
+   
+    if (lookahead (lexer, 1) == 'r') {	
+	
+	char *string = st_input_substring (lexer->input, lexer->start,
+					   st_input_index (lexer->input));				
+	radix = strtol (string, NULL, 10);
+	g_free (string);
+	if (radix < 2 || radix > 36) {
+	    raise_error (lexer, LEXER_ERROR_INVALID_RADIX);
 	}
 
-    } else if (LA (lexer, 1) == '.' && IS_DIGIT (LA (lexer, 2))) {
+	consume (lexer);
+	    
+    } else {
+	/* matched an integer so go make token */
+    	goto out;
+    }    
 
-	CONSUME (lexer);
+    int start = st_input_index (lexer->input);
+
+    if (lookahead (lexer, 1) == '-') {
+	consume (lexer);
+
+    while (is_radix_numeral (radix, lookahead (lexer, 1)))
+	consume (lexer);
+
+    if (lookahead (lexer, 1) == '.' && is_radix_numeral (radix, lookahead (lexer, 2))) {
+	consume (lexer);
 
 	do {
-	    CONSUME (lexer);
-	} while (IS_DIGIT (LA (lexer, 1)));
+	    consume (lexer);
+	} while (is_radix_numeral (radix, lookahead (lexer, 1)));
+    }  
+       
 
-    }
+    if (lookahead (lexer, 1) == 'e') {
 
-    if (LA (lexer, 1) == 'e') {
+	consume (lexer);
+	
+	int exponent_start = st_input_index (lexer->input);
 
-	CONSUME (lexer);
+	if (lookahead (lexer, 1) == '-' && isdigit (lookahead (lexer, 2)))
+	    consume (lexer);
 
-	/* consume negative exponent value */
-	if (LA (lexer, 1) == '-' && IS_DIGIT (LA (lexer, 2))) {
+	do {
+		consume (lexer);	
+	} while (isdigit (lookahead (lexer, 1)));
 
-	    CONSUME (lexer);
-
-	    do {
-		CONSUME (lexer);
-	    } while (IS_DIGIT (LA (lexer, 1)));
-
-	} else if (IS_DIGIT (LA (lexer, 1))) {
-
-	    /* or consume positive exponent value */
-
-	    do {
-		CONSUME (lexer);
-	    } while (IS_DIGIT (LA (lexer, 1)));
-
+	
+	if (exponent_start < st_input_index (lexer->input)) {
+	
+	    char *string = st_input_substring (lexer->input,
+					       exp_start,
+					       st_input_index (lexer->input));
+					    
+	    exponent = strtol (exp_str, NULL, 10);
 	}
-
     }
+    
+out:
 
-    if (create_token) {
-	make_token (lexer, ST_TOKEN_NUMBER_CONST,
-		    st_string_stream_substring (lexer->input,
-						lexer->start,
-						st_string_stream_index (lexer->input)));
-    }
+    make_number_token (lexer, radix, exponent,
+		       st_input_substring (lexer->input,
+					   lexer->start,
+					   st_input_index (lexer->input)));
 }
 
 
 static void
 match_identifier (st_lexer_t *lexer, bool create_token)
 {
-    if (g_unichar_isalpha (LA (lexer, 1)))
-	CONSUME (lexer);
+    if (g_unichar_isalpha (lookahead (lexer, 1)))
+	consume (lexer);
     else {
-	raise_error (lexer,
-		     ST_LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
-		     LA (lexer, 1), lexer->line, lexer->column);
+	raise_error (lexer, LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR);
     }
 
     while (true) {
-	if (g_unichar_isalpha (LA (lexer, 1)))
-	    CONSUME (lexer);
-	else if (LA (lexer, 1) >= '0' && LA (lexer, 1) <= '9')
-	    CONSUME (lexer);
-	else if (LA (lexer, 1) == '_')
-	    CONSUME (lexer);
+	if (g_unichar_isalpha (lookahead (lexer, 1)))
+	    consume (lexer);
+	else if (lookahead (lexer, 1) >= '0' && lookahead (lexer, 1) <= '9')
+	    consume (lexer);
+	else if (lookahead (lexer, 1) == '_')
+	    consume (lexer);
 	else
 	    break;
     }
 
     if (create_token) {
 	make_token (lexer, ST_TOKEN_IDENTIFIER,
-		    st_string_stream_substring (lexer->input,
+		    st_input_substring (lexer->input,
 						lexer->start,
-						st_string_stream_index (lexer->input)));
+						st_input_index (lexer->input)));
     }
 }
 
 static void
 match_keyword_or_identifier (st_lexer_t *lexer, bool create_token)
 {
-    if (g_unichar_isalpha (LA (lexer, 1)))
-	CONSUME (lexer);
+    if (g_unichar_isalpha (lookahead (lexer, 1)))
+	consume (lexer);
     else {
-	raise_error (lexer,
-		     ST_LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
-		     LA (lexer, 1), lexer->line, lexer->column);
+	raise_error (lexer, LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR);
     }
 
     while (true) {
 
-	if (g_unichar_isalpha (LA (lexer, 1)))
-	    CONSUME (lexer);
-	else if (LA (lexer, 1) >= '0' && LA (lexer, 1) <= '9')
-	    CONSUME (lexer);
-	else if (LA (lexer, 1) == '_')
-	    CONSUME (lexer);
+	if (g_unichar_isalpha (lookahead (lexer, 1)))
+	    consume (lexer);
+	else if (lookahead (lexer, 1) >= '0' && lookahead (lexer, 1) <= '9')
+	    consume (lexer);
+	else if (lookahead (lexer, 1) == '_')
+	    consume (lexer);
 	else
 	    break;
     }
 
-    st_lexer_token_type_t token_type;
+    st_token_type_t token_type;
 
-    if (LA (lexer, 1) == ':') {
-	CONSUME (lexer);
+    if (lookahead (lexer, 1) == ':') {
+	consume (lexer);
 	token_type = ST_TOKEN_KEYWORD_SELECTOR;
     } else {
 	token_type = ST_TOKEN_IDENTIFIER;
@@ -334,11 +365,11 @@ match_keyword_or_identifier (st_lexer_t *lexer, bool create_token)
 	char *text;
 
 	if (token_type == ST_TOKEN_KEYWORD_SELECTOR)
-	    text = st_string_stream_substring (lexer->input, lexer->start,
-					       st_string_stream_index (lexer->input));
+	    text = st_input_substring (lexer->input, lexer->start,
+					       st_input_index (lexer->input));
 	else
-	    text = st_string_stream_substring (lexer->input, lexer->start,
-					       st_string_stream_index (lexer->input));
+	    text = st_input_substring (lexer->input, lexer->start,
+					       st_input_index (lexer->input));
 
 	make_token (lexer, token_type, text);
     }
@@ -348,18 +379,16 @@ match_keyword_or_identifier (st_lexer_t *lexer, bool create_token)
 static void
 match_string_constant (st_lexer_t *lexer)
 {
-    MARK (lexer);
+    mark (lexer);
 
     match (lexer, '\'');
 
-    while (LA (lexer, 1) != '\'') {
-	CONSUME (lexer);
+    while (lookahead (lexer, 1) != '\'') {
+	consume (lexer);
 
-	if (LA (lexer, 1) == ST_STRING_STREAM_EOF) {
-	    REWIND (lexer);
-	    raise_error (lexer,
-			 ST_LEXER_ERROR_UNTERMINATED_STRING_LITERAL,
-			 0x0000, lexer->line, lexer->column);
+	if (lookahead (lexer, 1) == ST_INPUT_EOF) {
+	    rewind (lexer);
+	    raise_error (lexer, LEXER_ERROR_UNTERMINATED_STRING_LITERAL);
 	}
     }
 
@@ -367,27 +396,26 @@ match_string_constant (st_lexer_t *lexer)
 
     char *string;
 
-    string = st_string_stream_substring (lexer->input,
+    string = st_input_substring (lexer->input,
 					 lexer->start + 1,
-					 st_string_stream_index (lexer->input) - 1);
+					 st_input_index (lexer->input) - 1);
 
     make_token (lexer, ST_TOKEN_STRING_CONST, string);
 }
 
-static inline void
+static void
 match_comment (st_lexer_t *lexer)
 {
-    MARK (lexer);
+    mark (lexer);
 
     match (lexer, '"');
 
-    while (LA (lexer, 1) != '"') {
-	CONSUME (lexer);
+    while (lookahead (lexer, 1) != '"') {
+	consume (lexer);
 
-	if (LA (lexer, 1) == ST_STRING_STREAM_EOF) {
-	    REWIND (lexer);
-	    raise_error (lexer,
-			 ST_LEXER_ERROR_UNTERMINATED_COMMENT, 0x0000, lexer->line, lexer->column);
+	if (lookahead (lexer, 1) == ST_INPUT_EOF) {
+	    rewind (lexer);
+	    raise_error (lexer, LEXER_ERROR_UNTERMINATED_COMMENT);
 	}
     }
 
@@ -395,45 +423,43 @@ match_comment (st_lexer_t *lexer)
 
     char *comment;
 
-    comment = st_string_stream_substring (lexer->input,
+    comment = st_input_substring (lexer->input,
 					  lexer->start + 1,
-					  st_string_stream_index (lexer->input) - 1);
+					  st_input_index (lexer->input) - 1);
 
     make_token (lexer, ST_TOKEN_COMMENT, comment);
 }
 
-static inline void
-match_array_begin (st_lexer_t *lexer)
+static void
+match_tuple_begin (st_lexer_t *lexer)
 {
     match (lexer, '#');
     match (lexer, '(');
 
-    make_token (lexer, ST_TOKEN_ARRAY_BEGIN, NULL);
+    make_token (lexer, ST_TOKEN_TUPLE_BEGIN, NULL);
 }
 
 static void
 match_binary_selector (st_lexer_t *lexer, bool create_token)
 {
-    if (LA (lexer, 1) == '-') {
+    if (lookahead (lexer, 1) == '-') {
 	match (lexer, '-');
 
-    } else if (is_special_char (LA (lexer, 1))) {
-	match (lexer, LA (lexer, 1));
+    } else if (is_special_char (lookahead (lexer, 1))) {
+	match (lexer, lookahead (lexer, 1));
 
-	if (is_special_char (LA (lexer, 1)))
-	    match (lexer, LA (lexer, 1));
+	if (is_special_char (lookahead (lexer, 1)))
+	    match (lexer, lookahead (lexer, 1));
 
     } else {
-	raise_error (lexer,
-		     ST_LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
-		     LA (lexer, 1), lexer->line, lexer->column);
+	raise_error (lexer, LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR);
     }
 
     if (create_token) {
 	make_token (lexer, ST_TOKEN_BINARY_SELECTOR,
-		    st_string_stream_substring (lexer->input,
+		    st_input_substring (lexer->input,
 						lexer->start,
-						st_string_stream_index (lexer->input)));
+						st_input_index (lexer->input)));
     }
 }
 
@@ -442,28 +468,27 @@ match_symbol_constant (st_lexer_t *lexer)
 {
     match (lexer, '#');
 
-    if (g_unichar_isalpha (LA (lexer, 1))) {
+    if (g_unichar_isalpha (lookahead (lexer, 1))) {
 
 	do {
 	    match_keyword_or_identifier (lexer, false);
-	} while (g_unichar_isalpha (LA (lexer, 1)));
+	} while (g_unichar_isalpha (lookahead (lexer, 1)));
 
-    } else if (LA (lexer, 1) == '-' || is_special_char (LA (lexer, 1))) {
+    } else if (lookahead (lexer, 1) == '-' || is_special_char (lookahead (lexer, 1))) {
 	match_binary_selector (lexer, false);
     } else {
-	raise_error (lexer,
-		     ST_LEXER_ERROR_NO_ALT_FOR_POUND, LA (lexer, 1), lexer->line, lexer->column);
+	raise_error (lexer, LEXER_ERROR_NO_ALT_FOR_POUND);
     }
 
     // discard #
-    char *symbol_text = st_string_stream_substring (lexer->input,
+    char *symbol_text = st_input_substring (lexer->input,
 						    lexer->start + 1,
-						    st_string_stream_index (lexer->input));
+						    st_input_index (lexer->input));
 
     make_token (lexer, ST_TOKEN_SYMBOL_CONST, symbol_text);
 }
 
-static inline void
+static void
 match_block_begin (st_lexer_t *lexer)
 {
     match (lexer, '[');
@@ -471,7 +496,7 @@ match_block_begin (st_lexer_t *lexer)
     make_token (lexer, ST_TOKEN_BLOCK_BEGIN, NULL);
 }
 
-static inline void
+static void
 match_block_end (st_lexer_t *lexer)
 {
     match (lexer, ']');
@@ -479,7 +504,7 @@ match_block_end (st_lexer_t *lexer)
     make_token (lexer, ST_TOKEN_BLOCK_END, NULL);
 }
 
-static inline void
+static void
 match_lparen (st_lexer_t *lexer)
 {
     match (lexer, '(');
@@ -487,7 +512,7 @@ match_lparen (st_lexer_t *lexer)
     make_token (lexer, ST_TOKEN_LPAREN, NULL);
 }
 
-static inline void
+static void
 match_rparen (st_lexer_t *lexer)
 {
     match (lexer, ')');
@@ -495,45 +520,43 @@ match_rparen (st_lexer_t *lexer)
     make_token (lexer, ST_TOKEN_RPAREN, NULL);
 }
 
-static inline void
+static void
 match_char_constant (st_lexer_t *lexer)
 {
     match (lexer, '$');
 
-    if (g_unichar_isgraph (LA (lexer, 1))) {
-	CONSUME (lexer);
+    if (g_unichar_isgraph (lookahead (lexer, 1))) {
+	consume (lexer);
     } else {
-	raise_error (lexer,
-		     ST_LEXER_ERROR_INVALID_CHAR_CONST,
-		     LA (lexer, 1), lexer->line, lexer->column + 1);
+	raise_error (lexer, LEXER_ERROR_INVALID_CHAR_CONST);
     }
 
     make_token (lexer, ST_TOKEN_CHAR_CONST,
-		st_string_stream_substring (lexer->input,
+		st_input_substring (lexer->input,
 					    lexer->start + 1,
-					    st_string_stream_index (lexer->input)));
+					    st_input_index (lexer->input)));
 }
 
-static inline void
+static void
 match_eof (st_lexer_t *lexer)
 {
-    match (lexer, ST_STRING_STREAM_EOF);
+    match (lexer, ST_INPUT_EOF);
 
     make_token (lexer, ST_TOKEN_EOF, NULL);
 }
 
-static inline void
+static void
 match_white_space (st_lexer_t *lexer)
 {
     /* gobble up white space */
     while (true) {
-	switch (LA (lexer, 1)) {
+	switch (lookahead (lexer, 1)) {
 	case ' ':
 	case '\r':
 	case '\n':
 	case '\t':
 	case '\f':
-	    CONSUME (lexer);
+	    consume (lexer);
 	    break;
 	default:
 	    return;
@@ -541,21 +564,21 @@ match_white_space (st_lexer_t *lexer)
     }
 }
 
-static inline void
+static void
 match_colon (st_lexer_t *lexer)
 {
     match (lexer, ':');
     make_token (lexer, ST_TOKEN_COLON, NULL);
 }
 
-static inline void
+static void
 match_semicolon (st_lexer_t *lexer)
 {
     match (lexer, ';');
     make_token (lexer, ST_TOKEN_SEMICOLON, NULL);
 }
 
-static inline void
+static void
 match_assign (st_lexer_t *lexer)
 {
     match (lexer, ':');
@@ -563,14 +586,14 @@ match_assign (st_lexer_t *lexer)
     make_token (lexer, ST_TOKEN_ASSIGN, NULL);
 }
 
-static inline void
+static void
 match_period (st_lexer_t *lexer)
 {
     match (lexer, '.');
     make_token (lexer, ST_TOKEN_PERIOD, NULL);
 }
 
-static inline void
+static void
 match_return (st_lexer_t *lexer)
 {
     match (lexer, '^');
@@ -588,28 +611,25 @@ match_return (st_lexer_t *lexer)
  * of type ST_TOKEN_INVALID will be returned;
  *
  */
-st_lexer_token_t *
+st_token_t *
 st_lexer_next_token (st_lexer_t *lexer)
 {
     g_assert (lexer != NULL);
-
-    lexer->token = obstack_alloc (&lexer->allocator, sizeof (st_lexer_token_t));
-    lexer->token->type = ST_TOKEN_INVALID;
 
     while (true) {
 
 	/* reset token and error state */
 	lexer->failed = false;
 	lexer->token_matched = false;
-	lexer->line = st_string_stream_get_line (lexer->input);
-	lexer->column = st_string_stream_get_column (lexer->input);
-	lexer->start = st_string_stream_index (lexer->input);
+	lexer->line   = st_input_get_line (lexer->input);
+	lexer->column = st_input_get_column (lexer->input);
+	lexer->start  = st_input_index (lexer->input);
 
 	/* we return here on match errors and then goto out */
 	if (setjmp (lexer->main_loop))
 	    goto out;
 
-	switch (LA (lexer, 1)) {
+	switch (lookahead (lexer, 1)) {
 
 	case ' ':
 	case '\n':
@@ -647,21 +667,10 @@ st_lexer_next_token (st_lexer_t *lexer)
 	    match_semicolon (lexer);
 	    break;
 
-	case '+':
-	case '-':
-	case '/':
-	case '\\':
-	case '*':
-	case '<':
-	case '>':
-	case '=':
-	case '@':
-	case '%':
-	case '|':
-	case '&':
-	case '?':
-	case '!':
-	case '~':
+	case '+': case '-': case '/': case '\\':
+	case '*': case '<': case '>': case '=':
+	case '@': case '%': case '|': case '&':
+	case '?': case '!': case '~':
 	    match_binary_selector (lexer, true);
 	    break;
 
@@ -677,34 +686,32 @@ st_lexer_next_token (st_lexer_t *lexer)
 	    match_string_constant (lexer);
 	    break;
 
-	case ST_STRING_STREAM_EOF:
+	case ST_INPUT_EOF:
 	    match_eof (lexer);
 	    break;
 
 	default:
 
-	    if (g_unichar_isalpha (LA (lexer, 1)))
+	    if (g_unichar_isalpha (lookahead (lexer, 1)))
 		match_keyword_or_identifier (lexer, true);
 
-	    else if (IS_DIGIT (LA (lexer, 1)))
-		match_number (lexer, true);
+	    else if (IS_DIGIT (lookahead (lexer, 1)))
+		match_number (lexer);
 
-	    else if (LA (lexer, 1) == '#' && LA (lexer, 2) == '(')
-		match_array_begin (lexer);
+	    else if (lookahead (lexer, 1) == '#' && lookahead (lexer, 2) == '(')
+		match_tuple_begin (lexer);
 
-	    else if (LA (lexer, 1) == '#')
+	    else if (lookahead (lexer, 1) == '#')
 		match_symbol_constant (lexer);
 
-	    else if (LA (lexer, 1) == ':' && LA (lexer, 2) == '=')
+	    else if (lookahead (lexer, 1) == ':' && lookahead (lexer, 2) == '=')
 		match_assign (lexer);
 
-	    else if (LA (lexer, 1) == ':')
+	    else if (lookahead (lexer, 1) == ':')
 		match_colon (lexer);
 
 	    else
-		raise_error (lexer,
-			     ST_LEXER_ERROR_ILLEGAL_CHAR,
-			     LA (lexer, 1), lexer->line, lexer->column);
+		raise_error (lexer, LEXER_ERROR_ILLEGAL_CHAR);
 	}
 
       out:
@@ -725,14 +732,17 @@ st_lexer_new (const char *text)
 
     g_assert (text != NULL);
 
-    lexer = g_slice_new (st_lexer_t);
+    lexer = g_slice_new0 (st_lexer_t);
 
-    lexer->input = st_string_stream_new (text);
+    lexer->input = st_input_new (text);
 
     lexer->token = NULL;
     lexer->line = 1;
     lexer->column = 1;
     lexer->start = -1;
+    
+    lexer->error_code = NULL;
+
 
     lexer->failed = FALSE;
     lexer->last_error = NULL;
@@ -747,7 +757,7 @@ st_lexer_destroy (st_lexer_t *lexer)
 {
     g_assert (lexer != NULL);
 
-    st_string_stream_destroy (lexer->input);
+    st_input_destroy (lexer->input);
 
     // destroy all allocated tokens;
     obstack_free (&lexer->allocator, NULL);
@@ -758,8 +768,8 @@ st_lexer_destroy (st_lexer_t *lexer)
     g_slice_free (st_lexer_t, lexer);
 }
 
-st_lexer_token_type_t
-st_lexer_token_type (st_lexer_token_t *token)
+st_token_type_t
+st_token_type (st_token_t *token)
 {
     g_assert (token != NULL);
 
@@ -767,7 +777,7 @@ st_lexer_token_type (st_lexer_token_t *token)
 }
 
 char *
-st_lexer_token_text (st_lexer_token_t *token)
+st_token_text (st_token_t *token)
 {
     g_assert (token != NULL);
 
@@ -775,7 +785,7 @@ st_lexer_token_text (st_lexer_token_t *token)
 }
 
 guint
-st_lexer_token_line (st_lexer_token_t *token)
+st_lexer_token_line (st_token_t *token)
 {
     g_assert (token != NULL);
 
@@ -783,7 +793,7 @@ st_lexer_token_line (st_lexer_token_t *token)
 }
 
 guint
-st_lexer_token_column (st_lexer_token_t *token)
+st_lexer_token_column (st_token_t *token)
 {
     g_assert (token != NULL);
 
@@ -815,35 +825,37 @@ st_lexer_error_char (st_lexer_error_t *error)
 }
 
 char *
-st_lexer_error_message (st_lexer_error_t *error)
+st_lexer_error_message (st_lexer_t *lexer)
 {
     g_assert (error != NULL);
 
-    static const char *const message_formats[] = {
-	N_("error:%i: ST_LEXER_ERROR_NONE"),
-	N_("error:%i: ST_LEXER_ERROR_MISMATCHED_CHAR"),
-	N_("error:%i: ST_LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR"),
-	N_("error:%i: illegal character \\u%04X"),
-	N_("error:%i: unterminated comment"),
-	N_("error:%i: unterminated string literal"),
-	N_("error:%i: non-whitespace character expected after '$'"),
-	N_("error:%i: expected '(' after '#'"),
+    static const char *msgformats[] = {
+	N_("mismatched character \\u%04X"),
+	N_("no viable alternative for character \\u%04X"),
+	N_("illegal character \\u%04X"),
+	N_("unterminated comment"),
+	N_("unterminated string literal"),
+	N_("radix invalid for number"),
+	N_("non-whitespace character expected after '$'"),
+	N_("expected '(' after '#'"),
     };
 
-    switch (error->code) {
-    case ST_LEXER_ERROR_NONE:
-    case ST_LEXER_ERROR_MISMATCHED_CHAR:
-    case ST_LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR:
-    case ST_LEXER_ERROR_UNTERMINATED_COMMENT:
-    case ST_LEXER_ERROR_UNTERMINATED_STRING_LITERAL:
-    case ST_LEXER_ERROR_INVALID_CHAR_CONST:
-    case ST_LEXER_ERROR_NO_ALT_FOR_POUND:
+    switch (lexer->error_code) {
+    
+    case LEXER_ERROR_UNTERMINATED_COMMENT:
+    case LEXER_ERROR_UNTERMINATED_STRING_LITERAL:
+    case LEXER_ERROR_INVALID_RADIX:
+    case LEXER_ERROR_INVALID_CHAR_CONST:
+    case LEXER_ERROR_NO_ALT_FOR_POUND:
 
-	return g_strdup_printf (message_formats[error->code], error->line);
+	return g_strdup_printf (msgformats[lexer->error_code]);
 
-    case ST_LEXER_ERROR_ILLEGAL_CHAR:
+    case LEXER_ERROR_MISMATCHED_CHAR:
+    case LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR:
+    case LEXER_ERROR_ILLEGAL_CHAR:
 
-	return g_strdup_printf (message_formats[error->code], error->line, error->c);
+	return g_strdup_printf (msgformats[lexer->error_code], lexer->error_char);
+	
     default:
 	return NULL;
     }

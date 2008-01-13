@@ -26,7 +26,7 @@
 #include <st-association.h>
 #include <st-mark.h>
 
-#include <st-mini.h>
+#include <st-vtable.h>
 
 #include <glib.h>
 
@@ -118,9 +118,10 @@ collection_initialize (st_oop_t collection, st_smi_t capacity)
 
 /* Dictionary methods */
 
-ST_DEFINE_VTABLE (st_dictionary, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_dictionary, st_heap_object_vtable ());
 
-     static st_smi_t dict_scan_for_object (st_oop_t dict, st_oop_t object)
+static st_smi_t
+dict_scan_for_object (st_oop_t dict, st_oop_t object)
 {
     st_smi_t finish = ARRAY_SIZE (ARRAY (dict));
     st_smi_t start = (st_object_hash (object) % finish) + 1;
@@ -224,9 +225,10 @@ st_dictionary_vtable_init (st_vtable_t * table)
 
 /* Set methods */
 
-ST_DEFINE_VTABLE (st_set, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_set, st_heap_object_vtable ());
 
-     static st_smi_t set_scan_for_object (st_oop_t set, st_oop_t object)
+static st_smi_t
+set_scan_for_object (st_oop_t set, st_oop_t object)
 {
     st_smi_t finish = ARRAY_SIZE (ARRAY (set));
     st_smi_t start = (st_object_hash (object) % finish) + 1;

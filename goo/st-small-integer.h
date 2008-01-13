@@ -18,11 +18,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_SMALL_INTEGER_H__
-#define __ST_SMALL_INTEGER_H__
+#ifndef _ST_SMALL_INTEGER_H__
+#define _ST_SMALL_INTEGER_H__
 
 #include <st-types.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 
 INLINE st_oop_t st_smi_new (st_smi_t num);
 INLINE st_smi_t st_smi_value (st_oop_t smi);
@@ -30,7 +30,7 @@ INLINE st_oop_t st_smi_increment (st_oop_t smi);
 INLINE st_oop_t st_smi_decrement (st_oop_t smi);
 INLINE bool st_smi_equal (st_oop_t m, st_oop_t n);
 INLINE st_smi_t st_smi_hash (st_oop_t smi);
-st_vtable_t *st_smi_vtable (void);
+const st_vtable_t *st_smi_vtable (void);
 
 
 /* inline definitions */
@@ -71,4 +71,4 @@ st_smi_hash (st_oop_t smi)
     return smi;
 }
 
-#endif /* __ST_SMALL_INTEGER_H__ */
+#endif /* _ST_SMALL_INTEGER_H__ */

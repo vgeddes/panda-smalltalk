@@ -24,9 +24,10 @@
 
 #include <string.h>
 
-ST_DEFINE_VTABLE (st_symbol, st_byte_array_vtable ())
+ST_DEFINE_VTABLE (st_symbol, st_byte_array_vtable ());
 
-     static bool symbol_equal (st_oop_t object, st_oop_t another)
+static bool
+symbol_equal (st_oop_t object, st_oop_t another)
 {
     if (object == another)
 	return true;
@@ -35,7 +36,7 @@ ST_DEFINE_VTABLE (st_symbol, st_byte_array_vtable ())
 	return false;
 
     // now just do a string comparison
-    if (st_object_super_virtual (object)->equal (object, another))
+    if (st_byte_array_vtable ()->equal (object, another))
 	return true;
 
     return false;

@@ -18,12 +18,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_FLOAT_ARRAY_H__
-#define __ST_FLOAT_ARRAY_H__
+#ifndef _ST_FLOAT_ARRAY_H__
+#define _ST_FLOAT_ARRAY_H__
 
 #include <st-heap-object.h>
 #include <st-types.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 
 typedef struct
 {
@@ -45,12 +45,12 @@ st_vtable_t *st_float_array_table (void);
 
 
 /* inline definitions */
-#define _ST_FLOAT_ARRAY(oop) ((st_float_array_t *) ST_POINTER (oop))
+#define ST_FLOAT_ARRAY(oop) ((st_float_array_t *) ST_POINTER (oop))
 
 INLINE st_oop_t
 st_float_array_size (st_oop_t array)
 {
-    return _ST_FLOAT_ARRAY (array)->size;
+    return ST_FLOAT_ARRAY (array)->size;
 }
 
 INLINE bool
@@ -62,14 +62,14 @@ st_float_array_range_check (st_oop_t array, st_smi_t i)
 INLINE double
 st_float_array_at (st_oop_t array, st_smi_t i)
 {
-    return _ST_FLOAT_ARRAY (array)->elements[i - 1];
+    return ST_FLOAT_ARRAY (array)->elements[i - 1];
 }
 
 INLINE void
 st_float_array_at_put (st_oop_t array, st_smi_t i, double value)
 {
-    return _ST_FLOAT_ARRAY (array)->elements[i - 1] = value;
+    return ST_FLOAT_ARRAY (array)->elements[i - 1] = value;
 }
 
 
-#endif /* __ST_FLOAT_ARRAY_H__ */
+#endif /* _ST_FLOAT_ARRAY_H__ */

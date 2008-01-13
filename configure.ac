@@ -9,9 +9,11 @@ AM_INIT_AUTOMAKE([1.10 foreign])
 
 AC_CANONICAL_HOST
 
-# we are using C99, get used to it!
 AC_PROG_CC
 AC_PROG_CC_C99
+if test "x$ac_cv_prog_cc_c99" = "xno"; then
+   AC_MSG_ERROR([cannot find a C99-conforming compiler])
+fi
 
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET

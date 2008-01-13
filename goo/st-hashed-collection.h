@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_HASHED_COLLECTION_H__
-#define __ST_HASHED_COLLECTION_H__
+#ifndef _ST_HASHED_COLLECTION_H__
+#define _ST_HASHED_COLLECTION_H__
 
 #include <st-types.h>
 #include <st-array.h>
@@ -37,8 +37,8 @@ st_oop_t st_set_like (st_oop_t set, st_oop_t object);
 void st_set_add (st_oop_t set, st_oop_t object);
 
 
-st_vtable_t *st_dictionary_vtable (void);
-st_vtable_t *st_set_vtable (void);
+const st_vtable_t *st_dictionary_vtable (void);
+const st_vtable_t *st_set_vtable (void);
 
 
-#endif /* __ST_HASHED_COLLECTION_H__ */
+#endif /* _ST_HASHED_COLLECTION_H__ */

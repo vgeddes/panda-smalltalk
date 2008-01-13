@@ -1,9 +1,10 @@
-Bytecode Set:
+Formats:
 
-Format:
-  B    (byte)
-  BB   (byte, byte)
-  BBB  (byte, byte, byte)
+B    (byte)
+BB   (byte, byte)
+BBB  (byte, byte, byte)
+
+Codes:
 
 push_temp_0		B
 push_temp_1		B
@@ -113,6 +114,7 @@ push_literal_const_28	B
 push_literal_const_29	B
 push_literal_const_30	B
 push_literal_const_31	B
+
 push_literal_const_n	BB
 
 push_literal_var_0	B
@@ -147,6 +149,7 @@ push_literal_var_28	B
 push_literal_var_29	B
 push_literal_var_30	B
 push_literal_var_31	B
+
 push_literal_var_n	BB
 
 store_literal_var_n	BB
@@ -161,13 +164,6 @@ push_minus_one		B
 push_zero		B
 push_one		B
 push_two		B
-push_three		B
-push_four		B
-push_five		B
-push_six		B
-push_seven		B
-push_eight		B
-push_nine		B
 
 return_stack_top	B
 return_self		B
@@ -189,12 +185,12 @@ jump_far_true		BBB
 jump_far_false		BBB
 jump_far		BBB
 
-send_0_args		BB
-send_1_args		BB
-send_2_args		BB
-send_n_args		BBB
-send_self_n		BBB
-send_super_n		BBB
+send_0args		BB
+send_1args		BB
+send_2args		BB
+send_nargs		BBB
+send_nargs_self 	BBB
+send_nargs_super	BBB
 
 send_plus		B
 send_minus		B

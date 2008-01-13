@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ST_BYTE_ARRAY_H__
-#define __ST_BYTE_ARRAY_H__
+#ifndef _ST_BYTE_ARRAY_H__
+#define _ST_BYTE_ARRAY_H__
 
 #include <st-types.h>
 #include <st-small-integer.h>
@@ -44,22 +44,22 @@ INLINE guchar st_byte_array_at (st_oop_t object, st_smi_t i);
 
 INLINE void st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value);
 
-st_vtable_t *st_byte_array_vtable (void);
+const st_vtable_t *st_byte_array_vtable (void);
 
 
 /* inline definitions */
-#define _ST_BYTE_ARRAY(oop) ((st_byte_array_t *) ST_POINTER (oop))
+#define ST_BYTE_ARRAY(oop) ((st_byte_array_t *) ST_POINTER (oop))
 
 INLINE st_oop_t
 st_byte_array_size (st_oop_t object)
 {
-    return _ST_BYTE_ARRAY (object)->size;
+    return ST_BYTE_ARRAY (object)->size;
 }
 
 INLINE guchar *
 st_byte_array_bytes (st_oop_t object)
 {
-    return _ST_BYTE_ARRAY (object)->bytes;
+    return ST_BYTE_ARRAY (object)->bytes;
 }
 
 INLINE bool
@@ -84,6 +84,4 @@ st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value)
     st_byte_array_bytes (object)[i - 1] = value;
 }
 
-st_vtable_t *st_byte_array_vtable (void);
-
-#endif /* __ST_BYTE_ARRAY__ */
+#endif /* _ST_BYTE_ARRAY__ */

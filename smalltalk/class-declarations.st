@@ -80,6 +80,10 @@ ArrayedCollection subclass: #Array
 		  instanceVariableNames: ''
                   classVariableNames: ''!
 
+ArrayedCollection subclass: #Tuple
+		  instanceVariableNames: ''
+                  classVariableNames: ''!
+
 ArrayedCollection subclass: #ByteArray
 		  instanceVariableNames: ''
                   classVariableNames: ''!
@@ -91,7 +95,7 @@ SequenceableCollection subclass: #OrderedCollection
 "Execution"
 
 Object subclass: #ContextPart
-       instanceVariableNames: 'parent method stack sp ip receiver arguments temporaries returnContext'
+       instanceVariableNames: 'parent method stack sp ip receiver temporaries returnContext'
        classVariableNames: ''!
 
 ContextPart subclass: #MethodContext

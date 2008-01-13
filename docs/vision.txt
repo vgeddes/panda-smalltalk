@@ -1,0 +1,45 @@
+Some random scribblings about the project.
+
+
+
+Departures from Smalltalk-80:
+
+1)
+Array literals have been replaced by Tuple literals. Unlike Array literals
+which are limited to containing compile-time constants, Tuples can contain variables.
+
+
+2)
+Removed notion of `variable{Byte,Float,Word}Subclass:' class definitions.
+Can only use `subclass:' to create new definitions. 
+
+Arrayed objects cannot have instance variables (because it simplifies the object model and VM)
+
+instances of Array, ByteArray, FloatArray are regarded as magic to the VM and are treated differently
+from normal objects. These Arrayed types can be subclassed, but no instvars can be added.
+
+CompiledMethods are now ordinary objects containing arrayed `bytecode' and 'literals' instvars
+
+3)
+Threads must die!
+
+They are a usability nightmare. They are hard to use. They break encapsulation. 
+They introduce non-deterministic behaviour. Locks can cause performance problems.
+
+Just say no!
+
+Need to implement Concurrency somewhere along the lines of Erlang.
+
+Erlang's message-passing idiom can map well to Smalltalk. This is an advantage.
+
+
+4)
+Objects can be immutable.
+
+
+5)
+Renamed Magnitude to Comparable
+
+6)
+Renamed LinkedList to List
+

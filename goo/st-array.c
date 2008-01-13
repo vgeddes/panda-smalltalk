@@ -21,11 +21,12 @@
 #include <st-array.h>
 #include <st-universe.h>
 #include <st-utils.h>
-#include <st-mini.h>
+#include <st-vtable.h>
 
-ST_DEFINE_VTABLE (st_array, st_heap_object_vtable ())
+ST_DEFINE_VTABLE (st_array, st_heap_object_vtable ());
 
-     static bool is_array (void)
+static bool
+is_array (void)
 {
     return true;
 }
@@ -39,17 +40,13 @@ is_arrayed (void)
 static bool
 array_verify (st_oop_t object)
 {
-    // verify object header
-    if (!st_object_super_virtual (object)->verify (object)) {
-	printf ("A ");
+    if (!st_heap_object_vtable ()->verify (object))
 	return false;
-
-
-    }
+   
     // variable size
     st_oop_t size = st_array_size (object);
     if (!(st_object_is_smi (size) && (st_smi_value (size) > 0))) {
-	g_debug ("GABA: %i\n", st_smi_value (size));
+	g_debug ("GABA: %li\n", st_smi_value (size));
 	return false;
 
     }
@@ -70,10 +67,10 @@ allocate_arrayed (st_oop_t klass, st_smi_t size)
 {
     g_assert (size > 0);
 
-    st_oop_t array = st_allocate_object (sizeof (st_array_t) / sizeof (st_oop_t) + size);
+    st_oop_t array = st_allocate_object (ST_TYPE_SIZE (st_array_t) + size);
 
     st_object_initialize_header (array, klass);
-    _ST_ARRAY (array)->size = st_smi_new (size);
+    ST_ARRAY (array)->size = st_smi_new (size);
 
     st_oop_t *elements = st_array_element (array, 1);
     for (st_smi_t i = 0; i < size; i++)
