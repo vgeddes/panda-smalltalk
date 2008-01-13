@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_SMALL_INTEGER_H__
-#define _ST_SMALL_INTEGER_H__
+#ifndef __ST_SMALL_INTEGER_H__
+#define __ST_SMALL_INTEGER_H__
 
 #include <st-types.h>
 #include <st-vtable.h>
@@ -71,4 +71,4 @@ st_smi_hash (st_oop_t smi)
     return smi;
 }
 
-#endif /* _ST_SMALL_INTEGER_H__ */
+#endif /* __ST_SMALL_INTEGER_H__ */

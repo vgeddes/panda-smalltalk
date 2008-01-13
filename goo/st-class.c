@@ -18,13 +18,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-class.h>
-#include <st-heap-object.h>
-#include <st-hashed-collection.h>
-#include <st-universe.h>
-#include <st-symbol.h>
-#include <st-object.h>
-#include <st-vtable.h>
+#include "st-class.h"
+#include "st-heap-object.h"
+#include "st-hashed-collection.h"
+#include "st-universe.h"
+#include "st-symbol.h"
+#include "st-object.h"
+#include "st-vtable.h"
 
 
 /* Class */

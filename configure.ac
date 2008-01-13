@@ -5,7 +5,7 @@ AC_INIT([goo], [1.0])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([goo/st-lexer.c])
 
-AM_INIT_AUTOMAKE([1.10 foreign])
+AM_INIT_AUTOMAKE([1.10 foreign subdir-objects])
 
 AC_CANONICAL_HOST
 
@@ -52,10 +52,6 @@ AC_SUBST([AM_LDFLAGS])
 
 AC_CONFIG_FILES([
 Makefile
-goo/Makefile
-libs/Makefile
-libs/libtommath/Makefile
-tests/Makefile
 ])
 
 AC_OUTPUT

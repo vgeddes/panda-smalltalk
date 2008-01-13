@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_ASSOCIATION_H__
-#define _ST_ASSOCIATION_H__
+#ifndef __ST_ASSOCIATION_H__
+#define __ST_ASSOCIATION_H__
 
 #include <st-heap-object.h>
 #include <st-types.h>
@@ -73,4 +73,4 @@ st_association_set_value (st_oop_t assoc, st_oop_t value)
     ST_ASSOCIATION (assoc)->value = value;
 }
 
-#endif /* _ST_ASSOCIATION_H__ */
+#endif /* __ST_ASSOCIATION_H__ */

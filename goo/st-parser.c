@@ -18,12 +18,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <glib.h>
-
-#include <st-types.h>
-#include <st-lexer.h>
+#include "st-types.h"
+#include "st-lexer.h"
 
 #include <tommath.h>
+
+#include <glib.h>
 
 typedef enum
 {

@@ -18,10 +18,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-heap-object.h>
-#include <st-small-integer.h>
-#include <st-byte-array.h>
-#include <st-object.h>
+#include "st-heap-object.h"
+#include "st-small-integer.h"
+#include "st-byte-array.h"
+#include "st-object.h"
 
 ST_DEFINE_VTABLE (st_heap_object, st_object_vtable ());
 

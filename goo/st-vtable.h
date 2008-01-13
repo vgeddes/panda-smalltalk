@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_VTABLE_H__
-#define _ST_VTABLE_H__
+#ifndef __ST_VTABLE_H__
+#define __ST_VTABLE_H__
 
 #include <st-types.h>
 #include <glib.h>
@@ -105,4 +105,4 @@ table_name##_vtable (void)                                         \
 	return __st_vtable;                                        \
 }
 
-#endif /* _ST_VTABLE_H__ */
+#endif /* __ST_VTABLE_H__ */

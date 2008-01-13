@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-compiled-code.h>
+#include "st-compiled-code.h"
 
 /* CompiledMethod */
 

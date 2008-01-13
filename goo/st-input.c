@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
- * st-string-input.c
+ * st-input.c
  *
  * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
  *
@@ -18,7 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-string-input.h>
+#include "st-input.h"
+
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>

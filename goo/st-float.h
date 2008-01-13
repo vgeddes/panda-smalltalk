@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_FLOAT_H__
-#define _ST_FLOAT_H__
+#ifndef __ST_FLOAT_H__
+#define __ST_FLOAT_H__
 
 #include <st-types.h>
 #include <st-heap-object.h>
@@ -57,4 +57,4 @@ st_float_set_value (st_oop_t f, double value)
     ST_FLOAT (f)->value = value;
 }
 
-#endif /* _ST_FLOAT_H__ */
+#endif /* __ST_FLOAT_H__ */

@@ -30,14 +30,13 @@ static const char *const token_names[] = {
 };
 
 static void
-print_token (st_lexer_t *lexer, st_lexer_token_t *token)
+print_token (st_lexer_t *lexer, st_token_t *token)
 {
-    st_lexer_token_type_t type;
+    st_token_type_t type;
 
     char *string;
 
-    st_lexer_error_t *error;
-    type = st_lexer_token_type (token);
+    type = st_token_type (token);
 
     switch (type) {
 
@@ -52,24 +51,22 @@ print_token (st_lexer_t *lexer, st_lexer_token_t *token)
     case ST_TOKEN_BINARY_SELECTOR:
     case ST_TOKEN_CHAR_CONST:
 
-	string = st_lexer_token_text (token);
+	string = st_token_text (token);
 
 	printf ("%s (%i:%i: \"%s\")\n", token_names[type],
-		st_lexer_token_line (token), st_lexer_token_column (token), string);
+		st_token_line (token), st_token_column (token), string);
 	break;
 
 	// Invalid Token;
     case ST_TOKEN_INVALID:
 
-	error = st_lexer_last_error (lexer);
-
-	printf ("%s\n", st_lexer_error_message (error));
+	printf ("%s\n", st_lexer_error_message (lexer));
 	break;
 
 
     default:
 	printf ("%s (%i:%i)\n", token_names[type],
-		st_lexer_token_line (token), st_lexer_token_column (token));
+		st_token_line (token), st_token_column (token));
 	break;
     }
 }
@@ -81,7 +78,7 @@ int
 main (int argc, char *argv[])
 {
     st_lexer_t *lexer;
-    st_lexer_token_t *token;
+    st_token_t *token;
 
     /* read input from stdin */
     char buffer[BUF_SIZE];
@@ -93,12 +90,12 @@ main (int argc, char *argv[])
 
     lexer = st_lexer_new (buffer);
 
-    st_lexer_token_type_t type;
+    st_token_type_t type;
 
     do {
 
 	token = st_lexer_next_token (lexer);
-	type = st_lexer_token_type (token);
+	type = st_token_type (token);
 
 	print_token (lexer, token);
 

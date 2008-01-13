@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <st-universe.h>
-#include <st-utils.h>
-#include <st-hashed-collection.h>
-#include <st-symbol.h>
+#include "st-universe.h"
+#include "st-utils.h"
+#include "st-hashed-collection.h"
+#include "st-symbol.h"
 
 #include <string.h>
 

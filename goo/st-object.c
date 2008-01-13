@@ -18,12 +18,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-object.h>
-#include <st-mark.h>
-#include <st-universe.h>
-#include <st-class.h>
-#include <st-small-integer.h>
-#include <st-heap-object.h>
+#include "st-object.h"
+#include "st-mark.h"
+#include "st-universe.h"
+#include "st-class.h"
+#include "st-small-integer.h"
+#include "st-heap-object.h"
 
 int _st_current_hash = 0;
 

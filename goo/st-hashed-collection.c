@@ -18,15 +18,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-hashed-collection.h>
-#include <st-array.h>
-#include <st-small-integer.h>
-#include <st-utils.h>
-#include <st-universe.h>
-#include <st-association.h>
-#include <st-mark.h>
+#include "st-hashed-collection.h"
+#include "st-array.h"
+#include "st-small-integer.h"
+#include "st-utils.h"
+#include "st-universe.h"
+#include "st-association.h"
+#include "st-mark.h"
 
-#include <st-vtable.h>
+#include "st-vtable.h"
 
 #include <glib.h>
 

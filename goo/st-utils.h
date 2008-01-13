@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_UTILS_H__
-#define _ST_UTILS_H__
+#ifndef __ST_UTILS_H__
+#define __ST_UTILS_H__
 
 #include <glib.h>
 #include <st-types.h>
@@ -49,6 +49,4 @@ extern GList *objects;
 
 st_oop_t st_allocate_object (gsize size);
 
-
-G_END_DECLS
-#endif /* _ST_UTILS_H__ */
+#endif /* __ST_UTILS_H__ */

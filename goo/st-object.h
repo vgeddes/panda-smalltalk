@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_OBJECT_H__
-#define _ST_OBJECT_H__
+#ifndef __ST_OBJECT_H__
+#define __ST_OBJECT_H__
 
 #include <st-types.h>
 #include <st-small-integer.h>
@@ -232,4 +232,4 @@ st_object_is_byte_array (st_oop_t object)
     return st_object_is_heap (object) && st_object_virtual (object)->is_byte_array ();
 }
 
-#endif /* _ST_OBJECT_H__ */
+#endif /* __ST_OBJECT_H__ */

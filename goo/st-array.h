@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_ARRAY_H__
-#define _ST_ARRAY_H__
+#ifndef __ST_ARRAY_H__
+#define __ST_ARRAY_H__
 
 #include <st-types.h>
 #include <st-class.h>
@@ -93,4 +93,4 @@ st_array_at_put (st_oop_t object, st_smi_t i, st_oop_t value)
     *st_array_element (object, i) = value;
 }
 
-#endif /* _ST_ARRAY_H__ */
+#endif /* __ST_ARRAY_H__ */

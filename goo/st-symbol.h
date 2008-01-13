@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_SYMBOL_H__
-#define _ST_SYMBOL_H__
+#ifndef __ST_SYMBOL_H__
+#define __ST_SYMBOL_H__
 
 #include <st-types.h>
 #include <st-vtable.h>
@@ -30,4 +30,4 @@ st_oop_t st_symbol_new (const char *bytes);
 
 const st_vtable_t *st_symbol_vtable (void);
 
-#endif /* _ST_SYMBOL_H__ */
+#endif /* __ST_SYMBOL_H__ */

@@ -1,11 +1,17 @@
 
-SUBDIRS = libs goo tests
-
+lib_LTLIBRARIES =
+noinst_LTLIBRARIES =
+bin_PROGRAMS = 
+noinst_PROGRAMS =
 
 EXTRA_DIST = \
 	COPYING.GPL \
 	COPYING.LGPL \
 	autogen.sh
+	
+include Makefile-libtommath.am
+include Makefile-libgoo.am
+include Makefile-tests.am
 
 dist-hook:
 	@echo Generating ChangeLog

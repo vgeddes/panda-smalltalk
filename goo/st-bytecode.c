@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-bytecode.h>
-#include <st-math.h>
+#include "st-bytecode.h"
+
 
 #define INITIAL_CAPACITY 75
 

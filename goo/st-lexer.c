@@ -27,8 +27,8 @@
 
 #include <config.h>
 
-#include <st-lexer.h>
-#include <st-string-stream.h>
+#include "st-lexer.h"
+#include "st-input.h"
 
 #include <glib/gi18n-lib.h>
 #include <stdbool.h>
@@ -37,14 +37,33 @@
 #include <stdio.h>
 #include <obstack.h>
 
+#include <stdlib.h>
+#include <limits.h>
+
+
+#include <ctype.h>
+
 #define obstack_chunk_alloc g_malloc
 #define obstack_chunk_free  g_free
 
 
-#define lookahead(self, k)   (st_input_look_ahead (self->input, (k)))
+#define lookahead(self, k)   (st_input_look_ahead (self->input, k))
 #define consume(self)        (st_input_consume (self->input))
 #define mark(self)           (st_input_mark (self->input))
 #define rewind(self)         (st_input_rewind (self->input))
+
+typedef enum
+{
+    LEXER_ERROR_MISMATCHED_CHAR,
+    LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
+    LEXER_ERROR_ILLEGAL_CHAR,
+    LEXER_ERROR_UNTERMINATED_COMMENT,
+    LEXER_ERROR_UNTERMINATED_STRING_LITERAL,
+    LEXER_ERROR_INVALID_RADIX,
+    LEXER_ERROR_INVALID_CHAR_CONST,
+    LEXER_ERROR_NO_ALT_FOR_POUND,
+
+} error_code_t;
 
 struct st_lexer_t
 {
@@ -86,66 +105,8 @@ struct st_number_token_t
     
     int   radix;
     int   exponent;
-    char *number;
 };
 
-typedef enum
-{
-    LEXER_ERROR_MISMATCHED_CHAR,
-    LEXER_ERROR_NO_VIABLE_ALT_FOR_CHAR,
-    LEXER_ERROR_ILLEGAL_CHAR,
-    LEXER_ERROR_UNTERMINATED_COMMENT,
-    LEXER_ERROR_UNTERMINATED_STRING_LITERAL,
-    LEXER_ERROR_INVALID_RADIX,
-    LEXER_ERROR_INVALID_CHAR_CONST,
-    LEXER_ERROR_NO_ALT_FOR_POUND,
-
-} error_code_t;
-
-static void
-raise_error (st_lexer_t   *lexer,
-	     error_code_t  error_code)
-{
-    lexer->failed = true;
-
-    lexer->error_code   = error_code;
-    lexer->error_char   = c;
-    lexer->error_line   = lexer->line;
-    lexer->error_column = lexer->column;
-
-    /* create an token of type invalid */
-    make_token (lexer, ST_TOKEN_INVALID, NULL);    
-
-    /* hopefully recover after consuming char */
-    consume (lexer);
-
-    /* go back to main loop */
-    longjmp (lexer->main_loop, 0);
-}
-
-static void
-make_number_token (int radix, int exponent, char* number)
-{
-    st_token_t *token;
-
-    token = obstack_alloc (&lexer->allocator, sizeof (st_number_token_t));
-    
-    token->type   = type;
-    token->text   = number;
-    token->type   = type;
-    token->line   = lexer->line;
-    token->column = lexer->column;
-
-    st_number_token_t *number_token = ST_NUMBER_TOKEN (token);
-    number_token->radix    = radix;
-    number_token->exponent = exponent;
-
-    lexer->token = token;
-    lexer->token_matched = true;
-    
-    return token;
-
-}
 
 static void
 make_token (st_lexer_t      *lexer,
@@ -164,9 +125,50 @@ make_token (st_lexer_t      *lexer,
 
     lexer->token = token;
     lexer->token_matched = true;
-    
-    return token;
 }
+
+static void
+raise_error (st_lexer_t   *lexer,
+	     error_code_t  error_code)
+{
+    lexer->failed = true;
+
+    lexer->error_code   = error_code;
+    lexer->error_char   = 0;
+    lexer->error_line   = lexer->line;
+    lexer->error_column = lexer->column;
+
+    /* create an token of type invalid */
+    make_token (lexer, ST_TOKEN_INVALID, NULL);    
+
+    /* hopefully recover after consuming char */
+    consume (lexer);
+
+    /* go back to main loop */
+    longjmp (lexer->main_loop, 0);
+}
+
+static void
+make_number_token (st_lexer_t *lexer, int radix, int exponent, char *number)
+{
+    st_token_t *token;
+
+    token = obstack_alloc (&lexer->allocator, sizeof (st_number_token_t));
+    
+    token->type   = ST_TOKEN_NUMBER_CONST;
+    token->text   = number;
+    token->line   = lexer->line;
+    token->column = lexer->column;
+
+    st_number_token_t *number_token = ST_NUMBER_TOKEN (token);
+    number_token->radix    = radix;
+    number_token->exponent = exponent;
+
+    lexer->token = token;
+    lexer->token_matched = true;
+}
+
+
 
 static void
 match_range (st_lexer_t *lexer, gunichar a, gunichar b)
@@ -205,7 +207,7 @@ is_special_char (gunichar c)
 }
 
 /* check if a char is valid numeral identifier for a given radix */
-bool
+static bool
 is_radix_numeral (guint radix, gunichar c)
 {
     g_assert (radix >= 2 && radix <= 36);
@@ -256,7 +258,7 @@ match_number (st_lexer_t *lexer)
 
     start = st_input_index (lexer->input);
 
-    if (lookahead (lexer, 1) == '-') {
+    if (lookahead (lexer, 1) == '-')
 	consume (lexer);
 
     while (is_radix_numeral (radix, lookahead (lexer, 1)))
@@ -692,7 +694,7 @@ st_lexer_next_token (st_lexer_t *lexer)
 	    if (g_unichar_isalpha (lookahead (lexer, 1)))
 		match_keyword_or_identifier (lexer, true);
 
-	    else if (IS_DIGIT (lookahead (lexer, 1)))
+	    else if (isdigit (lookahead (lexer, 1)))
 		match_number (lexer);
 
 	    else if (lookahead (lexer, 1) == '#' && lookahead (lexer, 2) == '(')
@@ -738,11 +740,9 @@ st_lexer_new (const char *text)
     lexer->column = 1;
     lexer->start = -1;
     
-    lexer->error_code = NULL;
-
+    lexer->error_code = 0;
 
     lexer->failed = FALSE;
-    lexer->last_error = NULL;
 
     obstack_init (&lexer->allocator);
 
@@ -758,9 +758,6 @@ st_lexer_destroy (st_lexer_t *lexer)
 
     // destroy all allocated tokens;
     obstack_free (&lexer->allocator, NULL);
-
-    if (lexer->last_error)
-	g_slice_free (st_lexer_error_t, lexer->last_error);
 
     g_slice_free (st_lexer_t, lexer);
 }
@@ -782,7 +779,7 @@ st_token_text (st_token_t *token)
 }
 
 guint
-st_lexer_token_line (st_token_t *token)
+st_token_line (st_token_t *token)
 {
     g_assert (token != NULL);
 
@@ -790,7 +787,7 @@ st_lexer_token_line (st_token_t *token)
 }
 
 guint
-st_lexer_token_column (st_token_t *token)
+st_token_column (st_token_t *token)
 {
     g_assert (token != NULL);
 
@@ -798,33 +795,33 @@ st_lexer_token_column (st_token_t *token)
 }
 
 guint
-st_lexer_error_line (st_lexer_error_t *error)
+st_lexer_error_line (st_lexer_t *lexer)
 {
-    g_assert (error != NULL);
+    g_assert (lexer != NULL);
 
-    return error->line;
+    return lexer->error_line;
 }
 
 guint
-st_lexer_error_column (st_lexer_error_t *error)
+st_lexer_error_column (st_lexer_t *lexer)
 {
-    g_assert (error != NULL);
+    g_assert (lexer != NULL);
 
-    return error->column;
+    return lexer->error_column;
 }
 
 gunichar
-st_lexer_error_char (st_lexer_error_t *error)
+st_lexer_error_char (st_lexer_t *lexer)
 {
-    g_assert (error != NULL);
+    g_assert (lexer != NULL);
 
-    return error->c;
+    return lexer->error_char;
 }
 
 char *
 st_lexer_error_message (st_lexer_t *lexer)
 {
-    g_assert (error != NULL);
+    g_assert (lexer != NULL);
 
     static const char *msgformats[] = {
 	N_("mismatched character \\u%04X"),
@@ -857,3 +854,4 @@ st_lexer_error_message (st_lexer_t *lexer)
 	return NULL;
     }
 }
+

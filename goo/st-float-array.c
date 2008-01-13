@@ -18,7 +18,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-float-array.h>
+#include "st-float-array.h"
 
 ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ());
 

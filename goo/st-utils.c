@@ -18,9 +18,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-utils.h>
-#include <st-array.h>
-#include <st-byte-array.h>
+#include "st-utils.h"
+#include "st-array.h"
+#include "st-byte-array.h"
 
 GList *objects = NULL;
 

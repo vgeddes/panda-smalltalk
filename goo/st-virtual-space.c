@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-virtual-space.h>
-#include <st-types.h>
+#include "st-virtual-space.h"
+#include "st-types.h"
 
 #include <unistd.h>
 

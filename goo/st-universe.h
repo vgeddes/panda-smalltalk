@@ -17,8 +17,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _ST_UNIVERSE_H__
-#define _ST_UNIVERSE_H__
+#ifndef __ST_UNIVERSE_H__
+#define __ST_UNIVERSE_H__
 
 #include <st-types.h>
 
@@ -50,4 +50,4 @@ extern st_oop_t st_nil,
 st_oop_t st_global_get (const char *name);
 
 
-#endif /* _ST_UNIVERSE_H__ */
+#endif /* __ST_UNIVERSE_H__ */

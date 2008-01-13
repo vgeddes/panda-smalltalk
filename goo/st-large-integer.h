@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_LARGE_INTEGER__
-#define _ST_LARGE_INTEGER__
+#ifndef __ST_LARGE_INTEGER__
+#define __ST_LARGE_INTEGER__
 
 #include <tommath.h>
 #include <st-heap-object.h>
@@ -53,4 +53,4 @@ st_large_integer_value (st_oop_t integer)
     return &ST_LARGE_INTEGER (integer)->value;
 }
 
-#endif /* _ST_LARGE_INTEGER */
+#endif /* __ST_LARGE_INTEGER */

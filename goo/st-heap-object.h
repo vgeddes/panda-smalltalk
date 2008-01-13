@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_HEAP_OBJECT_H__
-#define _ST_HEAP_OBJECT_H__
+#ifndef __ST_HEAP_OBJECT_H__
+#define __ST_HEAP_OBJECT_H__
 
 #include <st-types.h>
 #include <st-vtable.h>
@@ -94,4 +94,4 @@ st_heap_object_instvars (st_oop_t object)
     return ((st_heap_object_t *) ST_POINTER (object))->instvars;
 }
 
-#endif /* _ST_HEAP_OBJECT_H__ */
+#endif /* __ST_HEAP_OBJECT_H__ */

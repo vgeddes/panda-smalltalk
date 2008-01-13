@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_COMPILED_CODE_H__
-#define _ST_COMPILED_CODE_H__
+#ifndef __ST_COMPILED_CODE_H__
+#define __ST_COMPILED_CODE_H__
 
 #include <st-types.h>
 #include <st-vtable.h>
@@ -341,4 +341,4 @@ st_compiled_block_method (st_oop_t block)
 }
 
 
-#endif /* _ST_COMPILED_CODE_H__ */
+#endif /* __ST_COMPILED_CODE_H__ */

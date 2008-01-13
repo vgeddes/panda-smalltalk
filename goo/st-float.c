@@ -18,10 +18,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-float.h>
-#include <st-object.h>
+#include "st-float.h"
+#include "st-object.h"
 
-#include <st-vtable.h>
+#include "st-vtable.h"
 
 
 ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ());

@@ -27,8 +27,8 @@
  *
  */
 
-#ifndef _ST_CLASS_H__
-#define _ST_CLASS_H__
+#ifndef __ST_CLASS_H__
+#define __ST_CLASS_H__
 
 #include <st-types.h>
 #include <st-heap-object.h>
@@ -194,4 +194,4 @@ st_metaclass_instance_class (st_oop_t metaclass)
     return ST_METACLASS (metaclass)->instance_class;
 }
 
-#endif /* _ST_CLASS_H__ */
+#endif /* __ST_CLASS_H__ */

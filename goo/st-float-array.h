@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_FLOAT_ARRAY_H__
-#define _ST_FLOAT_ARRAY_H__
+#ifndef __ST_FLOAT_ARRAY_H__
+#define __ST_FLOAT_ARRAY_H__
 
 #include <st-heap-object.h>
 #include <st-types.h>
@@ -72,4 +72,4 @@ st_float_array_at_put (st_oop_t array, st_smi_t i, double value)
 }
 
 
-#endif /* _ST_FLOAT_ARRAY_H__ */
+#endif /* __ST_FLOAT_ARRAY_H__ */

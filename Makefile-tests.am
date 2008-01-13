@@ -1,0 +1,14 @@
+
+noinst_PROGRAMS += tests/test-input tests/test-lexer
+
+tests_test_input_SOURCES = tests/test-input.c
+
+tests_test_input_LDADD =    $(GLIB_LIBS) libgoo.la
+tests_test_input_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS) -Igoo
+tests_test_input_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -Igoo
+
+tests_test_lexer_SOURCES = tests/test-lexer.c
+
+tests_test_lexer_LDADD =    $(GLIB_LIBS) libgoo.la
+tests_test_lexer_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS) -Igoo
+tests_test_lexer_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -Igoo

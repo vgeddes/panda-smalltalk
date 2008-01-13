@@ -18,25 +18,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "st-types.h"
+#include "st-utils.h"
+#include "st-object.h"
+#include "st-mark.h"
+#include "st-float.h"
+#include "st-association.h"
+#include "st-compiled-code.h"
+#include "st-array.h"
+#include "st-byte-array.h"
+#include "st-small-integer.h"
+#include "st-hashed-collection.h"
+#include "st-symbol.h"
+#include "st-universe.h"
+#include "st-heap-object.h"
+#include "st-lexer.h"
+#include "st-vtable.h"
+
 #include <glib.h>
-
-#include <st-types.h>
-#include <st-utils.h>
-#include <st-object.h>
-#include <st-mark.h>
-#include <st-float.h>
-#include <st-association.h>
-#include <st-compiled-code.h>
-#include <st-array.h>
-#include <st-byte-array.h>
-#include <st-small-integer.h>
-#include <st-hashed-collection.h>
-#include <st-symbol.h>
-#include <st-universe.h>
-#include <st-heap-object.h>
-#include <st-lexer.h>
-#include <st-vtable.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -109,10 +108,10 @@ declare_class (const char *name, st_oop_t klass)
 
 
 static void
-parse_error (char *message, st_lexer_token_t *token)
+parse_error (char *message, st_token_t *token)
 {
     g_warning ("error:%i:%i: %s",
-	       st_lexer_token_line (token), st_lexer_token_column (token), message);
+	       st_token_line (token), st_token_column (token), message);
     exit (1);
 }
 
@@ -215,25 +214,25 @@ static bool
 parse_variable_names (st_lexer_t *lexer, GList ** varnames)
 {
 
-    st_lexer_token_t *token;
+    st_token_t *token;
 
     token = st_lexer_next_token (lexer);
 
-    if (st_lexer_token_type (token) != ST_TOKEN_STRING_CONST)
+    if (st_token_type (token) != ST_TOKEN_STRING_CONST)
 	return false;
 
-    char *names = st_lexer_token_text (token);
+    char *names = st_token_text (token);
 
     st_lexer_t *ivarlexer = st_lexer_new (names);
 
     token = st_lexer_next_token (ivarlexer);
 
-    while (st_lexer_token_type (token) != ST_TOKEN_EOF) {
+    while (st_token_type (token) != ST_TOKEN_EOF) {
 
-	if (st_lexer_token_type (token) != ST_TOKEN_IDENTIFIER)
+	if (st_token_type (token) != ST_TOKEN_IDENTIFIER)
 	    parse_error (NULL, token);
 
-	*varnames = g_list_append (*varnames, g_strdup (st_lexer_token_text (token)));
+	*varnames = g_list_append (*varnames, g_strdup (st_token_text (token)));
 
 	token = st_lexer_next_token (ivarlexer);
     }
@@ -245,23 +244,23 @@ parse_variable_names (st_lexer_t *lexer, GList ** varnames)
 
 
 static void
-parse_class (st_lexer_t *lexer, st_lexer_token_t *token)
+parse_class (st_lexer_t *lexer, st_token_t *token)
 {
     char *class_name = NULL;
     char *superclass_name = NULL;
 
     // superclass name
-    if (st_lexer_token_type (token) == ST_TOKEN_IDENTIFIER) {
+    if (st_token_type (token) == ST_TOKEN_IDENTIFIER) {
 
-	superclass_name = g_strdup (st_lexer_token_text (token));
+	superclass_name = g_strdup (st_token_text (token));
 	token = st_lexer_next_token (lexer);
     } else {
 	parse_error ("expected identifier", token);
     }
 
     // 'subclass:' keyword selector
-    if (st_lexer_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
-	streq (st_lexer_token_text (token), "subclass:")) {
+    if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
+	streq (st_token_text (token), "subclass:")) {
 
 	token = st_lexer_next_token (lexer);
     } else {
@@ -269,9 +268,9 @@ parse_class (st_lexer_t *lexer, st_lexer_token_t *token)
     }
 
     // class name
-    if (st_lexer_token_type (token) == ST_TOKEN_SYMBOL_CONST) {
+    if (st_token_type (token) == ST_TOKEN_SYMBOL_CONST) {
 
-	class_name = g_strdup (st_lexer_token_text (token));
+	class_name = g_strdup (st_token_text (token));
 
 	token = st_lexer_next_token (lexer);
     } else {
@@ -281,8 +280,8 @@ parse_class (st_lexer_t *lexer, st_lexer_token_t *token)
     GList *ivarnames = NULL, *cvarnames = NULL;;
 
     // 'instanceVariableNames:' keyword selector        
-    if (st_lexer_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
-	streq (st_lexer_token_text (token), "instanceVariableNames:")) {
+    if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
+	streq (st_token_text (token), "instanceVariableNames:")) {
 
 	parse_variable_names (lexer, &ivarnames);
 
@@ -293,8 +292,8 @@ parse_class (st_lexer_t *lexer, st_lexer_token_t *token)
     token = st_lexer_next_token (lexer);
 
     // 'classVariableNames:' keyword selector   
-    if (st_lexer_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
-	streq (st_lexer_token_text (token), "classVariableNames:")) {
+    if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
+	streq (st_token_text (token), "classVariableNames:")) {
 
 	parse_variable_names (lexer, &cvarnames);
 
@@ -330,12 +329,12 @@ parse_classes (const char *filename)
 
     st_lexer_t *lexer = st_lexer_new (contents);
 
-    st_lexer_token_t *token = st_lexer_next_token (lexer);
+    st_token_t *token = st_lexer_next_token (lexer);
 
-    while (st_lexer_token_type (token) != ST_TOKEN_EOF) {
+    while (st_token_type (token) != ST_TOKEN_EOF) {
 
 	// ignore comments
-	while (st_lexer_token_type (token) == ST_TOKEN_COMMENT)
+	while (st_token_type (token) == ST_TOKEN_COMMENT)
 	    token = st_lexer_next_token (lexer);
 
 	parse_class (lexer, token);
@@ -448,3 +447,4 @@ main (int argc, char *argv[])
 
     return 0;
 }
+

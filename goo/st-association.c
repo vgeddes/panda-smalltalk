@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-association.h>
-#include <st-object.h>
+#include "st-association.h"
+#include "st-object.h"
 
 ST_DEFINE_VTABLE (st_association, st_heap_object_vtable ());
 

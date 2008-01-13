@@ -18,9 +18,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-symbol.h>
-#include <st-hashed-collection.h>
-#include <st-byte-array.h>
+#include "st-symbol.h"
+#include "st-hashed-collection.h"
+#include "st-byte-array.h"
 
 #include <string.h>
 

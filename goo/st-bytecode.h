@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef _ST_BYTECODE_H__
-#define _ST_BYTECODE_H__
+#ifndef __ST_BYTECODE_H__
+#define __ST_BYTECODE_H__
 
 #include <glib.h>
 #include <st-types.h>
@@ -170,4 +170,4 @@ void st_bytecode_is_code (guchar c);
 void st_bytecode_print_code (guchar c);
 
 
-#endif /* _ST_BYTECODE_H__ */
+#endif /* __ST_BYTECODE_H__ */

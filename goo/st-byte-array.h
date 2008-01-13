@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_BYTE_ARRAY_H__
-#define _ST_BYTE_ARRAY_H__
+#ifndef __ST_BYTE_ARRAY_H__
+#define __ST_BYTE_ARRAY_H__
 
 #include <st-types.h>
 #include <st-small-integer.h>
@@ -84,4 +84,4 @@ st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value)
     st_byte_array_bytes (object)[i - 1] = value;
 }
 
-#endif /* _ST_BYTE_ARRAY__ */
+#endif /* __ST_BYTE_ARRAY__ */

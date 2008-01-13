@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_MARK_H__
-#define _ST_MARK_H__
+#ifndef __ST_MARK_H__
+#define __ST_MARK_H__
 
 #include <st-types.h>
 #include <st-utils.h>
@@ -121,4 +121,4 @@ st_mark_new (void)
     return mark;
 }
 
-#endif /* _ST_MARK_H__ */
+#endif /* __ST_MARK_H__ */

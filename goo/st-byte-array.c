@@ -18,10 +18,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <st-byte-array.h>
-#include <st-object.h>
-#include <st-utils.h>
-#include <st-vtable.h>
+#include "st-byte-array.h"
+#include "st-object.h"
+#include "st-utils.h"
+#include "st-vtable.h"
+
 #include <string.h>
 
 ST_DEFINE_VTABLE (st_byte_array, st_heap_object_vtable ());

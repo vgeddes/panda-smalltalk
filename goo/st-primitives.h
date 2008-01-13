@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_PRIMITIVES_H__
-#define _ST_PRIMITIVES_H__
+#ifndef __ST_PRIMITIVES_H__
+#define __ST_PRIMITIVES_H__
 
 #include <glib.h>
 
@@ -31,5 +31,4 @@ int st_get_primitive_index_for_name (const char *name);
 st_prim_func st_get_primitive_func_for_index (guint index);
 
 
-G_END_DECLS
-#endif /* _ST_PRIMITIVES_H__ */
+#endif /* __ST_PRIMITIVES_H__ */

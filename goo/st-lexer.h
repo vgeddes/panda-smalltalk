@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_LEXER_H__
-#define _ST_LEXER_H__
+#ifndef __ST_LEXER_H__
+#define __ST_LEXER_H__
 
 #include <glib.h>
 
@@ -87,4 +87,4 @@ guint             st_lexer_error_column  (st_lexer_t *lexer);
 
 char *            st_lexer_error_message (st_lexer_t *lexer);
 
-#endif /* _ST_LEXER_H__ */
+#endif /* __ST_LEXER_H__ */

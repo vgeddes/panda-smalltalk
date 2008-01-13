@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
- * st-string-input.h
+ * st-input.h
  *
  * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
  *
@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ST_STRING_STREAM_H__
-#define _ST_STRING_STREAM_H__
+#ifndef __ST_INPUT_H__
+#define __ST_INPUT_H__
 
 #include <glib.h>
 
@@ -59,5 +59,4 @@ char      *st_input_substring (st_input_t *input, guint start, guint end);
 
 void       st_input_destroy   (st_input_t *input);
 
-G_END_DECLS
-#endif /* _ST_STRING_STREAM_H__ */
+#endif /* __ST_INPUT_H__ */
