@@ -226,9 +226,10 @@ match_number (st_lexer_t *lexer)
      * specifies a negative number or a binary selector
      */
 
-    radix = 10;
-    exponent = 0;
-    int start, end;
+    int radix = 10;
+    int exponent = 0;
+    int start, end, exponent_start;
+    char *string;
     
     do {
     
@@ -253,7 +254,7 @@ match_number (st_lexer_t *lexer)
     	goto out;
     }    
 
-    int start = st_input_index (lexer->input);
+    start = st_input_index (lexer->input);
 
     if (lookahead (lexer, 1) == '-') {
 	consume (lexer);
@@ -274,31 +275,27 @@ match_number (st_lexer_t *lexer)
 
 	consume (lexer);
 	
-	int exponent_start = st_input_index (lexer->input);
+	exponent_start = st_input_index (lexer->input);
 
 	if (lookahead (lexer, 1) == '-' && isdigit (lookahead (lexer, 2)))
 	    consume (lexer);
 
-	do {
-		consume (lexer);	
-	} while (isdigit (lookahead (lexer, 1)));
-
+	while (isdigit (lookahead (lexer, 1)))
+		consume (lexer);
+		
+	if (exponent_start == st_input_index (lexer->input))
+	    goto out;
 	
-	if (exponent_start < st_input_index (lexer->input)) {
-	
-	    char *string = st_input_substring (lexer->input,
-					       exp_start,
-					       st_input_index (lexer->input));
-					    
-	    exponent = strtol (exp_str, NULL, 10);
-	}
+	string = st_input_substring (lexer->input, exponent_start,
+				     st_input_index (lexer->input));				    
+	exponent = strtol (string, NULL, 10);
     }
     
 out:
 
     make_number_token (lexer, radix, exponent,
 		       st_input_substring (lexer->input,
-					   lexer->start,
+					   start,
 					   st_input_index (lexer->input)));
 }
 
