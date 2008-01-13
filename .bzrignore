@@ -34,3 +34,5 @@ tests/test-string-stream
 config.h
 *.loT
 ChangeLog
+tests/test-input
+.dirstamp
