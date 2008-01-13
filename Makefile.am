@@ -7,4 +7,6 @@ EXTRA_DIST = \
 	COPYING.LGPL \
 	autogen.sh
 
-
+dist-hook:
+	@echo Generating ChangeLog
+	which bzr && bzr log --short > $(distdir)/ChangeLog
