@@ -1,4 +1,6 @@
 
+ACLOCAL_AMFLAGS = -I .
+
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 bin_PROGRAMS = 
@@ -8,7 +10,7 @@ EXTRA_DIST = \
 	COPYING.GPL \
 	COPYING.LGPL \
 	autogen.sh
-	
+
 include Makefile-libtommath.am
 include Makefile-libgoo.am
 include Makefile-tests.am

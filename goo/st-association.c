@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /* 
  * st-association.c
  *
@@ -27,7 +26,7 @@ ST_DEFINE_VTABLE (st_association, st_heap_object_vtable ());
 static guint
 association_hash (st_oop_t object)
 {
-    st_association_t *a = ST_ASSOCIATION (object);
+st_association_t *a = ST_ASSOCIATION (object);
 
     return st_object_hash (a->key) ^ st_object_hash (a->value);
 }

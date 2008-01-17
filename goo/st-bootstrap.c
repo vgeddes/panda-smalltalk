@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /* 
  * st-bootstrap.c
  *
@@ -250,8 +249,8 @@ parse_class (st_lexer_t *lexer, st_token_t *token)
     char *superclass_name = NULL;
 
     // superclass name
-    if (st_token_type (token) == ST_TOKEN_IDENTIFIER) {
-
+    if (t_token_type (token) == ST_TOKEN_IDENTIFIER) {
+        
 	superclass_name = g_strdup (st_token_text (token));
 	token = st_lexer_next_token (lexer);
     } else {

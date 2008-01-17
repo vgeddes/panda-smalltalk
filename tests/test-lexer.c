@@ -1,4 +1,5 @@
 
+
 #include <st-lexer.h>
 
 #include <glib.h>
@@ -17,9 +18,9 @@ static const char *const token_names[] = {
     "TOKEN_RETURN",
     "TOKEN_COLON",
     "TOKEN_ASSIGN",
-    "TOKEN_ARRAY_BEGIN",
+    "TOKEN_TUPLE_BEGIN",
     "TOKEN_IDENTIFIER",
-    "TOKEN_CHAR_CONST",
+    "TOKEN_CHARACTER_CONST",
     "TOKEN_STRING_CONST",
     "TOKEN_NUMBER_CONST",
     "TOKEN_SYMBOL_CONST",
@@ -49,7 +50,7 @@ print_token (st_lexer_t *lexer, st_token_t *token)
     case ST_TOKEN_NUMBER_CONST:
     case ST_TOKEN_KEYWORD_SELECTOR:
     case ST_TOKEN_BINARY_SELECTOR:
-    case ST_TOKEN_CHAR_CONST:
+    case ST_TOKEN_CHARACTER_CONST:
 
 	string = st_token_text (token);
 
@@ -72,13 +73,15 @@ print_token (st_lexer_t *lexer, st_token_t *token)
 }
 
 
-#define BUF_SIZE 20480
+#define BUF_SIZE 10000
 
 int
 main (int argc, char *argv[])
 {
     st_lexer_t *lexer;
     st_token_t *token;
+    
+    printf ("Enter or pipe some Smalltalk code on stdin:\n\n");
 
     /* read input from stdin */
     char buffer[BUF_SIZE];

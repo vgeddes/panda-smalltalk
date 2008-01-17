@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-compiled-code.h
  *
@@ -94,38 +93,43 @@ const st_vtable_t *st_compiled_method_vtable         (void);
 
 
 
-/* inline definitions */
-
 /*
- * header format:
+ * CompiledCode Header:
  *
- * Method headers are smis containing bitfields.
+ * The CompiledCode header is a smi containing various bitfields.
  *
- * flag value:
- *   normal method:   0
- *   return receiver: 1
- *   return instvar:  2
- *   return literal:  3
- *   primitive call:  4
+ * A flag bitfield in the header indicates how the method must be executed. Generally
+ * it provides various optimization hints to the interpreter. The flag bitfield
+ * is alway stored in bits 31-29. The format of the remaining bits in the header
+ * varies according to the flag value.  
+ * 
+ * flag (3 bits):
+ *   0 : Activate method and execute its bytecodes 
+ *   1 : The method simply returns 'self'. Don't bother creating a new activation.
+ *   2 : The method simply returns an instance variable. Ditto.
+ *   3 : The method simply returns a literal. Ditto.
+ *   4 : The method performs a primitive operation.
  *
- * normal method or primitive call
- *   header: [ flag: 3 | arg_count: 5 | temp_count: 6 | stack_depth: 8 | primitive: 8 | tag: 2 ]
+ * Bitfield format
+ * 
+ * flag = 0:
+ *   [ flag: 3 | arg_count: 5 | temp_count: 6 | stack_depth: 8 | primitive: 8 | tag: 2 ]
  *
  *   arg_count:      number of args
  *   temp_count:     number of temps
- *   stack_depth:    Depth of stack
- *   primitive:      Index of a primitive method
+ *   stack_depth:    depth of stack
+ *   primitive:      index of a primitive method
  *   tag:            The usual smi tag
  *
- * return receiver
- *   header: [ flag: 3 | unused: 27 | tag: 2 ]
+ * flag = 1:
+ *   [ flag: 3 | unused: 27 | tag: 2 ]
  *
- * return instvar
+ * flag = 2:
  *   header: [ flag: 3 | unused: 11 | instvar: 16 | tag: 2 ]
  *
  *   instvar_index:  Index of instvar
  *
- * return literal
+ * flag = 3:
  *   header: [ flag: 3 | unused: 23 | literal: 4 | tag: 2 ]
  *
  *   literal: 
@@ -138,10 +142,10 @@ const st_vtable_t *st_compiled_method_vtable         (void);
  *       2:              6
  */
 
-#define ST_SET_BITFIELD(bits, field, value) \
+#define SET_BITFIELD(bits, field, value) \
     (((bits) & ~st_##field##_mask_aligned) | ((value & st_##field##_mask) << st_##field##_shift))
 
-#define ST_GET_BITFIELD(bits, field) \
+#define GET_BITFIELD(bits, field) \
     (((bits) >> st_##field##_shift) & st_##field##_mask)
 
 enum
@@ -211,6 +215,8 @@ typedef enum
 #define ST_COMPILED_METHOD(oop) ((st_compiled_method_t *) (ST_POINTER (oop)))
 #define ST_COMPILED_BLOCK(oop)  ((st_compiled_block_t *)  (ST_POINTER (oop)))
 
+#define HEADER(code) (ST_COMPILED_CODE (code)->header)
+
 INLINE st_oop_t
 st_compiled_code_header (st_oop_t code)
 {
@@ -226,80 +232,73 @@ st_compiled_code_set_header (st_oop_t code, st_oop_t header)
 INLINE int
 st_compiled_code_temp_count (st_oop_t code)
 {
-    return ST_GET_BITFIELD (st_compiled_code_header (code), temp);
+    return GET_BITFIELD (HEADER (code), temp);
 }
 
 INLINE int
 st_compiled_code_arg_count (st_oop_t code)
 {
-    return ST_GET_BITFIELD (st_compiled_code_header (code), arg);
+    return GET_BITFIELD (HEADER (code), arg);
 }
 
 INLINE int
 st_compiled_code_stack_depth (st_oop_t code)
 {
-    return ST_GET_BITFIELD (st_compiled_code_header (code), stack);
+    return GET_BITFIELD (HEADER (code), stack);
 }
 
 INLINE int
 st_compiled_code_primitive_index (st_oop_t code)
 {
-    return ST_GET_BITFIELD (st_compiled_code_header (code), primitive);
+    return GET_BITFIELD (HEADER (code), primitive);
 }
 
 INLINE int
 st_compiled_code_flags (st_oop_t code)
 {   
-    return ST_GET_BITFIELD (st_compiled_code_header (code), flag);
+    return GET_BITFIELD (HEADER (code), flag);
 }
 
 INLINE void
 st_compiled_code_set_flags (st_oop_t code, int flags)
 {
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), flag, flags));
+    HEADER (code) = SET_BITFIELD (HEADER (code), flag, flags);
 }
 
 INLINE void
 st_compiled_code_set_arg_count (st_oop_t code, int count)
-{
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), arg, count));
+{	
+    HEADER (code) = SET_BITFIELD (HEADER (code), arg, count);
 }
 
 INLINE void
 st_compiled_code_set_temp_count (st_oop_t code, int count)
 {
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), temp, count));
+    HEADER (code) = SET_BITFIELD (HEADER (code), temp, count);
 }
 
 INLINE void
 st_compiled_code_set_stack_depth (st_oop_t code, int depth)
 {
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), stack, depth));
+    HEADER (code) = SET_BITFIELD (HEADER (code), stack, depth);
 }
 
 INLINE void
 st_compiled_code_set_primitive_index (st_oop_t code, int index)
 {
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), primitive, index));
+    HEADER (code) = SET_BITFIELD (HEADER (code), primitive, index);
 }
 
 INLINE void
 st_compiled_code_set_instvar_index (st_oop_t code, int index)
 {
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), instvar, index));
+    HEADER (code) = SET_BITFIELD (HEADER (code), instvar, index);
 }
 
 INLINE void
 st_compiled_code_set_literal_type (st_oop_t code, st_cm_literal_type_t literal_type)
 {
-    st_compiled_code_set_header (code,
-	ST_SET_BITFIELD (st_compiled_code_header (code), literal, literal_type));
+    HEADER (code) = SET_BITFIELD (HEADER (code), literal, literal_type);
 }
 
 INLINE st_oop_t

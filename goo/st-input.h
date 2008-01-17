@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-input.h
  *
@@ -39,23 +38,19 @@ guint      st_input_get_line     (st_input_t *input);
 
 guint      st_input_get_column   (st_input_t *input);
 
-int        st_input_mark         (st_input_t *input);
+void       st_input_mark         (st_input_t *input);
 
 void       st_input_rewind       (st_input_t *input);
-
-void       st_input_rewind_to_marker (st_input_t * input, guint m);
 
 void       st_input_seek    (st_input_t *input, guint index);
 
 void       st_input_consume (st_input_t *input);
 
-void       st_input_reset   (st_input_t *input);
-
 guint      st_input_size    (st_input_t *input);
 
 guint      st_input_index   (st_input_t *input);
 
-char      *st_input_substring (st_input_t *input, guint start, guint end);
+char      *st_input_range (st_input_t *input, guint start, guint end);
 
 void       st_input_destroy   (st_input_t *input);
 

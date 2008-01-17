@@ -3,9 +3,8 @@ Object Memory Layout
 
 Legend
 -------
-Mark: GC book-keeping (12 bits), Readonly (1 bit) Hash (20 bits), Tag (2 bits)
-Class oop: Oop to class object of instance
-Fixed Size: Number of fixed fields in object
+mark: GC book-keeping (12 bits), Readonly (1 bit) Hash (20 bits), Tag (2 bits)
+class oop: Oop to class of instance
 
 Normal Object
 

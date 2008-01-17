@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-compiled-code.c
  *
@@ -25,7 +24,8 @@
 ST_DEFINE_VTABLE (st_compiled_method, st_heap_object_vtable ());
 
 
-     static bool is_compiled_method (void)
+static bool
+is_compiled_method (void)
 {
     return true;
 }
@@ -41,7 +41,8 @@ st_compiled_method_vtable_init (st_vtable_t * table)
 
 ST_DEFINE_VTABLE (st_compiled_block, st_heap_object_vtable ());
 
-     static bool is_compiled_block (void)
+static bool
+is_compiled_block (void)
 {
     return true;
 }
@@ -51,3 +52,4 @@ st_compiled_block_vtable_init (st_vtable_t * table)
 {
     table->is_compiled_block = is_compiled_block;
 }
+

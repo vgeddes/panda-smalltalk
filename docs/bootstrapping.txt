@@ -1,5 +1,5 @@
 Bootstrapping an initial image is a tricky process, a real chicken-and-egg
-problem, since the image must consist of serialized Smalltalk objects and bytecode.
+problem.
 
 
 Plan:

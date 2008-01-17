@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-utils.c
  *
@@ -17,10 +16,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
 #include "st-utils.h"
 #include "st-array.h"
 #include "st-byte-array.h"
+
+#include <stdint.h>
 
 GList *objects = NULL;
 
@@ -36,3 +37,4 @@ st_allocate_object (gsize size)
 
     return object;
 }
+

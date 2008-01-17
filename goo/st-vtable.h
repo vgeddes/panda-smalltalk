@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-vtable.h
  *
@@ -69,7 +68,7 @@ typedef struct
     bool (*is_byte_array) (void);
 
     /* bootstrapping support below: Remove once an initial image has been created
-     * We only use these for Strings, Symbols and Associations and Dictionaries
+     * We only use these for Strings, Symbols, Associations and Dictionaries
      */
     bool (*equal) (st_oop_t object, st_oop_t another);
 

@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-types.h
  *
@@ -34,14 +33,14 @@
 #  define ST_HOST32         1
 #  define ST_HOST64         0
 #  define ST_BITS_PER_WORD  32
-#  define ST_SMALL_INTEGER_MIN  (-1 << (31 - GOO_TAG_SIZE))
-#  define ST_SMALL_INTEGER_MAX  ( 1 << (31 - GOO_TAG_SIZE))
+#  define ST_SMALL_INTEGER_MIN  (-ST_SMALL_INTEGER_MAX - 1)
+#  define ST_SMALL_INTEGER_MAX  536870911
 #elif (SIZEOF_VOID_P == 8)
 #  define ST_HOST32         0
 #  define ST_HOST64         1
 #  define ST_BITS_PER_WORD  64
-#  define ST_SMALL_INTEGER_MIN  (-1 << (63 - GOO_TAG_SIZE))
-#  define ST_SMALL_INTEGER_MAX  ( 1 << (63 - GOO_TAG_SIZE))
+#  define ST_SMALL_INTEGER_MIN  (-ST_SMALL_INTEGER_MAX - 1)
+#  define ST_SMALL_INTEGER_MAX  2305843009213693951L
 #else
 #  error platform not supported
 #endif

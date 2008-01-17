@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-utils.h
  *
@@ -48,5 +47,6 @@ enum
 extern GList *objects;
 
 st_oop_t st_allocate_object (gsize size);
+
 
 #endif /* __ST_UTILS_H__ */

@@ -20,17 +20,6 @@ from normal objects. These Arrayed types can be subclassed, but no instvars can 
 
 CompiledMethods are now ordinary objects containing arrayed `bytecode' and 'literals' instvars
 
-3)
-Threads must die!
-
-They are a usability nightmare. They are hard to use. They break encapsulation. 
-They introduce non-deterministic behaviour. Locks can cause performance problems.
-
-Just say no!
-
-Need to implement Concurrency somewhere along the lines of Erlang.
-
-Erlang's message-passing idiom can map well to Smalltalk. This is an advantage.
 
 
 4)

@@ -1,4 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: t; indent-offset: 4 -*- */
 /*
  * st-lexer.h
  *
@@ -44,7 +43,7 @@ typedef enum
     ST_TOKEN_ASSIGN,
     ST_TOKEN_TUPLE_BEGIN,
     ST_TOKEN_IDENTIFIER,
-    ST_TOKEN_CHAR_CONST,
+    ST_TOKEN_CHARACTER_CONST,
     ST_TOKEN_STRING_CONST,
     ST_TOKEN_NUMBER_CONST,
     ST_TOKEN_SYMBOL_CONST,
@@ -64,6 +63,14 @@ st_token_t       *st_lexer_current_token (st_lexer_t *lexer);
 
 void              st_lexer_destroy       (st_lexer_t *lexer);
 
+gunichar          st_lexer_error_char    (st_lexer_t *lexer);
+
+guint             st_lexer_error_line    (st_lexer_t *lexer);
+
+guint             st_lexer_error_column  (st_lexer_t *lexer);
+
+char *            st_lexer_error_message (st_lexer_t *lexer);
+
 
 st_token_type_t   st_token_type   (st_token_t *token);
 
@@ -79,12 +86,5 @@ guint             st_number_token_radix    (st_number_token_t *token);
 int               st_number_token_exponent (st_number_token_t *token);
 
 
-gunichar          st_lexer_error_char    (st_lexer_t *lexer);
-
-guint             st_lexer_error_line    (st_lexer_t *lexer);
-
-guint             st_lexer_error_column  (st_lexer_t *lexer);
-
-char *            st_lexer_error_message (st_lexer_t *lexer);
 
 #endif /* __ST_LEXER_H__ */

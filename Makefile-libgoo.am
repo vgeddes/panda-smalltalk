@@ -1,15 +1,10 @@
 
-AM_CPPFLAGS += -DG_LOG_DOMAIN=\"Smalltalk\"
 
 lib_LTLIBRARIES += libgoo.la
 
 libgoo_la_SOURCES = \
-	goo/st-input.h \
-	goo/st-input.c \
 	goo/st-heap-object.c \
 	goo/st-heap-object.h \
- 	goo/st-lexer.c \
- 	goo/st-lexer.h \
  	goo/st-utils.h \
  	goo/st-utils.c \
   	goo/st-hashed-collection.h \
@@ -39,13 +34,22 @@ libgoo_la_SOURCES = \
 	goo/st-object.c \
 	goo/st-vtable.c \
 	goo/st-vtable.h \
+	goo/st-ast.c \
+	goo/st-ast.h \
+	goo/st-parser.h \
+	goo/st-parser.c \
+ 	goo/st-lexer.c \
+ 	goo/st-lexer.h \
+	goo/st-input.h \
+	goo/st-input.c \
  	goo/st-types.h
 	
 libgoo_la_CPPFLAGS =      \
 	-I$(top_srcdir)   \
         -I$(top_srcdir)/libs/libtommath \
         -Igoo \
-        $(AM_CPPFLAGS)
+        $(AM_CPPFLAGS) \
+        -DG_LOG_DOMAIN=\"Smalltalk\"
 
 libgoo_la_CFLAGS =      \
 	$(GLIB_CFLAGS)  \
