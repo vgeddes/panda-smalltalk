@@ -26,6 +26,45 @@
 
 ST_DEFINE_VTABLE (st_byte_array, st_heap_object_vtable ());
 
+
+#define ST_BYTE_ARRAY(oop) ((st_byte_array_t *) ST_POINTER (oop))
+
+
+st_oop_t
+st_byte_array_size (st_oop_t object)
+{
+    return ST_BYTE_ARRAY (object)->size;
+}
+
+guchar *
+st_byte_array_bytes (st_oop_t object)
+{
+    return ST_BYTE_ARRAY (object)->bytes;
+}
+
+bool
+st_byte_array_range_check (st_oop_t object, st_smi_t i)
+{
+    return 1 <= i && i <= st_smi_value (st_byte_array_size (object));
+}
+
+guchar
+st_byte_array_at (st_oop_t object, st_smi_t i)
+{
+    g_assert (1 <= i && i <= st_smi_value (st_byte_array_size (object)));
+
+    return st_byte_array_bytes (object)[i - 1];
+}
+
+void
+st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value)
+{
+    g_assert (1 <= i && i <= st_smi_value (st_byte_array_size (object)));
+
+    st_byte_array_bytes (object)[i - 1] = value;
+}
+
+
 static bool
 byte_array_verify (st_oop_t object)
 {    

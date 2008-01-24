@@ -50,6 +50,29 @@ typedef struct
 } st_compiled_block_t;
 
 
+typedef enum
+{
+    ST_COMPILED_CODE_NORMAL,
+    ST_COMPILED_CODE_RETURN_RECEIVER,
+    ST_COMPILED_CODE_RETURN_INSTVAR,
+    ST_COMPILED_CODE_RETURN_LITERAL,
+    ST_COMPILED_CODE_PRIMITIVE,
+
+} st_compiled_code_flag_t;
+
+typedef enum
+{
+    ST_COMPILED_CODE_LITERAL_NIL,
+    ST_COMPILED_CODE_LITERAL_TRUE,
+    ST_COMPILED_CODE_LITERAL_FALSE,
+    ST_COMPILED_CODE_LITERAL_MINUS_ONE,
+    ST_COMPILED_CODE_LITERAL_ZERO,
+    ST_COMPILED_CODE_LITERAL_ONE,
+    ST_COMPILED_CODE_LITERAL_TWO,
+
+} st_compiled_code_literal_type_t;
+
+
 INLINE st_oop_t st_compiled_code_header          (st_oop_t code);
 
 INLINE void     st_compiled_code_set_header      (st_oop_t code, st_oop_t header);
@@ -75,7 +98,7 @@ INLINE void     st_compiled_code_set_stack_depth     (st_oop_t code, int depth);
 
 INLINE void     st_compiled_code_set_instvar_index   (st_oop_t code, int depth);
 
-//INLINE void     st_compiled_code_set_literal_type    (st_oop_t code, st_cm_literal_type_t literal_type);
+INLINE void     st_compiled_code_set_literal_type    (st_oop_t code, st_compiled_code_literal_type_t literal_type);
 
 INLINE void     st_compiled_code_set_primitive_index (st_oop_t code, int index);
 
@@ -188,29 +211,6 @@ enum
     st_flag_mask_aligned        = st_flag_mask << st_flag_shift,
 };
 
-typedef enum
-{
-    st_cm_flag_normal,
-    st_cm_flag_return_receiver,
-    st_cm_flag_return_instvar,
-    st_cm_flag_return_literal,
-    st_cm_flag_primitive,
-
-} st_cm_flag_t;
-
-typedef enum
-{
-    st_cm_literal_nil,
-    st_cm_literal_true,
-    st_cm_literal_false,
-    st_cm_literal_minus_one,
-    st_cm_literal_zero,
-    st_cm_literal_one,
-    st_cm_literal_two,
-
-} st_cm_literal_type_t;
-
-
 #define ST_COMPILED_CODE(oop)   ((st_compiled_code_t *)   (ST_POINTER (oop)))
 #define ST_COMPILED_METHOD(oop) ((st_compiled_method_t *) (ST_POINTER (oop)))
 #define ST_COMPILED_BLOCK(oop)  ((st_compiled_block_t *)  (ST_POINTER (oop)))
@@ -296,7 +296,7 @@ st_compiled_code_set_instvar_index (st_oop_t code, int index)
 }
 
 INLINE void
-st_compiled_code_set_literal_type (st_oop_t code, st_cm_literal_type_t literal_type)
+st_compiled_code_set_literal_type (st_oop_t code, st_compiled_code_literal_type_t literal_type)
 {
     HEADER (code) = SET_BITFIELD (HEADER (code), literal, literal_type);
 }

@@ -91,6 +91,8 @@ INLINE void st_class_set_name (st_oop_t klass, st_oop_t name);
 
 INLINE void st_class_set_pool (st_oop_t klass, st_oop_t class_pool);
 
+GList *st_behavior_all_instance_variables (st_oop_t klass);
+
 const st_vtable_t *st_class_vtable (void);
 
 

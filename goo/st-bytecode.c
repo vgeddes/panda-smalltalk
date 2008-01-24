@@ -259,10 +259,10 @@ typedef enum
 
 typedef enum
 {
-    B			/* byte             */
-    BB
-    BS			/* byte, byte       */
-    BBS			/* byte, byte, byte */
+    B,			/* byte */
+    BB,
+    BS,			/* byte, byte       */
+    BBS,		/* byte, byte, byte */
 } format_t;
 
 typedef struct

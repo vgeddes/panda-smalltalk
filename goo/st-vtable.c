@@ -29,6 +29,7 @@
 static st_vtable_t tables[NUM_TABLES_MAX] = { { 0 } };
 static guint       num_tables = 0;
 
+
 /*
  * Returns a new vtable, derived from a parent_table.
  */
@@ -43,7 +44,7 @@ st_vtable_register (const st_vtable_t     *parent_table,
 
     table = &tables[num_tables++];
     
-    if (G_UNLIKELY (parent_table != NULL))
+    if (parent_table != NULL)
 	*table = *parent_table;
 
     init_func (table);

@@ -75,17 +75,8 @@ heap_object_describe (st_oop_t object)
 	return st_object_virtual (object)->describe (object);
   */
 
-    return g_strdup_printf (format,
-			    st_mark_nonpointer (st_heap_object_mark (object)),
-			    st_mark_readonly (st_heap_object_mark (object)),
-			    st_mark_hash (st_heap_object_mark (object)),
-			    (st_object_is_class (object) ?
-			     st_byte_array_bytes (st_class_name (object))
-			     : st_object_is_metaclass (object) ?
-			       g_strdup_printf ("%s class", st_byte_array_bytes
-					        (st_class_name (st_metaclass_instance_class (object))))
-			     : g_strdup_printf ("a %s", st_byte_array_bytes
-					        (st_class_name (st_object_class (object))))));
+    return g_strdup (format);
+   
 
 
 

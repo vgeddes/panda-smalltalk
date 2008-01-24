@@ -18,3 +18,4 @@ include Makefile-tests.am
 dist-hook:
 	@echo Generating ChangeLog
 	which bzr && bzr log --short > $(distdir)/ChangeLog
+

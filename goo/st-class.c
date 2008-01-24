@@ -66,6 +66,31 @@ class_verify (st_oop_t object)
 }
 
 
+GList *
+st_behavior_all_instance_variables (st_oop_t klass)
+{
+    GList *a = NULL, *b = NULL;
+    st_oop_t names;
+    st_smi_t size;
+
+    /* superclass of Object is nil */
+    if (klass == st_nil)
+	return NULL;
+    
+    /* recursively obtain instvar names from superclass */
+    a = st_behavior_all_instance_variables (st_behavior_superclass (klass));
+
+    names = st_behavior_instance_variables (klass);
+    if (names != st_nil) {
+	size = st_smi_value (st_array_size (names));
+	for (st_smi_t i = 1; i <= size; i++)
+	    b = g_list_append (b, st_byte_array_bytes (st_array_at (names, i)));
+    }
+
+    return g_list_concat (a, b);
+}
+
+
 static void
 st_class_vtable_init (st_vtable_t * table)
 {

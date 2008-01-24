@@ -23,6 +23,7 @@
 #include <st-types.h>
 #include <st-small-integer.h>
 #include <st-heap-object.h>
+#include <glib.h>
 
 typedef struct
 {
@@ -35,52 +36,14 @@ typedef struct
 } st_byte_array_t;
 
 
-INLINE st_oop_t st_byte_array_size (st_oop_t object);
+st_oop_t  st_byte_array_size (st_oop_t object);
 
-INLINE guchar *st_byte_array_bytes (st_oop_t object);
+guchar   *st_byte_array_bytes (st_oop_t object);
 
-INLINE guchar st_byte_array_at (st_oop_t object, st_smi_t i);
+guchar    st_byte_array_at (st_oop_t object, st_smi_t i);
 
-INLINE void st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value);
+void      st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value);
 
 const st_vtable_t *st_byte_array_vtable (void);
-
-
-/* inline definitions */
-#define ST_BYTE_ARRAY(oop) ((st_byte_array_t *) ST_POINTER (oop))
-
-INLINE st_oop_t
-st_byte_array_size (st_oop_t object)
-{
-    return ST_BYTE_ARRAY (object)->size;
-}
-
-INLINE guchar *
-st_byte_array_bytes (st_oop_t object)
-{
-    return ST_BYTE_ARRAY (object)->bytes;
-}
-
-INLINE bool
-st_byte_array_range_check (st_oop_t object, st_smi_t i)
-{
-    return 1 <= i && i <= st_smi_value (st_byte_array_size (object));
-}
-
-INLINE guchar
-st_byte_array_at (st_oop_t object, st_smi_t i)
-{
-    g_assert (1 <= i && i <= st_smi_value (st_byte_array_size (object)));
-
-    return st_byte_array_bytes (object)[i - 1];
-}
-
-INLINE void
-st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value)
-{
-    g_assert (1 <= i && i <= st_smi_value (st_byte_array_size (object)));
-
-    st_byte_array_bytes (object)[i - 1] = value;
-}
 
 #endif /* __ST_BYTE_ARRAY__ */

@@ -50,7 +50,6 @@
 #define obstack_chunk_alloc g_malloc
 #define obstack_chunk_free  g_free
 
-
 #define lookahead(self, k)   (st_input_look_ahead (self->input, k))
 #define consume(self)        (st_input_consume (self->input))
 #define mark(self)           (st_input_mark (self->input))
@@ -72,9 +71,9 @@ typedef enum
 struct st_lexer_t
 {
     st_input_t *input;
-
+    
     bool token_matched;
-
+    
     /* data for next token */
     guint line;
     guint column;
@@ -464,7 +463,6 @@ match_binary_selector (st_lexer_t *lexer, bool create_token)
     } else {
 	raise_error (lexer, ERROR_NO_VIABLE_ALT_FOR_CHAR, lookahead (lexer, 1));
     }
-
     if (create_token) {
 	make_token (lexer, ST_TOKEN_BINARY_SELECTOR,
 		    st_input_range (lexer->input,
@@ -601,11 +599,8 @@ match_white_space (st_lexer_t *lexer)
     /* gobble up white space */
     while (true) {
 	switch (lookahead (lexer, 1)) {
-	case ' ':
-	case '\r':
-	case '\n':
-	case '\t':
-	case '\f':
+	case  ' ': case '\r':
+	case '\n': case '\t': case '\f':
 	    consume (lexer);
 	    break;
 	default:
@@ -919,6 +914,3 @@ st_number_token_exponent (st_number_token_t *token)
 {
     return token->exponent;
 }
-
-
-
