@@ -23,7 +23,7 @@
 
 ST_DEFINE_VTABLE (st_large_integer, st_heap_object_vtable ());
 
-static st_oop_t large_integer_new (mp_int * value);
+static st_oop large_integer_new (mp_int * value);
 
 /* TODO: Move these functions to the primitive interface
  */
@@ -69,85 +69,86 @@ OP_PROLOGUE                          \
     result = op (VALUE (a), &value); \
 OP_EPILOGUE
 
-     static st_oop_t large_integer_add (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_add (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_add, a, b);
 }
 
-static st_oop_t
-large_integer_sub (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_sub (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_sub, a, b);
 }
 
-static st_oop_t
-large_integer_mul (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_mul (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_mul, a, b);
 }
 
-static st_oop_t
-large_integer_div (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_div (st_oop a, st_oop b, bool * error)
 {
     BINARY_DIV_OP (mp_div, a, b);
 }
 
-static st_oop_t
-large_integer_mod (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_mod (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_mod, a, b);
 }
 
-static st_oop_t
-large_integer_sqr (st_oop_t a, bool * error)
+static st_oop
+large_integer_sqr (st_oop a, bool * error)
 {
     UNARY_OP (mp_sqr, a);
 }
 
-static st_oop_t
-large_integer_neg (st_oop_t a, bool * error)
+static st_oop
+large_integer_neg (st_oop a, bool * error)
 {
     UNARY_OP (mp_neg, a);
 }
 
-static st_oop_t
-large_integer_abs (st_oop_t a, bool * error)
+static st_oop
+large_integer_abs (st_oop a, bool * error)
 {
     UNARY_OP (mp_abs, a);
 }
 
-static st_oop_t
-large_integer_gcd (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_gcd (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_gcd, a, b);
 }
 
-static st_oop_t
-large_integer_lcm (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_lcm (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_lcm, a, b);
 }
 
-static st_oop_t
-large_integer_bitor (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_bitor (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_or, a, b);
 }
 
-static st_oop_t
-large_integer_bitand (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_bitand (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_and, a, b);
 }
 
-static st_oop_t
-large_integer_bitxor (st_oop_t a, st_oop_t b, bool * error)
+static st_oop
+large_integer_bitxor (st_oop a, st_oop b, bool * error)
 {
     BINARY_OP (mp_xor, a, b);
 }
 
-static st_oop_t
-large_integer_bitshift (st_oop_t a, int shift, bool * error)
+static st_oop
+large_integer_bitshift (st_oop a, int shift, bool * error)
 {
     mp_int value;
     int result;
@@ -175,28 +176,28 @@ large_integer_bitshift (st_oop_t a, int shift, bool * error)
 
 
 static bool
-large_integer_eq (st_oop_t a, st_oop_t b, bool * error)
+large_integer_eq (st_oop a, st_oop b, bool * error)
 {
     *error = false;
     return mp_cmp (VALUE (a), VALUE (b)) == MP_EQ;
 }
 
 static bool
-large_integer_lt (st_oop_t a, st_oop_t b, bool * error)
+large_integer_lt (st_oop a, st_oop b, bool * error)
 {
     *error = false;
     return mp_cmp (VALUE (a), VALUE (b)) == MP_LT;
 }
 
 static bool
-large_integer_gt (st_oop_t a, st_oop_t b, bool * error)
+large_integer_gt (st_oop a, st_oop b, bool * error)
 {
     *error = false;
     return mp_cmp (VALUE (a), VALUE (b)) == MP_GT;
 }
 
 static bool
-large_integer_le (st_oop_t a, st_oop_t b, bool * error)
+large_integer_le (st_oop a, st_oop b, bool * error)
 {
     *error = false;
     int relation = mp_cmp (VALUE (a), VALUE (b));
@@ -204,7 +205,7 @@ large_integer_le (st_oop_t a, st_oop_t b, bool * error)
 }
 
 static bool
-large_integer_ge (st_oop_t a, st_oop_t b, bool * error)
+large_integer_ge (st_oop a, st_oop b, bool * error)
 {
     *error = false;
     int relation = mp_cmp (VALUE (a), VALUE (b));
@@ -212,14 +213,14 @@ large_integer_ge (st_oop_t a, st_oop_t b, bool * error)
 }
 
 static bool
-large_integer_is_positive (st_oop_t a, bool * error)
+large_integer_is_positive (st_oop a, bool * error)
 {
     *error = false;
     return SIGN (VALUE (a)) != MP_NEG;
 }
 
 static bool
-large_integer_is_prime (st_oop_t a, bool * error)
+large_integer_is_prime (st_oop a, bool * error)
 {
     int result;
     int isprime;
@@ -237,7 +238,7 @@ large_integer_is_prime (st_oop_t a, bool * error)
 }
 
 
-st_oop_t
+st_oop
 st_large_integer_new_from_string (const char *string, guint radix)
 {
     mp_int value;
@@ -262,7 +263,7 @@ st_large_integer_new_from_string (const char *string, guint radix)
 }
 
 char *
-st_large_integer_to_string (st_oop_t integer, guint radix)
+st_large_integer_to_string (st_oop integer, guint radix)
 {
     int result;
     int size;
@@ -284,10 +285,10 @@ st_large_integer_to_string (st_oop_t integer, guint radix)
     return NULL;
 }
 
-static st_oop_t
+static st_oop
 allocate_with_value (mp_int * value)
 {
-    st_oop_t object = st_allocate_object (sizeof (st_large_integer_t) / sizeof (st_oop_t));
+    st_oop object = st_allocate_object (sizeof (STLargeInteger) / sizeof (st_oop));
 
     if (value)
 	*VALUE (object) = *value;
@@ -298,20 +299,28 @@ allocate_with_value (mp_int * value)
 }
 
 
-static st_oop_t
+static st_oop
 large_integer_new (mp_int * value)
 {
     return allocate_with_value (value);
 }
 
-static st_oop_t
-allocate (st_oop_t klass)
+
+st_oop
+st_large_integer_new (mp_int * value)
+{
+    return allocate_with_value (value);
+}
+
+
+static st_oop
+allocate (st_oop klass)
 {
     return allocate_with_value (NULL);
 }
 
 static void
-st_large_integer_vtable_init (st_vtable_t * table)
+st_large_integer_vtable_init (STVTable * table)
 {
 
     table->allocate = allocate;

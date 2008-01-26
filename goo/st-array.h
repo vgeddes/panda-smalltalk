@@ -27,39 +27,39 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
-    st_oop_t size;
+    st_oop size;
 
-    st_oop_t elements[];
+    st_oop elements[];
 
-} st_array_t;
+} STArray;
 
 
-INLINE st_oop_t st_array_size (st_oop_t object);
+INLINE st_oop st_array_size (st_oop object);
 
-INLINE bool st_array_range_check (st_oop_t object, st_smi_t i);
+INLINE bool st_array_range_check (st_oop object, st_smi i);
 
-INLINE st_oop_t *st_array_element (st_oop_t object, st_smi_t i);
+INLINE st_oop *st_array_element (st_oop object, st_smi i);
 
-INLINE st_oop_t st_array_at (st_oop_t object, st_smi_t i);
+INLINE st_oop st_array_at (st_oop object, st_smi i);
 
-INLINE void st_array_at_put (st_oop_t object, st_smi_t i, st_oop_t value);
+INLINE void st_array_at_put (st_oop object, st_smi i, st_oop value);
 
-const st_vtable_t *st_array_vtable (void);
+const STVTable *st_array_vtable (void);
 
 
 /* inline definitions */
-#define ST_ARRAY(oop) ((st_array_t *) ST_POINTER (oop))
+#define ST_ARRAY(oop) ((STArray *) ST_POINTER (oop))
 
-INLINE st_oop_t
-st_array_size (st_oop_t object)
+INLINE st_oop
+st_array_size (st_oop object)
 {
     return ST_ARRAY (object)->size;
 }
 
 INLINE bool
-st_array_range_check (st_oop_t object, st_smi_t i)
+st_array_range_check (st_oop object, st_smi i)
 {
     return 1 <= i && i <= st_smi_value (st_array_size (object));
 }
@@ -67,8 +67,8 @@ st_array_range_check (st_oop_t object, st_smi_t i)
 /* 
  * returns address of element at index i > 0
  */
-INLINE st_oop_t *
-st_array_element (st_oop_t object, st_smi_t i)
+INLINE st_oop *
+st_array_element (st_oop object, st_smi i)
 {
     /* by obtaining the element address as an offset from `&array->size',
      * we avoid the slight overhead of subtraction if we had used `&array->elements[i - 1]' instead.
@@ -76,8 +76,8 @@ st_array_element (st_oop_t object, st_smi_t i)
     return (&ST_ARRAY (object)->size) + i;
 }
 
-INLINE st_oop_t
-st_array_at (st_oop_t object, st_smi_t i)
+INLINE st_oop
+st_array_at (st_oop object, st_smi i)
 {
     g_assert (1 <= i && i <= st_array_size (object));
 
@@ -85,7 +85,7 @@ st_array_at (st_oop_t object, st_smi_t i)
 }
 
 INLINE void
-st_array_at_put (st_oop_t object, st_smi_t i, st_oop_t value)
+st_array_at_put (st_oop object, st_smi i, st_oop value)
 {
     g_assert (1 <= i && i <= st_array_size (object));
 

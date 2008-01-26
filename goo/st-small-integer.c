@@ -24,7 +24,7 @@
 ST_DEFINE_VTABLE (st_smi, st_object_vtable ());
 
 static void
-st_smi_vtable_init (st_vtable_t * table)
+st_smi_vtable_init (STVTable * table)
 {
 
 }

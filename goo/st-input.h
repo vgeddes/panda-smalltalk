@@ -22,7 +22,7 @@
 
 #include <glib.h>
 
-typedef struct st_input_t st_input_t;
+typedef struct STInput STInput;
 
 enum
 {
@@ -30,28 +30,28 @@ enum
 };
 
 
-st_input_t *st_input_new          (const char *string);
+STInput *st_input_new          (const char *string);
 
-gunichar   st_input_look_ahead   (st_input_t *input, int i);
+gunichar   st_input_look_ahead   (STInput *input, int i);
 
-guint      st_input_get_line     (st_input_t *input);
+guint      st_input_get_line     (STInput *input);
 
-guint      st_input_get_column   (st_input_t *input);
+guint      st_input_get_column   (STInput *input);
 
-void       st_input_mark         (st_input_t *input);
+void       st_input_mark         (STInput *input);
 
-void       st_input_rewind       (st_input_t *input);
+void       st_input_rewind       (STInput *input);
 
-void       st_input_seek    (st_input_t *input, guint index);
+void       st_input_seek    (STInput *input, guint index);
 
-void       st_input_consume (st_input_t *input);
+void       st_input_consume (STInput *input);
 
-guint      st_input_size    (st_input_t *input);
+guint      st_input_size    (STInput *input);
 
-guint      st_input_index   (st_input_t *input);
+guint      st_input_index   (STInput *input);
 
-char      *st_input_range (st_input_t *input, guint start, guint end);
+char      *st_input_range (STInput *input, guint start, guint end);
 
-void       st_input_destroy   (st_input_t *input);
+void       st_input_destroy   (STInput *input);
 
 #endif /* __ST_INPUT_H__ */

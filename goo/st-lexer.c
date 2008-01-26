@@ -23,7 +23,7 @@
  * inefficient, but more straightforward than munging around with
  * multi-byte characters.
  *
- * Character input is supplied by the st_input_t object. It keeps track of
+ * Character input is supplied by the STInput object. It keeps track of
  * line/column numbers and has the ability to mark() and rewind() on the
  * input stream.
  *
@@ -66,11 +66,11 @@ typedef enum
     ERROR_INVALID_CHAR_CONST,
     ERROR_NO_ALT_FOR_POUND,
 
-} error_code_t;
+} ErrorCode;
 
-struct st_lexer_t
+struct STLexer
 {
-    st_input_t *input;
+    STInput *input;
     
     bool token_matched;
     
@@ -78,14 +78,14 @@ struct st_lexer_t
     guint line;
     guint column;
     guint start;
-    st_token_t *token;
+    STToken *token;
 
     /* error control */
     bool failed;
     jmp_buf main_loop;
     
     /* last error information */
-    error_code_t error_code;
+    ErrorCode    error_code;
     guint        error_line;
     guint        error_column;
     gunichar     error_char;
@@ -94,30 +94,30 @@ struct st_lexer_t
     struct obstack allocator;
 };
 
-struct st_token_t
+struct STToken
 {
-    st_token_type_t type;
+    STTokenType type;
     char *text;
     int   line;
     int   column;
 };
 
-struct st_number_token_t
+struct STNumberToken
 {
-    st_token_t parent;
+    STToken parent;
     
     int   radix;
     int   exponent;
 };
 
 static void
-make_token (st_lexer_t      *lexer,
-	    st_token_type_t  type,
+make_token (STLexer      *lexer,
+	    STTokenType  type,
 	    char            *text)
 {
-    st_token_t *token;
+    STToken *token;
 
-    token = obstack_alloc (&lexer->allocator, sizeof (st_token_t));
+    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
     
     token->type   = type;
     token->text   = text ? text : g_strdup ("");
@@ -130,18 +130,18 @@ make_token (st_lexer_t      *lexer,
 }
 
 static void
-make_number_token (st_lexer_t *lexer, int radix, int exponent, char *number)
+make_number_token (STLexer *lexer, int radix, int exponent, char *number)
 {
-    st_token_t *token;
+    STToken *token;
 
-    token = obstack_alloc (&lexer->allocator, sizeof (st_number_token_t));
+    token = obstack_alloc (&lexer->allocator, sizeof (STNumberToken));
     
     token->type   = ST_TOKEN_NUMBER_CONST;
     token->text   = number;
     token->line   = lexer->line;
     token->column = lexer->column;
 
-    st_number_token_t *number_token = ST_NUMBER_TOKEN (token);
+    STNumberToken *number_token = ST_NUMBER_TOKEN (token);
     number_token->radix    = radix;
     number_token->exponent = exponent;
 
@@ -150,8 +150,8 @@ make_number_token (st_lexer_t *lexer, int radix, int exponent, char *number)
 }
 
 static void
-raise_error (st_lexer_t   *lexer,
-	     error_code_t  error_code,
+raise_error (STLexer   *lexer,
+	     ErrorCode  error_code,
 	     gunichar      error_char)
 {
     lexer->failed = true;
@@ -172,7 +172,7 @@ raise_error (st_lexer_t   *lexer,
 }
 
 static void
-match_range (st_lexer_t *lexer, gunichar a, gunichar b)
+match_range (STLexer *lexer, gunichar a, gunichar b)
 {
     if (lookahead (lexer, 1) < a || lookahead (lexer, 1) > b) {
 	// mismatch error
@@ -182,7 +182,7 @@ match_range (st_lexer_t *lexer, gunichar a, gunichar b)
 }
 
 static void
-match (st_lexer_t *lexer, gunichar c)
+match (STLexer *lexer, gunichar c)
 {
     if (lookahead (lexer, 1) != c) {
 	// mismatch error
@@ -227,7 +227,7 @@ is_radix_numeral (guint radix, gunichar c)
  * be done in the parser. 
  */
 static void
-match_number (st_lexer_t *lexer)
+match_number (STLexer *lexer)
 {
     /* We don't match any leading '-'. The parser will resolve whether a '-'
      * specifies a negative number or a binary selector
@@ -314,7 +314,7 @@ out2:
 
 
 static void
-match_identifier (st_lexer_t *lexer, bool create_token)
+match_identifier (STLexer *lexer, bool create_token)
 {
     if (g_unichar_isalpha (lookahead (lexer, 1)))
 	consume (lexer);
@@ -341,7 +341,7 @@ match_identifier (st_lexer_t *lexer, bool create_token)
 }
 
 static void
-match_keyword_or_identifier (st_lexer_t *lexer, bool create_token)
+match_keyword_or_identifier (STLexer *lexer, bool create_token)
 {
     if (g_unichar_isalpha (lookahead (lexer, 1)))
 	consume (lexer);
@@ -361,7 +361,7 @@ match_keyword_or_identifier (st_lexer_t *lexer, bool create_token)
 	    break;
     }
 
-    st_token_type_t token_type;
+    STTokenType token_type;
 
     if (lookahead (lexer, 1) == ':') {
 	consume (lexer);
@@ -386,7 +386,7 @@ match_keyword_or_identifier (st_lexer_t *lexer, bool create_token)
 }
 
 static void
-match_string_constant (st_lexer_t *lexer)
+match_string_constant (STLexer *lexer)
 {
     mark (lexer);
 
@@ -413,7 +413,7 @@ match_string_constant (st_lexer_t *lexer)
 }
 
 static void
-match_comment (st_lexer_t *lexer)
+match_comment (STLexer *lexer)
 {
     mark (lexer);
 
@@ -440,7 +440,7 @@ match_comment (st_lexer_t *lexer)
 }
 
 static void
-match_tuple_begin (st_lexer_t *lexer)
+match_tuple_begin (STLexer *lexer)
 {
     match (lexer, '#');
     match (lexer, '(');
@@ -449,7 +449,7 @@ match_tuple_begin (st_lexer_t *lexer)
 }
 
 static void
-match_binary_selector (st_lexer_t *lexer, bool create_token)
+match_binary_selector (STLexer *lexer, bool create_token)
 {
     if (lookahead (lexer, 1) == '-') {
 	match (lexer, '-');
@@ -472,7 +472,7 @@ match_binary_selector (st_lexer_t *lexer, bool create_token)
 }
 
 static void
-match_symbol_constant (st_lexer_t *lexer)
+match_symbol_constant (STLexer *lexer)
 {
     match (lexer, '#');
 
@@ -497,7 +497,7 @@ match_symbol_constant (st_lexer_t *lexer)
 }
 
 static void
-match_block_begin (st_lexer_t *lexer)
+match_block_begin (STLexer *lexer)
 {
     match (lexer, '[');
 
@@ -505,7 +505,7 @@ match_block_begin (st_lexer_t *lexer)
 }
 
 static void
-match_block_end (st_lexer_t *lexer)
+match_block_end (STLexer *lexer)
 {
     match (lexer, ']');
 
@@ -513,7 +513,7 @@ match_block_end (st_lexer_t *lexer)
 }
 
 static void
-match_lparen (st_lexer_t *lexer)
+match_lparen (STLexer *lexer)
 {
     match (lexer, '(');
 
@@ -521,7 +521,7 @@ match_lparen (st_lexer_t *lexer)
 }
 
 static void
-match_rparen (st_lexer_t *lexer)
+match_rparen (STLexer *lexer)
 {
     match (lexer, ')');
 
@@ -529,7 +529,7 @@ match_rparen (st_lexer_t *lexer)
 }
 
 static void
-match_char_constant (st_lexer_t *lexer)
+match_char_constant (STLexer *lexer)
 {
     gunichar ch =0;
     match (lexer, '$');
@@ -586,7 +586,7 @@ match_char_constant (st_lexer_t *lexer)
 }
 
 static void
-match_eof (st_lexer_t *lexer)
+match_eof (STLexer *lexer)
 {
     match (lexer, ST_INPUT_EOF);
 
@@ -594,7 +594,7 @@ match_eof (st_lexer_t *lexer)
 }
 
 static void
-match_white_space (st_lexer_t *lexer)
+match_white_space (STLexer *lexer)
 {
     /* gobble up white space */
     while (true) {
@@ -610,21 +610,21 @@ match_white_space (st_lexer_t *lexer)
 }
 
 static void
-match_colon (st_lexer_t *lexer)
+match_colon (STLexer *lexer)
 {
     match (lexer, ':');
     make_token (lexer, ST_TOKEN_COLON, NULL);
 }
 
 static void
-match_semicolon (st_lexer_t *lexer)
+match_semicolon (STLexer *lexer)
 {
     match (lexer, ';');
     make_token (lexer, ST_TOKEN_SEMICOLON, NULL);
 }
 
 static void
-match_assign (st_lexer_t *lexer)
+match_assign (STLexer *lexer)
 {
     match (lexer, ':');
     match (lexer, '=');
@@ -632,21 +632,21 @@ match_assign (st_lexer_t *lexer)
 }
 
 static void
-match_period (st_lexer_t *lexer)
+match_period (STLexer *lexer)
 {
     match (lexer, '.');
     make_token (lexer, ST_TOKEN_PERIOD, ".");
 }
 
 static void
-match_return (st_lexer_t *lexer)
+match_return (STLexer *lexer)
 {
     match (lexer, '^');
     make_token (lexer, ST_TOKEN_RETURN, "^");
 }
 
 /* st_lexer_next_token:
- * lexer: a st_lexer_t
+ * lexer: a st_lexer
  *
  * Returns the next matched token from the input stream. Caller takes
  * ownership of returned token.
@@ -656,8 +656,8 @@ match_return (st_lexer_t *lexer)
  * of type ST_TOKEN_INVALID will be returned;
  *
  */
-st_token_t *
-st_lexer_next_token (st_lexer_t *lexer)
+STToken *
+st_lexer_next_token (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
@@ -766,14 +766,14 @@ st_lexer_next_token (st_lexer_t *lexer)
     }
 }
 
-st_lexer_t *
+STLexer *
 st_lexer_new (const char *text)
 {
-    st_lexer_t *lexer;
+    STLexer *lexer;
 
     g_assert (text != NULL);
 
-    lexer = g_slice_new0 (st_lexer_t);
+    lexer = g_slice_new0 (STLexer);
 
     lexer->input = st_input_new (text);
 
@@ -792,7 +792,7 @@ st_lexer_new (const char *text)
 }
 
 void
-st_lexer_destroy (st_lexer_t *lexer)
+st_lexer_destroy (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
@@ -801,11 +801,11 @@ st_lexer_destroy (st_lexer_t *lexer)
     // destroy all allocated tokens;
     obstack_free (&lexer->allocator, NULL);
 
-    g_slice_free (st_lexer_t, lexer);
+    g_slice_free (STLexer, lexer);
 }
 
-st_token_type_t
-st_token_type (st_token_t *token)
+STTokenType
+st_token_type (STToken *token)
 {
     g_assert (token != NULL);
 
@@ -813,7 +813,7 @@ st_token_type (st_token_t *token)
 }
 
 char *
-st_token_text (st_token_t *token)
+st_token_text (STToken *token)
 {
     g_assert (token != NULL);
 
@@ -821,7 +821,7 @@ st_token_text (st_token_t *token)
 }
 
 guint
-st_token_line (st_token_t *token)
+st_token_line (STToken *token)
 {
     g_assert (token != NULL);
 
@@ -829,7 +829,7 @@ st_token_line (st_token_t *token)
 }
 
 guint
-st_token_column (st_token_t *token)
+st_token_column (STToken *token)
 {
     g_assert (token != NULL);
 
@@ -837,7 +837,7 @@ st_token_column (st_token_t *token)
 }
 
 guint
-st_lexer_error_line (st_lexer_t *lexer)
+st_lexer_error_line (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
@@ -845,7 +845,7 @@ st_lexer_error_line (st_lexer_t *lexer)
 }
 
 guint
-st_lexer_error_column (st_lexer_t *lexer)
+st_lexer_error_column (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
@@ -853,7 +853,7 @@ st_lexer_error_column (st_lexer_t *lexer)
 }
 
 gunichar
-st_lexer_error_char (st_lexer_t *lexer)
+st_lexer_error_char (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
@@ -861,7 +861,7 @@ st_lexer_error_char (st_lexer_t *lexer)
 }
 
 char *
-st_lexer_error_message (st_lexer_t *lexer)
+st_lexer_error_message (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
@@ -897,20 +897,20 @@ st_lexer_error_message (st_lexer_t *lexer)
     }
 }
 
-st_token_t *
-st_lexer_current_token (st_lexer_t *lexer)
+STToken *
+st_lexer_current_token (STLexer *lexer)
 {
     return lexer->token;
 }
 
 guint
-st_number_token_radix (st_number_token_t *token)
+st_number_token_radix (STNumberToken *token)
 {
     return token->radix;
 }
 
 int
-st_number_token_exponent (st_number_token_t *token)
+st_number_token_exponent (STNumberToken *token)
 {
     return token->exponent;
 }

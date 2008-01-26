@@ -26,18 +26,17 @@
  */ 
 #define NUM_TABLES_MAX 15
 
-static st_vtable_t tables[NUM_TABLES_MAX] = { { 0 } };
-static guint       num_tables = 0;
-
+static STVTable tables[NUM_TABLES_MAX] = { { 0 } };
+static guint     num_tables = 0;
 
 /*
  * Returns a new vtable, derived from a parent_table.
  */
-const st_vtable_t *
-st_vtable_register (const st_vtable_t     *parent_table,
-		    st_vtable_init_func_t  init_func)
+const STVTable *
+st_vtable_register (const STVTable     *parent_table,
+		    STVTableInitFunc   init_func)
 {
-    st_vtable_t * table;
+    STVTable * table;
 
     g_assert (init_func != NULL);
     g_assert (num_tables < NUM_TABLES_MAX);

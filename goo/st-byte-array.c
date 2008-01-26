@@ -27,29 +27,29 @@
 ST_DEFINE_VTABLE (st_byte_array, st_heap_object_vtable ());
 
 
-#define ST_BYTE_ARRAY(oop) ((st_byte_array_t *) ST_POINTER (oop))
+#define ST_BYTE_ARRAY(oop) ((STByteArray *) ST_POINTER (oop))
 
 
-st_oop_t
-st_byte_array_size (st_oop_t object)
+st_oop
+st_byte_array_size (st_oop object)
 {
     return ST_BYTE_ARRAY (object)->size;
 }
 
 guchar *
-st_byte_array_bytes (st_oop_t object)
+st_byte_array_bytes (st_oop object)
 {
     return ST_BYTE_ARRAY (object)->bytes;
 }
 
 bool
-st_byte_array_range_check (st_oop_t object, st_smi_t i)
+st_byte_array_range_check (st_oop object, st_smi i)
 {
     return 1 <= i && i <= st_smi_value (st_byte_array_size (object));
 }
 
 guchar
-st_byte_array_at (st_oop_t object, st_smi_t i)
+st_byte_array_at (st_oop object, st_smi i)
 {
     g_assert (1 <= i && i <= st_smi_value (st_byte_array_size (object)));
 
@@ -57,7 +57,7 @@ st_byte_array_at (st_oop_t object, st_smi_t i)
 }
 
 void
-st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value)
+st_byte_array_at_put (st_oop object, st_smi i, guchar value)
 {
     g_assert (1 <= i && i <= st_smi_value (st_byte_array_size (object)));
 
@@ -66,22 +66,22 @@ st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value)
 
 
 static bool
-byte_array_verify (st_oop_t object)
+byte_array_verify (st_oop object)
 {    
     if (!st_heap_object_vtable ()->verify (object))
 	return false;
 
-    st_oop_t size = st_byte_array_size (object);
+    st_oop size = st_byte_array_size (object);
     if (!st_object_is_smi (size) || !(st_smi_value (size) > 0))
 	return false;
 
     return true;
 }
 
-INLINE st_smi_t
-round_size (st_smi_t size)
+INLINE st_smi
+round_size (st_smi size)
 {
-    /* round off number of bytes to a multiple of st_oop_t size (i.e. a multiple of 4 or 8 bytes,
+    /* round off number of bytes to a multiple of st_oop size (i.e. a multiple of 4 or 8 bytes,
      * depending on the platform).
      * 
      * we also include space for a null terminator. By doing this, we don't
@@ -92,21 +92,21 @@ round_size (st_smi_t size)
      */
     size += 1;
 
-    int r = size % sizeof (st_oop_t);
+    int r = size % sizeof (st_oop);
 
     if (r == 0)
 	return size;
     else
-	return size - r + sizeof (st_oop_t);
+	return size - r + sizeof (st_oop);
 }
 
-static st_oop_t
-allocate_arrayed (st_oop_t klass, st_smi_t size)
+static st_oop
+allocate_arrayed (st_oop klass, st_smi size)
 {
     g_assert (size > 0);
 
-    st_smi_t size_rounded = round_size (size);
-    st_oop_t array = st_allocate_object (ST_TYPE_SIZE (st_byte_array_t) + (size_rounded / sizeof (st_oop_t)));
+    st_smi size_rounded = round_size (size);
+    st_oop array = st_allocate_object (ST_TYPE_SIZE (STByteArray) + (size_rounded / sizeof (st_oop)));
 
     st_object_initialize_header (array, klass);
     ST_BYTE_ARRAY (array)->size = st_smi_new (size);
@@ -116,8 +116,8 @@ allocate_arrayed (st_oop_t klass, st_smi_t size)
     return array;
 }
 
-static st_oop_t
-allocate (st_oop_t klass)
+static st_oop
+allocate (st_oop klass)
 {
     return allocate_arrayed (klass, 0);
 }
@@ -135,9 +135,9 @@ is_arrayed (void)
 }
 
 static bool
-byte_array_equal (st_oop_t object, st_oop_t another)
+byte_array_equal (st_oop object, st_oop another)
 {
-    st_smi_t size1, size2;
+    st_smi size1, size2;
 
     if (!st_object_is_byte_array (another))
 	return false;
@@ -152,7 +152,7 @@ byte_array_equal (st_oop_t object, st_oop_t another)
 }
 
 static guint
-byte_array_hash (st_oop_t object)
+byte_array_hash (st_oop object)
 {
     const signed char *p = (signed char *) st_byte_array_bytes (object);
     guint32 h = *p;
@@ -162,7 +162,7 @@ byte_array_hash (st_oop_t object)
     if (size == 0 || !h)
 	return h;
 
-    for (st_smi_t i = 1; i < size; i++) {
+    for (st_smi i = 1; i < size; i++) {
 	h = (h << 5) - h + *(p + i);
     }
 
@@ -170,9 +170,9 @@ byte_array_hash (st_oop_t object)
 }
 
 static void
-st_byte_array_vtable_init (st_vtable_t * table)
+st_byte_array_vtable_init (STVTable * table)
 {
-    assert_static (sizeof (st_byte_array_t) == (sizeof (st_header_t) + sizeof (st_oop_t)));
+    assert_static (sizeof (STByteArray) == (sizeof (STHeader) + sizeof (st_oop)));
 
     table->allocate = allocate;
     table->allocate_arrayed = allocate_arrayed;

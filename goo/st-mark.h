@@ -24,11 +24,11 @@
 #include <st-utils.h>
 #include <stdio.h>
 
-INLINE st_oop_t st_mark_new (void);
-INLINE int st_mark_hash (st_oop_t mark);
-INLINE st_oop_t st_mark_set_hash (st_oop_t mark, int value);
-INLINE bool st_mark_readonly (st_oop_t mark);
-INLINE st_oop_t st_mark_set_readonly (st_oop_t mark, bool readonly);
+INLINE st_oop st_mark_new (void);
+INLINE int st_mark_hash (st_oop mark);
+INLINE st_oop st_mark_set_hash (st_oop mark, int value);
+INLINE bool st_mark_readonly (st_oop mark);
+INLINE st_oop st_mark_set_readonly (st_oop mark, bool readonly);
 
 
 
@@ -69,13 +69,13 @@ enum
 extern int _st_current_hash;
 
 INLINE int
-st_mark_hash (st_oop_t mark)
+st_mark_hash (st_oop mark)
 {
     return (mark >> st_hash_shift) & st_hash_mask;
 }
 
-INLINE st_oop_t
-st_mark_set_hash (st_oop_t mark, int value)
+INLINE st_oop
+st_mark_set_hash (st_oop mark, int value)
 {
     if ((value & st_hash_mask) == 0)
 	value = 1;
@@ -83,34 +83,34 @@ st_mark_set_hash (st_oop_t mark, int value)
 }
 
 INLINE bool
-st_mark_readonly (st_oop_t mark)
+st_mark_readonly (st_oop mark)
 {
     return (mark >> st_readonly_shift) & st_readonly_mask;
 }
 
-INLINE st_oop_t
-st_mark_set_readonly (st_oop_t mark, bool readonly)
+INLINE st_oop
+st_mark_set_readonly (st_oop mark, bool readonly)
 {
     return (mark & ~st_readonly_mask_in_place) | ((readonly ? 1 : 0) << st_readonly_shift);
 }
 
 INLINE bool
-st_mark_nonpointer (st_oop_t mark)
+st_mark_nonpointer (st_oop mark)
 {
     return (mark >> st_nonpointer_shift) & st_nonpointer_mask;
 }
 
-INLINE st_oop_t
-st_mark_set_nonpointer (st_oop_t mark, bool nonpointer)
+INLINE st_oop
+st_mark_set_nonpointer (st_oop mark, bool nonpointer)
 {
     return (mark & ~st_nonpointer_mask_in_place) | ((nonpointer ? 1 : 0) << st_nonpointer_shift);
 }
 
 
-INLINE st_oop_t
+INLINE st_oop
 st_mark_new (void)
 {
-    st_oop_t mark = (st_oop_t) ST_MARK_TAG;
+    st_oop mark = (st_oop) ST_MARK_TAG;
     mark = st_mark_set_hash (mark, _st_current_hash++);
     mark = st_mark_set_readonly (mark, false);
     mark = st_mark_set_nonpointer (mark, false);

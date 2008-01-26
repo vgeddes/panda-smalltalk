@@ -37,22 +37,22 @@ is_arrayed (void)
 }
 
 static bool
-array_verify (st_oop_t object)
+array_verify (st_oop object)
 {
     if (!st_heap_object_vtable ()->verify (object))
 	return false;
    
     // variable size
-    st_oop_t size = st_array_size (object);
+    st_oop size = st_array_size (object);
     if (!(st_object_is_smi (size) && (st_smi_value (size) > 0))) {
 	g_debug ("GABA: %li\n", st_smi_value (size));
 	return false;
 
     }
 
-    for (st_smi_t i = 1; i <= st_smi_value (size); i++) {
+    for (st_smi i = 1; i <= st_smi_value (size); i++) {
 
-	st_oop_t el = st_array_at (object, i);
+	st_oop el = st_array_at (object, i);
 
 	if ((!st_object_is_smi (el)) && (!st_object_is_heap (el)))
 	    return false;
@@ -61,31 +61,31 @@ array_verify (st_oop_t object)
     return true;
 }
 
-static st_oop_t
-allocate_arrayed (st_oop_t klass, st_smi_t size)
+static st_oop
+allocate_arrayed (st_oop klass, st_smi size)
 {
     g_assert (size > 0);
 
-    st_oop_t array = st_allocate_object (ST_TYPE_SIZE (st_array_t) + size);
+    st_oop array = st_allocate_object (ST_TYPE_SIZE (STArray) + size);
 
     st_object_initialize_header (array, klass);
     ST_ARRAY (array)->size = st_smi_new (size);
 
-    st_oop_t *elements = st_array_element (array, 1);
-    for (st_smi_t i = 0; i < size; i++)
+    st_oop *elements = st_array_element (array, 1);
+    for (st_smi i = 0; i < size; i++)
 	elements[i] = st_nil;
 
     return array;
 }
 
-static st_oop_t
-allocate (st_oop_t klass)
+static st_oop
+allocate (st_oop klass)
 {
     return allocate_arrayed (klass, 0);
 }
 
 static void
-st_array_vtable_init (st_vtable_t * table)
+st_array_vtable_init (STVTable * table)
 {
     table->allocate = allocate;
     table->allocate_arrayed = allocate_arrayed;

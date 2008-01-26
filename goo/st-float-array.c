@@ -27,12 +27,12 @@ is_arrayed (void)
     return true;
 }
 
-static st_oop_t
-allocate_arrayed (st_oop_t klass, st_smi_t size)
+static st_oop
+allocate_arrayed (st_oop klass, st_smi size)
 {
     g_assert (size > 0);
 
-    st_oop_t object = st_allocate_object (ST_TYPE_SIZE (st_float_array_t) + size);
+    st_oop object = st_allocate_object (ST_TYPE_SIZE (st_float_array) + size);
     
     st_object_initialize_header (object, klass);
 
@@ -40,21 +40,21 @@ allocate_arrayed (st_oop_t klass, st_smi_t size)
 
     double *elements = ST_FLOAT_ARRAY (object)->elements;
 
-    for (st_smi_t i = 0; i < size; i++)
+    for (st_smi i = 0; i < size; i++)
 	elements[i] = (double) 0;
 
 }
 
-static st_oop_t
-allocate (st_oop_t klass)
+static st_oop
+allocate (st_oop klass)
 {
     return allocate_arrayed (klass, 0);
 }
 
 static void
-st_float_vtable_init (st_vtable_t * table)
+st_float_vtable_init (STVTable * table)
 {
-    assert_static (sizeof (st_float_array_t) == (sizeof (st_header_t) + sizeof (st_oop_t)));
+    assert_static (sizeof (st_float_array) == (sizeof (STHeader) + sizeof (st_oop)));
 
     table->allocate_arrayed = allocate_arrayed;
     table->allocate = allocate;

@@ -25,15 +25,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef struct marker_t
+typedef struct Marker
 {
     int p;
     int line;
     int column;
 
-} marker_t;
+} Marker;
 
-struct st_input_t
+struct STInput
 {
     gunichar *text;
 
@@ -43,11 +43,11 @@ struct st_input_t
     guint line;     /* current line number, starting from 1 */
     guint column;   /* current column number, starting from 1 */
 
-    marker_t marker;
+    Marker marker;
 };
 
 void
-st_input_destroy (st_input_t *input)
+st_input_destroy (STInput *input)
 {
     g_assert (input != NULL);
 
@@ -55,7 +55,7 @@ st_input_destroy (st_input_t *input)
 }
 
 guint
-st_input_get_line (st_input_t *input)
+st_input_get_line (STInput *input)
 {
     g_assert (input != NULL);
 
@@ -63,7 +63,7 @@ st_input_get_line (st_input_t *input)
 }
 
 guint
-st_input_get_column (st_input_t *input)
+st_input_get_column (STInput *input)
 {
     g_assert (input != NULL);
 
@@ -71,7 +71,7 @@ st_input_get_column (st_input_t *input)
 }
 
 gunichar
-st_input_look_ahead (st_input_t *input, int i)
+st_input_look_ahead (STInput *input, int i)
 {
     g_assert (input != NULL);
 
@@ -95,7 +95,7 @@ st_input_look_ahead (st_input_t *input, int i)
 }
 
 void
-st_input_mark (st_input_t *input)
+st_input_mark (STInput *input)
 {
     g_assert (input != NULL);
     
@@ -105,7 +105,7 @@ st_input_mark (st_input_t *input)
 }
 
 void
-st_input_rewind (st_input_t *input)
+st_input_rewind (STInput *input)
 {
     g_assert (input != NULL);
     
@@ -116,7 +116,7 @@ st_input_rewind (st_input_t *input)
 }
 
 void
-st_input_seek (st_input_t *input, guint index)
+st_input_seek (STInput *input, guint index)
 {
     g_assert (input != NULL);
 
@@ -129,7 +129,7 @@ st_input_seek (st_input_t *input, guint index)
 }
 
 void
-st_input_consume (st_input_t *input)
+st_input_consume (STInput *input)
 {
     g_assert (input != NULL);
 
@@ -148,7 +148,7 @@ st_input_consume (st_input_t *input)
 }
 
 guint
-st_input_size (st_input_t *input)
+st_input_size (STInput *input)
 {
     g_assert (input != NULL);
 
@@ -156,7 +156,7 @@ st_input_size (st_input_t *input)
 }
 
 char *
-st_input_range (st_input_t *input, guint start, guint end)
+st_input_range (STInput *input, guint start, guint end)
 {
     char *buf;
     GError *error = NULL;
@@ -171,7 +171,7 @@ st_input_range (st_input_t *input, guint start, guint end)
 }
 
 guint
-st_input_index (st_input_t *input)
+st_input_index (STInput *input)
 {
     g_assert (input != NULL);
 
@@ -179,7 +179,7 @@ st_input_index (st_input_t *input)
 }
 
 static void
-set_data (st_input_t *input, const char *string)
+set_data (STInput *input, const char *string)
 {
     long len;
     gunichar *buffer;
@@ -198,12 +198,12 @@ set_data (st_input_t *input, const char *string)
     input->column = 1;
 }
 
-st_input_t *
+STInput *
 st_input_new (const char *string)
 {
     g_assert (string != NULL);
 
-    st_input_t *input = g_slice_new0 (st_input_t);
+    STInput *input = g_slice_new0 (STInput);
 
     set_data (input, string);
 

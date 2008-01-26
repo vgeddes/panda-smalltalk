@@ -23,21 +23,21 @@
 #include <st-types.h>
 #include <st-array.h>
 
-st_oop_t st_dictionary_new (void);
-st_oop_t st_dictionary_new_with_capacity (st_smi_t capacity);
-st_oop_t st_dictionary_at (st_oop_t dict, st_oop_t key);
-void st_dictionary_at_put (st_oop_t dict, st_oop_t key, st_oop_t value);
+st_oop st_dictionary_new (void);
+st_oop st_dictionary_new_with_capacity (st_smi capacity);
+st_oop st_dictionary_at (st_oop dict, st_oop key);
+void st_dictionary_at_put (st_oop dict, st_oop key, st_oop value);
 
 
-st_oop_t st_set_new (void);
-st_oop_t st_set_new_with_capacity (st_smi_t capacity);
-bool st_set_includes (st_oop_t set, st_oop_t object);
-st_oop_t st_set_like (st_oop_t set, st_oop_t object);
-void st_set_add (st_oop_t set, st_oop_t object);
+st_oop st_set_new (void);
+st_oop st_set_new_with_capacity (st_smi capacity);
+bool st_set_includes (st_oop set, st_oop object);
+st_oop st_set_like (st_oop set, st_oop object);
+void st_set_add (st_oop set, st_oop object);
 
 
-const st_vtable_t *st_dictionary_vtable (void);
-const st_vtable_t *st_set_vtable (void);
+const STVTable *st_dictionary_vtable (void);
+const STVTable *st_set_vtable (void);
 
 
 #endif /* __ST_HASHED_COLLECTION_H__ */

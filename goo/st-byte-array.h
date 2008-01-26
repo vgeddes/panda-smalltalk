@@ -27,23 +27,26 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
-    st_oop_t size;
+    st_oop size;
 
     guchar bytes[];
 
-} st_byte_array_t;
+} STByteArray;
 
 
-st_oop_t  st_byte_array_size (st_oop_t object);
+st_oop  st_byte_array_size (st_oop object);
 
-guchar   *st_byte_array_bytes (st_oop_t object);
+guchar *st_byte_array_bytes (st_oop object);
 
-guchar    st_byte_array_at (st_oop_t object, st_smi_t i);
+guchar  st_byte_array_at (st_oop object, st_smi i);
 
-void      st_byte_array_at_put (st_oop_t object, st_smi_t i, guchar value);
+void    st_byte_array_at_put (st_oop object, st_smi i, guchar value);
 
-const st_vtable_t *st_byte_array_vtable (void);
+bool    st_byte_array_range_check (st_oop object, st_smi i);
+
+
+const STVTable *st_byte_array_vtable (void);
 
 #endif /* __ST_BYTE_ARRAY__ */

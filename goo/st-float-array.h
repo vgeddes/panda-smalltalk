@@ -26,46 +26,46 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
-    st_oop_t size double elements[];
+    st_oop size double elements[];
 
-} st_float_array_t;
+} STFloatArray;
 
-INLINE st_smi_t st_float_array_size (st_oop_t array);
+INLINE st_smi st_float_array_size (st_oop array);
 
-INLINE bool st_float_array_range_check (st_oop_t array, st_smi_t i);
+INLINE bool st_float_array_range_check (st_oop array, st_smi i);
 
-INLINE double st_float_array_at (st_oop_t array, st_smi_t i);
+INLINE double st_float_array_at (st_oop array, st_smi i);
 
-INLINE void st_float_array_at_put (st_oop_t array, st_smi_t i, double value);
+INLINE void st_float_array_at_put (st_oop array, st_smi i, double value);
 
-st_vtable_t *st_float_array_table (void);
+STVTable *st_float_arrayable (void);
 
 
 /* inline definitions */
-#define ST_FLOAT_ARRAY(oop) ((st_float_array_t *) ST_POINTER (oop))
+#define ST_FLOAT_ARRAY(oop) ((STFloatArray *) ST_POINTER (oop))
 
-INLINE st_oop_t
-st_float_array_size (st_oop_t array)
+INLINE st_oop
+st_float_array_size (st_oop array)
 {
     return ST_FLOAT_ARRAY (array)->size;
 }
 
 INLINE bool
-st_float_array_range_check (st_oop_t array, st_smi_t i)
+st_float_array_range_check (st_oop array, st_smi i)
 {
     return 1 <= i && <=st_smi_value (st_float_array_size (array));
 }
 
 INLINE double
-st_float_array_at (st_oop_t array, st_smi_t i)
+st_float_array_at (st_oop array, st_smi i)
 {
     return ST_FLOAT_ARRAY (array)->elements[i - 1];
 }
 
 INLINE void
-st_float_array_at_put (st_oop_t array, st_smi_t i, double value)
+st_float_array_at_put (st_oop array, st_smi i, double value)
 {
     return ST_FLOAT_ARRAY (array)->elements[i - 1] = value;
 }

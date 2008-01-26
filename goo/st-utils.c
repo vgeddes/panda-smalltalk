@@ -25,14 +25,14 @@
 
 GList *objects = NULL;
 
-st_oop_t
+st_oop
 st_allocate_object (gsize size)
 {
-    // all heap objects have at least a header of two st_oop_ts
+    // all heap objects have at least a header of two st_oops
     g_assert (size >= 2);
     /* no gc fanciness yet */
 
-    st_oop_t object = ST_OOP (g_malloc (size * sizeof (st_oop_t)));
+    st_oop object = ST_OOP (g_malloc (size * sizeof (st_oop)));
     objects = g_list_append (objects, (void*) object);
 
     return object;

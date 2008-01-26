@@ -26,7 +26,7 @@
 ST_DEFINE_VTABLE (st_symbol, st_byte_array_vtable ());
 
 static bool
-symbol_equal (st_oop_t object, st_oop_t another)
+symbol_equal (st_oop object, st_oop another)
 {
     if (object == another)
 	return true;
@@ -48,19 +48,19 @@ is_symbol (void)
 }
 
 static void
-st_symbol_vtable_init (st_vtable_t * table)
+st_symbol_vtable_init (STVTable * table)
 {
     table->equal = symbol_equal;
 
     table->is_symbol = is_symbol;
 }
 
-static st_oop_t
-string_new (st_oop_t klass, const char *bytes)
+static st_oop
+string_new (st_oop klass, const char *bytes)
 {
     int len = strlen (bytes);
 
-    st_oop_t string = st_object_new_arrayed (klass, len);
+    st_oop string = st_object_new_arrayed (klass, len);
 
     guchar *data = st_byte_array_bytes (string);
 
@@ -69,21 +69,21 @@ string_new (st_oop_t klass, const char *bytes)
     return string;
 }
 
-st_oop_t
+st_oop
 st_string_new (const char *bytes)
 {
     return string_new (st_string_class, bytes);
 
 }
 
-st_oop_t
+st_oop
 st_symbol_new (const char *bytes)
 {
-    st_oop_t element = st_set_like (st_symbol_table, st_string_new (bytes));
+    st_oop element = st_set_like (st_symbol_table, st_string_new (bytes));
 
     if (element == st_nil) {
 
-	st_oop_t symbol = string_new (st_symbol_class, bytes);
+	st_oop symbol = string_new (st_symbol_class, bytes);
 
 	st_set_add (st_symbol_table, symbol);
 
@@ -91,4 +91,21 @@ st_symbol_new (const char *bytes)
     }
 
     return element;
+}
+
+st_oop
+st_character_new (gunichar unichar)
+{
+    st_oop ch = st_object_new (st_character_class);
+    
+    st_heap_object_instvars (ch)[0] = st_smi_new (unichar);
+
+    return ch;    
+}
+
+
+gunichar
+st_character_value (st_oop character)
+{ 
+    return st_smi_value (st_heap_object_instvars (character)[0]);
 }

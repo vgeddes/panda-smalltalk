@@ -25,31 +25,31 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
     mp_int value;
 
-} st_large_integer_t;
+} STLargeInteger;
 
 
-st_oop_t st_large_integer_new (mp_int * value);
+st_oop st_large_integer_new (mp_int * value);
 
-st_oop_t st_large_integer_new_from_string (const char *string, guint radix);
+st_oop st_large_integer_new_from_string (const char *string, guint radix);
 
-char *st_large_integer_to_string (st_oop_t integer, guint radix);
+char *st_large_integer_to_string (st_oop integer, guint radix);
 
-INLINE mp_int *st_large_integer_value (st_oop_t integer);
+INLINE mp_int *st_large_integer_value (st_oop integer);
 
-const st_vtable_t *st_large_integer_vtable (void);
+const STVTable *st_large_integer_vtable (void);
 
 
 /* inline definitions */
-#define ST_LARGE_INTEGER(oop) ((st_large_integer_t *) ST_POINTER (oop))
+#define ST_LARGE_INTEGER(oop) ((STLargeInteger *) ST_POINTER (oop))
 
-mp_int *
-st_large_integer_value (st_oop_t integer)
+INLINE mp_int *
+st_large_integer_value (st_oop integer)
 {
-    return &ST_LARGE_INTEGER (integer)->value;
+    return & ST_LARGE_INTEGER (integer)->value;
 }
 
 #endif /* __ST_LARGE_INTEGER */

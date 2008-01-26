@@ -208,7 +208,7 @@ typedef enum
 
 typedef struct 
 {
-    st_oop_t method;
+    st_oop method;
 
     GList  *temporary_nams; 
     GList  *instvar_names;
@@ -236,7 +236,7 @@ static const * const message_specials[] = {
 };
 
 static generator_t *
-generator_new (st_oop_t klass, GList *temps, GList *args)
+generator_new (st_oop klass, GList *temps, GList *args)
 {
     generator_t *gt;
 
@@ -258,7 +258,7 @@ generator_new (st_oop_t klass, GList *temps, GList *args)
 }
 
 static void
-generation_error (const char *msg, st_node_t *node)
+generation_error (const char *msg, STNode *node)
 {
     printf ("error:%i: %s\n", msg, node->line);
     abort ();
@@ -282,7 +282,7 @@ push (generator_t *gt, guchar code)
 }
 
 static char *
-node_identifier_name (st_node_t *node)
+node_identifier_name (STNode *node)
 {
     g_assert (node->type == ST_NODE_IDENTIFIER);
     return ST_NODE_IDENTIFIER_CAST (node)->name;
@@ -317,13 +317,13 @@ find_instvar (generator_t *gt, const char *name)
 static int
 find_literal_var (generator_t *gt, const char *name)
 {    
-    st_oop_t assoc = st_dictionary_association_at (st_smalltalk, st_symbol_new (name));
+    st_oop assoc = st_dictionary_association_at (st_smalltalk, st_symbol_new (name));
     if (assoc == st_nil)
 	return -1;
     
     int i = 0;
     for (GList *l = gt->literals; l; l = l->next) {
-	if (st_object_equal (assoc, (st_oop_t) l->data))
+	if (st_object_equal (assoc, (st_oop) l->data))
 	    return i;
 	i++;
     }
@@ -334,14 +334,14 @@ find_literal_var (generator_t *gt, const char *name)
 static int
 find_literal_const (generator_t *gt, st_node_literal_t *node)
 {
-    st_node_type_t type = ((st_node_t *) node)->type;
+    st_nodeype_t type = ((STNode *) node)->type;
 
     switch (type) {
     case ST_NODE_LITERAL_INTEGER:
     {
 	int i = 0;
 	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (node->integer,(st_oop_t) l->data))
+	    if (st_object_equal (node->integer,(st_oop) l->data))
 		return i;
 	    ++i;
 	}
@@ -350,10 +350,10 @@ find_literal_const (generator_t *gt, st_node_literal_t *node)
     }
     case ST_NODE_LITERAL_STRING:
     {
-	st_oop_t string = st_string_new (node->string);
+	st_oop string = st_string_new (node->string);
 	int i = 0;   
 	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (string, (st_oop_t) l->data))
+	    if (st_object_equal (string, (st_oop) l->data))
 		return i;
 	    ++i;
 	}
@@ -363,10 +363,10 @@ find_literal_const (generator_t *gt, st_node_literal_t *node)
     }
     case ST_NODE_LITERAL_SYMBOL:
     {
-	st_oop_t symbol = st_symbol_new (node->string);
+	st_oop symbol = st_symbol_new (node->string);
 	int i = 0;
 	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (symbol, (st_oop_t) l->data))
+	    if (st_object_equal (symbol, (st_oop) l->data))
 		return i;
 	    ++i;
 	}	
@@ -375,11 +375,11 @@ find_literal_const (generator_t *gt, st_node_literal_t *node)
     }
     case ST_NODE_LITERAL_CHARACTER:
     {
-	st_oop_t character = st_object_new (st_character_class);
+	st_oop character = st_object_new (character_class);
 	st_character_set_value (character, node->character);
 	int i = 0;
 	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (character, (st_oop_t) l->data))
+	    if (st_object_equal (character, (st_oop) l->data))
 		return i;
 	    ++i;
 	}	
@@ -493,7 +493,7 @@ push_literal_const (generator_t *gt, int index)
 }
 
 static void
-generate_assign (generator_t *gt, st_node_t *node, bool pop)
+generate_assign (generator_t *gt, STNode *node, bool pop)
 {
     st_node_assign_t *assign; = (st_node_assign_t *) node;
     char *identifier;
@@ -527,7 +527,7 @@ generate_assign (generator_t *gt, st_node_t *node, bool pop)
 static void
 generate_return (generator_t *gt, st_node_return_t *node)
 {
-    st_node_t *variable = node->variable;
+    STNode *variable = node->variable;
 
     // quick return case
     if (gt->top == 0 && variable->type == ST_NODE_IDENTIFIER) {
@@ -568,7 +568,7 @@ generate_return (generator_t *gt, st_node_return_t *node)
     // quick return case
     if (gt->top == 0 && value->type == ST_NODE_INTEGER) {
 
-	st_smi_t integer = ((st_node_literal_t *) variable)->integer;
+	st_smi integer = ((st_node_literal_t *) variable)->integer;
 
 	if (integer == -1) {
 	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
@@ -620,12 +620,12 @@ generate_return (generator_t *gt, st_node_return_t *node)
 
 static int
 
-static st_oop_t
-generate_block (st_oop_t object, st_node_block_t *node)
+static st_oop
+generate_block (st_oop object, st_node_block_t *node)
 {
-    st_oop_t *block;
+    st_oop *block;
 
-    block = st_object_new (st_compiled_block_class);
+    block = st_object_new (compiled_block_class);
 }
 
 
@@ -634,7 +634,7 @@ generate_block (st_oop_t object, st_node_block_t *node)
 static void
 generate_message_send (generator_t *gt, st_node_expression_t *expression)
 {
-    st_node_t *receiver;
+    STNode *receiver;
     bool super_send = false;
 
 
@@ -653,12 +653,12 @@ generate_message_send (generator_t *gt, st_node_expression_t *expression)
 }
 
 static void
-generate_expression (generator_t *gt, st_node_t *node)
+generate_expression (generator_t *gt, STNode *node)
 {
     st_node_expression_t *expression = (st_node_expression_t*) node;
     
-    st_node_t *receiver = expression->receiver;
-    st_node_t *message = expression->message;
+    STNode *receiver = expression->receiver;
+    STNode *message = expression->message;
     
     switch (node->type) {
 
@@ -758,7 +758,7 @@ generate_statements (generator_t *gt, GList *statements)
 {
     for (GList *l = statements; l; l = l->next) {
 
-	st_node_t *node = (st_node_t *) l->data;
+	STNode *node = (STNode *) l->data;
 
 	switch (node->type) {
 
@@ -792,11 +792,11 @@ generate_statements (generator_t *gt, GList *statements)
 	gt->stack_depth--;}
 }
 
-st_oop_t
-st_generate_method (st_oop_t klass, st_node_method_t *node)
+st_oop
+st_generate_method (st_oop klass, st_node_method_t *node)
 {
     generator_t *gt;
-    st_oop_t     method;
+    st_oop     method;
 
     g_assert (object != st_nil);
     g_assert (node != NULL);
@@ -806,7 +806,7 @@ st_generate_method (st_oop_t klass, st_node_method_t *node)
     // generate bytecode
     generate_statements (gt, node->statements);
 
-    method = st_object_new (st_compiled_method_class);
+    method = st_object_new (compiled_method_class);
 
     int arg_count = g_list_length (node->args);
     int temp_count = g_list_length (node->temps);
@@ -817,23 +817,23 @@ st_generate_method (st_oop_t klass, st_node_method_t *node)
 
     int literal_count = g_list_length (gt->literals);
     if (literal_count > 0) {
-	st_oop_t literals;
-	literals = st_object_new_arrayed (st_array_class, literal_count); 
+	st_oop literals;
+	literals = st_object_new_arrayed (array_class, literal_count); 
 
 	int i = 1;
 	for (GList *l = gt->literals; l; l = l->next)
-	    st_array_at_put (literals, i, (st_oop_t) l->data);
+	    st_array_at_put (literals, i, (st_oop) l->data);
 	
 	st_compiled_code_set_literals (method, literals);
     }
 
     if ((gt->flags == 0 || gt->flags == 4) && gt->top > 0) {
-	st_oop_t  bytecode;
+	st_oop  bytecode;
 	guchar   *bytes;
 	int       size;
 
 	size = gt->top + 1;
-	bytecode = st_object_new_array (st_byte_array_class, size);
+	bytecode = st_object_new_array (byte_array_class, size);
 	bytes = st_byte_array_bytes (bytecode);
 	memcpy (bytes, gt->code, size);
 	

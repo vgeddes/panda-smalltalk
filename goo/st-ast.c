@@ -1,6 +1,6 @@
 /*
  * st-bootstrap.c
- *
+ * 
  * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
  *
  * This library is free software: you can redistribute it and/or
@@ -18,450 +18,303 @@
  */
 
 #include <st-ast.h>
+#include <st-byte-array.h>
+#include <st-types.h>
+#include <st-object.h>
+#include <st-float.h>
+#include <string.h>
 
 
-st_node_type_t
-st_node_type (st_node_t *node)
+static void print_expression (STNode *expression);
+
+
+static void
+print_variable (STNode *variable)
 {
-    return node->type;
+    g_assert (variable->type == ST_VARIABLE_NODE);
+
+    char *name = (char *) st_byte_array_bytes (variable->name);
+
+    printf (name);
 }
 
-bool
-st_node_is_variable (st_node_t *node)
+static void
+print_selector (STNode *selector)
 {
-    return node->type >= ST_NODE_BLOCK
-	|| node->type == ST_NODE_EXPRESSION
-	|| node->type == ST_NODE_ASSIGN;
-}	  
+    g_assert (selector->type == ST_SELECTOR_NODE);
 
-bool
-st_node_is_message (st_node_t *node)
-{
-    return (node->type == ST_NODE_MESSAGE_UNARY   ||
-	   node->type == ST_NODE_MESSAGE_BINARY  ||
-	   node->type == ST_NODE_MESSAGE_KEYWORD);
+    char *symbol = (char *) st_byte_array_bytes (selector->name);
+    printf (symbol);
 }
 
-
-#define DATA(l) ((st_node_t *) l->data)
-
-st_node_t *
-st_node_method_new (const char *selector,
-		    GList *args,
-		    GList *temps,
-		    GList *statements)
+static void
+print_literal (STNode *literal)
 {
-    st_node_method_t *node;
+    st_oop value;
 
-    g_assert (selector != NULL);
+    g_assert (literal->type == ST_LITERAL_NODE); 
+   
+    value = literal->literal;
 
-    node = g_slice_new (st_node_method_t);
+    if (st_object_is_smi (value)) {
+	printf ("%li", st_smi_value (value));
+  
+    } else if (st_object_is_symbol (value)) {
+	
+	printf ("#%s", st_byte_array_bytes (value));
+    } else if (st_object_class (value) == st_string_class) {
 
-    ST_NODE_CAST (node)->type = ST_NODE_METHOD;
+	printf ("%s", st_byte_array_bytes (value));
+    } else if (st_object_is_float (value)) {
 
-    node->selector   = g_strdup (selector);
-    node->temps      = temps;
-    node->args       = args;
+	printf ("%f", st_float_value (value));
+    } else if (st_object_class (value) == st_character_class) {
 
-    node->statements = statements;
-
-    return ST_NODE_CAST (node);
+	char outbuf[6] = { 0 };
+	g_unichar_to_utf8 (st_character_value (value), outbuf);
+	printf ("$%s", outbuf);
+    }
 }
 
-
-
-
-st_node_t *
-st_node_block_new (GList *args,
-		   GList *temps,
-		   GList *statements)
+static void
+print_return (STNode *return_node)
 {
-    st_node_block_t *node;
+   g_assert (return_node->type == ST_RETURN_NODE);
 
-    node = g_slice_new (st_node_block_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_BLOCK;
-
-    node->args  = args;
-    node->temps = temps;
-
-    node->statements = statements;
-
-    return ST_NODE_CAST (node);
+    printf ("^ ");
+    print_expression (return_node->expression);
+    
 }
 
-
-
-
-st_node_t *
-st_node_expression_new (st_node_t *receiver, st_node_t *message)
+static void
+print_assign (STNode *assign)
 {
-    st_node_expression_t *node;
-
-    g_assert (receiver != NULL);
-    g_assert (message  != NULL);
-
-    node = g_slice_new (st_node_expression_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_EXPRESSION;
-
-    g_assert (st_node_is_variable (receiver));
-    node->receiver = receiver;
-
-    g_assert (st_node_is_message (message));
-    node->message = message;
-
-    return ST_NODE_CAST (node);
+    g_assert (assign->type == ST_ASSIGN_NODE);
+   
+    print_variable (assign->assignee);
+    printf (" := ");
+    print_expression (assign->expression);
 }
 
-
-
-st_node_t *
-st_node_return_new (st_node_t *variable)
+static char **
+extract_keywords (char *selector)
 {
-    st_node_return_t *node;
-    g_assert (variable != NULL);
+    int len = strlen (selector);
 
-    node = g_slice_new (st_node_return_t);
-    ST_NODE_CAST (node)->type = ST_NODE_RETURN;
+    /* hide trailing ':' */
+    selector[len - 1] = 0; 
+    char **keywords = g_strsplit (selector, ":", 0);
+    selector[len - 1] = ':'; 
 
-    g_assert (st_node_is_variable (variable));
-    node->variable = variable;
-
-    return ST_NODE_CAST (node);
+    return keywords;
 }
 
-
-st_node_t *
-st_node_assign_new (st_node_t *assignee,
-		    st_node_t *variable)
+static void
+print_method (STNode *method)
 {
-    st_node_assign_t *node;
-    g_assert (variable != NULL);
+    g_assert (method->type == ST_METHOD_NODE);
 
-    node = g_slice_new (st_node_assign_t);
+    if (method->precedence == ST_KEYWORD_PRECEDENCE) {
 
-    ST_NODE_CAST (node)->type = ST_NODE_ASSIGN;
+	char *selector = (char *) st_byte_array_bytes (method->selector->name);
+	
+	char **keywords = extract_keywords (selector);
+	STNode *arguments = method->arguments;
 
-    g_assert (st_node_type (assignee) == ST_NODE_IDENTIFIER);
-    node->assignee = assignee;
+	for (char **keyword = keywords; *keyword; keyword++) {
+	    
+	    printf ("%s: ", *keyword);
+	    print_variable (arguments);
+	    printf (" ");
+	    
+	    arguments = arguments->next;
+	}
+	g_strfreev (keywords);
 
-    g_assert (st_node_is_variable (variable));
-    node->variable = variable;
+    } else if (method->precedence == ST_BINARY_PRECEDENCE) {
 
-    return ST_NODE_CAST (node);
-}
+	print_selector (method->selector);
+	printf (" ");
+	print_variable (method->arguments);
+    } else {
+	
+	print_selector (method->selector);	
+    }
 
+    printf ("\n");
 
-st_node_t *
-st_node_literal_string_new (const char *string)
-{
-    st_node_literal_t *node;
-    g_assert (string != NULL);
+    if (method->temporaries != NULL) {
 
-    node = g_slice_new (st_node_literal_t);
+	printf ("| ");
+	STNode *temp = method->temporaries;
+	for (; temp; temp = temp->next) {
+	    print_variable (temp);
+	    printf (" ");
+	}
+	printf ("|\n");
+    }
 
-    ST_NODE_CAST (node)->type = ST_NODE_LITERAL_STRING;
-    node->string = g_strdup (string);
+    STNode *stm = method->statements;
+    for (; stm; stm = stm->next) {
 
-    return ST_NODE_CAST (node);
-}
+	if (stm->type == ST_RETURN_NODE)
+	    print_return (stm);
+	else
+	    print_expression (stm);
 
-st_node_t *
-st_node_literal_symbol_new (const char *symbol)
-{
-    st_node_literal_t *node;
-    g_assert (symbol != NULL);
-
-    node = g_slice_new (st_node_literal_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_LITERAL_SYMBOL;
-    node->string = g_strdup (symbol);
-
-    return ST_NODE_CAST (node);
-}
-
-st_node_t *
-st_node_literal_integer_new (st_smi_t integer)
-{
-    st_node_literal_t *node;
-
-    node = g_slice_new (st_node_literal_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_LITERAL_INTEGER;
-    node->integer = integer;
-
-    return ST_NODE_CAST (node);
-}
-
-st_node_t *
-st_node_literal_large_integer_new (mp_int *large_integer)
-{
-    st_node_literal_t *node;
-    g_assert (large_integer != NULL);
-
-    node = g_slice_new (st_node_literal_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_LITERAL_LARGE_INTEGER;
-    node->large_integer = *large_integer;
-
-    return ST_NODE_CAST (node);
-}
-
-st_node_t *
-st_node_literal_float_new (double floating)
-{
-    st_node_literal_t *node;
-
-    node = g_slice_new (st_node_literal_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_LITERAL_FLOATING;
-    node->floating = floating;
-
-    return ST_NODE_CAST (node);
-}
-
-st_node_t *
-st_node_literal_character_new (gunichar character)
-{
-    st_node_literal_t *node;
-    g_assert (g_unichar_validate (character));
-
-    node = g_slice_new (st_node_literal_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_LITERAL_CHARACTER;
-    node->character = character;
-
-    return ST_NODE_CAST (node);
+	printf (".\n");
+    }
 }
 
 
-st_node_t *
-st_node_identifier_new (const char *name)
-{
-    st_node_identifier_t *node;
+static void
+print_block (STNode *block)
+{   
+    g_assert (block->type == ST_BLOCK_NODE);
 
-    node = g_slice_new (st_node_identifier_t);
+    printf ("[ ");
 
-    ST_NODE_CAST (node)->type = ST_NODE_IDENTIFIER;
-    node->name = g_strdup (name);
+    if (block->arguments != NULL) {
 
-    return ST_NODE_CAST (node);
+	STNode *arg = block->arguments;
+	for (; arg; arg = arg->next) {
+	    printf (":");
+	    print_variable (arg);
+	    printf (" ");
+	}
+	printf ("|");
+    }
+   
+    printf (" ");
+
+    if (block->temporaries != NULL) {
+
+	printf ("| ");
+	STNode *temp = block->temporaries;
+	for (; temp; temp = temp->next) {
+	    print_variable (temp);
+	    printf (" ");
+	}
+	printf ("|");
+    }
+    
+    printf (" ");
+
+    STNode *stm = block->statements;
+    for (; stm; stm = stm->next) {
+
+	if (stm->type == ST_RETURN_NODE)
+	    print_return (stm);
+	else
+	    print_expression (stm);
+
+	printf (". ");
+    }
+
+    printf (" ]");
 }
 
 
-
-st_node_t *
-st_node_unary_message_new (const char *selector)
+static void
+print_message (STNode *msg)
 {
-    st_node_unary_message_t *node;
-    g_assert (selector != NULL);
 
-    node = g_slice_new (st_node_unary_message_t);
+    if (msg->precedence == ST_UNARY_PRECEDENCE) {
 
-    ST_NODE_CAST (node)->type = ST_NODE_MESSAGE_UNARY;
-    node->selector = g_strdup (selector);
+	print_expression (msg->receiver);
+	printf (" ");
+	print_selector (msg->selector);
 
-    return ST_NODE_CAST (node);
+    } else if (msg->precedence == ST_BINARY_PRECEDENCE) {
+
+	print_expression (msg->receiver);
+	printf (" ");
+	print_selector (msg->selector);
+	printf (" ");
+	print_expression (msg->arguments);
+	
+    } else if (msg->precedence == ST_KEYWORD_PRECEDENCE) {
+
+	char   *selector = (char *) st_byte_array_bytes (msg->selector->name);
+
+	char  **keywords = extract_keywords (selector);
+	STNode *arguments = msg->arguments;
+
+	print_expression (msg->receiver);
+	printf (" ");
+
+	for (char **keyword = keywords; *keyword; keyword++) {
+	    
+	    printf ("%s: ", *keyword);
+	    print_expression (arguments);
+	    printf (" ");
+	    
+	    arguments = arguments->next;
+	}
+	g_strfreev (keywords);
+
+    }
+
 }
 
-
-st_node_t *
-st_node_binary_message_new (const char *selector,
-			    st_node_t  *argument)
+static void
+print_expression (STNode *expr)
 {
-    st_node_binary_message_t *node;
-    g_assert (selector != NULL);
-    g_assert (argument != NULL);
+    switch (expr->type) {
+	
+    case ST_LITERAL_NODE:
+	print_literal (expr);
+	break;
+	
+    case ST_VARIABLE_NODE:
+	print_variable (expr);
+	break;
+	      
+    case ST_ASSIGN_NODE:
+	print_assign (expr);
+	break;
 
-    node = g_slice_new (st_node_binary_message_t);
+    case ST_BLOCK_NODE:
+	print_block (expr);
+	break;
 
-    ST_NODE_CAST (node)->type = ST_NODE_MESSAGE_BINARY;
+    case ST_MESSAGE_NODE:
+	print_message (expr);
+	break;
 
-    node->selector = g_strdup (selector);
-
-    g_assert (st_node_is_variable (argument));
-    node->argument = argument;
-
-    return ST_NODE_CAST (node);
-}
-
-st_node_t *
-st_node_keyword_message_new (const char *selector,
-			     GList      *arguments)
-{
-    st_node_keyword_message_t *node;
-    g_assert (selector != NULL);
-    g_assert (arguments != NULL);
-
-    node = g_slice_new (st_node_keyword_message_t);
-
-    ST_NODE_CAST (node)->type = ST_NODE_MESSAGE_KEYWORD;
-
-    node->selector = g_strdup (selector);
-
-    for (GList *l = arguments; l; l=l->next)
-	g_assert (st_node_is_variable (DATA (l)));
-    node->arguments = arguments;
-
-    return ST_NODE_CAST (node);
+    }
 }
 
 void
-st_print_node (st_node_t *node)
+st_print_method (STNode *method)
 {
-    switch (st_node_type (node)) {
-
-    case ST_NODE_METHOD:
-    {
-	st_node_method_t *method_node = ST_NODE_METHOD_CAST (node);
-	
-	printf ("method:\n");
-	printf ("  selector: %s\n", method_node->selector);
-	    
-	printf ("  args: ");
-	for (GList *l = method_node->args; l; l = l->next)
-	    printf ("%s ", (char *) l->data);
-	
-	printf ("\n");
-	
-	printf ("  temps: ");
-	for (GList *l = method_node->temps; l; l = l->next)
-	    printf ("%s ", (char *) l->data);
-	
-	printf ("\n");
-	
-	for (GList *l = method_node->statements; l; l = l->next) {
-	    st_print_node (ST_NODE_CAST (l->data));
-	    printf (".\n");
-	}
-	
-	printf ("\n");
-	
-	break;
-    }
-    case ST_NODE_BLOCK:
-    {
-	st_node_block_t *block = ST_NODE_BLOCK_CAST (node);
-	
-	printf ("[");
-
-	printf ("args: ");
-	for (GList *l = block->args; l; l = l->next)
-	    printf ("%s ", (char *) l->data);
-	    
-	printf ("temps: ");
-	for (GList *l = block->temps; l; l = l->next)
-	    printf ("%s ", (char *) l->data);
-	
-	printf ("| ");	
-
-	for (GList *l = block->statements; l; l = l->next) {
-	    st_print_node (ST_NODE_CAST (l->data));
-	    printf (". ");
-	}	
-
-	printf ("]");
-	
-
-	break;       
-    }
-    case ST_NODE_EXPRESSION:
-    {
-	st_node_expression_t *expression = ST_NODE_EXPRESSION_CAST (node);
-	
-	printf ("(");
-	
-	st_print_node (expression->receiver);
-	
-	printf (" ");
-	
-	st_print_node (expression->message);
-	
-	printf (")");
-	
-	break;
-    }
-    case ST_NODE_RETURN:
-	printf ("^ ");
-	st_print_node (ST_NODE_RETURN_CAST (node)->variable);
-	break;
-    case ST_NODE_ASSIGN:
-	printf ("(");
-	st_print_node (ST_NODE_ASSIGN_CAST (node)->assignee);
-	printf (" := ");
-	st_print_node (ST_NODE_ASSIGN_CAST (node)->variable);
-	printf (")");
-	break;
-    case ST_NODE_IDENTIFIER:
-	printf (ST_NODE_IDENTIFIER_CAST (node)->name);
-	break;
-    case ST_NODE_MESSAGE_UNARY:
-    {
-	printf ("#%s", ST_NODE_UNARY_MESSAGE_CAST (node)->selector);
-	break;
-    }
-    case ST_NODE_MESSAGE_BINARY:
-    {
-	printf ("#%s ", ST_NODE_BINARY_MESSAGE_CAST (node)->selector);
-	st_print_node (ST_NODE_BINARY_MESSAGE_CAST (node)->argument);
-	break;
-    }
-    case ST_NODE_MESSAGE_KEYWORD:
-    {
-	
-	printf ("#%s ", ST_NODE_KEYWORD_MESSAGE_CAST (node)->selector);
-	
-	GList *arguments = ST_NODE_KEYWORD_MESSAGE_CAST (node)->arguments;
-	for (GList *l = arguments; l; l = l->next) {
-	    st_print_node (ST_NODE_CAST (l->data));
-	    printf (" ");
-	}
-	break;
-    }
-    case ST_NODE_LITERAL_INTEGER:
-	printf ("%li", ST_NODE_LITERAL_CAST (node)->integer);
-	    break;
-    case ST_NODE_LITERAL_LARGE_INTEGER:
-    {
-	char *string;
-	int result, size;
-	mp_int value = ST_NODE_LITERAL_CAST (node)->large_integer;
-	
-	result = mp_radix_size (&value, 10, &size);
-	g_assert (result == MP_OKAY);
-	
-	g_debug ("%i", size);
-	
-	string = g_malloc (size);
-	
-	result = mp_toradix (&value, string, 10);
-	g_assert (result == MP_OKAY);
-	
-	printf ("%s", string);
-	break;
-    }
-    case ST_NODE_LITERAL_FLOATING:
-	printf ("%f", ST_NODE_LITERAL_CAST (node)->floating);
-	break;
-    case ST_NODE_LITERAL_STRING:
-	printf ("'%s'", ST_NODE_LITERAL_CAST (node)->string);
-	break;
-    case ST_NODE_LITERAL_SYMBOL:
-	printf ("#%s", ST_NODE_LITERAL_CAST (node)->string);
-	break;
-    case ST_NODE_LITERAL_CHARACTER:
-    {
-	char out[6] = {0};
-	g_unichar_to_utf8 (ST_NODE_LITERAL_CAST (node)->character, out);
-	printf ("$%s", out);
-	break;
-    }
-    default:
-	// not handled yet
-	break;
-    }
+    g_assert (method->type == ST_METHOD_NODE);
+    
+    print_method (method);
 }
 
 
+
+
+STNode *
+st_node_new (STNodeType type)
+{
+    STNode *node = g_slice_new0 (STNode);
+    node->type = type;
+    node->next = NULL;
+    return node;
+}
+
+
+STNode *
+st_node_append (STNode *list, STNode *node)
+{
+    STNode *l = list;
+    if (list == NULL)
+	return node;
+    while (l->next)
+	l = l->next;
+    l->next = node;
+    return list;
+}
 

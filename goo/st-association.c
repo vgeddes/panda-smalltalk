@@ -24,21 +24,21 @@ ST_DEFINE_VTABLE (st_association, st_heap_object_vtable ());
 
 
 static guint
-association_hash (st_oop_t object)
+association_hash (st_oop object)
 {
-st_association_t *a = ST_ASSOCIATION (object);
+STAssociation *a = ST_ASSOCIATION (object);
 
     return st_object_hash (a->key) ^ st_object_hash (a->value);
 }
 
 static bool
-association_equal (st_oop_t object, st_oop_t another)
+association_equal (st_oop object, st_oop another)
 {
     if (!st_object_is_association (another))
 	return false;
 
-    st_association_t *a = ST_ASSOCIATION (object);
-    st_association_t *b = ST_ASSOCIATION (another);
+    STAssociation *a = ST_ASSOCIATION (object);
+    STAssociation *b = ST_ASSOCIATION (another);
 
     return st_object_equal (a->key, b->key) && st_object_equal (a->value, b->value);
 }
@@ -50,10 +50,10 @@ is_association (void)
 }
 
 static void
-st_association_vtable_init (st_vtable_t * table)
+st_association_vtable_init (STVTable * table)
 {
-    /* ensure that st_association_t is not padded */
-    assert_static (sizeof (st_association_t) == (sizeof (st_header_t) + 2 * sizeof (st_oop_t)));
+    /* ensure that STAssociation is not padded */
+    assert_static (sizeof (STAssociation) == (sizeof (STHeader) + 2 * sizeof (st_oop)));
 
     table->is_association = is_association;
 
@@ -61,10 +61,10 @@ st_association_vtable_init (st_vtable_t * table)
     table->hash = association_hash;
 }
 
-st_oop_t
-st_association_new (st_oop_t key, st_oop_t value)
+st_oop
+st_association_new (st_oop key, st_oop value)
 {
-    st_oop_t assoc = st_object_new (st_association_class);
+    st_oop assoc = st_object_new (st_association_class);
 
     st_association_set_key (assoc, key);
     st_association_set_value (assoc, value);

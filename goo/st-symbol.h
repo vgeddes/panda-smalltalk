@@ -22,11 +22,17 @@
 
 #include <st-types.h>
 #include <st-vtable.h>
+#include <glib.h>
 
-st_oop_t st_string_new (const char *bytes);
+st_oop st_string_new (const char *bytes);
 
-st_oop_t st_symbol_new (const char *bytes);
+st_oop st_symbol_new (const char *bytes);
 
-const st_vtable_t *st_symbol_vtable (void);
+st_oop st_character_new (gunichar unichar);
+
+gunichar st_character_value (st_oop character);
+
+
+const STVTable *st_symbol_vtable (void);
 
 #endif /* __ST_SYMBOL_H__ */

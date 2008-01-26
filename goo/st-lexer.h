@@ -22,11 +22,11 @@
 
 #include <glib.h>
 
-#define ST_NUMBER_TOKEN(token) ((st_number_token_t *) token)
+#define ST_NUMBER_TOKEN(token) ((STNumberToken *) token)
 
-typedef struct st_lexer_t         st_lexer_t;
-typedef struct st_token_t         st_token_t;
-typedef struct st_number_token_t  st_number_token_t;
+typedef struct STLexer        STLexer;
+typedef struct STToken        STToken;
+typedef struct STNumberToken  STNumberToken;
 
 typedef enum
 {
@@ -52,38 +52,38 @@ typedef enum
     ST_TOKEN_KEYWORD_SELECTOR,
     ST_TOKEN_EOF
     
-} st_token_type_t;
+} STTokenType;
 
 
-st_lexer_t       *st_lexer_new           (const char *text);
+STLexer       *st_lexer_new           (const char *text);
 
-st_token_t       *st_lexer_next_token    (st_lexer_t *lexer);
+STToken       *st_lexer_next_token    (STLexer *lexer);
 
-st_token_t       *st_lexer_current_token (st_lexer_t *lexer);
+STToken       *st_lexer_current_token (STLexer *lexer);
 
-void              st_lexer_destroy       (st_lexer_t *lexer);
+void              st_lexer_destroy       (STLexer *lexer);
 
-gunichar          st_lexer_error_char    (st_lexer_t *lexer);
+gunichar          st_lexer_error_char    (STLexer *lexer);
 
-guint             st_lexer_error_line    (st_lexer_t *lexer);
+guint             st_lexer_error_line    (STLexer *lexer);
 
-guint             st_lexer_error_column  (st_lexer_t *lexer);
+guint             st_lexer_error_column  (STLexer *lexer);
 
-char *            st_lexer_error_message (st_lexer_t *lexer);
-
-
-st_token_type_t   st_token_type   (st_token_t *token);
-
-char             *st_token_text   (st_token_t *token);
-
-guint             st_token_line   (st_token_t *token);
-
-guint             st_token_column (st_token_t *token);
+char *            st_lexer_error_message (STLexer *lexer);
 
 
-guint             st_number_token_radix    (st_number_token_t *token);
+STTokenType       st_token_type   (STToken *token);
 
-int               st_number_token_exponent (st_number_token_t *token);
+char             *st_token_text   (STToken *token);
+
+guint             st_token_line   (STToken *token);
+
+guint             st_token_column (STToken *token);
+
+
+guint             st_number_token_radix    (STNumberToken *token);
+
+int               st_number_token_exponent (STNumberToken *token);
 
 
 

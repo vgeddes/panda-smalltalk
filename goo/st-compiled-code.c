@@ -31,7 +31,7 @@ is_compiled_method (void)
 }
 
 static void
-st_compiled_method_vtable_init (st_vtable_t * table)
+st_compiled_method_vtable_init (STVTable * table)
 {
     table->is_compiled_method = is_compiled_method;
 }
@@ -48,7 +48,7 @@ is_compiled_block (void)
 }
 
 static void
-st_compiled_block_vtable_init (st_vtable_t * table)
+st_compiled_block_vtable_init (STVTable * table)
 {
     table->is_compiled_block = is_compiled_block;
 }

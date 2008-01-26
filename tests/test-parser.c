@@ -3,6 +3,7 @@
 #include <st-parser.h>
 #include <st-lexer.h>
 #include <st-ast.h>
+#include <st-universe.h>
 
 #include <glib.h>
 #include <stdio.h>
@@ -21,10 +22,16 @@ main (int argc, char *argv[])
     while ((c = getchar ()) != EOF && i < (BUF_SIZE - 1))
 	buffer[i++] = c;
     buffer[i] = '\0';
-    
-    st_lexer_t *lexer = st_lexer_new (buffer);
 
-    st_print_node ((st_node_t *) st_parser_parse (lexer));
+    st_bootstrap_universe ();
+
+    STLexer *lexer = st_lexer_new (buffer);
+
+    STNode *node = st_parser_parse (lexer);
+
+    printf ("-------------------\n");	    
+
+    st_print_method (node);
 
     return 0;
 }

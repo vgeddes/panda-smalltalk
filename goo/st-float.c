@@ -31,10 +31,10 @@ is_float (void)
     return true;
 }
 
-static st_oop_t
-float_allocate (st_oop_t klass)
+static st_oop
+float_allocate (st_oop klass)
 {
-    st_oop_t f = st_allocate_object (ST_TYPE_SIZE (st_float_t));
+    st_oop f = st_allocate_object (ST_TYPE_SIZE (STFloat));
 
     st_object_initialize_header (f, st_float_class);
 
@@ -44,18 +44,18 @@ float_allocate (st_oop_t klass)
 }
 
 static void
-st_float_vtable_init (st_vtable_t * table)
+st_float_vtable_init (STVTable * table)
 {
-    assert_static (sizeof (st_float_t) == (sizeof (st_header_t) + sizeof (double)));
+    assert_static (sizeof (STFloat) == (sizeof (STHeader) + sizeof (double)));
 
     table->is_float = is_float;
     table->allocate = float_allocate;
 }
 
-st_oop_t
+st_oop
 st_float_new (double value)
 {
-    st_oop_t f = st_object_new (st_float_class);
+    st_oop f = st_object_new (st_float_class);
 
     st_float_set_value (f, value);
 

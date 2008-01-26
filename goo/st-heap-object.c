@@ -24,12 +24,12 @@
 
 ST_DEFINE_VTABLE (st_heap_object, st_object_vtable ());
 
-static st_oop_t
-heap_object_allocate (st_oop_t klass)
+static st_oop
+heap_object_allocate (st_oop klass)
 {
-    st_smi_t instance_size = st_smi_value (st_behavior_instance_size (klass));
+    st_smi instance_size = st_smi_value (st_behavior_instance_size (klass));
 
-    st_oop_t object = st_allocate_object (ST_TYPE_SIZE (st_header_t) + instance_size);
+    st_oop object = st_allocate_object (ST_TYPE_SIZE (STHeader) + instance_size);
 
     st_object_initialize_header (object, klass);
     st_object_initialize_body (object, instance_size);
@@ -37,8 +37,8 @@ heap_object_allocate (st_oop_t klass)
     return object;
 }
 
-static st_oop_t
-heap_object_allocate_arrayed (st_oop_t klass, st_smi_t size)
+static st_oop
+heap_object_allocate_arrayed (st_oop klass, st_smi size)
 {
     g_critical ("class is not arrayed, use non-arrayed allocation instead");
 
@@ -46,11 +46,11 @@ heap_object_allocate_arrayed (st_oop_t klass, st_smi_t size)
 }
 
 static bool
-heap_object_verify (st_oop_t object)
+heap_object_verify (st_oop object)
 {
     bool verified = true;
 
-    st_oop_t klass = st_heap_object_class (object);
+    st_oop klass = st_heap_object_class (object);
 
     verified = verified && st_object_is_heap (object);
     verified = verified && st_object_is_mark (st_heap_object_mark (object));
@@ -61,7 +61,7 @@ heap_object_verify (st_oop_t object)
 }
 
 static char *
-heap_object_describe (st_oop_t object)
+heap_object_describe (st_oop object)
 {
     static const char format[] =
 	"mark:\t[nonpointer: %i; frozen: %i; hash: %i]\n" "class:\t\n" "name:\t%s\n";
@@ -83,22 +83,22 @@ heap_object_describe (st_oop_t object)
 }
 
 static bool
-heap_object_equal (st_oop_t object, st_oop_t another)
+heap_object_equal (st_oop object, st_oop another)
 {
     return ST_POINTER (object) == ST_POINTER (another);
 }
 
 static guint
-heap_object_hash (st_oop_t object)
+heap_object_hash (st_oop object)
 {
     return st_mark_hash (st_heap_object_mark (object));
 }
 
 static void
-st_heap_object_vtable_init (st_vtable_t * table)
+st_heap_object_vtable_init (STVTable * table)
 {
-    /* ensure that st_header_t is not padded */
-    assert_static (sizeof (st_header_t) == 2 * sizeof (st_oop_t));
+    /* ensure that STHeader is not padded */
+    assert_static (sizeof (STHeader) == 2 * sizeof (st_oop));
 
     table->allocate = heap_object_allocate;
     table->allocate_arrayed = heap_object_allocate_arrayed;

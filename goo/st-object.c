@@ -27,29 +27,29 @@
 int _st_current_hash = 0;
 
 void
-st_object_initialize_header (st_oop_t object, st_oop_t klass)
+st_object_initialize_header (st_oop object, st_oop klass)
 {
     st_heap_object_set_mark (object, st_mark_new ());
     st_heap_object_set_class (object, klass);
 }
 
 void
-st_object_initialize_body (st_oop_t object, st_smi_t instance_size)
+st_object_initialize_body (st_oop object, st_smi instance_size)
 {
-    st_oop_t *instvars = st_heap_object_instvars (object);
+    st_oop *instvars = st_heap_object_instvars (object);
 
-    for (st_smi_t i = 0; i < instance_size; i++)
+    for (st_smi i = 0; i < instance_size; i++)
 	instvars[i] = st_nil;
 }
 
-st_oop_t
-st_object_new (st_oop_t klass)
+st_oop
+st_object_new (st_oop klass)
 {
     return ST_CLASS_VTABLE (klass)->allocate (klass);
 }
 
-st_oop_t
-st_object_new_arrayed (st_oop_t klass, st_smi_t size)
+st_oop
+st_object_new_arrayed (st_oop klass, st_smi size)
 {
     return ST_CLASS_VTABLE (klass)->allocate_arrayed (klass, size);
 }
@@ -65,40 +65,40 @@ is_not_type (void)
 }
 
 static bool
-object_equal (st_oop_t object, st_oop_t another)
+object_equal (st_oop object, st_oop another)
 {
     /* identity test */
     return object == another;
 }
 
 static bool
-object_verify (st_oop_t object)
+object_verify (st_oop object)
 {
     return false;
 }
 
 static char *
-object_describe (st_oop_t object)
+object_describe (st_oop object)
 {
     return NULL;
 }
 
-static st_oop_t
-allocate (st_oop_t klass)
+static st_oop
+allocate (st_oop klass)
 {
     g_assert_not_reached ();
     return 0;
 }
 
-static st_oop_t
-allocate_arrayed (st_oop_t klass, st_smi_t size)
+static st_oop
+allocate_arrayed (st_oop klass, st_smi size)
 {
     g_assert_not_reached ();
     return 0;
 }
 
 static void
-st_object_vtable_init (st_vtable_t *table)
+st_object_vtable_init (STVTable *table)
 {
     table->allocate = allocate;
     table->allocate_arrayed = allocate_arrayed;

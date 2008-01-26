@@ -5,20 +5,20 @@ lib_LTLIBRARIES += libgoo.la
 libgoo_la_SOURCES = \
 	goo/st-heap-object.c \
 	goo/st-heap-object.h \
- 	goo/st-utils.h \
- 	goo/st-utils.c \
-  	goo/st-hashed-collection.h \
-    	goo/st-hashed-collection.c \
-  	goo/st-array.h \
- 	goo/st-array.c \
-  	goo/st-byte-array.h \
- 	goo/st-byte-array.c \
-  	goo/st-small-integer.h \
-   	goo/st-small-integer.c \
-    	goo/st-large-integer.h \
-   	goo/st-large-integer.c \
-  	goo/st-compiled-code.h \
-   	goo/st-compiled-code.c \
+	goo/st-utils.h \
+	goo/st-utils.c \
+	goo/st-hashed-collection.h \
+	goo/st-hashed-collection.c \
+	goo/st-array.h \
+	goo/st-array.c \
+	goo/st-byte-array.h \
+	goo/st-byte-array.c \
+	goo/st-small-integer.h \
+	goo/st-small-integer.c \
+	goo/st-large-integer.h \
+	goo/st-large-integer.c \
+	goo/st-compiled-code.h \
+	goo/st-compiled-code.c \
 	goo/st-universe.h \
 	goo/st-universe.c \
 	goo/st-association.h \
@@ -38,12 +38,12 @@ libgoo_la_SOURCES = \
 	goo/st-ast.h \
 	goo/st-parser.h \
 	goo/st-parser.c \
- 	goo/st-lexer.c \
- 	goo/st-lexer.h \
+	goo/st-lexer.c \
+	goo/st-lexer.h \
 	goo/st-input.h \
 	goo/st-input.c \
- 	goo/st-types.h
-	
+	goo/st-types.h
+
 libgoo_la_CPPFLAGS =      \
 	-I$(top_srcdir)   \
         -I$(top_srcdir)/libs/libtommath \

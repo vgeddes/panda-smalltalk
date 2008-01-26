@@ -38,159 +38,159 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
-    const st_vtable_t *vtable;
+    const STVTable *vtable;
 
-    st_oop_t superclass;
-    st_oop_t instance_size;
-    st_oop_t method_dictionary;
-    st_oop_t instance_variables;
+    st_oop superclass;
+    st_oop instance_size;
+    st_oop method_dictionary;
+    st_oop instance_variables;
 
-} st_behavior_t;
-
-typedef struct
-{
-    st_behavior_t parent;
-
-    st_oop_t class_name;
-    st_oop_t class_pool;
-
-} st_class_t;
+} STBehavior;
 
 typedef struct
 {
-    st_behavior_t parent;
+    STBehavior parent;
 
-    st_oop_t instance_class;
+    st_oop class_name;
+    st_oop class_pool;
 
-} st_metaclass_t;
+} STClass;
 
-INLINE st_oop_t st_behavior_instance_size (st_oop_t klass);
+typedef struct
+{
+    STBehavior parent;
 
-INLINE st_oop_t st_behavior_superclass (st_oop_t klass);
+    st_oop instance_class;
 
-INLINE st_oop_t st_behavior_method_dictionary (st_oop_t klass);
+} STMetaclass;
 
-INLINE st_oop_t st_behavior_instance_variables (st_oop_t klass);
+INLINE st_oop st_behavior_instance_size (st_oop klass);
 
-INLINE void st_behavior_set_instance_size (st_oop_t klass, st_smi_t instance_size);
+INLINE st_oop st_behavior_superclass (st_oop klass);
 
-INLINE void st_behavior_set_superclass (st_oop_t klass, st_oop_t superclass);
+INLINE st_oop st_behavior_method_dictionary (st_oop klass);
 
-INLINE void st_behavior_set_method_dictionary (st_oop_t klass, st_oop_t method_dictionary);
+INLINE st_oop st_behavior_instance_variables (st_oop klass);
 
-INLINE void st_behavior_set_instance_variables (st_oop_t klass, st_oop_t instance_variables);
+INLINE void st_behavior_set_instance_size (st_oop klass, st_smi instance_size);
 
+INLINE void st_behavior_set_superclass (st_oop klass, st_oop superclass);
 
-INLINE st_oop_t st_class_name (st_oop_t klass);
+INLINE void st_behavior_set_method_dictionary (st_oop klass, st_oop method_dictionary);
 
-INLINE st_oop_t st_class_pool (st_oop_t klass);
-
-INLINE void st_class_set_name (st_oop_t klass, st_oop_t name);
-
-INLINE void st_class_set_pool (st_oop_t klass, st_oop_t class_pool);
-
-GList *st_behavior_all_instance_variables (st_oop_t klass);
-
-const st_vtable_t *st_class_vtable (void);
+INLINE void st_behavior_set_instance_variables (st_oop klass, st_oop instance_variables);
 
 
-INLINE st_oop_t st_metaclass_instance_class (st_oop_t metaclass);
+INLINE st_oop st_class_name (st_oop klass);
 
-INLINE void st_metaclass_set_instance_class (st_oop_t metaclass, st_oop_t instance_class);
+INLINE st_oop st_class_pool (st_oop klass);
 
-const st_vtable_t *st_metaclass_vtable (void);
+INLINE void st_class_set_name (st_oop klass, st_oop name);
+
+INLINE void st_class_set_pool (st_oop klass, st_oop class_pool);
+
+GList *st_behavior_all_instance_variables (st_oop klass);
+
+const STVTable *st_class_vtable (void);
+
+
+INLINE st_oop st_metaclass_instance_class (st_oop metaclass);
+
+INLINE void st_metaclass_set_instance_class (st_oop metaclass, st_oop instance_class);
+
+const STVTable *st_metaclass_vtable (void);
 
 
 /* inline definitions */
 
-#define ST_BEHAVIOR(oop)      ((st_behavior_t *)  ST_POINTER (oop))
+#define ST_BEHAVIOR(oop)      ((STBehavior *)  ST_POINTER (oop))
 
-INLINE st_oop_t
-st_behavior_instance_size (st_oop_t klass)
+INLINE st_oop
+st_behavior_instance_size (st_oop klass)
 {
     return ST_BEHAVIOR (klass)->instance_size;
 }
 
-INLINE st_oop_t
-st_behavior_superclass (st_oop_t klass)
+INLINE st_oop
+st_behavior_superclass (st_oop klass)
 {
     return ST_BEHAVIOR (klass)->superclass;
 }
 
-INLINE st_oop_t
-st_behavior_method_dictionary (st_oop_t klass)
+INLINE st_oop
+st_behavior_method_dictionary (st_oop klass)
 {
     return ST_BEHAVIOR (klass)->method_dictionary;
 }
 
 INLINE void
-st_behavior_set_instance_size (st_oop_t klass, st_smi_t instance_size)
+st_behavior_set_instance_size (st_oop klass, st_smi instance_size)
 {
     ST_BEHAVIOR (klass)->instance_size = st_smi_new (instance_size);
 }
 
 INLINE void
-st_behavior_set_superclass (st_oop_t klass, st_oop_t superclass)
+st_behavior_set_superclass (st_oop klass, st_oop superclass)
 {
     ST_BEHAVIOR (klass)->superclass = superclass;
 }
 
 INLINE void
-st_behavior_set_method_dictionary (st_oop_t klass, st_oop_t method_dictionary)
+st_behavior_set_method_dictionary (st_oop klass, st_oop method_dictionary)
 {
     ST_BEHAVIOR (klass)->method_dictionary = method_dictionary;
 }
 
 INLINE void
-st_behavior_set_instance_variables (st_oop_t klass, st_oop_t instance_variables)
+st_behavior_set_instance_variables (st_oop klass, st_oop instance_variables)
 {
     ST_BEHAVIOR (klass)->instance_variables = instance_variables;
 }
 
-INLINE st_oop_t
-st_behavior_instance_variables (st_oop_t klass)
+INLINE st_oop
+st_behavior_instance_variables (st_oop klass)
 {
     return ST_BEHAVIOR (klass)->instance_variables;
 }
 
-#define ST_CLASS(oop)     ((st_class_t *)     ST_POINTER (oop))
+#define ST_CLASS(oop)     ((STClass *)     ST_POINTER (oop))
 
 INLINE void
-st_class_set_name (st_oop_t klass, st_oop_t name)
+st_class_set_name (st_oop klass, st_oop name)
 {
     ST_CLASS (klass)->class_name = name;
 }
 
-INLINE st_oop_t
-st_class_name (st_oop_t klass)
+INLINE st_oop
+st_class_name (st_oop klass)
 {
     return ST_CLASS (klass)->class_name;
 }
 
 INLINE void
-st_class_set_pool (st_oop_t klass, st_oop_t class_pool)
+st_class_set_pool (st_oop klass, st_oop class_pool)
 {
     ST_CLASS (klass)->class_pool = class_pool;
 }
 
-INLINE st_oop_t
-st_class_pool (st_oop_t klass)
+INLINE st_oop
+st_class_pool (st_oop klass)
 {
     return ST_CLASS (klass)->class_pool;
 }
 
-#define ST_METACLASS(oop) ((st_metaclass_t *) ST_POINTER (oop))
+#define ST_METACLASS(oop) ((STMetaclass *) ST_POINTER (oop))
 
 INLINE void
-st_metaclass_set_instance_class (st_oop_t metaclass, st_oop_t instance_class)
+st_metaclass_set_instance_class (st_oop metaclass, st_oop instance_class)
 {
     ST_METACLASS (metaclass)->instance_class = instance_class;
 }
 
-INLINE st_oop_t
-st_metaclass_instance_class (st_oop_t metaclass)
+INLINE st_oop
+st_metaclass_instance_class (st_oop metaclass)
 {
     return ST_METACLASS (metaclass)->instance_class;
 }

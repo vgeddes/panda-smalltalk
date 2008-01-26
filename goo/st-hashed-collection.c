@@ -34,24 +34,24 @@
 #define ARRAY(collection)    (ST_HASHED_COLLECTION (collection)->array)
 #define ARRAY_SIZE(array)    (st_smi_value (st_array_size (array)))
 
-#define ST_HASHED_COLLECTION(oop) ((st_hashed_collection_t *) (ST_POINTER (oop)))
+#define ST_HASHED_COLLECTION(oop) ((STHashedCollection *) (ST_POINTER (oop)))
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
-    st_oop_t tally;
-    st_oop_t array;
+    st_oop tally;
+    st_oop array;
 
-} st_hashed_collection_t;
+} STHashedCollection;
 
 
 /* Hashed Collection methods */
 
-static st_smi_t
-collection_find_element_or_nil (st_oop_t collection, st_oop_t object)
+static st_smi
+collection_find_element_or_nil (st_oop collection, st_oop object)
 {
-    st_smi_t index;
+    st_smi index;
 
     index = st_object_virtual (collection)->scan_for_object (collection, object);
 
@@ -61,40 +61,40 @@ collection_find_element_or_nil (st_oop_t collection, st_oop_t object)
     g_assert_not_reached ();
 }
 
-static st_smi_t
-collection_grow_size (st_oop_t collection)
+static st_smi
+collection_grow_size (st_oop collection)
 {
     return MAX (ARRAY_SIZE (ARRAY (collection)), 2);
 }
 
 static void
-collection_grow (st_oop_t collection)
+collection_grow (st_oop collection)
 {
-    st_oop_t old_array = ARRAY (collection);
+    st_oop old_array = ARRAY (collection);
 
-    st_smi_t new_size = ARRAY_SIZE (old_array) + collection_grow_size (collection);
+    st_smi new_size = ARRAY_SIZE (old_array) + collection_grow_size (collection);
 
     ARRAY (collection) = st_object_new_arrayed (st_array_class, new_size);
 
-    st_smi_t n = ARRAY_SIZE (old_array);
+    st_smi n = ARRAY_SIZE (old_array);
 
-    for (st_smi_t i = 1; i <= n; i++)
+    for (st_smi i = 1; i <= n; i++)
 	if (st_array_at (old_array, i) != st_nil)
 	    st_object_virtual (collection)->no_check_add (collection, st_array_at (old_array, i));
 }
 
 static void
-collection_full_check (st_oop_t collection)
+collection_full_check (st_oop collection)
 {
-    st_smi_t array_size = ARRAY_SIZE (ARRAY (collection));
-    st_smi_t tally = st_smi_value (TALLY (collection));
+    st_smi array_size = ARRAY_SIZE (ARRAY (collection));
+    st_smi tally = st_smi_value (TALLY (collection));
 
     if ((array_size - tally) < MAX ((array_size / 4), 1))
 	collection_grow (collection);
 }
 
 static void
-collection_at_new_index_put (st_oop_t collection, st_smi_t index, st_oop_t object)
+collection_at_new_index_put (st_oop collection, st_smi index, st_oop object)
 {
     st_array_at_put (ARRAY (collection), index, object);
 
@@ -104,7 +104,7 @@ collection_at_new_index_put (st_oop_t collection, st_smi_t index, st_oop_t objec
 }
 
 static void
-collection_initialize (st_oop_t collection, st_smi_t capacity)
+collection_initialize (st_oop collection, st_smi capacity)
 {
     g_assert (capacity > 0);
 
@@ -119,15 +119,15 @@ collection_initialize (st_oop_t collection, st_smi_t capacity)
 
 ST_DEFINE_VTABLE (st_dictionary, st_heap_object_vtable ());
 
-static st_smi_t
-dict_scan_for_object (st_oop_t dict, st_oop_t object)
+static st_smi
+dict_scan_for_object (st_oop dict, st_oop object)
 {
-    st_smi_t finish = ARRAY_SIZE (ARRAY (dict));
-    st_smi_t start = (st_object_hash (object) % finish) + 1;
+    st_smi finish = ARRAY_SIZE (ARRAY (dict));
+    st_smi start = (st_object_hash (object) % finish) + 1;
 
-    for (st_smi_t i = start; i <= finish; i++) {
+    for (st_smi i = start; i <= finish; i++) {
 
-	st_oop_t element = st_array_at (ARRAY (dict), i);
+	st_oop element = st_array_at (ARRAY (dict), i);
 
 	if (element == st_nil)
 	    return i;
@@ -135,9 +135,9 @@ dict_scan_for_object (st_oop_t dict, st_oop_t object)
 	    return i;
     }
 
-    for (st_smi_t i = 1; i <= (start - 1); i++) {
+    for (st_smi i = 1; i <= (start - 1); i++) {
 
-	st_oop_t element = st_array_at (ARRAY (dict), i);
+	st_oop element = st_array_at (ARRAY (dict), i);
 
 	if (element == st_nil)
 	    return i;
@@ -151,7 +151,7 @@ dict_scan_for_object (st_oop_t dict, st_oop_t object)
 
 
 static void
-dict_no_check_add (st_oop_t dict, st_oop_t object)
+dict_no_check_add (st_oop dict, st_oop object)
 {
     st_array_at_put (ARRAY (dict),
 		     collection_find_element_or_nil (dict, st_association_key (object)), object);
@@ -159,11 +159,11 @@ dict_no_check_add (st_oop_t dict, st_oop_t object)
 
 
 void
-st_dictionary_at_put (st_oop_t dict, st_oop_t key, st_oop_t value)
+st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
 {
-    st_smi_t index = collection_find_element_or_nil (dict, key);
+    st_smi index = collection_find_element_or_nil (dict, key);
 
-    st_oop_t assoc = st_array_at (ARRAY (dict), index);
+    st_oop assoc = st_array_at (ARRAY (dict), index);
 
     if (assoc == st_nil) {
 
@@ -176,12 +176,12 @@ st_dictionary_at_put (st_oop_t dict, st_oop_t key, st_oop_t value)
 
 }
 
-st_oop_t
-st_dictionary_at (st_oop_t dict, st_oop_t key)
+st_oop
+st_dictionary_at (st_oop dict, st_oop key)
 {
-    st_smi_t index = collection_find_element_or_nil (dict, key);
+    st_smi index = collection_find_element_or_nil (dict, key);
 
-    st_oop_t assoc = st_array_at (ARRAY (dict), index);
+    st_oop assoc = st_array_at (ARRAY (dict), index);
 
     if (assoc != st_nil)
 	return st_association_value (assoc);
@@ -189,10 +189,10 @@ st_dictionary_at (st_oop_t dict, st_oop_t key)
     return st_nil;
 }
 
-st_oop_t
-st_dictionary_new_with_capacity (st_smi_t capacity)
+st_oop
+st_dictionary_new_with_capacity (st_smi capacity)
 {
-    st_oop_t dict;
+    st_oop dict;
 
     dict = st_object_new (st_dictionary_class);
 
@@ -201,7 +201,7 @@ st_dictionary_new_with_capacity (st_smi_t capacity)
     return dict;
 }
 
-st_oop_t
+st_oop
 st_dictionary_new (void)
 {
     return st_dictionary_new_with_capacity (DEFAULT_CAPACITY);
@@ -214,7 +214,7 @@ is_dictionary (void)
 }
 
 static void
-st_dictionary_vtable_init (st_vtable_t * table)
+st_dictionary_vtable_init (STVTable * table)
 {
     table->scan_for_object = dict_scan_for_object;
     table->no_check_add = dict_no_check_add;
@@ -226,15 +226,15 @@ st_dictionary_vtable_init (st_vtable_t * table)
 
 ST_DEFINE_VTABLE (st_set, st_heap_object_vtable ());
 
-static st_smi_t
-set_scan_for_object (st_oop_t set, st_oop_t object)
+static st_smi
+set_scan_for_object (st_oop set, st_oop object)
 {
-    st_smi_t finish = ARRAY_SIZE (ARRAY (set));
-    st_smi_t start = (st_object_hash (object) % finish) + 1;
+    st_smi finish = ARRAY_SIZE (ARRAY (set));
+    st_smi start = (st_object_hash (object) % finish) + 1;
 
-    for (st_smi_t i = start; i <= finish; i++) {
+    for (st_smi i = start; i <= finish; i++) {
 
-	st_oop_t element = st_array_at (ARRAY (set), i);
+	st_oop element = st_array_at (ARRAY (set), i);
 
 	if (element == st_nil)
 	    return i;
@@ -242,9 +242,9 @@ set_scan_for_object (st_oop_t set, st_oop_t object)
 	    return i;
     }
 
-    for (st_smi_t i = 1; i <= (start - 1); i++) {
+    for (st_smi i = 1; i <= (start - 1); i++) {
 
-	st_oop_t element = st_array_at (ARRAY (set), i);
+	st_oop element = st_array_at (ARRAY (set), i);
 
 	if (element == st_nil)
 	    return i;
@@ -257,18 +257,18 @@ set_scan_for_object (st_oop_t set, st_oop_t object)
 }
 
 static void
-set_no_check_add (st_oop_t set, st_oop_t object)
+set_no_check_add (st_oop set, st_oop object)
 {
     st_array_at_put (ARRAY (set), collection_find_element_or_nil (set, object), object);
 }
 
 
 void
-st_set_add (st_oop_t set, st_oop_t object)
+st_set_add (st_oop set, st_oop object)
 {
-    st_smi_t index = collection_find_element_or_nil (set, object);
+    st_smi index = collection_find_element_or_nil (set, object);
 
-    st_oop_t element = st_array_at (ARRAY (set), index);
+    st_oop element = st_array_at (ARRAY (set), index);
 
     if (element == st_nil) {
 
@@ -278,25 +278,25 @@ st_set_add (st_oop_t set, st_oop_t object)
 }
 
 bool
-st_set_includes (st_oop_t set, st_oop_t object)
+st_set_includes (st_oop set, st_oop object)
 {
-    st_smi_t index = collection_find_element_or_nil (set, object);
+    st_smi index = collection_find_element_or_nil (set, object);
 
     return st_array_at (ARRAY (set), index) != st_nil;
 }
 
-st_oop_t
-st_set_like (st_oop_t set, st_oop_t object)
+st_oop
+st_set_like (st_oop set, st_oop object)
 {
-    st_smi_t index = collection_find_element_or_nil (set, object);
+    st_smi index = collection_find_element_or_nil (set, object);
 
     return st_array_at (ARRAY (set), index);
 }
 
-st_oop_t
-st_set_new_with_capacity (st_smi_t capacity)
+st_oop
+st_set_new_with_capacity (st_smi capacity)
 {
-    st_oop_t set;
+    st_oop set;
 
     set = st_object_new (st_set_class);
 
@@ -305,7 +305,7 @@ st_set_new_with_capacity (st_smi_t capacity)
     return set;
 }
 
-st_oop_t
+st_oop
 st_set_new (void)
 {
     return st_set_new_with_capacity (DEFAULT_CAPACITY);
@@ -318,7 +318,7 @@ is_set (void)
 }
 
 static void
-st_set_vtable_init (st_vtable_t * table)
+st_set_vtable_init (STVTable * table)
 {
     table->scan_for_object = set_scan_for_object;
     table->no_check_add = set_no_check_add;

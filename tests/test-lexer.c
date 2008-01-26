@@ -31,9 +31,9 @@ static const char *const token_names[] = {
 };
 
 static void
-print_token (st_lexer_t *lexer, st_token_t *token)
+print_token (STLexer *lexer, STToken *token)
 {
-    st_token_type_t type;
+    STTokenType type;
 
     char *string;
 
@@ -78,8 +78,8 @@ print_token (st_lexer_t *lexer, st_token_t *token)
 int
 main (int argc, char *argv[])
 {
-    st_lexer_t *lexer;
-    st_token_t *token;
+    STLexer *lexer;
+    STToken *token;
     
     printf ("Enter or pipe some Smalltalk code on stdin:\n\n");
 
@@ -93,7 +93,7 @@ main (int argc, char *argv[])
 
     lexer = st_lexer_new (buffer);
 
-    st_token_type_t type;
+    STTokenType type;
 
     do {
 

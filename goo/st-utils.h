@@ -37,7 +37,7 @@
 #define streq(a,b)  (strcmp ((a),(b)) == 0)
 
 /* returns the size of a type, in oop's */
-#define ST_TYPE_SIZE(type) (sizeof (type) / sizeof (st_oop_t))
+#define ST_TYPE_SIZE(type) (sizeof (type) / sizeof (st_oop))
 
 enum
 {
@@ -46,7 +46,7 @@ enum
 
 extern GList *objects;
 
-st_oop_t st_allocate_object (gsize size);
+st_oop st_allocate_object (gsize size);
 
 
 #endif /* __ST_UTILS_H__ */

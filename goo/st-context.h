@@ -4,16 +4,16 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
-    st_oop_t parent;
-    st_oop_t method;
-    st_oop_t stack;
-    st_oop_t sp;
-    st_oop_t ip;
+    st_oop parent;
+    st_oop method;
+    st_oop stack;
+    st_oop sp;
+    st_oop ip;
     
-    st_oop_t ap;
-    st_oop_t tp;
+    st_oop ap;
+    st_oop tp;
         
 } st_context_t;
 

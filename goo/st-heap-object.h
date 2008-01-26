@@ -28,69 +28,69 @@
 
 typedef struct
 {
-    st_oop_t mark;
-    st_oop_t klass;
+    st_oop mark;
+    st_oop klass;
 
-} st_header_t;
+} STHeader;
 
 typedef struct
 {
-    st_oop_t mark;
-    st_oop_t klass;
+    st_oop mark;
+    st_oop klass;
 
-    st_oop_t instvars[];
-} st_heap_object_t;
-
-
-INLINE st_oop_t st_heap_object_class (st_oop_t object);
-
-INLINE void st_heap_object_set_class (st_oop_t object, st_oop_t klass);
-
-INLINE int st_heap_object_hash (st_oop_t object);
-
-INLINE st_oop_t st_heap_object_mark (st_oop_t object);
-
-INLINE void st_heap_object_set_mark (st_oop_t object, st_oop_t mark);
-
-INLINE st_oop_t *st_heap_object_instvars (st_oop_t object);
-
-const st_vtable_t *st_heap_object_vtable (void);
+    st_oop instvars[];
+} STHeapObject;
 
 
-INLINE st_oop_t
-st_heap_object_class (st_oop_t object)
+INLINE st_oop   st_heap_object_class     (st_oop object);
+
+INLINE void     st_heap_object_set_class (st_oop object, st_oop klass);
+
+INLINE int      st_heap_object_hash     (st_oop object);
+
+INLINE st_oop   st_heap_object_mark     (st_oop object);
+
+INLINE void     st_heap_object_set_mark (st_oop object, st_oop mark);
+
+INLINE st_oop  *st_heap_object_instvars (st_oop object);
+
+const STVTable *st_heap_object_vtable   (void);
+
+
+INLINE st_oop
+st_heap_object_class (st_oop object)
 {
     return ST_POINTER (object)->klass;
 }
 
 INLINE void
-st_heap_object_set_class (st_oop_t object, st_oop_t klass)
+st_heap_object_set_class (st_oop object, st_oop klass)
 {
     ST_POINTER (object)->klass = klass;
 }
 
 INLINE int
-st_heap_object_hash (st_oop_t object)
+st_heap_object_hash (st_oop object)
 {
     return st_mark_hash (ST_POINTER (object)->mark);
 }
 
-INLINE st_oop_t
-st_heap_object_mark (st_oop_t object)
+INLINE st_oop
+st_heap_object_mark (st_oop object)
 {
     return ST_POINTER (object)->mark;
 }
 
 INLINE void
-st_heap_object_set_mark (st_oop_t object, st_oop_t mark)
+st_heap_object_set_mark (st_oop object, st_oop mark)
 {
     ST_POINTER (object)->mark = mark;
 }
 
-INLINE st_oop_t *
-st_heap_object_instvars (st_oop_t object)
+INLINE st_oop *
+st_heap_object_instvars (st_oop object)
 {
-    return ((st_heap_object_t *) ST_POINTER (object))->instvars;
+    return ((STHeapObject *) ST_POINTER (object))->instvars;
 }
 
 #endif /* __ST_HEAP_OBJECT_H__ */

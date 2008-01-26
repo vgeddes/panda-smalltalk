@@ -7,7 +7,7 @@
 #include <st-ast.h>
 
 
-st_node_method_t *st_parser_parse (st_lexer_t *lexer);
+STNode *st_parser_parse (STLexer *lexer);
 
 
 #endif // __ST_PARSER_H__

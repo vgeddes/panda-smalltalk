@@ -23,49 +23,49 @@
 #include <st-types.h>
 #include <st-vtable.h>
 
-INLINE st_oop_t st_smi_new (st_smi_t num);
-INLINE st_smi_t st_smi_value (st_oop_t smi);
-INLINE st_oop_t st_smi_increment (st_oop_t smi);
-INLINE st_oop_t st_smi_decrement (st_oop_t smi);
-INLINE bool st_smi_equal (st_oop_t m, st_oop_t n);
-INLINE st_smi_t st_smi_hash (st_oop_t smi);
-const st_vtable_t *st_smi_vtable (void);
+INLINE st_oop st_smi_new (st_smi num);
+INLINE st_smi st_smi_value (st_oop smi);
+INLINE st_oop st_smi_increment (st_oop smi);
+INLINE st_oop st_smi_decrement (st_oop smi);
+INLINE bool st_smi_equal (st_oop m, st_oop n);
+INLINE st_smi st_smi_hash (st_oop smi);
+const STVTable *st_smi_vtable (void);
 
 
 /* inline definitions */
 
-INLINE st_oop_t
-st_smi_new (st_smi_t num)
+INLINE st_oop
+st_smi_new (st_smi num)
 {
-    return (st_oop_t) (num << ST_TAG_SIZE);
+    return (st_oop) (num << ST_TAG_SIZE);
 }
 
-INLINE st_smi_t
-st_smi_value (st_oop_t smi)
+INLINE st_smi
+st_smi_value (st_oop smi)
 {
-    return (st_smi_t) (smi >> ST_TAG_SIZE);
+    return (st_smi) (smi >> ST_TAG_SIZE);
 }
 
-INLINE st_oop_t
-st_smi_increment (st_oop_t smi)
+INLINE st_oop
+st_smi_increment (st_oop smi)
 {
     return st_smi_new (st_smi_value (smi) + 1);
 }
 
-INLINE st_oop_t
-st_smi_decrement (st_oop_t smi)
+INLINE st_oop
+st_smi_decrement (st_oop smi)
 {
     return st_smi_new (st_smi_value (smi) - 1);
 }
 
 INLINE bool
-st_smi_equal (st_oop_t m, st_oop_t n)
+st_smi_equal (st_oop m, st_oop n)
 {
     return m == n;
 }
 
-INLINE st_smi_t
-st_smi_hash (st_oop_t smi)
+INLINE st_smi
+st_smi_hash (st_oop smi)
 {
     return smi;
 }

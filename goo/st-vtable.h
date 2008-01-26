@@ -26,14 +26,14 @@
 typedef struct
 {
     /* allocation */
-    st_oop_t (*allocate) (st_oop_t klass);
+    st_oop (*allocate) (st_oop klass);
 
-    st_oop_t (*allocate_arrayed) (st_oop_t klass, st_smi_t size);
+    st_oop (*allocate_arrayed) (st_oop klass, st_smi size);
 
     /* debugging */
-    bool (*verify) (st_oop_t object);
+    bool (*verify) (st_oop object);
 
-    char *(*describe) (st_oop_t object);
+    char *(*describe) (st_oop object);
 
 
     /* type tests */
@@ -70,32 +70,32 @@ typedef struct
     /* bootstrapping support below: Remove once an initial image has been created
      * We only use these for Strings, Symbols, Associations and Dictionaries
      */
-    bool (*equal) (st_oop_t object, st_oop_t another);
+    bool (*equal) (st_oop object, st_oop another);
 
-    guint (*hash) (st_oop_t object);
+    guint (*hash) (st_oop object);
 
     /* implementation methods for sets and dictionaries - also remove after bootstrapping */
 
-    st_smi_t (*scan_for_object) (st_oop_t collection, st_oop_t object);
+    st_smi (*scan_for_object) (st_oop collection, st_oop object);
 
-    void (*no_check_add) (st_oop_t collection, st_oop_t object);
+    void (*no_check_add) (st_oop collection, st_oop object);
 
-} st_vtable_t;
+} STVTable;
 
-typedef void (*st_vtable_init_func_t) (st_vtable_t *table);
+typedef void (*STVTableInitFunc) (STVTable *table);
 
-const st_vtable_t *st_vtable_register (const st_vtable_t    *parent_table,
-				       st_vtable_init_func_t init_func);
+const STVTable *st_vtable_register (const STVTable    *parent_table,
+				    STVTableInitFunc   init_func);
 
 
 #define ST_DEFINE_VTABLE(table_name, parent_table)                 \
                                                                    \
-static void table_name##_vtable_init (st_vtable_t *table);         \
+static void table_name##_vtable_init (STVTable *table);            \
                                                                    \
-const st_vtable_t *                                                \
+const STVTable *                                                   \
 table_name##_vtable (void)                                         \
 {                                                                  \
-        static const st_vtable_t *__st_vtable = NULL;              \
+        static const STVTable *__st_vtable = NULL;                 \
         if (G_UNLIKELY (__st_vtable == NULL)) {                    \
                 __st_vtable =                                      \
                 st_vtable_register ((parent_table),                \

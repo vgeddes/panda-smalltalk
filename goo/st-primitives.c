@@ -28,13 +28,13 @@ typedef struct
 static void
 SmallInteger_minus (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
-    st_oop_t arg = stack_pop (es);
+    st_oop receiver = stack_pop (es);
+    st_oop arg = stack_pop (es);
 
     long a = st_small_integer_value (receiver);
     long b = st_small_integer_value (arg);
 
-    st_oop_t c = st_small_integer_new (a - b);
+    st_oop c = st_small_integer_new (a - b);
 
     stack_push (es, c);
 }
@@ -42,13 +42,13 @@ SmallInteger_minus (ExecutionState es)
 static void
 SmallInteger_add (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
-    st_oop_t arg = stack_pop (es);
+    st_oop receiver = stack_pop (es);
+    st_oop arg = stack_pop (es);
 
     long a = st_small_integer_value (receiver);
     long b = st_small_integer_value (arg);
 
-    st_oop_t c = st_small_integer_new (a + b);
+    st_oop c = st_small_integer_new (a + b);
 
     stack_push (es, c);
 }
@@ -56,9 +56,9 @@ SmallInteger_add (ExecutionState es)
 static void
 Object_class (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
+    st_oop receiver = stack_pop (es);
 
-    st_oop_t klass = st_object_class (receiver);
+    st_oop klass = st_object_class (receiver);
 
     stack_push (es, klass);
 }
@@ -66,9 +66,9 @@ Object_class (ExecutionState es)
 static void
 Object_size (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
+    st_oop receiver = stack_pop (es);
 
-    st_oop_t size = st_array_object_size (receiver);
+    st_oop size = st_array_object_size (receiver);
 
     stack_push (es, size);
 }
@@ -76,9 +76,9 @@ Object_size (ExecutionState es)
 static void
 Object_hash (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
+    st_oop receiver = stack_pop (es);
 
-    st_oop_t hash = st_small_integer_new (st_mark_get_hash (st_object_get_mark (receiver)));
+    st_oop hash = st_small_integer_new (st_mark_get_hash (st_object_get_mark (receiver)));
 
     stack_push (es, hash);
 }
@@ -86,10 +86,10 @@ Object_hash (ExecutionState es)
 static void
 Object_at (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
-    st_oop_t index = stack_pop (es);
+    st_oop receiver = stack_pop (es);
+    st_oop index = stack_pop (es);
 
-    st_oop_t element = st_array_object_at (receiver, st_small_integer_value (index));
+    st_oop element = st_array_object_at (receiver, st_small_integer_value (index));
 
     stack_push (es, element);
 }
@@ -97,9 +97,9 @@ Object_at (ExecutionState es)
 static void
 Object_at_put (ExecutionState es)
 {
-    st_oop_t receiver = stack_pop (es);
-    st_oop_t index = stack_pop (es);
-    st_oop_t object = stack_pop (es);
+    st_oop receiver = stack_pop (es);
+    st_oop index = stack_pop (es);
+    st_oop object = stack_pop (es);
 
     st_array_object_at_put (receiver, st_small_integer_value (index), object);
 

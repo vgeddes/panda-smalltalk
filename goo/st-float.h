@@ -25,33 +25,33 @@
 
 typedef struct
 {
-    st_header_t header;
+    STHeader header;
 
     double value;
 
-} st_float_t;
+} STFloat;
 
 
-st_oop_t st_float_new (double value);
+st_oop st_float_new (double value);
 
-INLINE double st_float_value (st_oop_t f);
+INLINE double st_float_value (st_oop f);
 
-INLINE void st_float_set_value (st_oop_t f, double value);
+INLINE void st_float_set_value (st_oop f, double value);
 
-const st_vtable_t *st_float_vtable (void);
+const STVTable *st_float_vtable (void);
 
 
 /* inline definitions */
-#define ST_FLOAT(oop) ((st_float_t *) ST_POINTER (oop))
+#define ST_FLOAT(oop) ((STFloat *) ST_POINTER (oop))
 
 INLINE double
-st_float_value (st_oop_t f)
+st_float_value (st_oop f)
 {
     return ST_FLOAT (f)->value;
 }
 
 INLINE void
-st_float_set_value (st_oop_t f, double value)
+st_float_set_value (st_oop f, double value)
 {
     ST_FLOAT (f)->value = value;
 }

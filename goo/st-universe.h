@@ -21,11 +21,13 @@
 
 #include <st-types.h>
 
-extern st_oop_t st_nil,
+extern st_oop
+    st_nil,
     st_true,
     st_false,
     st_symbol_table,
     st_smalltalk,
+
     st_undefined_object_class,
     st_metaclass_class,
     st_behavior_class,
@@ -46,7 +48,10 @@ extern st_oop_t st_nil,
     st_compiled_block_class;
 
 
-st_oop_t st_global_get (const char *name);
+void   st_bootstrap_universe (void);
+
+st_oop st_global_get (const char *name);
+
 
 
 #endif /* __ST_UNIVERSE_H__ */
