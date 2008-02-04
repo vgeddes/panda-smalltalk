@@ -1,21 +1,26 @@
-/* 
- * st-ast.h
+/*
+ * st-ast.c
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (c) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #ifndef __ST_AST_H__
 #define __ST_AST_H__
@@ -27,12 +32,10 @@ typedef enum
 {
     ST_METHOD_NODE,
     ST_BLOCK_NODE,
-    ST_PRIMITIVE_NODE,
     ST_VARIABLE_NODE,
     ST_ASSIGN_NODE,
     ST_RETURN_NODE,
     ST_MESSAGE_NODE,
-    ST_SELECTOR_NODE,
     ST_LITERAL_NODE,
     
 } STNodeType;
@@ -45,21 +48,12 @@ typedef enum
 
 } STMessagePrecedence;
 
-typedef enum
-{
-    
-    POBNIK,
-
-} STNodeFlags;
-
 typedef struct STNode STNode;
  
 struct STNode
 {
     STNodeType type;
-    
-    STNodeFlags flags;
-    
+        
     /* line number where the node construct starts */
     int line;
 
@@ -69,7 +63,7 @@ struct STNode
     /* Common fields */
     struct {
 	STMessagePrecedence precedence;
-	STNode *selector;
+	st_oop  selector;
 	STNode *temporaries;
 	STNode *arguments;
 	STNode *statements;
@@ -77,23 +71,23 @@ struct STNode
     };
 
     union {
-	/* Message */
+	/*  receiver for MessageNode */
 	struct {
 	    STNode *receiver;
 	};
-	/* Primitive */
+	/* primitive for MethodNode */
 	struct {
 	    int primitive;
 	};
-	/* Assign */
+	/* assignee for AssignNode */
 	struct {
 	    STNode *assignee;
 	};
-	/* Literal (SmallInteger, String, Symbol, Float, Character ) */
+	/* value for LiteralNode */
 	struct {
 	    st_oop literal;
 	};
-	/* Variable | Selector */
+	/* name for a VariableNode */
 	struct {
 	    st_oop name;
 	};
@@ -104,6 +98,8 @@ struct STNode
 STNode *st_node_new (STNodeType type);
 
 STNode *st_node_append (STNode *list, STNode *node);
+
+guint   st_node_length (STNode *list);
 
 void    st_print_method (STNode *method);
 

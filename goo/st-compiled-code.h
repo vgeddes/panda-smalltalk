@@ -1,21 +1,26 @@
 /*
  * st-compiled-code.h
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #ifndef __ST_COMPILED_CODE_H__
 #define __ST_COMPILED_CODE_H__
@@ -77,7 +82,7 @@ INLINE st_oop st_compiled_code_header          (st_oop code);
 
 INLINE void     st_compiled_code_set_header      (st_oop code, st_oop header);
 
-INLINE int      st_compiled_codeemp_count      (st_oop code);
+INLINE int      st_compiled_code_temp_count      (st_oop code);
 
 INLINE int      st_compiled_code_arg_count       (st_oop code);
 
@@ -110,9 +115,9 @@ INLINE void     st_compiled_block_set_method         (st_oop block, st_oop metho
 
 INLINE st_oop    st_compiled_block_method          (st_oop block);
 
-const STVTable *st_compiled_block_vtable          (void);
+guint st_compiled_block_vtable  (void);
 
-const STVTable *st_compiled_method_vtable         (void);
+guint st_compiled_method_vtable (void);
 
 
 
@@ -190,10 +195,10 @@ enum
     st_flag_shift        = st_arg_bits + st_arg_shift,
 
     st_primitive_mask           = ST_NTH_MASK (st_primitive_bits),
-    st_primitive_mask_aligned   = st_primitive_bits << st_primitive_shift,
+    st_primitive_mask_aligned   = st_primitive_mask << st_primitive_shift,
 
     st_stack_mask               = ST_NTH_MASK (st_stack_bits),
-    st_stack_mask_aligned       = st_stack_bits << st_stack_shift,
+    st_stack_mask_aligned       = st_stack_mask << st_stack_shift,
     
     st_instvar_mask             = ST_NTH_MASK (st_instvar_bits),
     st_instvar_mask_aligned     = st_instvar_mask << st_instvar_shift,
@@ -230,7 +235,7 @@ st_compiled_code_set_header (st_oop code, st_oop header)
 }
 
 INLINE int
-st_compiled_codeemp_count (st_oop code)
+st_compiled_code_temp_count (st_oop code)
 {
     return GET_BITFIELD (HEADER (code), temp);
 }

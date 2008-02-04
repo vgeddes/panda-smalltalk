@@ -1,21 +1,26 @@
 /*
  * st-lexer.c
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 /* Notes:
  *
@@ -81,7 +86,7 @@ struct STLexer
     STToken *token;
 
     /* error control */
-    bool failed;
+    bool    failed;
     jmp_buf main_loop;
     
     /* last error information */
@@ -97,23 +102,26 @@ struct STLexer
 struct STToken
 {
     STTokenType type;
-    char *text;
     int   line;
     int   column;
-};
 
-struct STNumberToken
-{
-    STToken parent;
-    
-    int   radix;
-    int   exponent;
+    union {
+	struct {
+	    char *text;
+	};
+	/* Number Token */
+	struct {
+	    char *number;
+	    int   radix;
+	    int   exponent;
+	};
+    };
 };
 
 static void
 make_token (STLexer      *lexer,
 	    STTokenType  type,
-	    char            *text)
+	    char        *text)
 {
     STToken *token;
 
@@ -134,16 +142,15 @@ make_number_token (STLexer *lexer, int radix, int exponent, char *number)
 {
     STToken *token;
 
-    token = obstack_alloc (&lexer->allocator, sizeof (STNumberToken));
+    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
     
     token->type   = ST_TOKEN_NUMBER_CONST;
-    token->text   = number;
     token->line   = lexer->line;
     token->column = lexer->column;
 
-    STNumberToken *number_token = ST_NUMBER_TOKEN (token);
-    number_token->radix    = radix;
-    number_token->exponent = exponent;
+    token->number   = number;
+    token->radix    = radix;
+    token->exponent = exponent;
 
     lexer->token = token;
     lexer->token_matched = true;
@@ -363,7 +370,7 @@ match_keyword_or_identifier (STLexer *lexer, bool create_token)
 
     STTokenType token_type;
 
-    if (lookahead (lexer, 1) == ':') {
+    if (lookahead (lexer, 1) == ':' && lookahead (lexer, 2) != '=') {
 	consume (lexer);
 	token_type = ST_TOKEN_KEYWORD_SELECTOR;
     } else {
@@ -903,14 +910,21 @@ st_lexer_current_token (STLexer *lexer)
     return lexer->token;
 }
 
+
+char *
+st_number_token_number (STToken *token)
+{
+    return token->number;
+}
+
 guint
-st_number_token_radix (STNumberToken *token)
+st_number_token_radix (STToken *token)
 {
     return token->radix;
 }
 
 int
-st_number_token_exponent (STNumberToken *token)
+st_number_token_exponent (STToken *token)
 {
     return token->exponent;
 }

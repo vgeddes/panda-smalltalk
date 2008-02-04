@@ -1,21 +1,26 @@
 /*
  * st-class.c
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #include "st-class.h"
 #include "st-heap-object.h"
@@ -43,10 +48,10 @@ class_verify (st_oop object)
     bool verified = true;
 
     /* verify header */
-    if (!st_heap_object_vtable ()->verify (object))
+    if (!tables[st_heap_object_vtable ()].verify (object))
 	return false;
 
-    verified = verified && (ST_CLASS_VTABLE (object) != NULL);
+    verified = verified && (st_behavior_format (object) > 0);
 
     // superclass of Object is st_nil !
     st_oop superclass = st_behavior_superclass (object);
@@ -122,10 +127,10 @@ metaclass_verify (st_oop object)
     bool verified = true;
 
     /* verify header */
-    if (!st_heap_object_vtable ()->verify (object))
+    if (!tables[st_heap_object_vtable ()].verify (object))
 	return false;
 
-    verified = verified && (ST_CLASS_VTABLE (object) != NULL);
+    verified = verified && (st_behavior_format (object) > 0);
 
     // superclass of 'Object class' is 'Class' is st_nil !
     st_oop superclass = st_behavior_superclass (object);
@@ -150,7 +155,7 @@ metaclass_allocate (st_oop klass)
 
     st_object_initialize_header (object, st_metaclass_class);
 
-    ST_CLASS_VTABLE (object) = st_class_vtable ();
+    st_behavior_set_format (object, st_class_vtable ());
 
     return object;
 }

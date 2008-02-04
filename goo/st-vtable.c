@@ -1,21 +1,26 @@
 /*
  * st-vtable.c
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #include "st-vtable.h"
 
@@ -24,30 +29,32 @@
 /* Max number of tables
  * please do increase if more tables are needed
  */ 
-#define NUM_TABLES_MAX 15
+#define NUM_TABLES_MAX 50
 
-static STVTable tables[NUM_TABLES_MAX] = { { 0 } };
-static guint     num_tables = 0;
+STVTable tables[NUM_TABLES_MAX] = { { 0 } };
+static guint num_tables = 1;
 
 /*
- * Returns a new vtable, derived from a parent_table.
+ * Creates a new vtable, derived from a parent_table.
  */
-const STVTable *
-st_vtable_register (const STVTable     *parent_table,
-		    STVTableInitFunc   init_func)
+guint
+st_vtable_register (guint             parent_table_id,
+		    STVTableInitFunc  init_func)
 {
-    STVTable * table;
+    int table_id;
+    g_debug ("%i\n", num_tables);
 
     g_assert (init_func != NULL);
+    g_assert (parent_table_id < NUM_TABLES_MAX);
     g_assert (num_tables < NUM_TABLES_MAX);
 
-    table = &tables[num_tables++];
+    table_id = num_tables++;
     
-    if (parent_table != NULL)
-	*table = *parent_table;
+    if (parent_table_id > 0)
+	tables[table_id] = tables[parent_table_id];
 
-    init_func (table);
+    init_func (&tables[table_id]);
 
-    return table;
+    return table_id;
 }
 

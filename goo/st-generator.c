@@ -1,140 +1,54 @@
-
+/*
+ * st-generator.c
+ *
+ * Copyright (C) 2008 Vincent Geddes
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #include "st-generator.h"
 
 #include "st-types.h"
+#include "st-object.h"
+#include "st-symbol.h"
+#include "st-hashed-collection.h"
+#include "st-compiled-code.h"
+#include "st-byte-array.h"
+#include "st-universe.h"
+#include "st-class.h"
+
+#include <glib.h>
+#include <string.h>
+#include <stdlib.h>
+
+
+#define DEFAULT_CODE_SIZE 50
 
 typedef enum
 {
-    push_temp_0 = 1,
-    push_temp_1,
-    push_temp_2,
-    push_temp_3,
-    push_temp_4,
-    push_temp_5,
-    push_temp_6,
-    push_temp_7,
-    push_temp_8,
-    push_temp_9,
-    push_temp_10,
-    push_temp_11,
-    push_temp_12,
-    push_temp_13,
-    push_temp_14,
-    push_temp_15,
-
-    push_temp_n,
-
-    store_pop_temp_0,
-
-
+    push_temp_n = 1,
     store_pop_temp_n,
 
-    push_instvar_0,
-    push_instvar_1,
-    push_instvar_2,
-    push_instvar_3,
-    push_instvar_4,
-    push_instvar_5,
-    push_instvar_6,
-    push_instvar_7,
-    push_instvar_8,
-    push_instvar_9,
-    push_instvar_10,
-    push_instvar_11,
-    push_instvar_12,
-    push_instvar_13,
-    push_instvar_14,
-    push_instvar_15,
-
     push_instvar_n,
-
-    store_pop_instvar_0,
-    store_pop_instvar_1,
-    store_pop_instvar_2,
-    store_pop_instvar_3,
-    store_pop_instvar_4,
-    store_pop_instvar_5,
-    store_pop_instvar_6,
-    store_pop_instvar_7,
-    store_pop_instvar_8,
-    store_pop_instvar_9,
-    store_pop_instvar_10,
-    store_pop_instvar_11,
-    store_pop_instvar_12,
-    store_pop_instvar_13,
-    store_pop_instvar_14,
-    store_pop_instvar_15,
-
     store_pop_instvar_n,
 
-    push_literal_const_0,
-    push_literal_const_1,
-    push_literal_const_2,
-    push_literal_const_3,
-    push_literal_const_4,
-    push_literal_const_5,
-    push_literal_const_6,
-    push_literal_const_7,
-    push_literal_const_8,
-    push_literal_const_9,
-    push_literal_const_10,
-    push_literal_const_11,
-    push_literal_const_12,
-    push_literal_const_13,
-    push_literal_const_14,
-    push_literal_const_15,
-    push_literal_const_16,
-    push_literal_const_17,
-    push_literal_const_18,
-    push_literal_const_19,
-    push_literal_const_20,
-    push_literal_const_21,
-    push_literal_const_22,
-    push_literal_const_23,
-    push_literal_const_24,
-    push_literal_const_25,
-    push_literal_const_26,
-    push_literal_const_27,
-    push_literal_const_28,
-    push_literal_const_29,
-    push_literal_const_30,
-    push_literal_const_31,
     push_literal_const_n,
-
-    push_literal_var_0,
-    push_literal_var_1,
-    push_literal_var_2,
-    push_literal_var_3,
-    push_literal_var_4,
-    push_literal_var_5,
-    push_literal_var_6,
-    push_literal_var_7,
-    push_literal_var_8,
-    push_literal_var_9,
-    push_literal_var_10,
-    push_literal_var_11,
-    push_literal_var_12,
-    push_literal_var_13,
-    push_literal_var_14,
-    push_literal_var_15,
-    push_literal_var_16,
-    push_literal_var_17,
-    push_literal_var_18,
-    push_literal_var_19,
-    push_literal_var_20,
-    push_literal_var_21,
-    push_literal_var_22,
-    push_literal_var_23,
-    push_literal_var_24,
-    push_literal_var_25,
-    push_literal_var_26,
-    push_literal_var_27,
-    push_literal_var_28,
-    push_literal_var_29,
-    push_literal_var_30,
-    push_literal_var_31,
-    
     push_literal_var_n,
 
     store_literal_var_n,
@@ -145,16 +59,8 @@ typedef enum
     push_nil,
     push_true,
     push_false,
-    push_minus_one,
-    push_zero,
-    push_one,
-    push_two,
 
     return_stack_top,
-    return_self,
-    return_nil,
-    return_true,
-    return_false,
 
     pop_stack_top,
     duplicate_stack_top,
@@ -163,18 +69,12 @@ typedef enum
 
     create_block,
 
-    jump_true,
-    jump_false,
-    jump,
     jump_far_true,
     jump_far_false,
     jump_far,
 
-    send_0_args,
-    send_1_args,
-    send_2_args,
-    send_n_args,
-    send_n_args_super,
+    send,        /* B - B (arg count) - B (index of selector in literal frame) */ 
+    send_super,
 
     send_plus,
     send_minus,
@@ -195,58 +95,109 @@ typedef enum
     send_at,
     send_at_put,
     send_size,
-    send_value,
-    send_value_arg,
     send_identity_eq,
     send_class,
-    send_hash,
-    send_do,
     send_new,
     send_new_arg,
     
-} code_t;
+} Code;
+
+enum {
+    SPECIAL_PLUS,
+    SPECIAL_MINUS,
+    SPECIAL_LT,
+    SPECIAL_GT,
+    SPECIAL_LE,
+    SPECIAL_GE,
+    SPECIAL_EQ,
+    SPECIAL_NE,
+    SPECIAL_MUL,
+    SPECIAL_DIV,
+    SPECIAL_MOD,
+    SPECIAL_BITSHIFT,
+    SPECIAL_BITAND,
+    SPECIAL_BITOR,
+    SPECIAL_BITXOR,
+    
+    SPECIAL_AT,
+    SPECIAL_ATPUT,
+    SPECIAL_SIZE,
+    SPECIAL_VALUE,
+    SPECIAL_IDEQ,
+    SPECIAL_CLASS,
+    SPECIAL_HASH,
+    SPECIAL_NEW,
+    SPECIAL_NEW_ARG,
+
+    NUM_SPECIALS,
+} STSpecialType;
 
 typedef struct 
 {
     st_oop method;
+ 
+    GList   *temporaries;
+    /* names of instvars, in order of location in the object */
+    GList   *instvars;
+    /* literal frame for the compiled code */
+    GList   *literals;
 
-    GList  *temporary_nams; 
-    GList  *instvar_names;
-    GList  *literals;
-    int     primitive;
-
-    guchar  code;
-    guint   size;
-    guint   alloc
+    guchar  *code;
+    guint    size;
+    guint    alloc;
     
-    guint   stack_depth;
+    guint    stack_depth;
 
-} generator_t;
+} Generator;
+
+st_oop specials[NUM_SPECIALS] = { 0 };
+			      
+
+static void
+init_specials (void)
+{
+    /* arithmetic specials */
+    specials[SPECIAL_PLUS]     = st_symbol_new ("+");
+    specials[SPECIAL_MINUS]    = st_symbol_new ("-");
+    specials[SPECIAL_LT]       = st_symbol_new ("<");
+    specials[SPECIAL_GT]       = st_symbol_new (">");
+    specials[SPECIAL_LE]       = st_symbol_new ("<=");
+    specials[SPECIAL_GE]       = st_symbol_new (">=");
+    specials[SPECIAL_EQ]       = st_symbol_new ("=");
+    specials[SPECIAL_NE]       = st_symbol_new ("~=");
+    specials[SPECIAL_MUL]      = st_symbol_new ("*");
+    specials[SPECIAL_DIV]      = st_symbol_new ("/");
+    specials[SPECIAL_MOD]      = st_symbol_new ("\\");
+    specials[SPECIAL_BITSHIFT] = st_symbol_new ("bitShift:");
+    specials[SPECIAL_BITAND]   = st_symbol_new ("bitAnd:");
+    specials[SPECIAL_BITOR]    = st_symbol_new ("bitOr:");
+    specials[SPECIAL_BITXOR]   = st_symbol_new ("bitXor:");
+    
+    /* message specials */
+    specials[SPECIAL_AT]       = st_symbol_new ("at:");
+    specials[SPECIAL_ATPUT]    = st_symbol_new ("at:put:");
+    specials[SPECIAL_SIZE]     = st_symbol_new ("size");
+    specials[SPECIAL_VALUE]    = st_symbol_new ("value");
+    specials[SPECIAL_IDEQ]     = st_symbol_new ("==");
+    specials[SPECIAL_CLASS]    = st_symbol_new ("class");
+    specials[SPECIAL_HASH]     = st_symbol_new ("hash");
+    specials[SPECIAL_NEW]      = st_symbol_new ("new");
+    specials[SPECIAL_NEW_ARG]  = st_symbol_new ("new:");
+}
 
 
-#define DEFAULT_CODE_SIZE 50
+static void generate_expression (Generator *gt, STNode *node);
 
-
-static const * const arithmetic_specials[] = {
-    "+", "-", "<", ">", "<=", ">=", "=", "~=",
-    "*", "/", "\\", "bitShift:", "bitAnd:", "bitOr:", "bitXor:", 
-};
-static const * const message_specials[] = {
-    "at:", "at:put:", "size", "value", "value:", "==", "class", "hash", "do:", "new", "new:",
-};
-
-static generator_t *
+static Generator *
 generator_new (st_oop klass, GList *temps, GList *args)
 {
-    generator_t *gt;
+    Generator *gt;
 
-    gt = g_slice_new0 (generator_t);
+    gt = g_slice_new0 (Generator);
 
-    gt->temporary_names = g_list_concat (temps, args);
-    gt->instvar_names = st_behavior_all_instance_variables (object);
-    gt->literals  = NULL;
-    gt->flags     = 0;
-    gt->primitive = 0;
+    gt->temporaries = g_list_concat (args, temps);
+    gt->instvars    = st_behavior_all_instance_variables (klass);
+    gt->literals    = NULL;
 
     gt->code  = g_malloc (DEFAULT_CODE_SIZE);
     gt->alloc = DEFAULT_CODE_SIZE;
@@ -257,22 +208,59 @@ generator_new (st_oop klass, GList *temps, GList *args)
     return gt;
 }
 
-static void
-generation_error (const char *msg, STNode *node)
+static st_oop
+create_literals_array (Generator *gt)
 {
-    printf ("error:%i: %s\n", msg, node->line);
-    abort ();
+    int    count;
+    st_oop literals = st_nil;
+
+    count = g_list_length (gt->literals);
+
+    if (count > 0) {
+	literals = st_object_new_arrayed (st_array_class, count); 
+
+	int i = 1;
+	for (GList *l = gt->literals; l; l = l->next) {
+	    st_array_at_put (literals, i, (st_oop) l->data);
+	    i++;
+	}
+    }
+
+    return literals;
+}
+
+static st_oop
+create_bytecode_array (Generator *gt)
+{
+    if (gt->size == 0)
+	return st_nil;
+
+    st_oop  bytecode;
+    guchar   *bytes;
+
+    bytecode = st_object_new_arrayed (st_byte_array_class, gt->size);
+    bytes = st_byte_array_bytes (bytecode);
+    memcpy (bytes, gt->code, gt->size);
+
+    return bytecode;
 }
 
 static void
-resize (generator_t *gt)
+generation_error (const char *msg, STNode *node)
+{
+    printf ("error:%i: %s\n", node->line, msg);
+    exit (1);
+}
+
+static void
+resize (Generator *gt)
 {
     gt->alloc += gt->alloc;
     gt->code = g_realloc (gt->code, gt->alloc);
 }
 
 static void
-push (generator_t *gt, guchar code)
+push (Generator *gt, guchar code)
 {
     gt->size++;
     if (gt->size > gt->alloc)
@@ -281,20 +269,14 @@ push (generator_t *gt, guchar code)
     gt->code[gt->size - 1] = code;
 }
 
-static char *
-node_identifier_name (STNode *node)
-{
-    g_assert (node->type == ST_NODE_IDENTIFIER);
-    return ST_NODE_IDENTIFIER_CAST (node)->name;
-}
 
 static int
-find_temporary (generator_t *gt, const char *name)
+find_instvar (Generator *gt, st_oop name)
 {   
     int i = 0;
-    for (GList *l = gt->temporary_names; l; l = l->next) {
+    for (GList *l = gt->instvars; l; l = l->next) {
 
-	if (streq (name, (char *) l->data))
+	if (st_object_equal (name, (st_oop) l->data))
 	    return i;
 	i++;
     }
@@ -302,12 +284,12 @@ find_temporary (generator_t *gt, const char *name)
 }
 
 static int
-find_instvar (generator_t *gt, const char *name)
-{    
+find_temporary (Generator *gt, st_oop name)
+{   
     int i = 0;
-    for (GList *l = gt->instvar_names; l; l = l->next) {
+    for (GList *l = gt->temporaries; l; l = l->next) {
 
-	if (streq (name, (char *) l->data))
+	if (st_object_equal (name, (st_oop) l->data))
 	    return i;
 	i++;
     }
@@ -315,9 +297,24 @@ find_instvar (generator_t *gt, const char *name)
 }
 
 static int
-find_literal_var (generator_t *gt, const char *name)
-{    
-    st_oop assoc = st_dictionary_association_at (st_smalltalk, st_symbol_new (name));
+find_literal_const (Generator *gt, st_oop literal)
+{   
+    int i = 0;
+    for (GList *l = gt->literals; l; l = l->next) {
+
+	if (st_object_equal (literal, (st_oop) l->data))
+	    return i;
+	i++;
+    }
+    gt->literals = g_list_append (gt->literals, (void *) literal);
+    return i;
+}
+
+static int
+find_literal_var (Generator *gt, st_oop name)
+{
+    /* check that variable binding exists */
+    st_oop assoc = st_dictionary_association_at (st_smalltalk, name);
     if (assoc == st_nil)
 	return -1;
     
@@ -327,518 +324,564 @@ find_literal_var (generator_t *gt, const char *name)
 	    return i;
 	i++;
     }
-    gt->literals = g_list_append (gt->literals, assoc);
+    gt->literals = g_list_append (gt->literals, (void *) assoc);
     return i;
 }
 
-static int
-find_literal_const (generator_t *gt, st_node_literal_t *node)
-{
-    st_nodeype_t type = ((STNode *) node)->type;
-
-    switch (type) {
-    case ST_NODE_LITERAL_INTEGER:
-    {
-	int i = 0;
-	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (node->integer,(st_oop) l->data))
-		return i;
-	    ++i;
-	}
-	gt->literals = g_list_append (gt->literals, node->integer);
-	return i;
-    }
-    case ST_NODE_LITERAL_STRING:
-    {
-	st_oop string = st_string_new (node->string);
-	int i = 0;   
-	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (string, (st_oop) l->data))
-		return i;
-	    ++i;
-	}
-	gt->literals = g_list_append (gt->literals, string);
-	return i;
-
-    }
-    case ST_NODE_LITERAL_SYMBOL:
-    {
-	st_oop symbol = st_symbol_new (node->string);
-	int i = 0;
-	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (symbol, (st_oop) l->data))
-		return i;
-	    ++i;
-	}	
-	gt->literals = g_list_append (gt->literals, symbol);
-	return i;
-    }
-    case ST_NODE_LITERAL_CHARACTER:
-    {
-	st_oop character = st_object_new (character_class);
-	st_character_set_value (character, node->character);
-	int i = 0;
-	for (GList *l = gt->literals; l; l = l->next) {
-	    if (st_object_equal (character, (st_oop) l->data))
-		return i;
-	    ++i;
-	}	
-	gt->literals = g_list_append (gt->literals, character);
-	return i;
-    }
-    default:
-	g_assert_not_reached ();
-	return -1;
-    }
-}
-
 static void
-assign_temp (generator_t *gt, int index, bool pop)
+assign_temp (Generator *gt, int index)
 {
     g_assert (index <= 255);
 
-    if (!pop) {
-	push (gt, store_temp_n);
-	push (gt, (char) index); 
-    } else if (index > 15) {
-	push (gt, store_pop_temp_n);
-	push (gt, (char) index);
-    } else {
-	push (gt, (char) (store_pop_temp_0 + index));
-    }
+    push (gt, store_temp_n);
+    push (gt, (guchar) index);
 }
 
 static void
-assign_instvar (generator_t *gt, int index, bool pop)
+assign_instvar (Generator *gt, int index)
 {
     g_assert (index <= 255);
 
-    if (!pop) {
-	push (gt, store_instvar_n);
-	push (gt, (char) index); 
-    } else if (index > 15) {
-	push (gt, store_pop_instvar_n);
-	push (gt, (char) index);
-    } else {
-	push (gt, (char) (store_pop_instvar_0 + index));
-    }
+    push (gt, store_instvar_n);
+    push (gt, (guchar) index); 
 }
 
 static void
-assign_literal_var (generator_t *gt, int index, bool pop)
+assign_literal_var (Generator *gt, int index)
 {
     g_assert (index <= 255);
-
-    if (!pop) {
-	push (gt, store_literal_var_n);
-	push (gt, (guchar) index); 
-    } else if (index > 31) {
-	push (gt, store_pop_literal_var_n);
-	push (gt, (guchar) index);
-    } else {
-	push (gt, (guchar) (store_pop_literal_var_0 + index));
-    }
-}
-
-static void
-push_temp (generator_t *gt, int index)
-{
-    g_assert (index <= 255);
-    if (index > 15) {
-	push (gt, push_temp_n);
-	push (gt, (guchar) index);
-    } else {
-	push (gt, (guchar) (push_temp_0 + index));
-    }
-    gt->stack_depth++;
-}
-
-static void
-push_instvar (generator_t *gt, int index)
-{
-    g_assert (index <= 255);
-    if (index > 15) {
-	push (gt, push_instvar_n);
-	push (gt, (guchar) index);
-    } else {
-	push (gt, (guchar) (push_instvar_0 + index));
-    }
-    gt->stack_depth++;
-}
-
-static void
-push_literal_var (generator_t *gt, int index)
-{
-    g_assert (index <= 255);
-    if (index > 31) {
-	push (gt, push_literal_var_n);
-	push (gt, (guchar) index);
-    } else {
-	push (gt, (guchar) (push_literal_var_0 + index));
-    }
-    gt->stack_depth++;
-}
-
-static void
-push_literal_const (generator_t *gt, int index)
-{
-    g_assert (index <= 255);
-    if (index > 31) {
-	push (gt, push_literal_const_n);
-	push (gt, (guchar) index);
-    } else {
-	push (gt, (guchar) (push_literal_const_0 + index));
-    }
-    gt->stack_depth++;
-}
-
-static void
-generate_assign (generator_t *gt, STNode *node, bool pop)
-{
-    st_node_assign_t *assign; = (st_node_assign_t *) node;
-    char *identifier;
-    int   index = 0;
-
-    gen_expression (gt, assign->variable);
-
-    identifier = node_identifier_name (assign->assignee);
     
-    index = find_temporary (gt, identifier);
+    push (gt, store_literal_var_n);
+    push (gt, (guchar) index); 
+}
+
+static void
+push_temporary (Generator *gt, int index)
+{
+    g_assert (index <= 255);
+
+    push (gt, push_temp_n);
+    push (gt, (guchar) index);
+
+    gt->stack_depth++;
+}
+
+static void
+push_instvar (Generator *gt, int index)
+{
+    g_assert (index <= 255);
+
+    push (gt, push_instvar_n);
+    push (gt, (guchar) index);
+    
+    gt->stack_depth++;
+}
+
+static void
+push_literal_var (Generator *gt, int index)
+{
+    g_assert (index <= 255);
+    
+    push (gt, push_literal_var_n);
+    push (gt, (guchar) index);
+    
+    gt->stack_depth++;
+}
+
+static void
+push_literal_const (Generator *gt, int index)
+{
+    g_assert (index <= 255);
+  
+    push (gt, push_literal_const_n);
+    push (gt, (guchar) index);
+    
+    gt->stack_depth++;
+}
+
+static void
+generate_assign (Generator *gt, STNode *node)
+{
+    int index;
+    
+    generate_expression (gt, node->expression);
+    
+    index = find_temporary (gt, node->assignee->name);
     if (index >= 0) {
-	assign_temp (gt, index, pop); 
+	assign_temp (gt, index); 
 	return;
     }
 
-    index = find_instvar (gt, identifier);
+    index = find_instvar (gt, node->assignee->name);
     if (index >= 0) {
-	assign_instvar (gt, index, pop);
+	assign_instvar (gt, index);
 	return;
     }
  
-    index = find_literal_var (gt, indentifier);
+    index = find_literal_var (gt, node->assignee->name);
     if (index >= 0) {
-	assign_literal_var (gt, index, pop);
+	assign_literal_var (gt, index);
 	return;
     }
     
-    gen_error ("could not resolve identifier", node);
+    generation_error ("could not resolve identifier", node);
 }
 
 static void
-generate_return (generator_t *gt, st_node_return_t *node)
+generate_return (Generator *gt, STNode *node)
 {
-    STNode *variable = node->variable;
+    generate_expression (gt, node->expression);
 
-    // quick return case
-    if (gt->top == 0 && variable->type == ST_NODE_IDENTIFIER) {
-
-	char *identifier = node_identifier_name (variable);
-
-	if (streq (identifier, "self")) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_RECEIVER);
-	    return;
-
-	}
-	if (streq (identifier, "nil")) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_NIL);
-	    return;
-
-	}
-	if (streq (identifier, "true")) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_TRUE);
-	    return;
-
-	}
-       if (streq (identifier, "false")) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_FALSE);
-	    return;
-	}
-
-       int index = find_identifier (gt, identifier);
-       if (index >= 0) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_INSTVAR);
-	    st_compiled_code_set_instvar_index (gt->method, index);
-	    return;
-       }
-    }
-
-    // quick return case
-    if (gt->top == 0 && value->type == ST_NODE_INTEGER) {
-
-	st_smi integer = ((st_node_literal_t *) variable)->integer;
-
-	if (integer == -1) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_MINUS_ONE);
-	    return;
-	}
-	if (integer == 0) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_ZERO);
-	    return;
-	}
-	if (integer == 1) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_ONE);
-	    return;
-	}
-	if (integer == 2) {
-	    st_compiled_code_set_flag (gt->method, ST_COMPILED_CODE_RETURN_LITERAL);
-	    st_compiled_code_set_literal_type (gt->method, ST_COMPILED_CODE_LITERAL_TWO);
-	    return;
-	}
-    }
-
-    if (variable->type == ST_NODE_IDENTIFIER) {
-
-	char *identifier = node_identifier_name (variable);
-
-	if (streq (identifier, "self")) {
-	    append (gt, return_self);
-	    return;
-	}
-	if (streq (identifier, "nil")) {
-	    append (gt, return_nil);
-	    return;
-	}
-	if (streq (identifier, "true")) {
-	    append (gt, return_true);
-	    return;
-	}
-	if (streq (identifier, "false")) {
-	    append (gt, return_false);
-	    return;
-	}
-    }
-    
-    generate_expression (gt, variable);
     push (gt, return_stack_top);
 }
-
+			      
 static int
-
-static st_oop
-generate_block (st_oop object, st_node_block_t *node)
+generate_block (Generator *gt, STNode *node)
 {
-    st_oop *block;
+    int argcount = 0, tempcount = 0;
+    st_oop block;
 
-    block = st_object_new (compiled_block_class);
-}
+    GList *literals;
+    guchar *code;
+    int size, alloc, stack_depth;
 
+    literals = gt->literals;
+    code = gt->code;
+    size = gt->size;
+    alloc = gt->alloc;
+    stack_depth = gt->stack_depth;
 
-
-
-static void
-generate_message_send (generator_t *gt, st_node_expression_t *expression)
-{
-    STNode *receiver;
-    bool super_send = false;
-
-
-    if (expression->message->type == ST_NODE_MESSAGE_KEYWORD) {
-
-	st_node_keyword_message_t *message = (st_node_keyword_message_t *) expression->message;
-	GList *args = message->arguments;
-	st_node_block_t *true_block, *false_block;
-
-
-	
-
+    for (STNode *l = node->arguments; l; l = l->next) {
+	for (GList *t = gt->temporaries; t; t = t->next) {
+	    if (st_object_equal ((st_oop) t->data, l->name)) {
+		generation_error ("temporary name already used", l);
+	    }
+	}	
+	gt->temporaries = g_list_append (gt->temporaries, (void *) l->name);
+	argcount++;
     }
 
+   for (STNode *l = node->temporaries; l; l = l->next) {
+	for (GList *t = gt->temporaries; t; t = t->next) {
+	    if (st_object_equal ((st_oop) t->data, l->name)) {
+		generation_error ("temporary name already used", l);
+	    }
+	}	
+	gt->temporaries = g_list_append (gt->temporaries, (void *) l->name);
+	tempcount++;
+    }
+
+    generate_statements (generator, node->statements);
+
+    block = st_object_new (st_compiled_block_class);
     
+    st_compiled_code_set_bytecodes (block, create_bytecode_array (gt));
+    st_compiled_code_set_literals  (block, create_literals_array (gt));
+
+    st_compiled_code_set_arg_count (block, argcount);
+    st_compiled_code_set_temp_count (block, tempcount);
+ 
+
+    return -1;
+}
+
+
+static void
+generate_message (Generator *gt, STNode *msg)
+{
+    STNode *args;
+    guint   argcount = 0;
+    bool    super_send = false;
+
+    /* generate receiver */
+    generate_expression (gt, msg->receiver);
+
+    /* generate arguments */
+    args = msg->arguments;
+    for (; args; args = args->next) {
+	generate_expression (gt, args);
+	argcount++;
+    }
+
+    /* check if receiver is pseudo-variable 'super' */
+    if (msg->receiver->type == ST_VARIABLE_NODE
+	&& st_object_equal (msg->receiver->name, st_string_new ("super")))
+	super_send = true;
+
+    /* check if message is a special */
+    for (int i = 0; i < G_N_ELEMENTS (specials); i++) {
+	if (!super_send && msg->selector == specials[i]) {
+	    push (gt, send_plus + i);  
+		return;
+	}
+    }
+
+    /* send type */
+    if (super_send)
+	push (gt, send_super);
+    else
+	push (gt, send);
+
+    /* argument count */
+    push (gt, (guchar) argcount);
+	
+    /* index of selector in literal frame */
+    int index = find_literal_const (gt, msg->selector);
+    push (gt, (guchar) index);
 }
 
 static void
-generate_expression (generator_t *gt, STNode *node)
-{
-    st_node_expression_t *expression = (st_node_expression_t*) node;
-    
-    STNode *receiver = expression->receiver;
-    STNode *message = expression->message;
-    
+generate_expression (Generator *gt, STNode *node)
+{    
     switch (node->type) {
-
-    case ST_NODE_IDENTIFIER:
-    {	
-	int   index;
-	char *identifier = node_identifier_name (receiver);
-	
-	if (streq (identifier, "self") || streq (identifier, "super")) {
+    case ST_VARIABLE_NODE:
+    {		
+	if (st_object_equal (node->name, st_string_new ("self"))
+	    || st_object_equal (node->name, st_string_new ("super"))) {
 	    push (gt, push_self);
 	    gt->stack_depth++;
 	    break;
-	} else if (streq (identifier, "true")) {
+	} else if (st_object_equal (node->name, st_string_new ("true"))) {
 	    push (gt, push_true);
 	    gt->stack_depth++;
 	    break;
-	} else if (streq (identifier, "false")) {
+	} else if (st_object_equal (node->name, st_string_new ("false"))) {
 	    push (gt, push_false);
 	    gt->stack_depth++;
 	    break;
+	} else if (st_object_equal (node->name, st_string_new ("nil"))) {
+	    push (gt, push_nil);
+	    gt->stack_depth++;
+	    break;
 	}
-	
-	index = find_temporary (gt, identifier);
+
+	int index;	
+	index = find_temporary (gt, node->name);
 	if (index >= 0) {
 	    push_temporary (gt, index);
 	    break;
 	}
-	index = find_instvar (gt, identifier);
+	index = find_instvar (gt, node->name);
 	if (index >= 0) {
 	    push_instvar (gt, index);
 	    break;
 	}
-	index = find_literal_var (gt, identifier);
+	index = find_literal_var (gt, node->name);
 	if (index >= 0) {
 	    push_literal_var (gt, index);
 	    break;
 	}
-	generation_error ("could not resolve identifier", receiver);
+	generation_error ("could not resolve identifier", node);
     }
-    case ST_NODE_LITERAL_INTEGER:
-    case ST_NODE_LITERAL_FLOAT:
-    case ST_NODE_LITERAL_STRING:
-    case ST_NODE_LITERAL_SYMBOL:
-    case ST_NODE_LITERAL_CHARACTER:
+    case ST_LITERAL_NODE:
     {
-	st_node_literal_t *literal = (st_node_literal_t *) receiver;
-
-	if (node->type = ST_NODE_LITERAL_INTEGER && literal->integer == -1) {
-	    push (gt, push_minus_one);
-	    gt->stack_depth++;
-	    break;
-	} else if (node->type = ST_NODE_LITERAL_INTEGER && literal->integer == 0) {
-	    push (gt, push_zero);
-	    gt->stack_depth++;
-	    break;
-	} else if (node->type = ST_NODE_LITERAL_INTEGER && literal->integer == 1) {
-	    push (gt, push_one);
-	    gt->stack_depth++;
-	    break;
-	} else if (node->type = ST_NODE_LITERAL_INTEGER && literal->integer == 2) {
-	    push (gt, push_two);
-	    gt->stack_depth++;
-	    break;
-	}
-
 	int index;
-	index = find_literal_const (gt, node);
+	index = find_literal_const (gt, node->literal);
 	push_literal_const (gt, index);
 	break;
     }
-    case ST_NODE_ASSIGN:
+    case ST_ASSIGN_NODE:
     {
-	generate_assign (gt, );
-	
-
-
+	generate_assign (gt, node);
+	break;
     }
-    case ST_NODE_BLOCK:
+    case ST_BLOCK_NODE:
     {	
-	int index;
-	index = generate_block (gt, (st_node_block_t *) node);
+	/*	int index;
+	index = generate_block (gt, node);
 	push_literal_const (gt, index);
+	break;
+	*/
     }
-    case ST_NODE_EXPRESSION:
+    case ST_MESSAGE_NODE:
     {
-	st_node_expression_t *expression = (st_node_expression_t *) node;
-	
-	generate_message_send (gt, expression);
+	generate_message (gt, node);
+	break;
     }
     default:
-	// foo
+	g_assert_not_reached ();
     }
 } 
 
 static void
-generate_statements (generator_t *gt, GList *statements)
+generate_statements (Generator *gt, STNode *statements)
 {
-    for (GList *l = statements; l; l = l->next) {
+    for (STNode *stm = statements; stm; stm = stm->next) {
 
-	STNode *node = (STNode *) l->data;
+	switch (stm->type) {
 
-	switch (node->type) {
-
-	case ST_NODE_IDENTIFIER:
-	case ST_NODE_LITERAL_SYMBOL:
-	case ST_NODE_LITERAL_STRING:
-	case ST_NODE_LITERAL_INTEGER:
-        case ST_NODE_LITERAL_LARGE_INTEGER:
-        case ST_NODE_LITERAL_FLOAT:
-        case ST_NODE_LITERAL_CHARACTER:
+	case ST_VARIABLE_NODE:
+	case ST_LITERAL_NODE:
+	case ST_BLOCK_NODE:
 	    /*
-	     * don't generate anything since no work is being done
+	     * don't generate anything since we would end up with a constant
+	     * expression with no side-effects
 	     */
 	    break;
 
-	case ST_NODE_ASSIGN:
-	    generate_assign (gt, node, true);
+	case ST_ASSIGN_NODE:
+	    generate_assign (gt, stm);
 	    break;
 	    
-	case ST_NODE_RETURN:
+	case ST_RETURN_NODE:
+	    
+	    generate_return (gt, stm);
+	    
+	    g_assert (stm->next == NULL);
 
-	    generate_return (gt, node);
+	    /* break out and don't pop stack top */
+	    return;
+	    
+	case ST_MESSAGE_NODE:
+	    
+	    generate_message (gt, stm);
 	    break;
+	    
+	default:
+	    g_assert_not_reached ();
 
 	}
 
-	gen_expression (gt, node);
+	push (gt, pop_stack_top);
+    }
 
-	/* end of statement, so we can discard the last value on the stack */
-	append (gt, pop_stack_top);
-	gt->stack_depth--;}
+    gt->stack_depth++;
+
+    push (gt, push_self);
+    push (gt, return_stack_top);
 }
 
 st_oop
-st_generate_method (st_oop klass, st_node_method_t *node)
+st_generate_method (st_oop klass, STNode *node)
 {
-    generator_t *gt;
+    Generator *gt;
     st_oop     method;
+    int argcount, tempcount;
 
-    g_assert (object != st_nil);
-    g_assert (node != NULL);
+    g_assert (klass != st_nil);
+    g_assert (node != NULL && node->type == ST_METHOD_NODE);
     
-    gt = generator_new (klass, node->temps, node->args);
+    init_specials ();
+
+    GList *temp_l = NULL;
+    for (STNode *l = node->temporaries; l; l = l->next) {
+	temp_l = g_list_append (temp_l, (void *) l->name);
+    }
+    GList *arg_l = NULL;
+    for (STNode *l = node->arguments; l; l = l->next) {
+	arg_l = g_list_append (arg_l, (void *) l->name);
+    }
+
+    gt = generator_new (klass, temp_l, arg_l);
 
     // generate bytecode
     generate_statements (gt, node->statements);
 
-    method = st_object_new (compiled_method_class);
+    method = st_object_new (st_compiled_method_class);
 
-    int arg_count = g_list_length (node->args);
-    int temp_count = g_list_length (node->temps);
+    argcount  = st_node_length (node->arguments);
+    tempcount = st_node_length (node->temporaries);
 
-    st_compiled_code_set_arg_count   (method, arg_count);
-    st_compiled_code_set_temp_count  (method, temp_count);
+    st_compiled_code_set_arg_count   (method, argcount);
+    st_compiled_code_set_temp_count  (method, tempcount);
     st_compiled_code_set_stack_depth (method, gt->stack_depth);
 
-    int literal_count = g_list_length (gt->literals);
-    if (literal_count > 0) {
-	st_oop literals;
-	literals = st_object_new_arrayed (array_class, literal_count); 
-
-	int i = 1;
-	for (GList *l = gt->literals; l; l = l->next)
-	    st_array_at_put (literals, i, (st_oop) l->data);
-	
-	st_compiled_code_set_literals (method, literals);
+    if (node->primitive >= 0) {
+	st_compiled_code_set_flags (method, 1);	
+	st_compiled_code_set_primitive_index (method, node->primitive);
+    } else {
+	st_compiled_code_set_flags (method, 0);	
     }
 
-    if ((gt->flags == 0 || gt->flags == 4) && gt->top > 0) {
-	st_oop  bytecode;
-	guchar   *bytes;
-	int       size;
-
-	size = gt->top + 1;
-	bytecode = st_object_new_array (byte_array_class, size);
-	bytes = st_byte_array_bytes (bytecode);
-	memcpy (bytes, gt->code, size);
-	
-	st_compiled_method_set_bytecode (method, bytecode);
-    }
+    st_compiled_code_set_literals (method, create_literals_array (gt));
+    st_compiled_code_set_bytecodes (method, create_bytecode_array (gt)); 
 
     return method;
+}
+
+
+static void
+print_bytecodes (st_oop literals, guchar *codes, int len) 
+{
+    guchar *end = codes + len;
+
+    guchar *ip = codes;
+
+    while (*ip) {
+
+	printf ("%3i ", ip - codes);
+
+	switch (*ip) {
+	    
+	case push_temp_n:
+	    printf ("pushTemp: %i", *(++ip));
+	    
+	    ip++;
+	    break;
+	    
+	case push_instvar_n:
+	    printf ("pushInstvar: %i", *(++ip));
+
+	    ip++;
+	    break;
+	    
+	case push_literal_const_n:
+	    printf ("pushConst: %i", *(++ip));
+
+	    ip++;
+	    break;
+	    
+
+	case push_literal_var_n:
+	    printf ("pushLit: %i", *(++ip));
+
+	    ip++;
+	    break;
+	    
+
+	case push_self:
+	    printf ("push: self");
+
+	    ip++;
+	    break;
+	    
+
+	case push_true:
+	    printf ("pushConst: true");
+
+	    ip++;
+	    break;
+	    
+
+	case push_false:
+	    printf ("pushConst: false");
+
+	    ip++;
+	    break;
+	    
+
+	case push_nil:
+	    printf ("pushConst: nil");
+
+	    ip++;
+	    break;
+	    
+
+	case store_temp_n:
+	    printf ("storeTemp: %i", *(++ip));
+
+	    ip++;
+	    break;
+	    
+
+	case store_instvar_n:
+	    printf ("storeInstvar: %i", *(++ip));
+
+	    ip++;
+	    break;
+
+	case store_pop_temp_n:
+	    printf ("popIntoTemp: %i", *(++ip));
+
+	    ip++;
+	    break;
+
+	case store_pop_instvar_n:
+	    printf ("popIntoInstvar: %i", *(++ip));
+
+	    ip++;
+	    break;
+
+
+	case pop_stack_top:
+	    printf ("pop");
+
+	    ip++;
+	    break;
+
+	case return_stack_top:
+	    printf ("returnTop");
+
+	    ip++;
+	    break;
+
+	case send:
+	{
+	    st_oop selector;
+	    ip += 2;
+
+	    selector = st_array_at (literals, *ip + 1);
+	    printf ("send: #%s", (char *) st_byte_array_bytes (selector));
+
+	    ip++;
+	    break;
+	}
+	case send_super:
+	{
+	    st_oop selector;
+	    ip += 2;
+
+	    selector = st_array_at (literals, *ip + 1);
+	    printf ("sendSuper: #%s", (char *) st_byte_array_bytes (selector));
+
+	    ip++;
+	    break;
+	}
+
+
+	case send_plus:
+	case send_minus:
+	case send_lt:
+	case send_gt:
+	case send_le:
+	case send_ge:
+	case send_eq:
+	case send_ne:
+	case send_mul:
+	case send_div:
+	case send_mod:
+	case send_bitshift:
+	case send_bitand:
+	case send_bitor:
+	case send_bitxor:
+	case send_at:
+	case send_at_put:
+	case send_size:
+	case send_identity_eq:
+	case send_class:
+	case send_new:
+	case send_new_arg:
+
+	    printf ("sendSpecial: #%s", st_byte_array_bytes (specials[*ip - send_plus]));
+
+	    ip++;
+	    break;
+	default:
+
+	g_assert_not_reached ();
+	}
+	
+	printf ("\n");
+    }
+    
+}
+
+
+void st_generator_print_method (st_oop method)
+{
+    printf ("flags:      %3i\n", st_compiled_code_flags (method));
+    printf ("arg-count:  %3i\n", st_compiled_code_arg_count (method));
+    printf ("temp-count: %3i\n", st_compiled_code_temp_count (method));
+    printf ("stack-depth:%3i\n", st_compiled_code_stack_depth (method));
+    printf ("primitive:  %3i\n", st_compiled_code_primitive_index (method));
+    
+    printf ("\n");
+
+    st_oop literals = st_compiled_code_literals (method);
+    char *bytecodes = (guchar *) st_byte_array_bytes (st_compiled_code_bytecodes (method));
+    int size = st_byte_array_size (st_compiled_code_bytecodes (method));
+
+    print_bytecodes (literals, bytecodes, size);
+    
+
 }

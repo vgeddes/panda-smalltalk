@@ -1,21 +1,26 @@
 /*
  * st-class.h
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 /* Definition of Class objects
  *
@@ -34,13 +39,11 @@
 #include <st-small-integer.h>
 #include <glib.h>
 
-#define ST_CLASS_VTABLE(klass) (ST_BEHAVIOR (klass)->vtable)
-
 typedef struct
 {
     STHeader header;
-
-    const STVTable *vtable;
+    
+    st_oop format;
 
     st_oop superclass;
     st_oop instance_size;
@@ -70,6 +73,8 @@ INLINE st_oop st_behavior_instance_size (st_oop klass);
 
 INLINE st_oop st_behavior_superclass (st_oop klass);
 
+INLINE st_oop st_behavior_format (st_oop klass);
+
 INLINE st_oop st_behavior_method_dictionary (st_oop klass);
 
 INLINE st_oop st_behavior_instance_variables (st_oop klass);
@@ -93,14 +98,14 @@ INLINE void st_class_set_pool (st_oop klass, st_oop class_pool);
 
 GList *st_behavior_all_instance_variables (st_oop klass);
 
-const STVTable *st_class_vtable (void);
+guint st_class_vtable (void);
 
 
 INLINE st_oop st_metaclass_instance_class (st_oop metaclass);
 
 INLINE void st_metaclass_set_instance_class (st_oop metaclass, st_oop instance_class);
 
-const STVTable *st_metaclass_vtable (void);
+guint st_metaclass_vtable (void);
 
 
 /* inline definitions */
@@ -120,6 +125,13 @@ st_behavior_superclass (st_oop klass)
 }
 
 INLINE st_oop
+st_behavior_format (st_oop klass)
+{
+    return ST_BEHAVIOR (klass)->format;    
+}
+
+
+INLINE st_oop
 st_behavior_method_dictionary (st_oop klass)
 {
     return ST_BEHAVIOR (klass)->method_dictionary;
@@ -135,6 +147,13 @@ INLINE void
 st_behavior_set_superclass (st_oop klass, st_oop superclass)
 {
     ST_BEHAVIOR (klass)->superclass = superclass;
+}
+
+
+INLINE st_oop
+st_behavior_set_format (st_oop klass, guint format)
+{
+    return ST_BEHAVIOR (klass)->format = st_smi_new (format);    
 }
 
 INLINE void

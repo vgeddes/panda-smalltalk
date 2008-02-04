@@ -1,21 +1,26 @@
 /*
  * st-universe.c
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #include "st-types.h"
 #include "st-utils.h"
@@ -40,29 +45,30 @@
 #include <stdio.h>
 
 st_oop
-    st_nil		= ST_OOP (NULL),
-    st_true		= ST_OOP (NULL),
-    st_false		= ST_OOP (NULL),
-    st_symbol_table	= ST_OOP (NULL),
-    st_smalltalk	= ST_OOP (NULL),
-    st_undefined_object_class = ST_OOP (NULL),
-    st_metaclass_class  = ST_OOP (NULL),
-    st_behavior_class   = ST_OOP (NULL),
-    st_smi_class	= ST_OOP (NULL),
-    st_float_class      = ST_OOP (NULL),
-    st_character_class  = ST_OOP (NULL),
-    st_true_class       = ST_OOP (NULL),
-    st_false_class      = ST_OOP (NULL),
-    st_array_class       = ST_OOP (NULL),
-    st_byte_array_class  = ST_OOP (NULL),
-    st_set_class	 = ST_OOP (NULL),
-    st_tuple_class       = ST_OOP (NULL),
-    st_dictionary_class  = ST_OOP (NULL),
-    st_association_class = ST_OOP (NULL),
-    st_string_class      = ST_OOP (NULL),
-    st_symbol_class      = ST_OOP (NULL),
-    st_compiled_method_class = ST_OOP (NULL),
-    st_compiled_block_class  = ST_OOP (NULL);
+    st_nil		     = 0,
+    st_true		     = 0,
+    st_false		     = 0,
+    st_symbol_table	     = 0,
+    st_smalltalk	     = 0,
+    st_undefined_object_class = 0,
+    st_metaclass_class       = 0,
+    st_behavior_class        = 0,
+    st_smi_class	     = 0,
+    st_large_integer_class   = 0,
+    st_float_class           = 0,
+    st_character_class       = 0,
+    st_true_class            = 0,
+    st_false_class           = 0,
+    st_array_class           = 0,
+    st_byte_array_class      = 0,
+    st_set_class	     = 0,
+    st_tuple_class           = 0,
+    st_dictionary_class      = 0,
+    st_association_class     = 0,
+    st_string_class          = 0,
+    st_symbol_class          = 0,
+    st_compiled_method_class = 0,
+    st_compiled_block_class  = 0;
 
 
 
@@ -122,7 +128,7 @@ enum
 static GList *classes = NULL;
 
 static st_oop
-st_class_new (const STVTable * table)
+st_class_new (guint format)
 {
     st_oop klass = st_allocate_object (ST_TYPE_SIZE (STClass));
 
@@ -133,7 +139,7 @@ st_class_new (const STVTable * table)
 
     st_heap_object_set_mark (klass, st_mark_set_nonpointer (st_heap_object_mark (klass), true));
 
-    ST_CLASS_VTABLE (klass) = table;
+    st_behavior_set_format (klass, format);
     st_behavior_set_instance_size (klass, st_nil);
     st_behavior_set_superclass (klass, st_nil);
     st_behavior_set_method_dictionary (klass, st_nil);
@@ -211,7 +217,7 @@ setup_class_final (const char *class_name,
 	klass = st_global_get (class_name);
 	if (klass == st_nil) {
 	    /* we allocate the class and set it's virtual table */
-	    klass = st_class_new (ST_CLASS_VTABLE (superclass));
+	    klass = st_class_new (st_behavior_format (superclass));
 	}
 
 	st_behavior_set_superclass (klass, superclass);
@@ -418,6 +424,7 @@ st_bootstrap_universe (void)
     st_behavior_class = st_class_new (st_heap_object_vtable ());
     _st_class_class = st_class_new (st_class_vtable ());
     st_smi_class = st_class_new (st_smi_vtable ());
+    st_large_integer_class = st_class_new (st_heap_object_vtable ());
     st_character_class = st_class_new (st_heap_object_vtable ());
     st_true_class = st_class_new (st_heap_object_vtable ());
     st_false_class = st_class_new (st_heap_object_vtable ());
@@ -444,6 +451,7 @@ st_bootstrap_universe (void)
     st_behavior_set_instance_size (st_undefined_object_class, 0);
     st_behavior_set_instance_size (st_symbol_class, 0);
     st_behavior_set_instance_size (st_string_class, 0);
+    st_behavior_set_instance_size (st_large_integer_class, 0);
     st_behavior_set_instance_size (st_byte_array_class, 0);
     st_behavior_set_instance_size (st_array_class, 0);
     st_behavior_set_instance_size (st_tuple_class, 0);
@@ -465,6 +473,7 @@ st_bootstrap_universe (void)
     declare_class ("Class", _st_class_class);
     declare_class ("Metaclass", st_metaclass_class);
     declare_class ("SmallInteger", st_smi_class);
+    declare_class ("LargeInteger", st_large_integer_class);
     declare_class ("Character", st_character_class);
     declare_class ("True", st_true_class);
     declare_class ("False", st_false_class);
@@ -484,15 +493,22 @@ st_bootstrap_universe (void)
     parse_classes ("../smalltalk/class-declarations.st");
 
     /* verify object graph */
-    /*    for (GList * l = objects; l; l = l->next) {
+    for (GList * l = objects; l; l = l->next) {
+	
+	st_oop object = (st_oop) l->data;
 
-	printf ("verified: %i\n", st_object_verify ((st_oop) l->data));
+	if (st_object_is_class (object))
+	    printf ("%s\n",st_byte_array_bytes (st_class_name (object)));
 
-	if (!st_object_verify ((st_oop) l->data)) {
-	    printf ("%s\n", st_object_describe ((st_oop) l->data));
-	}
+	fflush (stdout);
 
+	printf ("verified: %i\n", st_object_verify (object));
+
+	//	if (!st_object_verify ((st_oop) l->data)) {
+	//	    printf ("%s\n", st_object_describe ((st_oop) l->data));
+	    //	}
+	
     }
-    */
+    
 
 }

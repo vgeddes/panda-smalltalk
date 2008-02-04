@@ -1,21 +1,26 @@
 /*
  * st-bootstrap.c
+ *
+ * Copyright (c) 2008 Vincent Geddes
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
- *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #include <st-ast.h>
 #include <st-byte-array.h>
@@ -36,15 +41,6 @@ print_variable (STNode *variable)
     char *name = (char *) st_byte_array_bytes (variable->name);
 
     printf (name);
-}
-
-static void
-print_selector (STNode *selector)
-{
-    g_assert (selector->type == ST_SELECTOR_NODE);
-
-    char *symbol = (char *) st_byte_array_bytes (selector->name);
-    printf (symbol);
 }
 
 static void
@@ -116,7 +112,7 @@ print_method (STNode *method)
 
     if (method->precedence == ST_KEYWORD_PRECEDENCE) {
 
-	char *selector = (char *) st_byte_array_bytes (method->selector->name);
+	char *selector = (char *) st_byte_array_bytes (method->selector);
 	
 	char **keywords = extract_keywords (selector);
 	STNode *arguments = method->arguments;
@@ -132,13 +128,13 @@ print_method (STNode *method)
 	g_strfreev (keywords);
 
     } else if (method->precedence == ST_BINARY_PRECEDENCE) {
-
-	print_selector (method->selector);
+	
+	printf ((char *) st_byte_array_bytes (method->selector));    
 	printf (" ");
 	print_variable (method->arguments);
     } else {
 	
-	print_selector (method->selector);	
+	printf ((char *) st_byte_array_bytes (method->selector));	
     }
 
     printf ("\n");
@@ -153,6 +149,13 @@ print_method (STNode *method)
 	}
 	printf ("|\n");
     }
+
+    if (method->primitive >= 0) {
+	
+	printf ("<primitive: %i>\n", method->primitive);
+	
+    }
+    
 
     STNode *stm = method->statements;
     for (; stm; stm = stm->next) {
@@ -183,9 +186,8 @@ print_block (STNode *block)
 	    printf (" ");
 	}
 	printf ("|");
+        printf (" ");
     }
-   
-    printf (" ");
 
     if (block->temporaries != NULL) {
 
@@ -196,21 +198,20 @@ print_block (STNode *block)
 	    printf (" ");
 	}
 	printf ("|");
+	printf (" ");
     }
-    
-    printf (" ");
 
     STNode *stm = block->statements;
     for (; stm; stm = stm->next) {
-
 	if (stm->type == ST_RETURN_NODE)
 	    print_return (stm);
 	else
 	    print_expression (stm);
-
-	printf (". ");
+	
+	if (stm->next != NULL)
+	    printf (". ");
     }
-
+    
     printf (" ]");
 }
 
@@ -221,32 +222,79 @@ print_message (STNode *msg)
 
     if (msg->precedence == ST_UNARY_PRECEDENCE) {
 
+	if (msg->receiver->type == ST_MESSAGE_NODE &&
+	    (msg->receiver->precedence == ST_BINARY_PRECEDENCE ||
+	     msg->receiver->precedence == ST_KEYWORD_PRECEDENCE))
+	    printf ("(");
+
 	print_expression (msg->receiver);
+
+	if (msg->receiver->type == ST_MESSAGE_NODE &&
+	    (msg->receiver->precedence == ST_BINARY_PRECEDENCE ||
+	     msg->receiver->precedence == ST_KEYWORD_PRECEDENCE))
+	    printf (")");
+
 	printf (" ");
-	print_selector (msg->selector);
+	printf ((char *) st_byte_array_bytes (msg->selector));    
+
 
     } else if (msg->precedence == ST_BINARY_PRECEDENCE) {
 
+	if (msg->receiver->type == ST_MESSAGE_NODE &&
+	    msg->receiver->precedence == ST_KEYWORD_PRECEDENCE)
+	    printf ("(");
+
 	print_expression (msg->receiver);
+
+	if (msg->receiver->type == ST_MESSAGE_NODE &&
+	    msg->receiver->precedence == ST_KEYWORD_PRECEDENCE)
+	    printf (")");
+
 	printf (" ");
-	print_selector (msg->selector);
+	printf ((char *) st_byte_array_bytes (msg->selector));
 	printf (" ");
+
+	if (msg->arguments->type == ST_MESSAGE_NODE &&
+	    (msg->arguments->precedence == ST_BINARY_PRECEDENCE ||
+	     msg->arguments->precedence == ST_KEYWORD_PRECEDENCE))
+	    printf ("(");
+
 	print_expression (msg->arguments);
+
+	if (msg->arguments->type == ST_MESSAGE_NODE &&
+	    (msg->arguments->precedence == ST_BINARY_PRECEDENCE ||
+	     msg->arguments->precedence == ST_KEYWORD_PRECEDENCE))
+	    printf (")");
 	
     } else if (msg->precedence == ST_KEYWORD_PRECEDENCE) {
 
-	char   *selector = (char *) st_byte_array_bytes (msg->selector->name);
+	char   *selector = (char *) st_byte_array_bytes (msg->selector);
 
 	char  **keywords = extract_keywords (selector);
 	STNode *arguments = msg->arguments;
 
+	if (msg->receiver->type == ST_MESSAGE_NODE &&
+	    msg->receiver->precedence == ST_KEYWORD_PRECEDENCE)
+	    printf ("(");
 	print_expression (msg->receiver);
+	if (msg->receiver->type == ST_MESSAGE_NODE &&
+	     msg->receiver->precedence == ST_KEYWORD_PRECEDENCE)
+	    printf (")");
+
 	printf (" ");
 
 	for (char **keyword = keywords; *keyword; keyword++) {
 	    
 	    printf ("%s: ", *keyword);
+
+	if (msg->arguments->type == ST_MESSAGE_NODE &&
+	    msg->arguments->precedence == ST_KEYWORD_PRECEDENCE)
+	    printf ("(");
 	    print_expression (arguments);
+	if (msg->arguments->type == ST_MESSAGE_NODE &&
+	    msg->arguments->precedence == ST_KEYWORD_PRECEDENCE)
+	    printf (")");
+
 	    printf (" ");
 	    
 	    arguments = arguments->next;
@@ -254,7 +302,6 @@ print_message (STNode *msg)
 	g_strfreev (keywords);
 
     }
-
 }
 
 static void
@@ -316,5 +363,16 @@ st_node_append (STNode *list, STNode *node)
 	l = l->next;
     l->next = node;
     return list;
+}
+
+
+guint
+st_node_length (STNode *list)
+{
+    STNode *l   = list;
+    int     len = 0;
+    for (; l; l = l->next)
+	++len;
+    return len;
 }
 

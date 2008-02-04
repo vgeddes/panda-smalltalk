@@ -1,32 +1,34 @@
 /*
  * st-lexer.h
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #ifndef __ST_LEXER_H__
 #define __ST_LEXER_H__
 
 #include <glib.h>
 
-#define ST_NUMBER_TOKEN(token) ((STNumberToken *) token)
-
-typedef struct STLexer        STLexer;
-typedef struct STToken        STToken;
-typedef struct STNumberToken  STNumberToken;
+typedef struct STLexer    STLexer;
+typedef struct STToken    STToken;
 
 typedef enum
 {
@@ -54,36 +56,38 @@ typedef enum
     
 } STTokenType;
 
-
+ 
 STLexer       *st_lexer_new           (const char *text);
 
 STToken       *st_lexer_next_token    (STLexer *lexer);
 
 STToken       *st_lexer_current_token (STLexer *lexer);
 
-void              st_lexer_destroy       (STLexer *lexer);
+void           st_lexer_destroy       (STLexer *lexer);
 
-gunichar          st_lexer_error_char    (STLexer *lexer);
+gunichar       st_lexer_error_char    (STLexer *lexer);
 
-guint             st_lexer_error_line    (STLexer *lexer);
+guint          st_lexer_error_line    (STLexer *lexer);
 
-guint             st_lexer_error_column  (STLexer *lexer);
+guint          st_lexer_error_column  (STLexer *lexer);
 
-char *            st_lexer_error_message (STLexer *lexer);
-
-
-STTokenType       st_token_type   (STToken *token);
-
-char             *st_token_text   (STToken *token);
-
-guint             st_token_line   (STToken *token);
-
-guint             st_token_column (STToken *token);
+char          *st_lexer_error_message (STLexer *lexer);
 
 
-guint             st_number_token_radix    (STNumberToken *token);
+STTokenType    st_token_type   (STToken *token);
 
-int               st_number_token_exponent (STNumberToken *token);
+char          *st_token_text   (STToken *token);
+
+guint          st_token_line   (STToken *token);
+
+guint          st_token_column (STToken *token);
+
+
+char          *st_number_token_number   (STToken *token);
+
+guint          st_number_token_radix    (STToken *token);
+
+int            st_number_token_exponent (STToken *token);
 
 
 

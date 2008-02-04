@@ -1,21 +1,26 @@
 /*
  * st-vtable.h
  *
- * Copyright (C) 2008 Vincent Geddes <vgeddes@gnome.org>
+ * Copyright (C) 2008 Vincent Geddes
  *
- * This library is free software: you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #ifndef __ST_VTABLE_H__
 #define __ST_VTABLE_H__
@@ -84,24 +89,26 @@ typedef struct
 
 typedef void (*STVTableInitFunc) (STVTable *table);
 
-const STVTable *st_vtable_register (const STVTable    *parent_table,
-				    STVTableInitFunc   init_func);
+guint st_vtable_register (guint              parent_table_id,
+			  STVTableInitFunc   init_func);
+
+extern STVTable tables[];
 
 
-#define ST_DEFINE_VTABLE(table_name, parent_table)                 \
+#define ST_DEFINE_VTABLE(table_name, parent_table_id)              \
                                                                    \
 static void table_name##_vtable_init (STVTable *table);            \
                                                                    \
-const STVTable *                                                   \
+guint                                                              \
 table_name##_vtable (void)                                         \
 {                                                                  \
-        static const STVTable *__st_vtable = NULL;                 \
-        if (G_UNLIKELY (__st_vtable == NULL)) {                    \
-                __st_vtable =                                      \
-                st_vtable_register ((parent_table),                \
+        static guint __st_vtable_id = 0;                           \
+        if (G_UNLIKELY (__st_vtable_id == 0)) {                    \
+                __st_vtable_id =                                   \
+                st_vtable_register ((parent_table_id),             \
                                     table_name##_vtable_init);     \
         }                                                          \
-	return __st_vtable;                                        \
+	return __st_vtable_id;                                     \
 }
 
 #endif /* __ST_VTABLE_H__ */
