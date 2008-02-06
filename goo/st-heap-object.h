@@ -33,6 +33,7 @@
 
 typedef struct
 {
+    const STVTable *vt[0];
     st_oop mark;
     st_oop klass;
 
@@ -40,6 +41,7 @@ typedef struct
 
 typedef struct
 {
+    const STVTable *vt[0];
     st_oop mark;
     st_oop klass;
 
@@ -59,37 +61,39 @@ INLINE void     st_heap_object_set_mark (st_oop object, st_oop mark);
 
 INLINE st_oop  *st_heap_object_instvars (st_oop object);
 
-guint          st_heap_object_vtable   (void);
+const STVTable *st_heap_object_vtable   (void);
 
+
+#define ST_HEADER(oop) ((STHeader *) ST_POINTER (oop))
 
 INLINE st_oop
 st_heap_object_class (st_oop object)
 {
-    return ST_POINTER (object)->klass;
+    return ST_HEADER (object)->klass;
 }
 
 INLINE void
 st_heap_object_set_class (st_oop object, st_oop klass)
 {
-    ST_POINTER (object)->klass = klass;
+    ST_HEADER (object)->klass = klass;
 }
 
 INLINE int
 st_heap_object_hash (st_oop object)
 {
-    return st_mark_hash (ST_POINTER (object)->mark);
+    return st_mark_hash (ST_HEADER (object)->mark);
 }
 
 INLINE st_oop
 st_heap_object_mark (st_oop object)
 {
-    return ST_POINTER (object)->mark;
+    return ST_HEADER (object)->mark;
 }
 
 INLINE void
 st_heap_object_set_mark (st_oop object, st_oop mark)
 {
-    ST_POINTER (object)->mark = mark;
+    ST_HEADER (object)->mark = mark;
 }
 
 INLINE st_oop *

@@ -43,8 +43,8 @@ bool st_set_includes (st_oop set, st_oop object);
 st_oop st_set_like (st_oop set, st_oop object);
 void st_set_add (st_oop set, st_oop object);
 
-guint st_dictionary_vtable (void);
-guint st_set_vtable (void);
+const STVTable *st_dictionary_vtable (void);
+const STVTable *st_set_vtable (void);
 
 
 #endif /* __ST_HASHED_COLLECTION_H__ */

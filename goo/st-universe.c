@@ -125,29 +125,27 @@ enum
 
 };
 
-static GList *classes = NULL;
-
 static st_oop
-st_class_new (guint format)
+st_class_new (const STVTable *vtable)
 {
-    st_oop klass = st_allocate_object (ST_TYPE_SIZE (STClass));
+    st_oop klass;
+
+    klass = st_allocate_class (ST_TYPE_SIZE (STClass));
+
+    ST_CLASS_VTABLE (klass) = vtable;
 
     /* TODO refactor this initialising */
-
     st_heap_object_set_mark (klass, st_mark_new ());
     st_heap_object_set_class (klass, st_nil);
 
     st_heap_object_set_mark (klass, st_mark_set_nonpointer (st_heap_object_mark (klass), true));
 
-    st_behavior_set_format (klass, format);
     st_behavior_set_instance_size (klass, st_nil);
     st_behavior_set_superclass (klass, st_nil);
     st_behavior_set_method_dictionary (klass, st_nil);
     st_behavior_set_instance_variables (klass, st_nil);
     st_class_set_name (klass, st_nil);
     st_class_set_pool (klass, st_nil);
-
-    classes = g_list_append (classes, (void *) klass);
 
     return klass;
 }
@@ -217,7 +215,7 @@ setup_class_final (const char *class_name,
 	klass = st_global_get (class_name);
 	if (klass == st_nil) {
 	    /* we allocate the class and set it's virtual table */
-	    klass = st_class_new (st_behavior_format (superclass));
+	    klass = st_class_new (ST_CLASS_VTABLE (superclass));
 	}
 
 	st_behavior_set_superclass (klass, superclass);
@@ -418,7 +416,7 @@ st_bootstrap_universe (void)
     st_heap_object_set_mark (st_nil, st_mark_new ());
     st_heap_object_set_class (st_nil, st_nil);
 
-    _st_object_class = st_class_new (st_object_vtable ());
+    _st_object_class = st_class_new (st_object_vtable ()); 
     st_undefined_object_class = st_class_new (st_heap_object_vtable ());
     st_metaclass_class = st_class_new (st_metaclass_vtable ());
     st_behavior_class = st_class_new (st_heap_object_vtable ());
@@ -494,16 +492,14 @@ st_bootstrap_universe (void)
 
     /* verify object graph */
     for (GList * l = objects; l; l = l->next) {
-	
+
 	st_oop object = (st_oop) l->data;
 
-	if (st_object_is_class (object))
+	if (st_object_is_class (object)) {
 	    printf ("%s\n",st_byte_array_bytes (st_class_name (object)));
 
-	fflush (stdout);
-
-	printf ("verified: %i\n", st_object_verify (object));
-
+	    printf ("verified: %i\n", st_object_verify (object));
+	}
 	//	if (!st_object_verify ((st_oop) l->data)) {
 	//	    printf ("%s\n", st_object_describe ((st_oop) l->data));
 	    //	}

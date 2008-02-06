@@ -41,5 +41,20 @@ st_allocate_object (gsize size)
     objects = g_list_append (objects, (void*) object);
 
     return object;
+
 }
 
+st_oop
+st_allocate_class (gsize size)
+{
+    // all class objects have at least a header of two st_oops
+    g_assert (size >= 2);
+    /* no gc fanciness yet */
+
+    STVTable** object = g_malloc (sizeof (STVTable*) + sizeof (st_oop) * size);
+
+    objects = g_list_append (objects, ST_OOP (object + 1));
+    
+    return ST_OOP (object + 1);
+
+}

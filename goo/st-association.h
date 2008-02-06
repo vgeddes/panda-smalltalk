@@ -48,7 +48,7 @@ INLINE void st_association_set_key (st_oop assoc, st_oop key);
 
 INLINE void st_association_set_value (st_oop assoc, st_oop value);
 
-guint  st_association_vtable (void);
+const STVTable *st_association_vtable (void);
 
 /* inline definitions */
 #define ST_ASSOCIATION(oop) ((STAssociation *) ST_POINTER (oop))

@@ -45,7 +45,7 @@ INLINE double st_float_array_at (st_oop array, st_smi i);
 
 INLINE void st_float_array_at_put (st_oop array, st_smi i, double value);
 
-guint  st_float_array_vtable (void);
+const STVTable *st_float_array_vtable (void);
 
 
 /* inline definitions */

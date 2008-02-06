@@ -45,7 +45,7 @@ char *st_large_integer_to_string (st_oop integer, guint radix);
 
 INLINE mp_int *st_large_integer_value (st_oop integer);
 
-guint st_large_integer_vtable (void);
+const STVTable *st_large_integer_vtable (void);
 
 
 /* inline definitions */

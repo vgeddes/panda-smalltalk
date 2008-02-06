@@ -49,14 +49,14 @@ st_object_initialize_body (st_oop object, st_smi instance_size)
 
 st_oop
 st_object_new (st_oop klass)
-{
-    return tables[st_smi_value (st_behavior_format (klass))].allocate (klass);
+{   
+    return ST_CLASS_VTABLE (klass)->allocate (klass);
 }
 
 st_oop
 st_object_new_arrayed (st_oop klass, st_smi size)
 {
-    return tables[st_smi_value (st_behavior_format (klass))].allocate_arrayed (klass, size);
+    return ST_CLASS_VTABLE (klass)->allocate_arrayed (klass, size);
 }
 
 /* Meta table */

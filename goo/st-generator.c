@@ -434,7 +434,7 @@ generate_return (Generator *gt, STNode *node)
 
     push (gt, return_stack_top);
 }
-			      
+#if 0			      
 static int
 generate_block (Generator *gt, STNode *node)
 {
@@ -484,7 +484,7 @@ generate_block (Generator *gt, STNode *node)
 
     return -1;
 }
-
+#endif
 
 static void
 generate_message (Generator *gt, STNode *msg)

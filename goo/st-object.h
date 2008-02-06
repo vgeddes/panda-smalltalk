@@ -66,7 +66,7 @@ INLINE bool st_object_is_arrayed (st_oop object);
 INLINE bool st_object_is_array (st_oop object);
 INLINE bool st_object_is_byte_array (st_oop object);
 
-guint st_object_vtable (void);
+const STVTable *st_object_vtable (void);
 
 
 /* inline definitions */
@@ -95,8 +95,6 @@ st_object_is_smi (st_oop object)
     return st_object_tag (object) == ST_SMI_TAG;
 }
 
-
-
 INLINE st_oop
 st_object_class (st_oop object)
 {
@@ -110,9 +108,9 @@ INLINE const STVTable *
 st_object_virtual (st_oop object)
 {
     if (G_UNLIKELY (st_object_is_smi (object)))
-	return &tables[st_smi_vtable ()];
+	return st_smi_vtable ();
     
-    return &tables[st_smi_value (st_behavior_format (st_object_class (object)))];
+    return ST_CLASS_VTABLE (st_object_class (object));
 }
 
 INLINE bool
@@ -126,7 +124,6 @@ st_object_hash (st_oop object)
 {
     return st_object_virtual (object)->hash (object);
 }
-
 
 INLINE bool
 st_object_verify (st_oop object)
@@ -149,91 +146,106 @@ st_object_describe (st_oop object)
 INLINE bool
 st_object_is_class (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_class ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_class ();
 }
 
 INLINE bool
 st_object_is_metaclass (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_metaclass ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_metaclass ();
 }
 
 INLINE bool
 st_object_is_association (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_association ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_association ();
 }
 
 INLINE bool
 st_object_is_symbol (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_symbol ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_symbol ();
 }
 
 INLINE bool
 st_object_is_float (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_float ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_float ();
 }
 
 INLINE bool
 st_object_is_dictionary (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_dictionary ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_dictionary ();
 }
 
 INLINE bool
 st_object_is_set (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_set ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_set ();
 }
 
 INLINE bool
 st_object_is_compiled_method (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_compiled_method ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_compiled_method ();
 }
 
 INLINE bool
 st_object_is_compiled_block (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_compiled_block ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_compiled_block ();
 }
 
 INLINE bool
 st_object_is_block_closure (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_block_closure ();
+    return st_object_is_heap (object) 
+	&& st_object_virtual (object)->is_block_closure ();
 }
 
 INLINE bool
 st_object_is_method_context (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_method_context ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_method_context ();
 }
 
 INLINE bool
 st_object_is_block_context (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_block_context ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_block_context ();
 }
 
 INLINE bool
 st_object_is_arrayed (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_arrayed ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_arrayed ();
 }
 
 INLINE bool
 st_object_is_array (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_array ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_array ();
 }
 
 INLINE bool
 st_object_is_byte_array (st_oop object)
 {
-    return st_object_is_heap (object) && st_object_virtual (object)->is_byte_array ();
+    return st_object_is_heap (object)
+	&& st_object_virtual (object)->is_byte_array ();
 }
 
 #endif /* __ST_OBJECT_H__ */

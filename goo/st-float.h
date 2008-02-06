@@ -43,7 +43,7 @@ INLINE double st_float_value (st_oop f);
 
 INLINE void st_float_set_value (st_oop f, double value);
 
-guint st_float_vtable (void);
+const STVTable *st_float_vtable (void);
 
 
 /* inline definitions */

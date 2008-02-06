@@ -43,7 +43,7 @@ is_arrayed (void)
 static bool
 array_verify (st_oop object)
 {
-    if (!(&tables[st_heap_object_vtable ()])->verify (object))
+    if (!st_heap_object_vtable ()->verify (object))
 	return false;
    
     // variable size
