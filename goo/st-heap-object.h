@@ -29,15 +29,7 @@
 #include <st-vtable.h>
 #include <st-mark.h>
 
-/* Each heap object starts with this layout */
-
-typedef struct
-{
-    const STVTable *vt[0];
-    st_oop mark;
-    st_oop klass;
-
-} STHeader;
+/* Every heap object starts with this layout */
 
 typedef struct
 {
@@ -46,22 +38,22 @@ typedef struct
     st_oop klass;
 
     st_oop instvars[];
-} STHeapObject;
+} STHeader;
 
 
 INLINE st_oop   st_heap_object_class     (st_oop object);
 
 INLINE void     st_heap_object_set_class (st_oop object, st_oop klass);
 
-INLINE int      st_heap_object_hash     (st_oop object);
+INLINE int      st_heap_object_hash      (st_oop object);
 
-INLINE st_oop   st_heap_object_mark     (st_oop object);
+INLINE st_oop   st_heap_object_mark      (st_oop object);
 
-INLINE void     st_heap_object_set_mark (st_oop object, st_oop mark);
+INLINE void     st_heap_object_set_mark  (st_oop object, st_oop mark);
 
-INLINE st_oop  *st_heap_object_instvars (st_oop object);
+INLINE st_oop  *st_heap_object_instvars  (st_oop object);
 
-const STVTable *st_heap_object_vtable   (void);
+const STVTable *st_heap_object_vtable    (void);
 
 
 #define ST_HEADER(oop) ((STHeader *) ST_POINTER (oop))
@@ -99,7 +91,7 @@ st_heap_object_set_mark (st_oop object, st_oop mark)
 INLINE st_oop *
 st_heap_object_instvars (st_oop object)
 {
-    return ((STHeapObject *) ST_POINTER (object))->instvars;
+    return ST_HEADER (object)->instvars;
 }
 
 #endif /* __ST_HEAP_OBJECT_H__ */

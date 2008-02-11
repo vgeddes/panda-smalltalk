@@ -48,11 +48,8 @@ array_verify (st_oop object)
    
     // variable size
     st_oop size = st_array_size (object);
-    if (!(st_object_is_smi (size) && (st_smi_value (size) > 0))) {
-	g_debug ("GABA: %li\n", st_smi_value (size));
+    if (!(st_object_is_smi (size) && (st_smi_value (size) > 0)))
 	return false;
-
-    }
 
     for (st_smi i = 1; i <= st_smi_value (size); i++) {
 

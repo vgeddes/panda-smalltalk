@@ -26,6 +26,7 @@
 #include "st-types.h"
 #include "st-lexer.h"
 #include "st-utils.h"
+#include "st-primitives.h"
 #include "st-byte-array.h"
 #include "st-symbol.h"
 #include "st-float.h"
@@ -99,6 +100,7 @@ parse_block_arguments (STParser *parser)
 	    parse_error ("expected identifier", token);
 
 	arg = st_node_new (ST_VARIABLE_NODE);
+	arg->line = st_token_line (token);
 	arg->name = st_symbol_new (st_token_text (token));
 	arguments = st_node_append (arguments, arg);
 
@@ -126,6 +128,8 @@ parse_block (STParser *parser)
     
     // parse block arguments
     token = next (parser->lexer);
+
+    block->line = st_token_line (token);
     
     if (st_token_type (token) == ST_TOKEN_COLON)
 	block->arguments = parse_block_arguments (parser);
@@ -168,6 +172,7 @@ parse_number (STParser *parser)
     p = number = st_number_token_number (token);
 
     node = st_node_new (ST_LITERAL_NODE);
+    node->line = st_token_line (token);
 
     /* check if there is a decimal point */
     while (*p && *p != '.')
@@ -236,6 +241,7 @@ parse_primary (STParser *parser)
     case ST_TOKEN_IDENTIFIER:
 	
 	node = st_node_new (ST_VARIABLE_NODE);
+	node->line = st_token_line (token);
 	node->name = st_string_new (st_token_text (token));
 
 	next (parser->lexer);
@@ -249,6 +255,7 @@ parse_primary (STParser *parser)
     case ST_TOKEN_STRING_CONST: 
     
 	node = st_node_new (ST_LITERAL_NODE);
+	node->line = st_token_line (token);
 	node->literal = st_string_new (st_token_text (token));
 
 	next (parser->lexer);
@@ -257,6 +264,7 @@ parse_primary (STParser *parser)
     case ST_TOKEN_SYMBOL_CONST:
 
 	node = st_node_new (ST_LITERAL_NODE);
+	node->line = st_token_line (token);
 	node->literal = st_symbol_new (st_token_text (token));
     
 	next (parser->lexer);
@@ -265,6 +273,7 @@ parse_primary (STParser *parser)
     case ST_TOKEN_CHARACTER_CONST:
 
 	node = st_node_new (ST_LITERAL_NODE);
+	node->line = st_token_line (token);
 	node->literal = st_character_new (g_utf8_get_char (st_token_text (token)));
 
 	next (parser->lexer);
@@ -364,7 +373,7 @@ parse_keyword_argument (STParser *parser, STNode *receiver)
     } else if (st_token_type (token) == ST_TOKEN_IDENTIFIER) {
 	receiver = parse_unary_message (parser, receiver);
 	
-    } else if (st_token_type (token) == ST_TOKEN_BINARY_SELECTOR) {
+    } else if (st_token_type (token) == ST_TOKEN_BINARY_SELECTOR && !streq (st_token_text (token), "!")) {
 	receiver = parse_binary_message (parser, receiver);
 	
     } else {
@@ -422,7 +431,8 @@ parse_message (STParser *parser, STNode *receiver)
     type = st_token_type (token);
     
     if (type == ST_TOKEN_PERIOD || type == ST_TOKEN_RPAREN
-	|| type == ST_TOKEN_EOF || type == ST_TOKEN_BLOCK_END)
+	|| type == ST_TOKEN_EOF || type == ST_TOKEN_BLOCK_END
+	|| (type == ST_TOKEN_BINARY_SELECTOR && streq (st_token_text (token), "!")))
 	return receiver;
 
     if (type == ST_TOKEN_IDENTIFIER)
@@ -554,8 +564,9 @@ parse_statements (STParser *parser)
 
     token = current (parser->lexer);
 
-    while (st_token_type (token) != ST_TOKEN_EOF) {
-	
+    while (st_token_type (token) != ST_TOKEN_EOF
+	   && (st_token_type (token) != ST_TOKEN_BINARY_SELECTOR || !streq (st_token_text (token), "!"))) {
+	       
 	if (parser->in_block && st_token_type (token) == ST_TOKEN_BLOCK_END)
 	    break;
 
@@ -603,10 +614,12 @@ parse_primitive (STParser *parser)
 	&& streq (st_token_text (token), "primitive:")) {
 	
 	token = next (parser->lexer);
-	if (st_token_type (token) == ST_TOKEN_STRING_CONST)
-	    index = 47;//st_get_primitive_index_for_name (st_token_text (token));
-	else 
-	    parse_error ("expected string literal", token);   
+	if (st_token_type (token) != ST_TOKEN_STRING_CONST)
+	    parse_error ("expected string literal", token); 
+
+	index = st_primitive_index_for_name (st_token_text (token));
+	if (index < 0)
+	    parse_error ("unknown primitive", token); 
 	
 	token = next (parser->lexer);
 	if (st_token_type (token) != ST_TOKEN_BINARY_SELECTOR

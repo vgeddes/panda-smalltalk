@@ -22,21 +22,33 @@
  * THE SOFTWARE.
 */
 
-
-
 typedef struct
 {
     STHeader header;
 
-    st_oop parent;
+    st_oop sender;
+    st_oop pc;
+    st_oop stackp;
     st_oop method;
-    st_oop stack;
-    st_oop sp;
-    st_oop ip;
-    
-    st_oop ap;
-    st_oop tp;
-        
-} st_context_t;
+ 
+} STContextPart;
 
-/* Context BlockContext MethodContext */
+typedef struct
+{
+    STContextPart parent;
+   
+    st_oop receiver;    
+    st_oop stack[];
+} STMethodContext;
+
+typedef struct
+{
+    STContextPart parent;
+
+    st_oop home;
+    st_oop stack[];
+} STBlockContext;
+
+
+const STVTable *st_method_context_vtable (void);
+const STVTable *st_block_context_vtable (void);

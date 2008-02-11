@@ -29,11 +29,11 @@
 #include <st-utils.h>
 #include <stdio.h>
 
-INLINE st_oop st_mark_new (void);
-INLINE int st_mark_hash (st_oop mark);
-INLINE st_oop st_mark_set_hash (st_oop mark, int value);
-INLINE bool st_mark_readonly (st_oop mark);
-INLINE st_oop st_mark_set_readonly (st_oop mark, bool readonly);
+INLINE st_oop  st_mark_new (void);
+INLINE int     st_mark_hash (st_oop mark);
+INLINE st_oop  st_mark_set_hash (st_oop mark, int value);
+INLINE bool    st_mark_readonly (st_oop mark);
+INLINE st_oop  st_mark_set_readonly (st_oop mark, bool readonly);
 
 
 

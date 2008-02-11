@@ -90,7 +90,7 @@ st_behavior_all_instance_variables (st_oop klass)
     if (names != st_nil) {
 	size = st_smi_value (st_array_size (names));
 	for (st_smi i = 1; i <= size; i++)
-	    b = g_list_append (b, st_byte_array_bytes (st_array_at (names, i)));
+	    b = g_list_append (b, st_array_at (names, i));
     }
 
     return g_list_concat (a, b);

@@ -42,63 +42,66 @@
 
 typedef enum
 {
-    push_temp_n = 1,
-    store_pop_temp_n,
+    PUSH_TEMP = 1,
+    PUSH_INSTVAR,
+    PUSH_LITERAL_CONST,
+    PUSH_LITERAL_VAR,
 
-    push_instvar_n,
-    store_pop_instvar_n,
+    STORE_LITERAL_VAR,
+    STORE_TEMP,
+    STORE_INSTVAR,
 
-    push_literal_const_n,
-    push_literal_var_n,
+    STORE_POP_LITERAL_VAR,
+    STORE_POP_TEMP,
+    STORE_POP_INSTVAR,
 
-    store_literal_var_n,
-    store_temp_n,
-    store_instvar_n,
+    PUSH_SELF,
+    PUSH_NIL,
+    PUSH_TRUE,
+    PUSH_FALSE,
 
-    push_self,
-    push_nil,
-    push_true,
-    push_false,
+    RETURN_STACK_TOP,
+    BLOCK_RETURN,
 
-    return_stack_top,
+    POP_STACK_TOP,
+    DUPLICATE_STACK_TOP,
 
-    pop_stack_top,
-    duplicate_stack_top,
+    PUSH_ACTIVE_CONTEXT,
 
-    push_active_context,
+    CREATE_BLOCK,
 
-    create_block,
+    JUMP_TRUE,
+    JUMP_FALSE,
+    JUMP,
 
-    jump_far_true,
-    jump_far_false,
-    jump_far,
+    SEND,        /* B - B (ARG COUNT) - B (INDEX OF SELECTOR IN LITERAL FRAME) */ 
+    SEND_SUPER,
 
-    send,        /* B - B (arg count) - B (index of selector in literal frame) */ 
-    send_super,
+    SEND_PLUS,
+    SEND_MINUS,
+    SEND_LT,
+    SEND_GT,
+    SEND_LE,
+    SEND_GE,
+    SEND_EQ,
+    SEND_NE,
+    SEND_MUL,
+    SEND_DIV,
+    SEND_MOD,
+    SEND_BITSHIFT,
+    SEND_BITAND,
+    SEND_BITOR,
+    SEND_BITXOR,
 
-    send_plus,
-    send_minus,
-    send_lt,
-    send_gt,
-    send_le,
-    send_ge,
-    send_eq,
-    send_ne,
-    send_mul,
-    send_div,
-    send_mod,
-    send_bitshift,
-    send_bitand,
-    send_bitor,
-    send_bitxor,
-
-    send_at,
-    send_at_put,
-    send_size,
-    send_identity_eq,
-    send_class,
-    send_new,
-    send_new_arg,
+    SEND_AT,
+    SEND_AT_PUT,
+    SEND_SIZE,
+    SEND_VALUE,
+    SEND_VALUE_ARG,
+    SEND_IDENTITY_EQ,
+    SEND_CLASS,
+    SEND_NEW,
+    SEND_NEW_ARG,
     
 } Code;
 
@@ -123,9 +126,9 @@ enum {
     SPECIAL_ATPUT,
     SPECIAL_SIZE,
     SPECIAL_VALUE,
+    SPECIAL_VALUE_ARG,
     SPECIAL_IDEQ,
     SPECIAL_CLASS,
-    SPECIAL_HASH,
     SPECIAL_NEW,
     SPECIAL_NEW_ARG,
 
@@ -134,10 +137,13 @@ enum {
 
 typedef struct 
 {
-    st_oop method;
+    bool     in_block;
+
+    st_oop   klass;
  
+    /* names of temporaries, in order of appearance */
     GList   *temporaries;
-    /* names of instvars, in order of location in the object */
+    /* names of instvars, in order they were defined */
     GList   *instvars;
     /* literal frame for the compiled code */
     GList   *literals;
@@ -174,38 +180,84 @@ init_specials (void)
     specials[SPECIAL_BITXOR]   = st_symbol_new ("bitXor:");
     
     /* message specials */
-    specials[SPECIAL_AT]       = st_symbol_new ("at:");
-    specials[SPECIAL_ATPUT]    = st_symbol_new ("at:put:");
-    specials[SPECIAL_SIZE]     = st_symbol_new ("size");
-    specials[SPECIAL_VALUE]    = st_symbol_new ("value");
-    specials[SPECIAL_IDEQ]     = st_symbol_new ("==");
-    specials[SPECIAL_CLASS]    = st_symbol_new ("class");
-    specials[SPECIAL_HASH]     = st_symbol_new ("hash");
-    specials[SPECIAL_NEW]      = st_symbol_new ("new");
-    specials[SPECIAL_NEW_ARG]  = st_symbol_new ("new:");
+    specials[SPECIAL_AT]        = st_symbol_new ("at:");
+    specials[SPECIAL_ATPUT]     = st_symbol_new ("at:put:");
+    specials[SPECIAL_SIZE]      = st_symbol_new ("size");
+    specials[SPECIAL_VALUE]     = st_symbol_new ("value");
+    specials[SPECIAL_VALUE_ARG] = st_symbol_new ("value:");
+    specials[SPECIAL_IDEQ]      = st_symbol_new ("==");
+    specials[SPECIAL_CLASS]     = st_symbol_new ("class");
+    specials[SPECIAL_NEW]       = st_symbol_new ("new");
+    specials[SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
 }
 
-
 static void generate_expression (Generator *gt, STNode *node);
+static void generate_statements (Generator *gt, STNode *statements);
+
+static void
+generation_error (const char *msg, STNode *node)
+{
+    printf ("error:%i: %s\n", node->line, msg);
+    exit (1);
+}
+
+static GList *
+get_temporaries (GList  *instvars,
+		 STNode *arguments,
+		 STNode *temporaries)
+{
+    GList *temps = NULL; 
+        
+    for (STNode *n = arguments; n; n = n->next) {
+	
+	for (GList *l = instvars; l; l = l->next) {
+	    if (st_object_equal (n->name, (st_oop) l->data))
+		generation_error ("name is already defined", arguments);
+	}	
+	temps = g_list_prepend (temps, (gpointer) n->name);
+    }
+
+    for (STNode *n = temporaries; n; n = n->next) {
+	
+	for (GList *l = instvars; l; l = l->next) {
+	    if (st_object_equal (n->name, (st_oop) l->data))
+		generation_error ("name is already defined", temporaries);
+	}
+	temps = g_list_prepend (temps, (gpointer) n->name);
+    }
+
+    return g_list_reverse (temps);
+}
 
 static Generator *
-generator_new (st_oop klass, GList *temps, GList *args)
+generator_new (st_oop klass, STNode *method)
 {
     Generator *gt;
 
     gt = g_slice_new0 (Generator);
 
-    gt->temporaries = g_list_concat (args, temps);
-    gt->instvars    = st_behavior_all_instance_variables (klass);
-    gt->literals    = NULL;
+    gt->klass    = klass;
+    gt->instvars = st_behavior_all_instance_variables (klass);
+    gt->literals = NULL;
+    gt->temporaries = get_temporaries (gt->instvars, method->arguments, method->temporaries);
 
     gt->code  = g_malloc (DEFAULT_CODE_SIZE);
     gt->alloc = DEFAULT_CODE_SIZE;
     gt->size  = 0;
-
     gt->stack_depth = 0;
    
     return gt;
+}
+
+static void
+generator_destroy (Generator *gt)
+{
+    g_list_free (gt->instvars);
+    g_list_free (gt->temporaries);
+    g_list_free (gt->literals);
+
+    g_free (gt->code);
+    g_slice_free (Generator, gt);
 }
 
 static st_oop
@@ -246,25 +298,14 @@ create_bytecode_array (Generator *gt)
 }
 
 static void
-generation_error (const char *msg, STNode *node)
-{
-    printf ("error:%i: %s\n", node->line, msg);
-    exit (1);
-}
-
-static void
-resize (Generator *gt)
-{
-    gt->alloc += gt->alloc;
-    gt->code = g_realloc (gt->code, gt->alloc);
-}
-
-static void
 push (Generator *gt, guchar code)
 {
     gt->size++;
-    if (gt->size > gt->alloc)
-	resize (gt);
+
+    if (gt->size > gt->alloc) {
+	gt->alloc += gt->alloc;
+	gt->code = g_realloc (gt->code, gt->alloc);
+    }
 
     gt->code[gt->size - 1] = code;
 }
@@ -329,29 +370,38 @@ find_literal_var (Generator *gt, st_oop name)
 }
 
 static void
-assign_temp (Generator *gt, int index)
+assign_temp (Generator *gt, int index, bool pop)
 {
     g_assert (index <= 255);
 
-    push (gt, store_temp_n);
+    if (pop)
+	push (gt, STORE_POP_TEMP);
+    else
+	push (gt, STORE_TEMP);
     push (gt, (guchar) index);
 }
 
 static void
-assign_instvar (Generator *gt, int index)
+assign_instvar (Generator *gt, int index, bool pop)
 {
     g_assert (index <= 255);
 
-    push (gt, store_instvar_n);
+    if (pop)
+	push (gt, STORE_POP_INSTVAR);
+    else
+	push (gt, STORE_INSTVAR);
     push (gt, (guchar) index); 
 }
 
 static void
-assign_literal_var (Generator *gt, int index)
+assign_literal_var (Generator *gt, int index, bool pop)
 {
     g_assert (index <= 255);
     
-    push (gt, store_literal_var_n);
+    if (pop)
+	push (gt, STORE_POP_LITERAL_VAR);
+    else
+	push (gt, STORE_LITERAL_VAR);
     push (gt, (guchar) index); 
 }
 
@@ -360,18 +410,18 @@ push_temporary (Generator *gt, int index)
 {
     g_assert (index <= 255);
 
-    push (gt, push_temp_n);
+    push (gt, PUSH_TEMP);
     push (gt, (guchar) index);
 
     gt->stack_depth++;
 }
 
 static void
-push_instvar (Generator *gt, int index)
+push_instance_var (Generator *gt, int index)
 {
     g_assert (index <= 255);
 
-    push (gt, push_instvar_n);
+    push (gt, PUSH_INSTVAR);
     push (gt, (guchar) index);
     
     gt->stack_depth++;
@@ -382,7 +432,7 @@ push_literal_var (Generator *gt, int index)
 {
     g_assert (index <= 255);
     
-    push (gt, push_literal_var_n);
+    push (gt, PUSH_LITERAL_VAR);
     push (gt, (guchar) index);
     
     gt->stack_depth++;
@@ -393,14 +443,14 @@ push_literal_const (Generator *gt, int index)
 {
     g_assert (index <= 255);
   
-    push (gt, push_literal_const_n);
+    push (gt, PUSH_LITERAL_CONST);
     push (gt, (guchar) index);
     
     gt->stack_depth++;
 }
 
 static void
-generate_assign (Generator *gt, STNode *node)
+generate_assign (Generator *gt, STNode *node, bool pop)
 {
     int index;
     
@@ -408,23 +458,23 @@ generate_assign (Generator *gt, STNode *node)
     
     index = find_temporary (gt, node->assignee->name);
     if (index >= 0) {
-	assign_temp (gt, index); 
+	assign_temp (gt, index, pop); 
 	return;
     }
 
     index = find_instvar (gt, node->assignee->name);
     if (index >= 0) {
-	assign_instvar (gt, index);
+	assign_instvar (gt, index, pop);
 	return;
     }
  
     index = find_literal_var (gt, node->assignee->name);
     if (index >= 0) {
-	assign_literal_var (gt, index);
+	assign_literal_var (gt, index, pop);
 	return;
     }
     
-    generation_error ("could not resolve identifier", node);
+    generation_error ("unknown variable", node);
 }
 
 static void
@@ -432,59 +482,112 @@ generate_return (Generator *gt, STNode *node)
 {
     generate_expression (gt, node->expression);
 
-    push (gt, return_stack_top);
+    push (gt, RETURN_STACK_TOP);
 }
-#if 0			      
+
+static void
+create_block (Generator *gt, int index)
+{
+    g_assert (index <= 255);
+
+   push (gt, CREATE_BLOCK);
+   push (gt, (guchar) index);
+} 
+
+
+static GList *
+get_block_temporaries (Generator *gt, STNode *arguments, STNode *temporaries)
+{
+    GList *temps = NULL;
+
+    for (STNode *node = arguments; node; node = node->next) {
+	
+	for (GList *l = gt->instvars; l; l = l->next) {
+	    if (st_object_equal (node->name, (st_oop) l->data))
+		generation_error ("name is already defined", node);
+	}
+	for (GList *l = gt->temporaries; l; l = l->next) {
+	    if (st_object_equal ( node->name, (st_oop) l->data))
+		generation_error ("name already used in method", node);
+	}
+	temps = g_list_prepend (temps, (void *) node->name);
+    }
+    
+    for (STNode *node = temporaries; node; node = node->next) {
+	
+	for (GList *l = gt->instvars; l; l = l->next) {
+	    if (st_object_equal (node->name, (st_oop) l->data))
+		generation_error ("name is already defined", node);
+	}
+	for (GList *l = gt->temporaries; l; l = l->next) {
+	    if (st_object_equal ( node->name, (st_oop) l->data))
+		generation_error ("name already used in method", node);
+	}
+	temps = g_list_prepend (temps, (void *) node->name);
+    }
+
+    return g_list_reverse (temps);
+}
+
 static int
 generate_block (Generator *gt, STNode *node)
 {
-    int argcount = 0, tempcount = 0;
     st_oop block;
+    bool nested;
 
     GList *literals;
     guchar *code;
     int size, alloc, stack_depth;
 
+    /* save previous state */
     literals = gt->literals;
-    code = gt->code;
-    size = gt->size;
-    alloc = gt->alloc;
+    code     = gt->code;
+    size     = gt->size;
+    alloc    = gt->alloc;
     stack_depth = gt->stack_depth;
 
-    for (STNode *l = node->arguments; l; l = l->next) {
-	for (GList *t = gt->temporaries; t; t = t->next) {
-	    if (st_object_equal ((st_oop) t->data, l->name)) {
-		generation_error ("temporary name already used", l);
-	    }
-	}	
-	gt->temporaries = g_list_append (gt->temporaries, (void *) l->name);
-	argcount++;
-    }
+    gt->literals = NULL;
+    gt->code  = g_malloc (DEFAULT_CODE_SIZE);
+    gt->alloc = DEFAULT_CODE_SIZE;
+    gt->size  = 0;
+    gt->stack_depth = 0;
 
-   for (STNode *l = node->temporaries; l; l = l->next) {
-	for (GList *t = gt->temporaries; t; t = t->next) {
-	    if (st_object_equal ((st_oop) t->data, l->name)) {
-		generation_error ("temporary name already used", l);
-	    }
-	}	
-	gt->temporaries = g_list_append (gt->temporaries, (void *) l->name);
-	tempcount++;
-    }
+    nested = gt->in_block;
+    gt->in_block = true;
 
-    generate_statements (generator, node->statements);
+    gt->temporaries = g_list_append (gt->temporaries,
+				     get_block_temporaries (gt, node->arguments,
+							    node->temporaries));
+
+    generate_statements (gt, node->statements);
 
     block = st_object_new (st_compiled_block_class);
     
     st_compiled_code_set_bytecodes (block, create_bytecode_array (gt));
     st_compiled_code_set_literals  (block, create_literals_array (gt));
 
-    st_compiled_code_set_arg_count (block, argcount);
-    st_compiled_code_set_temp_count (block, tempcount);
- 
+    st_compiled_code_set_arg_count (block, st_node_length (node->arguments));
+    st_compiled_code_set_temp_count (block, st_node_length (node->temporaries));
+    st_compiled_code_set_stack_depth (block, gt->stack_depth);
 
-    return -1;
+    g_free (gt->code);
+    g_list_free (gt->literals);
+
+    /* restore previous state */ 
+    gt->literals = literals;
+    gt->code = code;
+    gt->size = size;
+    gt->alloc = alloc;
+    gt->stack_depth = stack_depth;
+
+    if (nested == false)
+	gt->in_block = false;
+
+    gt->literals = g_list_append (gt->literals, (void *) block);
+    
+    return g_list_length (gt->literals) - 1;
 }
-#endif
+
 
 static void
 generate_message (Generator *gt, STNode *msg)
@@ -511,16 +614,16 @@ generate_message (Generator *gt, STNode *msg)
     /* check if message is a special */
     for (int i = 0; i < G_N_ELEMENTS (specials); i++) {
 	if (!super_send && msg->selector == specials[i]) {
-	    push (gt, send_plus + i);  
+	    push (gt, SEND_PLUS + i);  
 		return;
 	}
     }
 
     /* send type */
     if (super_send)
-	push (gt, send_super);
+	push (gt, SEND_SUPER);
     else
-	push (gt, send);
+	push (gt, SEND);
 
     /* argument count */
     push (gt, (guchar) argcount);
@@ -538,19 +641,19 @@ generate_expression (Generator *gt, STNode *node)
     {		
 	if (st_object_equal (node->name, st_string_new ("self"))
 	    || st_object_equal (node->name, st_string_new ("super"))) {
-	    push (gt, push_self);
+	    push (gt, PUSH_SELF);
 	    gt->stack_depth++;
 	    break;
 	} else if (st_object_equal (node->name, st_string_new ("true"))) {
-	    push (gt, push_true);
+	    push (gt, PUSH_TRUE);
 	    gt->stack_depth++;
 	    break;
 	} else if (st_object_equal (node->name, st_string_new ("false"))) {
-	    push (gt, push_false);
+	    push (gt, PUSH_FALSE);
 	    gt->stack_depth++;
 	    break;
 	} else if (st_object_equal (node->name, st_string_new ("nil"))) {
-	    push (gt, push_nil);
+	    push (gt, PUSH_NIL);
 	    gt->stack_depth++;
 	    break;
 	}
@@ -563,7 +666,7 @@ generate_expression (Generator *gt, STNode *node)
 	}
 	index = find_instvar (gt, node->name);
 	if (index >= 0) {
-	    push_instvar (gt, index);
+	    push_instance_var (gt, index);
 	    break;
 	}
 	index = find_literal_var (gt, node->name);
@@ -571,7 +674,7 @@ generate_expression (Generator *gt, STNode *node)
 	    push_literal_var (gt, index);
 	    break;
 	}
-	generation_error ("could not resolve identifier", node);
+	generation_error ("unknown variable", node);
     }
     case ST_LITERAL_NODE:
     {
@@ -582,16 +685,15 @@ generate_expression (Generator *gt, STNode *node)
     }
     case ST_ASSIGN_NODE:
     {
-	generate_assign (gt, node);
+	generate_assign (gt, node, false);
 	break;
     }
     case ST_BLOCK_NODE:
     {	
-	/*	int index;
+	int index;
 	index = generate_block (gt, node);
-	push_literal_const (gt, index);
+	create_block (gt, index);
 	break;
-	*/
     }
     case ST_MESSAGE_NODE:
     {
@@ -606,49 +708,69 @@ generate_expression (Generator *gt, STNode *node)
 static void
 generate_statements (Generator *gt, STNode *statements)
 {
-    for (STNode *stm = statements; stm; stm = stm->next) {
+    if (gt->in_block && statements == NULL) {
+	push (gt, PUSH_NIL);
+    }
 
-	switch (stm->type) {
+    for (STNode *node = statements; node; node = node->next) {
+
+	switch (node->type) {
 
 	case ST_VARIABLE_NODE:
 	case ST_LITERAL_NODE:
 	case ST_BLOCK_NODE:
 	    /*
 	     * don't generate anything since we would end up with a constant
-	     * expression with no side-effects
+	     * expression with no side-effects.
+             * 
+             * However, in a block with no explicit return, the value of the last statement is the implicit
+             * value of the block.   
 	     */
+	    if (gt->in_block && node->next == NULL)
+		generate_expression (gt, node);
+
 	    break;
 
 	case ST_ASSIGN_NODE:
-	    generate_assign (gt, stm);
+
+	    if (gt->in_block && node->next == NULL)
+		generate_assign (gt, node, false);
+	    else
+		generate_assign (gt, node, true);		
+
 	    break;
 	    
 	case ST_RETURN_NODE:
 	    
-	    generate_return (gt, stm);
+	    generate_return (gt, node);
 	    
-	    g_assert (stm->next == NULL);
+	    g_assert (node->next == NULL);
 
 	    /* break out and don't pop stack top */
 	    return;
 	    
 	case ST_MESSAGE_NODE:
 	    
-	    generate_message (gt, stm);
+	    generate_message (gt, node);
+	    
+	    if (!gt->in_block || !(node->next == NULL))
+		push (gt, POP_STACK_TOP);
 	    break;
 	    
 	default:
 	    g_assert_not_reached ();
-
 	}
-
-	push (gt, pop_stack_top);
     }
 
-    gt->stack_depth++;
-
-    push (gt, push_self);
-    push (gt, return_stack_top);
+    /* default return bytecodes */
+    if (!gt->in_block) {
+	gt->stack_depth++;
+	push (gt, PUSH_SELF);
+	push (gt, RETURN_STACK_TOP);
+    } else {
+	gt->stack_depth++;
+	push (gt, BLOCK_RETURN);
+    }
 }
 
 st_oop
@@ -656,34 +778,21 @@ st_generate_method (st_oop klass, STNode *node)
 {
     Generator *gt;
     st_oop     method;
-    int argcount, tempcount;
 
     g_assert (klass != st_nil);
     g_assert (node != NULL && node->type == ST_METHOD_NODE);
     
     init_specials ();
 
-    GList *temp_l = NULL;
-    for (STNode *l = node->temporaries; l; l = l->next) {
-	temp_l = g_list_append (temp_l, (void *) l->name);
-    }
-    GList *arg_l = NULL;
-    for (STNode *l = node->arguments; l; l = l->next) {
-	arg_l = g_list_append (arg_l, (void *) l->name);
-    }
-
-    gt = generator_new (klass, temp_l, arg_l);
+    gt = generator_new (klass, node);
 
     // generate bytecode
     generate_statements (gt, node->statements);
 
     method = st_object_new (st_compiled_method_class);
 
-    argcount  = st_node_length (node->arguments);
-    tempcount = st_node_length (node->temporaries);
-
-    st_compiled_code_set_arg_count   (method, argcount);
-    st_compiled_code_set_temp_count  (method, tempcount);
+    st_compiled_code_set_arg_count   (method, st_node_length (node->arguments));
+    st_compiled_code_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_length (node->arguments));
     st_compiled_code_set_stack_depth (method, gt->stack_depth);
 
     if (node->primitive >= 0) {
@@ -703,109 +812,123 @@ st_generate_method (st_oop klass, STNode *node)
 static void
 print_bytecodes (st_oop literals, guchar *codes, int len) 
 {
-    guchar *end = codes + len;
-
     guchar *ip = codes;
 
     while (*ip) {
 
-	printf ("%3i ", ip - codes);
+	printf ("%3li ", ip - codes);
 
 	switch (*ip) {
 	    
-	case push_temp_n:
+	case PUSH_TEMP:
 	    printf ("pushTemp: %i", *(++ip));
 	    
 	    ip++;
 	    break;
 	    
-	case push_instvar_n:
+	case PUSH_INSTVAR:
 	    printf ("pushInstvar: %i", *(++ip));
 
 	    ip++;
 	    break;
 	    
-	case push_literal_const_n:
+	case PUSH_LITERAL_CONST:
 	    printf ("pushConst: %i", *(++ip));
 
 	    ip++;
 	    break;
-	    
 
-	case push_literal_var_n:
+	case PUSH_LITERAL_VAR:
 	    printf ("pushLit: %i", *(++ip));
 
 	    ip++;
 	    break;
-	    
 
-	case push_self:
+	case PUSH_SELF:
 	    printf ("push: self");
 
 	    ip++;
 	    break;
-	    
 
-	case push_true:
+	case PUSH_TRUE:
 	    printf ("pushConst: true");
 
 	    ip++;
 	    break;
 	    
-
-	case push_false:
+	case PUSH_FALSE:
 	    printf ("pushConst: false");
 
 	    ip++;
 	    break;
-	    
-
-	case push_nil:
+	   
+	case PUSH_NIL:
 	    printf ("pushConst: nil");
 
 	    ip++;
-	    break;
-	    
+	    break; 
 
-	case store_temp_n:
+	case STORE_TEMP:
 	    printf ("storeTemp: %i", *(++ip));
 
 	    ip++;
 	    break;
-	    
 
-	case store_instvar_n:
+	case STORE_INSTVAR:
 	    printf ("storeInstvar: %i", *(++ip));
 
 	    ip++;
 	    break;
 
-	case store_pop_temp_n:
+	case STORE_LITERAL_VAR:
+	    printf ("storeLiteral: %i", *(++ip));
+
+	    ip++;
+	    break;
+
+	case STORE_POP_TEMP:
 	    printf ("popIntoTemp: %i", *(++ip));
 
 	    ip++;
 	    break;
 
-	case store_pop_instvar_n:
+	case STORE_POP_INSTVAR:
 	    printf ("popIntoInstvar: %i", *(++ip));
 
 	    ip++;
 	    break;
 
+	case STORE_POP_LITERAL_VAR:
+	    printf ("popIntoLiteral: %i", *(++ip));
 
-	case pop_stack_top:
+	    ip++;
+	    break;
+
+	case CREATE_BLOCK:
+	    printf ("createBlock: %i", *(++ip));
+
+	    ip++;
+	    break;
+
+	case POP_STACK_TOP:
 	    printf ("pop");
 
 	    ip++;
 	    break;
 
-	case return_stack_top:
+	case RETURN_STACK_TOP:
 	    printf ("returnTop");
 
 	    ip++;
 	    break;
 
-	case send:
+	case BLOCK_RETURN:
+	    printf ("blockReturn");
+
+	    ip++;
+	    break;
+
+	case SEND:
 	{
 	    st_oop selector;
 	    ip += 2;
@@ -816,7 +939,7 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 	    ip++;
 	    break;
 	}
-	case send_super:
+	case SEND_SUPER:
 	{
 	    st_oop selector;
 	    ip += 2;
@@ -828,34 +951,37 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 	    break;
 	}
 
+	case SEND_PLUS:
+	case SEND_MINUS:
+	case SEND_LT:
+	case SEND_GT:
+	case SEND_LE:
+	case SEND_GE:
+	case SEND_EQ:
+	case SEND_NE:
+	case SEND_MUL:
+	case SEND_DIV:
+	case SEND_MOD:
+	case SEND_BITSHIFT:
+	case SEND_BITAND:
+	case SEND_BITOR:
+	case SEND_BITXOR:
+	case SEND_AT:
+	case SEND_AT_PUT:
+	case SEND_SIZE:
+	case SEND_VALUE:
+	case SEND_VALUE_ARG:
+	case SEND_IDENTITY_EQ:
+	case SEND_CLASS:
+	case SEND_NEW:
+	case SEND_NEW_ARG:
 
-	case send_plus:
-	case send_minus:
-	case send_lt:
-	case send_gt:
-	case send_le:
-	case send_ge:
-	case send_eq:
-	case send_ne:
-	case send_mul:
-	case send_div:
-	case send_mod:
-	case send_bitshift:
-	case send_bitand:
-	case send_bitor:
-	case send_bitxor:
-	case send_at:
-	case send_at_put:
-	case send_size:
-	case send_identity_eq:
-	case send_class:
-	case send_new:
-	case send_new_arg:
-
-	    printf ("sendSpecial: #%s", st_byte_array_bytes (specials[*ip - send_plus]));
+	    printf ("sendSpecial: #%s", st_byte_array_bytes (specials[*ip - SEND_PLUS]));
 
 	    ip++;
 	    break;
+
+
 	default:
 
 	g_assert_not_reached ();
@@ -866,22 +992,92 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
     
 }
 
+void st_generator_print_method (st_oop method);
+static void print_block (st_oop block);
 
-void st_generator_print_method (st_oop method)
+static void
+print_literals (st_oop literals)
 {
-    printf ("flags:      %3i\n", st_compiled_code_flags (method));
-    printf ("arg-count:  %3i\n", st_compiled_code_arg_count (method));
-    printf ("temp-count: %3i\n", st_compiled_code_temp_count (method));
-    printf ("stack-depth:%3i\n", st_compiled_code_stack_depth (method));
-    printf ("primitive:  %3i\n", st_compiled_code_primitive_index (method));
-    
-    printf ("\n");
+    printf ("literals: ");
 
-    st_oop literals = st_compiled_code_literals (method);
-    char *bytecodes = (guchar *) st_byte_array_bytes (st_compiled_code_bytecodes (method));
-    int size = st_byte_array_size (st_compiled_code_bytecodes (method));
+    for (int i = 1; i <= st_smi_value (st_array_size (literals)); i++) {
+	
+	st_oop lit = st_array_at (literals, i);
+
+	if (st_object_is_smi (lit)) {
+	    
+	    printf ("%li", st_smi_value (lit));
+	    
+	} else if (st_object_is_symbol (lit)) {
+
+	    printf ("#%s", (char *) st_byte_array_bytes (lit));
+ 
+	} else if (st_object_class (lit) == st_string_class) {
+
+	    printf ("'%s'", (char *) st_byte_array_bytes (lit));
+
+	} else if (st_object_class (lit) == st_character_class) {
+
+	    char outbuf[6] = { 0 };
+	    g_unichar_to_utf8 (st_character_value (lit), outbuf);
+	    printf ("$%s", outbuf);
+	}
+
+	printf (" ");
+    }
+    
+    printf ("\nblock literals:\n");
+    
+    for (int i = 1; i <= st_smi_value (st_array_size (literals)); i++) {
+		
+	st_oop lit = st_array_at (literals, i);
+	
+	if (st_object_is_compiled_block (lit)) {
+	   
+	    printf ("[\n");
+	    print_block (lit);
+	    printf ("\n]\n");
+	    
+	}
+    }
+}
+
+static void
+print_block (st_oop block)
+{
+    st_oop  literals;
+    guchar *bytecodes;
+    int     size;
+
+    literals = st_compiled_code_literals (block);
+    bytecodes = (guchar *) st_byte_array_bytes (st_compiled_code_bytecodes (block));
+    size = st_byte_array_size (st_compiled_code_bytecodes (block));
 
     print_bytecodes (literals, bytecodes, size);
     
+    print_literals (literals);
+}
 
+void
+st_generator_print_method (st_oop method)
+{
+    st_oop  literals;
+    guchar *bytecodes;
+    int     size;
+
+    printf ("flags: %i; ", st_compiled_code_flags (method));
+    printf ("arg-count: %i; ", st_compiled_code_arg_count (method));
+    printf ("temp-count: %i; ", st_compiled_code_temp_count (method));
+    printf ("stack-depth: %i; ", st_compiled_code_stack_depth (method));
+    printf ("primitive: %i;\n", st_compiled_code_primitive_index (method));
+    
+    printf ("\n");
+
+    literals = st_compiled_code_literals (method);
+    bytecodes = (guchar *) st_byte_array_bytes (st_compiled_code_bytecodes (method));
+    size = st_byte_array_size (st_compiled_code_bytecodes (method));
+
+    print_bytecodes (literals, bytecodes, size);
+    
+    print_literals (literals);
 }

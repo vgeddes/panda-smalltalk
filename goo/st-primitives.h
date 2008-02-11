@@ -27,12 +27,16 @@
 
 #include <glib.h>
 
-G_BEGIN_DECLS typedef void (*st_prim_func) (void *todo);
+typedef void (*STPrimitiveFunc) (void);
 
+typedef struct
+{
+    const char *     name;
+    STPrimitiveFunc  func;
+} STPrimitive;
 
-int st_get_primitive_index_for_name (const char *name);
+extern const STPrimitive st_primitives[];
 
-st_prim_func st_get_primitive_func_for_index (guint index);
-
+int st_primitive_index_for_name (const char *name);
 
 #endif /* __ST_PRIMITIVES_H__ */

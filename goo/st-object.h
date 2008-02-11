@@ -33,6 +33,25 @@
 #include <st-universe.h>
 #include <glib.h>
 
+typedef enum
+{
+    ST_FIXED_TYPE,
+    ST_FLOAT_TYPE,
+    ST_SMALL_INTEGER_TYPE,
+    ST_LARGE_INTEGER_TYPE,
+    ST_ARRAY_TYPE,
+    ST_BYTE_ARRAY_TYPE,
+    ST_FLOAT_ARRAY_TYPE,
+    ST_COMPILED_METHOD_TYPE,
+    ST_COMPILED_BLOCK_TYPE,
+    ST_METHOD_CONTEXT_TYPE, 
+    ST_BLOCK_CONTEXT_TYPE,
+
+} STObjectType;
+
+    
+
+
 st_oop st_object_new (st_oop klass);
 st_oop st_object_new_arrayed (st_oop klass, st_smi size);
 
@@ -67,6 +86,8 @@ INLINE bool st_object_is_array (st_oop object);
 INLINE bool st_object_is_byte_array (st_oop object);
 
 const STVTable *st_object_vtable (void);
+
+
 
 
 /* inline definitions */

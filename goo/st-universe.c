@@ -177,7 +177,9 @@ parse_error (char *message, STToken *token)
 
 static void
 setup_class_final (const char *class_name,
-		   const char *superclass_name, GList * ivarnames, GList * cvarnames)
+		   const char *superclass_name,
+		   GList      *ivarnames,
+		   GList      *cvarnames)
 {
     st_oop metaclass, klass, superclass;
 
@@ -231,8 +233,7 @@ setup_class_final (const char *class_name,
 	st_behavior_set_superclass (metaclass, st_object_class (superclass));
 
 	// set the instance size
-	st_smi n_ivars =
-	    g_list_length (ivarnames) + st_smi_value (st_behavior_instance_size (superclass));
+	st_smi n_ivars = g_list_length (ivarnames) + st_smi_value (st_behavior_instance_size (superclass));
 	st_behavior_set_instance_size (klass, n_ivars);
     }
 
@@ -488,23 +489,20 @@ st_bootstrap_universe (void)
     declare_class ("CompiledBlock", st_compiled_block_class);
 
     /* parse class declarations */
-    parse_classes ("../smalltalk/class-declarations.st");
+    parse_classes ("../smalltalk/ClassDefinitions.st");
 
     /* verify object graph */
-    for (GList * l = objects; l; l = l->next) {
+    /*    for (GList * l = objects; l; l = l->next) {
 
 	st_oop object = (st_oop) l->data;
 
 	if (st_object_is_class (object)) {
 	    printf ("%s\n",st_byte_array_bytes (st_class_name (object)));
-
-	    printf ("verified: %i\n", st_object_verify (object));
 	}
-	//	if (!st_object_verify ((st_oop) l->data)) {
-	//	    printf ("%s\n", st_object_describe ((st_oop) l->data));
-	    //	}
+	    printf ("verified: %i\n", st_object_verify (object));
+	
 	
     }
-    
+    */
 
 }
