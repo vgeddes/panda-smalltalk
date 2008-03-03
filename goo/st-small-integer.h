@@ -34,7 +34,7 @@ INLINE st_oop st_smi_increment (st_oop smi);
 INLINE st_oop st_smi_decrement (st_oop smi);
 INLINE bool st_smi_equal (st_oop m, st_oop n);
 INLINE st_smi st_smi_hash (st_oop smi);
-const STVTable *st_smi_vtable (void);
+guint st_smi_vtable (void);
 
 
 /* inline definitions */

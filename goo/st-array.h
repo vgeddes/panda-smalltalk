@@ -51,7 +51,7 @@ INLINE st_oop st_array_at (st_oop object, st_smi i);
 
 INLINE void st_array_at_put (st_oop object, st_smi i, st_oop value);
 
-const STVTable *st_array_vtable (void);
+guint st_array_vtable (void);
 
 
 /* inline definitions */

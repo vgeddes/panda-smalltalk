@@ -43,7 +43,7 @@ is_arrayed (void)
 static bool
 array_verify (st_oop object)
 {
-    if (!st_heap_object_vtable ()->verify (object))
+    if (!tables[st_heap_object_vtable ()].verify (object))
 	return false;
    
     // variable size
@@ -70,7 +70,7 @@ allocate_arrayed (st_oop klass, st_smi size)
     st_oop array = st_allocate_object (ST_TYPE_SIZE (STArray) + size);
 
     st_object_initialize_header (array, klass);
-    ST_ARRAY (array)->size = st_smi_new (size);
+    ST_ARRAY (array)->size = st_smi_new (size);    
 
     st_oop *elements = st_array_element (array, 1);
     for (st_smi i = 0; i < size; i++)

@@ -48,10 +48,8 @@ class_verify (st_oop object)
     bool verified = true;
 
     /* verify header */
-    if (!st_heap_object_vtable ()->verify (object))
+    if (!tables[st_heap_object_vtable ()].verify (object))
 	return false;
-
-    verified = verified && (ST_CLASS_VTABLE (object) != NULL);
 
     // superclass of Object is st_nil !
     st_oop superclass = st_behavior_superclass (object);
@@ -90,7 +88,7 @@ st_behavior_all_instance_variables (st_oop klass)
     if (names != st_nil) {
 	size = st_smi_value (st_array_size (names));
 	for (st_smi i = 1; i <= size; i++)
-	    b = g_list_append (b, st_array_at (names, i));
+	    b = g_list_append (b, (gpointer) st_array_at (names, i));
     }
 
     return g_list_concat (a, b);
@@ -101,7 +99,7 @@ static void
 st_class_vtable_init (STVTable * table)
 {
     assert_static (sizeof (STBehavior) ==
-		   (sizeof (STHeader) + 4 * sizeof (st_oop)));
+		   (sizeof (STHeader) + 5 * sizeof (st_oop)));
     assert_static (sizeof (STClass) == (sizeof (STBehavior) + 2 * sizeof (st_oop)));
 
     table->is_class = is_class;
@@ -127,10 +125,8 @@ metaclass_verify (st_oop object)
     bool verified = true;
 
     /* verify header */
-    if (!st_heap_object_vtable ()->verify (object))
+    if (!tables[st_heap_object_vtable ()].verify (object))
 	return false;
-
-    verified = verified && (ST_CLASS_VTABLE (object) != NULL);
 
     // superclass of 'Object class' is 'Class' is st_nil !
     st_oop superclass = st_behavior_superclass (object);
@@ -151,9 +147,7 @@ metaclass_verify (st_oop object)
 static st_oop
 metaclass_allocate (st_oop klass)
 {
-    st_oop object = st_allocate_class (ST_TYPE_SIZE (STMetaclass));
-
-    ST_CLASS_VTABLE (object) = st_class_vtable ();
+    st_oop object = st_allocate_object (ST_TYPE_SIZE (STMetaclass));
 
     st_object_initialize_header (object, st_metaclass_class);
 

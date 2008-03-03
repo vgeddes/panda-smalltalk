@@ -73,7 +73,7 @@ st_byte_array_at_put (st_oop object, st_smi i, guchar value)
 static bool
 byte_array_verify (st_oop object)
 {    
-    if (!st_heap_object_vtable ()->verify (object))
+    if (!tables[st_heap_object_vtable ()].verify (object))
 	return false;
 
     st_oop size = st_byte_array_size (object);

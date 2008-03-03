@@ -52,6 +52,6 @@ void    st_byte_array_at_put (st_oop object, st_smi i, guchar value);
 bool    st_byte_array_range_check (st_oop object, st_smi i);
 
 
-const STVTable *st_byte_array_vtable (void);
+guint st_byte_array_vtable (void);
 
 #endif /* __ST_BYTE_ARRAY__ */

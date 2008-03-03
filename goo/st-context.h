@@ -50,5 +50,5 @@ typedef struct
 } STBlockContext;
 
 
-const STVTable *st_method_context_vtable (void);
-const STVTable *st_block_context_vtable (void);
+guint st_method_context_vtable (void);
+guint st_block_context_vtable (void);

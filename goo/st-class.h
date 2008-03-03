@@ -43,6 +43,7 @@ typedef struct
 {
     STHeader header;
     
+    st_oop format;
     st_oop superclass;
     st_oop instance_size;
     st_oop method_dictionary;
@@ -67,7 +68,7 @@ typedef struct
 
 } STMetaclass;
 
-#define ST_CLASS_VTABLE(oop) ((ST_POINTER (oop))->vt[-1])
+INLINE st_oop st_behavior_format (st_oop klass);
 
 INLINE st_oop st_behavior_instance_size (st_oop klass);
 
@@ -76,6 +77,8 @@ INLINE st_oop st_behavior_superclass (st_oop klass);
 INLINE st_oop st_behavior_method_dictionary (st_oop klass);
 
 INLINE st_oop st_behavior_instance_variables (st_oop klass);
+
+INLINE void st_behavior_set_format (st_oop klass, st_oop format);
 
 INLINE void st_behavior_set_instance_size (st_oop klass, st_smi instance_size);
 
@@ -96,19 +99,32 @@ INLINE void st_class_set_pool (st_oop klass, st_oop class_pool);
 
 GList *st_behavior_all_instance_variables (st_oop klass);
 
-const STVTable *st_class_vtable (void);
+guint st_class_vtable (void);
 
 
 INLINE st_oop st_metaclass_instance_class (st_oop metaclass);
 
 INLINE void st_metaclass_set_instance_class (st_oop metaclass, st_oop instance_class);
 
-const STVTable *st_metaclass_vtable (void);
+guint st_metaclass_vtable (void);
 
 
 /* inline definitions */
 
 #define ST_BEHAVIOR(oop) ((STBehavior *)  ST_POINTER (oop))
+
+
+INLINE st_oop
+st_behavior_format (st_oop klass)
+{
+    return ST_BEHAVIOR (klass)->format;
+}
+
+INLINE void
+st_behavior_set_format (st_oop klass, st_oop format)
+{
+    ST_BEHAVIOR (klass)->format = format;
+}
 
 INLINE st_oop
 st_behavior_instance_size (st_oop klass)

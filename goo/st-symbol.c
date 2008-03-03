@@ -40,7 +40,7 @@ symbol_equal (st_oop object, st_oop another)
 	return false;
 
     // now just do a string comparison
-    if (st_byte_array_vtable ()->equal (object, another))
+    if (tables[st_byte_array_vtable ()].equal (object, another))
 	return true;
 
     return false;

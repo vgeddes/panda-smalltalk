@@ -116,9 +116,9 @@ INLINE void     st_compiled_block_set_method         (st_oop block, st_oop metho
 INLINE st_oop    st_compiled_block_method          (st_oop block);
 
 
-const STVTable *st_compiled_block_vtable  (void);
+guint st_compiled_block_vtable  (void);
 
-const STVTable *st_compiled_method_vtable (void);
+guint st_compiled_method_vtable (void);
 
 
 

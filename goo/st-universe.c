@@ -25,7 +25,6 @@
 #include "st-types.h"
 #include "st-utils.h"
 #include "st-object.h"
-#include "st-mark.h"
 #include "st-float.h"
 #include "st-association.h"
 #include "st-compiled-code.h"
@@ -70,9 +69,6 @@ st_oop
     st_compiled_method_class = 0,
     st_compiled_block_class  = 0;
 
-
-
-
 st_oop
 st_global_get (const char *name)
 {
@@ -83,7 +79,6 @@ st_global_get (const char *name)
 #include "st-types.h"
 #include "st-utils.h"
 #include "st-object.h"
-#include "st-mark.h"
 #include "st-float.h"
 #include "st-association.h"
 #include "st-compiled-code.h"
@@ -107,7 +102,7 @@ enum
     INSTANCE_SIZE_OBJECT = 0,
     INSTANCE_SIZE_UNDEFINED_OBJECT = 0,
     INSTANCE_SIZE_BEHAVIOR = 0,
-    INSTANCE_SIZE_CLASS = 6 + 1,	/* 6 instvars + 1 vtable */
+    INSTANCE_SIZE_CLASS = 7,	        /* 7 instvars */
     INSTANCE_SIZE_METACLASS = 6,	/* 5 instvars + 1 vtable */
     INSTANCE_SIZE_SMI = 0,
     INSTANCE_SIZE_CHARACTER = 1,
@@ -126,19 +121,21 @@ enum
 };
 
 static st_oop
-st_class_new (const STVTable *vtable)
+st_class_new (guint format)
 {
     st_oop klass;
 
-    klass = st_allocate_class (ST_TYPE_SIZE (STClass));
-
-    ST_CLASS_VTABLE (klass) = vtable;
+    klass = st_allocate_object (ST_TYPE_SIZE (STClass));
 
     /* TODO refactor this initialising */
-    st_heap_object_set_mark (klass, st_mark_new ());
+    st_heap_object_set_format (klass, st_class_vtable ());
+
+    st_heap_object_set_readonly (klass, false);
+    st_heap_object_set_nonpointer (klass, false);
+    st_heap_object_set_hash (klass, st_current_hash++);			       
     st_heap_object_set_class (klass, st_nil);
 
-    st_heap_object_set_mark (klass, st_mark_set_nonpointer (st_heap_object_mark (klass), true));
+    st_behavior_set_format (klass, st_smi_new (format));
 
     st_behavior_set_instance_size (klass, st_nil);
     st_behavior_set_superclass (klass, st_nil);
@@ -217,7 +214,7 @@ setup_class_final (const char *class_name,
 	klass = st_global_get (class_name);
 	if (klass == st_nil) {
 	    /* we allocate the class and set it's virtual table */
-	    klass = st_class_new (ST_CLASS_VTABLE (superclass));
+	    klass = st_class_new (st_smi_value (st_behavior_format (superclass)));
 	}
 
 	st_behavior_set_superclass (klass, superclass);
@@ -414,7 +411,10 @@ st_bootstrap_universe (void)
      * are initialized to it's st_oop.
      */
     st_nil = st_allocate_object (sizeof (STHeader) / sizeof (st_oop));
-    st_heap_object_set_mark (st_nil, st_mark_new ());
+    st_heap_object_set_readonly (st_nil, false);
+    st_heap_object_set_nonpointer (st_nil, false);
+    st_heap_object_set_format (st_nil, st_heap_object_vtable ());
+    st_heap_object_set_hash (st_nil, st_current_hash++);
     st_heap_object_set_class (st_nil, st_nil);
 
     _st_object_class = st_class_new (st_object_vtable ()); 

@@ -60,7 +60,6 @@ void st_object_initialize_body (st_oop object, st_smi instance_size);
 
 /* tag tests */
 INLINE int st_object_tag (st_oop object);
-INLINE bool st_object_is_mark (st_oop object);
 INLINE bool st_object_is_heap (st_oop object);
 INLINE bool st_object_is_smi (st_oop object);
 
@@ -85,7 +84,7 @@ INLINE bool st_object_is_arrayed (st_oop object);
 INLINE bool st_object_is_array (st_oop object);
 INLINE bool st_object_is_byte_array (st_oop object);
 
-const STVTable *st_object_vtable (void);
+guint st_object_vtable (void);
 
 
 
@@ -96,12 +95,6 @@ INLINE int
 st_object_tag (st_oop object)
 {
     return object & st_tag_mask;
-}
-
-INLINE bool
-st_object_is_mark (st_oop object)
-{
-    return st_object_tag (object) == ST_MARK_TAG;
 }
 
 INLINE bool
@@ -129,9 +122,9 @@ INLINE const STVTable *
 st_object_virtual (st_oop object)
 {
     if (G_UNLIKELY (st_object_is_smi (object)))
-	return st_smi_vtable ();
+	return &tables[st_smi_vtable ()];
     
-    return ST_CLASS_VTABLE (st_object_class (object));
+    return & tables[ST_OBJECT_FORMAT (object)];
 }
 
 INLINE bool

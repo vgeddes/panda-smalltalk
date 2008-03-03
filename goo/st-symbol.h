@@ -38,6 +38,6 @@ st_oop st_character_new (gunichar unichar);
 gunichar st_character_value (st_oop character);
 
 
-const STVTable *st_symbol_vtable (void);
+guint st_symbol_vtable (void);
 
 #endif /* __ST_SYMBOL_H__ */

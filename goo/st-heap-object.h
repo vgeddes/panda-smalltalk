@@ -26,72 +26,78 @@
 #define __ST_HEAP_OBJECT_H__
 
 #include <st-types.h>
+#include <st-utils.h>
 #include <st-vtable.h>
-#include <st-mark.h>
 
-/* Every heap object starts with this layout */
+/* Every heap-allocated object starts with this layout */
+/* format of mark oop
+ * [ gc: 9 | non-pointer: 1 | readonly: 1 | hasBeenHashed : 1 | hasHashField: 2 | format: 6 ]
+ *
+ * gc:          book-keeping for garbage collection
+ * unused: 	not used yet (haven't implemented GC)
+ * non-pointer:	object body contains native C types
+ * readonly:	object cannot be modified
+ * 
+ */
 
 typedef struct
 {
-    const STVTable *vt[0];
-    st_oop mark;
+    st_smi header;
+    st_smi hash;
     st_oop klass;
-
-    st_oop instvars[];
+    
+    st_oop fields[];
 } STHeader;
 
 
-INLINE st_oop   st_heap_object_class     (st_oop object);
+extern int st_current_hash;
 
-INLINE void     st_heap_object_set_class (st_oop object, st_oop klass);
-
-INLINE int      st_heap_object_hash      (st_oop object);
-
-INLINE st_oop   st_heap_object_mark      (st_oop object);
-
-INLINE void     st_heap_object_set_mark  (st_oop object, st_oop mark);
-
-INLINE st_oop  *st_heap_object_instvars  (st_oop object);
-
-const STVTable *st_heap_object_vtable    (void);
-
-
-#define ST_HEADER(oop) ((STHeader *) ST_POINTER (oop))
-
-INLINE st_oop
-st_heap_object_class (st_oop object)
+enum
 {
-    return ST_HEADER (object)->klass;
-}
+    st_unused_bits = 9,
+    st_nonpointer_bits = 1,
+    st_readonly_bits = 1,
+    st_format_bits = 6,
 
-INLINE void
-st_heap_object_set_class (st_oop object, st_oop klass)
-{
-    ST_HEADER (object)->klass = klass;
-}
+    st_format_shift = 0,
+    st_readonly_shift = st_format_bits + st_format_shift,
+    st_nonpointer_shift = st_readonly_bits + st_readonly_shift,
+    st_unused_shift = st_nonpointer_bits + st_nonpointer_shift,
 
-INLINE int
-st_heap_object_hash (st_oop object)
-{
-    return st_mark_hash (ST_HEADER (object)->mark);
-}
+    st_format_mask = ST_NTH_MASK (st_format_bits),
+    st_format_mask_in_place = st_format_mask << st_format_shift,
+    st_readonly_mask = ST_NTH_MASK (st_readonly_bits),
+    st_readonly_mask_in_place = st_readonly_mask << st_readonly_shift,
+    st_nonpointer_mask = ST_NTH_MASK (st_nonpointer_bits),
+    st_nonpointer_mask_in_place = st_nonpointer_mask << st_nonpointer_shift,
+    st_unused_mask = ST_NTH_MASK (st_unused_bits),
+    st_unused_mask_in_place = st_unused_mask << st_unused_shift,
+};
 
-INLINE st_oop
-st_heap_object_mark (st_oop object)
-{
-    return ST_HEADER (object)->mark;
-}
+#define ST_OBJECT_FORMAT(object) (ST_POINTER (object)->header & st_format_mask)
 
-INLINE void
-st_heap_object_set_mark (st_oop object, st_oop mark)
-{
-    ST_HEADER (object)->mark = mark;
-}
+st_oop   st_heap_object_class     (st_oop object);
 
-INLINE st_oop *
-st_heap_object_instvars (st_oop object)
-{
-    return ST_HEADER (object)->instvars;
-}
+void     st_heap_object_set_class (st_oop object, st_oop klass);
+
+guint    st_heap_object_hash      (st_oop object);
+
+void     st_heap_object_set_hash  (st_oop object, int hash);
+
+void     st_heap_object_set_format  (st_oop object, guint format);
+
+bool     st_heap_object_readonly  (st_oop object);
+
+void     st_heap_object_set_readonly  (st_oop object, bool readonly);
+
+bool     st_heap_object_nonpointer  (st_oop object);
+
+void     st_heap_object_set_nonpointer  (st_oop object, bool nonpointer);
+
+
+st_oop  *st_heap_object_instvars  (st_oop object);
+
+guint    st_heap_object_vtable    (void);
+
 
 #endif /* __ST_HEAP_OBJECT_H__ */

@@ -27,7 +27,6 @@ libgoo_la_SOURCES = \
 	goo/st-float.c \
 	goo/st-symbol.h \
 	goo/st-symbol.c \
-	goo/st-mark.h \
 	goo/st-class.h \
 	goo/st-class.c \
 	goo/st-object.h \

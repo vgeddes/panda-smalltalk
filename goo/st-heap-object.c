@@ -29,6 +29,98 @@
 
 ST_DEFINE_VTABLE (st_heap_object, st_object_vtable ());
 
+#define ST_HEADER(oop) ((STHeader *) ST_POINTER (oop))
+
+#define HEADER(object) (ST_POINTER (object)->header)
+
+int st_current_hash = 0;
+
+guint
+st_heap_object_hash (st_oop object)
+{
+    return (guint) ST_POINTER (object)->hash;   
+}
+
+void
+st_heap_object_set_hash (st_oop object, int value)
+{
+    ST_POINTER (object)->hash = (st_smi) value;
+}
+
+void
+st_heap_object_set_format (st_oop object, guint format)
+{
+    HEADER (object) = (HEADER (object) & ~st_format_mask_in_place) | (format << st_format_shift);   
+
+}
+
+bool
+st_heap_object_readonly (st_oop object)
+{
+    return (HEADER (object) >> st_readonly_shift) & st_readonly_mask;
+}
+
+void
+st_heap_object_set_readonly (st_oop object, bool readonly)
+{
+    HEADER (object) = (HEADER (object) & ~st_readonly_mask_in_place) | ((readonly ? 1 : 0) << st_readonly_shift);
+}
+
+bool
+st_heap_object_nonpointer (st_oop object)
+{
+    return (HEADER (object) >> st_nonpointer_shift) & st_nonpointer_mask;
+}
+
+void
+st_heap_object_set_nonpointer (st_oop object, bool nonpointer)
+{
+    HEADER (object) = (HEADER (object) & ~st_nonpointer_mask_in_place) | ((nonpointer ? 1 : 0) << st_nonpointer_shift);
+}
+
+st_oop
+st_heap_object_class (st_oop object)
+{
+    return ST_HEADER (object)->klass;
+}
+
+void
+st_heap_object_set_class (st_oop object, st_oop klass)
+{
+    ST_HEADER (object)->klass = klass;
+}
+
+st_oop *
+st_heap_object_instvars (st_oop object)
+{
+    return ST_HEADER (object)->fields;
+}
+
+void
+st_object_initialize_header (st_oop object, st_oop klass)
+{
+    /* header */
+    st_heap_object_set_format (object, st_smi_value (st_behavior_format (klass)));
+    st_heap_object_set_readonly (object, false);
+    st_heap_object_set_nonpointer (object, false);
+
+    /* hash */
+    st_heap_object_set_hash (object, st_current_hash++);
+
+    /* klass */
+    st_heap_object_set_class (object, klass);
+}
+
+void
+st_object_initialize_body (st_oop object, st_smi instance_size)
+{
+    st_oop *instvars = st_heap_object_instvars (object);
+
+    for (st_smi i = 0; i < instance_size; i++)
+	instvars[i] = st_nil;
+}
+
+
 static st_oop
 heap_object_allocate (st_oop klass)
 {
@@ -58,7 +150,6 @@ heap_object_verify (st_oop object)
     st_oop klass = st_heap_object_class (object);
 
     verified = verified && st_object_is_heap (object);
-    verified = verified && st_object_is_mark (st_heap_object_mark (object));
     verified = verified && (st_object_is_class (klass)
 			    || st_object_is_metaclass (klass));
 
@@ -96,14 +187,14 @@ heap_object_equal (st_oop object, st_oop another)
 static guint
 heap_object_hash (st_oop object)
 {
-    return st_mark_hash (st_heap_object_mark (object));
+    return st_heap_object_hash (object);
 }
 
 static void
 st_heap_object_vtable_init (STVTable * table)
 {
     /* ensure that STHeader is not padded */
-    assert_static (sizeof (STHeader) == 2 * sizeof (st_oop));
+    assert_static (sizeof (STHeader) == 3 * sizeof (st_oop));
 
     table->allocate = heap_object_allocate;
     table->allocate_arrayed = heap_object_allocate_arrayed;

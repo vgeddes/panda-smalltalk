@@ -23,6 +23,7 @@
 */
 
 #include "st-primitives.h"
+#include "string.h"
 
 static void
 SmallInteger_add (void)

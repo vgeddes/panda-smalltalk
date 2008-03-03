@@ -87,23 +87,25 @@ typedef struct
 
 } STVTable;
 
+extern STVTable tables[];
+
 typedef void (*STVTableInitFunc) (STVTable *table);
 
-STVTable *st_vtable_register (const STVTable   *parent_table,
-			      STVTableInitFunc  init_func);
+guint  st_vtable_register (guint            parent_table_id,
+			   STVTableInitFunc init_func);
 
 
-#define ST_DEFINE_VTABLE(table_name, parent_table)		   \
+#define ST_DEFINE_VTABLE(table_name, parent_table_id)		   \
                                                                    \
 static void table_name##_vtable_init (STVTable *table);	           \
  								   \
-const STVTable *					           \
+guint								   \
 table_name##_vtable (void)				           \
 {								   \
-    static STVTable *__st_vtable = NULL;		           \
-    if (__st_vtable == NULL) {				           \
+    static guint __st_vtable = 0;				   \
+    if (__st_vtable == 0) {				           \
 	__st_vtable =						   \
-	    st_vtable_register ((parent_table),		           \
+	    st_vtable_register (parent_table_id,	           \
 				table_name##_vtable_init);	   \
     }							           \
     return __st_vtable;					           \

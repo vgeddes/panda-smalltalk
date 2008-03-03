@@ -23,45 +23,26 @@
 */
 
 #include "st-object.h"
-#include "st-mark.h"
 #include "st-universe.h"
 #include "st-class.h"
 #include "st-small-integer.h"
 #include "st-heap-object.h"
 
-int _st_current_hash = 0;
-
-void
-st_object_initialize_header (st_oop object, st_oop klass)
-{
-    st_heap_object_set_mark (object, st_mark_new ());
-    st_heap_object_set_class (object, klass);
-}
-
-void
-st_object_initialize_body (st_oop object, st_smi instance_size)
-{
-    st_oop *instvars = st_heap_object_instvars (object);
-
-    for (st_smi i = 0; i < instance_size; i++)
-	instvars[i] = st_nil;
-}
-
 st_oop
 st_object_new (st_oop klass)
-{   
-    return ST_CLASS_VTABLE (klass)->allocate (klass);
+{  
+    return tables[st_smi_value (st_behavior_format (klass))].allocate (klass);
 }
 
 st_oop
 st_object_new_arrayed (st_oop klass, st_smi size)
 {
-    return ST_CLASS_VTABLE (klass)->allocate_arrayed (klass, size);
+    return tables[st_smi_value (st_behavior_format (klass))].allocate_arrayed (klass, size);
 }
 
 /* Meta table */
 
-ST_DEFINE_VTABLE (st_object, NULL);
+ST_DEFINE_VTABLE (st_object, 0);
 
 static bool
 is_not_type (void)
