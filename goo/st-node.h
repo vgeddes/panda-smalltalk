@@ -97,11 +97,13 @@ struct STNode
 
 STNode *st_node_new (STNodeType type);
 
-STNode *st_node_append (STNode *list, STNode *node);
+STNode *st_node_list_append (STNode *list, STNode *node);
 
-guint   st_node_length (STNode *list);
+guint   st_node_list_length (STNode *list);
 
 void    st_print_method (STNode *method);
+
+void    st_node_destroy (STNode *node);
 
 #endif /* __ST_AST_H__ */
 

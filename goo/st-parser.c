@@ -31,7 +31,9 @@
 #include "st-symbol.h"
 #include "st-float.h"
 #include "st-large-integer.h"
-#include "st-ast.h"
+#include "st-universe.h"
+#include "st-object.h"
+#include "st-array.h"
 
 #include <tommath.h>
 #include <glib.h>
@@ -102,7 +104,7 @@ parse_block_arguments (STParser *parser)
 	arg = st_node_new (ST_VARIABLE_NODE);
 	arg->line = st_token_line (token);
 	arg->name = st_symbol_new (st_token_text (token));
-	arguments = st_node_append (arguments, arg);
+	arguments = st_node_list_append (arguments, arg);
 
 	token = next (parser->lexer);
     }
@@ -227,6 +229,66 @@ parse_number (STParser *parser)
     return node;
 }
 
+static STNode *parse_primary (STParser *parser);
+
+static STNode *
+parse_tuple (STParser *parser)
+{
+    STToken *token;
+    STNode *node;
+    GList *items = NULL;
+
+    token = next (parser->lexer);
+    while (true) {
+	
+	switch (st_token_type (token)) {
+	case ST_TOKEN_NUMBER_CONST:
+	case ST_TOKEN_STRING_CONST:
+	case ST_TOKEN_SYMBOL_CONST:
+	case ST_TOKEN_CHARACTER_CONST:
+	    node = parse_primary (parser);
+	    items = g_list_prepend (items, (gpointer) node->literal);
+	    st_node_destroy (node);
+	    break;
+	    
+	case ST_TOKEN_LPAREN:
+	    node = parse_tuple (parser);
+	    items = g_list_prepend (items, (gpointer) node->literal);
+	    st_node_destroy (node);
+	    break;
+	
+	default:
+	    if (st_token_type (token) == ST_TOKEN_RPAREN) {
+		goto out;
+	    } else
+		parse_error ("expected ')'", token);
+	}
+
+	token = current (parser->lexer);
+    }
+
+ out:
+    token = next (parser->lexer);
+    st_oop tuple;
+
+    items = g_list_reverse (items);
+
+    tuple = st_object_new_arrayed (st_array_class, g_list_length (items));
+
+    int i = 1;
+    for (GList *l = items; l; l = l->next)
+	st_array_at_put (tuple, i++, (st_oop) l->data);
+    
+    node = st_node_new (ST_LITERAL_NODE);
+    node->literal = tuple;
+    node->line = st_token_line (token);
+
+    g_debug ("%i\n", g_list_length (items)); 
+
+    return node;
+}
+
+
 /* identifiers, literals, blocks */
 static STNode *
 parse_primary (STParser *parser)
@@ -282,6 +344,11 @@ parse_primary (STParser *parser)
     case ST_TOKEN_BLOCK_BEGIN:
     
 	node = parse_block (parser);
+	break;
+
+   case ST_TOKEN_TUPLE_BEGIN:
+    
+	node = parse_tuple (parser);
 	break;
 
     default:
@@ -399,7 +466,7 @@ parse_keyword_message (STParser *parser, STNode *receiver)
 	token = next (parser->lexer);
 	
 	arg = parse_keyword_argument (parser, NULL);
-	arguments = st_node_append (arguments, arg);
+	arguments = st_node_list_append (arguments, arg);
 
 	token = current (parser->lexer);
     }
@@ -483,6 +550,7 @@ parse_expression (STParser *parser)
     case ST_TOKEN_SYMBOL_CONST:
     case ST_TOKEN_CHARACTER_CONST:    
     case ST_TOKEN_BLOCK_BEGIN:
+    case ST_TOKEN_TUPLE_BEGIN:
 
 	receiver = parse_primary (parser);
 	break;
@@ -579,7 +647,7 @@ parse_statements (STParser *parser)
 
 	expression = parse_statement (parser);
 	
-	statements = st_node_append (statements, expression);
+	statements = st_node_list_append (statements, expression);
 	
 	/* Consume statement delimiter ('.') if there is one.
 	 *
@@ -657,7 +725,7 @@ parse_temporaries (STParser *parser)
 	temp->line = st_token_line (token);
 	temp->name = st_string_new (st_token_text (token));
 	
-	temporaries = st_node_append (temporaries, temp);
+	temporaries = st_node_list_append (temporaries, temp);
    
 	token = next (parser->lexer);
     }
@@ -719,7 +787,7 @@ parse_message_pattern (STParser *parser, STNode *method)
 	    arg = st_node_new (ST_VARIABLE_NODE);
 	    arg->line = st_token_line (token);
 	    arg->name = st_string_new (st_token_text (token));
-	    arguments = st_node_append (arguments, arg);
+	    arguments = st_node_list_append (arguments, arg);
 
 	    token = next (parser->lexer);
 	} 

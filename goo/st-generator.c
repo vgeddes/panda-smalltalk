@@ -624,7 +624,7 @@ generate_block (Generator *gt, STNode *node)
 				     get_block_temporaries (gt, node->temporaries));
 
     push (gt, BLOCK_COPY);
-    push (gt, st_node_length (node->arguments));
+    push (gt, st_node_list_length (node->arguments));
 
     // get size of block code and then jump around that code
     size = size_statements (gt, node->statements, false);
@@ -1486,8 +1486,8 @@ st_generate_method (st_oop klass, STNode *node)
 
     method = st_object_new (st_compiled_method_class);
 
-    st_compiled_code_set_arg_count   (method, st_node_length (node->arguments));
-    st_compiled_code_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_length (node->arguments));
+    st_compiled_code_set_arg_count   (method, st_node_list_length (node->arguments));
+    st_compiled_code_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
     st_compiled_code_set_stack_depth (method, compute_stack_depth (gt));
 
     if (node->primitive >= 0) {

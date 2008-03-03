@@ -23,7 +23,7 @@
 */
 
 #include <st-types.h>
-#include <st-ast.h>
+#include <st-node.h>
 
 #ifndef __ST_GENERATOR__
 #define __ST_GENERATOR__

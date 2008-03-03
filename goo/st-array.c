@@ -65,7 +65,7 @@ array_verify (st_oop object)
 static st_oop
 allocate_arrayed (st_oop klass, st_smi size)
 {
-    g_assert (size > 0);
+    g_assert (size >= 0);
 
     st_oop array = st_allocate_object (ST_TYPE_SIZE (STArray) + size);
 

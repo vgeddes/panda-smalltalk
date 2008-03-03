@@ -2,7 +2,7 @@
 
 #include <st-parser.h>
 #include <st-lexer.h>
-#include <st-ast.h>
+#include <st-node.h>
 #include <st-universe.h>
 
 #include <glib.h>
@@ -33,6 +33,8 @@ main (int argc, char *argv[])
     printf ("-------------------\n");	    
 
     st_print_method (node);
+
+    st_node_destroy (node);
 
     return 0;
 }

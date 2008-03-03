@@ -35,8 +35,8 @@ libgoo_la_SOURCES = \
 	goo/st-vtable.h \
 	goo/st-primitives.c \
 	goo/st-primitives.h \
-	goo/st-ast.c \
-	goo/st-ast.h \
+	goo/st-node.c \
+	goo/st-node.h \
 	goo/st-generator.h \
 	goo/st-generator.c \
 	goo/st-parser.h \

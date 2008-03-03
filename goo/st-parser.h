@@ -27,7 +27,7 @@
 
 #include <st-lexer.h>
 
-#include <st-ast.h>
+#include <st-node.h>
 
 
 STNode *st_parser_parse (STLexer *lexer);

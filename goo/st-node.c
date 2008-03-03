@@ -22,16 +22,17 @@
  * THE SOFTWARE.
 */
 
-#include <st-ast.h>
+#include <st-node.h>
 #include <st-byte-array.h>
+#include <st-array.h>
 #include <st-types.h>
 #include <st-object.h>
 #include <st-float.h>
+#include <st-symbol.h>
 #include <string.h>
 
 
 static void print_expression (STNode *expression);
-
 
 static void
 print_variable (STNode *variable)
@@ -43,33 +44,57 @@ print_variable (STNode *variable)
     printf (name);
 }
 
+static void print_tuple (st_oop tuple);
+
+static void
+print_object (st_oop object)
+{
+    if (st_object_is_smi (object)) {
+	printf ("%li", st_smi_value (object));
+  
+    } else if (st_object_is_symbol (object)) {
+	
+	printf ("#%s", st_byte_array_bytes (object));
+    } else if (st_object_class (object) == st_string_class) {
+
+	printf ("%s", st_byte_array_bytes (object));
+    } else if (st_object_is_float (object)) {
+
+	printf ("%f", st_float_value (object));
+    } else if (st_object_class (object) == st_character_class) {
+
+	char outbuf[6] = { 0 };
+	g_unichar_to_utf8 (st_character_value (object), outbuf);
+	printf ("$%s", outbuf);
+    } else if (st_object_class (object) == st_array_class) {
+
+	print_tuple (object);
+
+    }
+}
+
+static void
+print_tuple (st_oop tuple)
+{
+    int size;
+
+    size = st_smi_value (st_array_size (tuple));
+
+    printf ("#(");
+    for (int i = 1; i <= size; i++) {
+	print_object (st_array_at (tuple, i));	
+	if (i < size)
+	    printf (" ");
+    }
+    printf (")");
+}
+
 static void
 print_literal (STNode *literal)
 {
-    st_oop value;
-
     g_assert (literal->type == ST_LITERAL_NODE); 
    
-    value = literal->literal;
-
-    if (st_object_is_smi (value)) {
-	printf ("%li", st_smi_value (value));
-  
-    } else if (st_object_is_symbol (value)) {
-	
-	printf ("#%s", st_byte_array_bytes (value));
-    } else if (st_object_class (value) == st_string_class) {
-
-	printf ("%s", st_byte_array_bytes (value));
-    } else if (st_object_is_float (value)) {
-
-	printf ("%f", st_float_value (value));
-    } else if (st_object_class (value) == st_character_class) {
-
-	char outbuf[6] = { 0 };
-	g_unichar_to_utf8 (st_character_value (value), outbuf);
-	printf ("$%s", outbuf);
-    }
+    print_object (literal->literal);
 }
 
 static void
@@ -340,9 +365,6 @@ st_print_method (STNode *method)
     print_method (method);
 }
 
-
-
-
 STNode *
 st_node_new (STNodeType type)
 {
@@ -352,9 +374,8 @@ st_node_new (STNodeType type)
     return node;
 }
 
-
 STNode *
-st_node_append (STNode *list, STNode *node)
+st_node_list_append (STNode *list, STNode *node)
 {
     STNode *l = list;
     if (list == NULL)
@@ -367,7 +388,7 @@ st_node_append (STNode *list, STNode *node)
 
 
 guint
-st_node_length (STNode *list)
+st_node_list_length (STNode *list)
 {
     STNode *l   = list;
     int     len = 0;
@@ -376,3 +397,38 @@ st_node_length (STNode *list)
     return len;
 }
 
+void
+st_node_destroy (STNode *node)
+{
+    if (node == NULL)
+	return;
+
+    switch (node->type) {
+    case ST_METHOD_NODE:
+    case ST_BLOCK_NODE:
+	st_node_destroy (node->arguments);
+	st_node_destroy (node->temporaries);
+	st_node_destroy (node->statements);
+	break;
+
+    case ST_ASSIGN_NODE:
+	st_node_destroy (node->assignee);
+	st_node_destroy (node->expression);
+	break;
+
+    case ST_RETURN_NODE:
+	st_node_destroy (node->expression);
+	break;
+
+    case ST_MESSAGE_NODE:
+	st_node_destroy (node->receiver);
+	st_node_destroy (node->arguments);
+
+    default:
+	break;
+    }
+	
+    st_node_destroy (node->next);
+
+    g_slice_free (STNode, node);
+}
