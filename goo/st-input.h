@@ -57,6 +57,8 @@ guint      st_input_index   (STInput *input);
 
 char      *st_input_range (STInput *input, guint start, guint end);
 
+char      *st_input_next_chunk (STInput *input);
+
 void       st_input_destroy   (STInput *input);
 
 #endif /* __ST_INPUT_H__ */

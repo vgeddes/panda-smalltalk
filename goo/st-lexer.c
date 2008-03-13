@@ -24,7 +24,7 @@
 
 /* Notes:
  *
- * I expand utf8-encoded text to ucs4 format and then lex it. Yes it's a bit
+ * we expand utf8-encoded text to ucs4 format and then lex it. Yes it's a bit
  * inefficient, but more straightforward than munging around with
  * multi-byte characters.
  *
@@ -76,7 +76,9 @@ typedef enum
 struct STLexer
 {
     STInput *input;
-    
+
+    bool filter_comments;
+
     bool token_matched;
     
     /* data for next token */
@@ -176,6 +178,7 @@ raise_error (STLexer   *lexer,
 
     /* go back to main loop */
     longjmp (lexer->main_loop, 0);
+
 }
 
 static void
@@ -436,14 +439,18 @@ match_comment (STLexer *lexer)
     }
 
     match (lexer, '"');
+    
+    if (!lexer->filter_comments) {
+	
+	char *comment;
 
-    char *comment;
-
-    comment = st_input_range (lexer->input,
-			      lexer->start + 1,
-			      st_input_index (lexer->input) - 1);
-
-    make_token (lexer, ST_TOKEN_COMMENT, comment);
+	comment = st_input_range (lexer->input,
+				  lexer->start + 1,
+				  st_input_index (lexer->input) - 1);
+    
+	make_token (lexer, ST_TOKEN_COMMENT, comment);
+    }
+    
 }
 
 static void
@@ -793,6 +800,8 @@ st_lexer_new (const char *text)
 
     lexer->failed = FALSE;
 
+    lexer->filter_comments = true;
+
     obstack_init (&lexer->allocator);
 
     return lexer;
@@ -910,6 +919,11 @@ st_lexer_current_token (STLexer *lexer)
     return lexer->token;
 }
 
+void
+st_lexer_filter_comments (STLexer *lexer, bool filter)
+{
+    lexer->filter_comments = filter;
+}
 
 char *
 st_number_token_number (STToken *token)

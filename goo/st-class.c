@@ -73,6 +73,7 @@ class_verify (st_oop object)
 GList *
 st_behavior_all_instance_variables (st_oop klass)
 {
+    st_oop superclass;
     GList *a = NULL, *b = NULL;
     st_oop names;
     st_smi size;
@@ -81,7 +82,6 @@ st_behavior_all_instance_variables (st_oop klass)
     if (klass == st_nil)
 	return NULL;
     
-    /* recursively obtain instvar names from superclass */
     a = st_behavior_all_instance_variables (st_behavior_superclass (klass));
 
     names = st_behavior_instance_variables (klass);

@@ -37,6 +37,7 @@
 #include "st-heap-object.h"
 #include "st-lexer.h"
 #include "st-vtable.h"
+#include "st-compiler.h"
 
 #include <glib.h>
 #include <stdlib.h>
@@ -61,7 +62,6 @@ st_oop
     st_array_class           = 0,
     st_byte_array_class      = 0,
     st_set_class	     = 0,
-    st_tuple_class           = 0,
     st_dictionary_class      = 0,
     st_association_class     = 0,
     st_string_class          = 0,
@@ -74,28 +74,6 @@ st_global_get (const char *name)
 {
     return st_dictionary_at (st_smalltalk, st_symbol_new (name));
 }
-
-
-#include "st-types.h"
-#include "st-utils.h"
-#include "st-object.h"
-#include "st-float.h"
-#include "st-association.h"
-#include "st-compiled-code.h"
-#include "st-array.h"
-#include "st-byte-array.h"
-#include "st-small-integer.h"
-#include "st-hashed-collection.h"
-#include "st-symbol.h"
-#include "st-universe.h"
-#include "st-heap-object.h"
-#include "st-lexer.h"
-#include "st-vtable.h"
-
-#include <glib.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 enum
 {
@@ -167,7 +145,7 @@ declare_class (const char *name, st_oop klass)
 static void
 parse_error (char *message, STToken *token)
 {
-    g_warning ("error:%i:%i: %s",
+    g_warning ("error: %i: %i: %s",
 	       st_token_line (token), st_token_column (token), message);
     exit (1);
 }
@@ -432,7 +410,6 @@ st_bootstrap_universe (void)
     st_byte_array_class = st_class_new (st_byte_array_vtable ());
     st_dictionary_class = st_class_new (st_dictionary_vtable ());
     st_set_class = st_class_new (st_set_vtable ());
-    st_tuple_class = st_class_new (st_array_vtable ());
     st_string_class = st_class_new (st_byte_array_vtable ());
     st_symbol_class = st_class_new (st_symbol_vtable ());
     st_association_class = st_class_new (st_association_vtable ());
@@ -453,7 +430,6 @@ st_bootstrap_universe (void)
     st_behavior_set_instance_size (st_large_integer_class, 0);
     st_behavior_set_instance_size (st_byte_array_class, 0);
     st_behavior_set_instance_size (st_array_class, 0);
-    st_behavior_set_instance_size (st_tuple_class, 0);
     st_behavior_set_instance_size (st_true_class, 0);
     st_behavior_set_instance_size (st_false_class, 0);
     st_behavior_set_instance_size (st_set_class, 2);
@@ -482,7 +458,6 @@ st_bootstrap_universe (void)
     declare_class ("String", st_string_class);
     declare_class ("Symbol", st_symbol_class);
     declare_class ("Set", st_set_class);
-    declare_class ("Tuple", st_tuple_class);
     declare_class ("Dictionary", st_dictionary_class);
     declare_class ("Association", st_association_class);
     declare_class ("CompiledMethod", st_compiled_method_class);
@@ -491,18 +466,38 @@ st_bootstrap_universe (void)
     /* parse class declarations */
     parse_classes ("../smalltalk/ClassDefinitions.st");
 
-    /* verify object graph */
-    /*    for (GList * l = objects; l; l = l->next) {
+    st_file_in ("../smalltalk/Object.st");
 
-	st_oop object = (st_oop) l->data;
-
-	if (st_object_is_class (object)) {
-	    printf ("%s\n",st_byte_array_bytes (st_class_name (object)));
-	}
-	    printf ("verified: %i\n", st_object_verify (object));
-	
-	
-    }
+    /*
+    st_file_in ("../smalltalk/UndefinedObject.st");
+    st_file_in ("../smalltalk/SmallInteger.st");
+    st_file_in ("../smalltalk/Class.st");
+    st_file_in ("../smalltalk/Behavior.st");
+    st_file_in ("../smalltalk/Character.st");
+    st_file_in ("../smalltalk/True.st");
+    st_file_in ("../smalltalk/False.st");
+    st_file_in ("../smalltalk/Float.st");
+    st_file_in ("../smalltalk/String.st");
+    st_file_in ("../smalltalk/Symbol.st");
+    st_file_in ("../smalltalk/Array.st");
+    st_file_in ("../smalltalk/ByteArray.st");
+    st_file_in ("../smalltalk/Set.st");
+    st_file_in ("../smalltalk/Dictionary.st");
+    st_file_in ("../smalltalk/Association.st");
     */
 
+    /* verify object graph
+       for (GList * l = objects; l; l = l->next) {
+       
+       st_oop object = (st_oop) l->data;
+       
+       if (st_object_is_class (object)) {
+       printf ("%s\n",st_byte_array_bytes (st_class_name (object)));
+       }
+       printf ("verified: %i\n", st_object_verify (object));
+       
+       
+	}
+    */
+    
 }

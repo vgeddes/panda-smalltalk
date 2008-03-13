@@ -26,6 +26,7 @@
 #define __ST_LEXER_H__
 
 #include <glib.h>
+#include <stdbool.h>
 
 typedef struct STLexer    STLexer;
 typedef struct STToken    STToken;
@@ -72,6 +73,8 @@ guint          st_lexer_error_line    (STLexer *lexer);
 guint          st_lexer_error_column  (STLexer *lexer);
 
 char          *st_lexer_error_message (STLexer *lexer);
+
+void           st_lexer_filter_comments (STLexer *lexer, bool filter);
 
 
 STTokenType    st_token_type   (STToken *token);

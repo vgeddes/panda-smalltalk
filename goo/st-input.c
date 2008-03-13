@@ -50,6 +50,41 @@ struct STInput
     Marker marker;
 };
 
+char *
+st_input_next_chunk (STInput *input)
+{
+    char *chunk = NULL;
+    guint start = st_input_index (input);
+
+    while (st_input_look_ahead (input, 1) != ST_INPUT_EOF) {
+
+	if (st_input_look_ahead (input, 1) != '!') {
+	    st_input_consume (input);
+	    continue;
+	}
+	
+	/* skip past doubled bangs */
+	if (st_input_look_ahead (input, 1) == '!'
+	    && st_input_look_ahead (input, 2) == '!') {
+	    st_input_consume (input);
+	    st_input_consume (input);
+	    continue;
+	}
+
+	/* now we have a chunk */
+
+	chunk = st_input_range (input, start, st_input_index (input));
+	
+	/* consume bang */
+	st_input_consume (input);
+
+	break;
+    }
+
+    return chunk;
+}
+
+
 void
 st_input_destroy (STInput *input)
 {
@@ -217,3 +252,4 @@ st_input_new (const char *string)
 
     return input;
 }
+

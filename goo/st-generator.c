@@ -22,7 +22,7 @@
  * THE SOFTWARE.
 */
 
-#include "st-generator.h"
+#include "st-compiler.h"
 
 #include "st-types.h"
 #include "st-object.h"
@@ -36,6 +36,7 @@
 #include <glib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <setjmp.h>
 
 #define DEFAULT_CODE_SIZE 50
 	
@@ -139,6 +140,9 @@ typedef struct
     bool     in_block;
 
     st_oop   klass;
+
+    jmp_buf  jmploc;
+    GError   **error;
  
     /* names of temporaries, in order of appearance */
     GList   *temporaries;
@@ -256,14 +260,19 @@ static void generate_expression (Generator *gt, STNode *node);
 static void generate_statements (Generator *gt, STNode *statements, bool optimized_block);
 
 static void
-generation_error (const char *msg, STNode *node)
+generation_error (Generator *gt, const char *msg, STNode *node)
 {
-    printf ("error:%i: %s\n", node->line, msg);
-    exit (1);
+    g_set_error (gt->error,
+		 ST_COMPILATION_ERROR,
+		 ST_COMPILATION_ERROR_FAILED,
+		 "%i: %s", node->line, msg);
+
+    longjmp (gt->jmploc, 0);
 }
 
 static GList *
-get_temporaries (GList  *instvars,
+get_temporaries (Generator *gt,
+		 GList  *instvars,
 		 STNode *arguments,
 		 STNode *temporaries)
 {
@@ -273,7 +282,7 @@ get_temporaries (GList  *instvars,
 	
 	for (GList *l = instvars; l; l = l->next) {
 	    if (st_object_equal (n->name, (st_oop) l->data))
-		generation_error ("name is already defined", arguments);
+		generation_error (gt, "name is already defined", arguments);
 	}	
 	temps = g_list_prepend (temps, (gpointer) n->name);
     }
@@ -282,7 +291,7 @@ get_temporaries (GList  *instvars,
 	
 	for (GList *l = instvars; l; l = l->next) {
 	    if (st_object_equal (n->name, (st_oop) l->data))
-		generation_error ("name is already defined", temporaries);
+		generation_error (gt, "name is already defined", temporaries);
 	}
 	temps = g_list_prepend (temps, (gpointer) n->name);
     }
@@ -291,16 +300,16 @@ get_temporaries (GList  *instvars,
 }
 
 static Generator *
-generator_new (st_oop klass, STNode *method)
+generator_new (void)
 {
     Generator *gt;
 
     gt = g_slice_new0 (Generator);
 
-    gt->klass    = klass;
-    gt->instvars = st_behavior_all_instance_variables (klass);
-    gt->literals = NULL;
-    gt->temporaries = get_temporaries (gt->instvars, method->arguments, method->temporaries);
+    gt->klass       = 0;
+    gt->instvars    = NULL;
+    gt->literals    = NULL;
+    gt->temporaries = NULL;
 
     gt->code  = g_malloc (DEFAULT_CODE_SIZE);
     gt->alloc = DEFAULT_CODE_SIZE;
@@ -546,7 +555,7 @@ generate_assign (Generator *gt, STNode *node, bool pop)
 	return;
     }
     
-    generation_error ("unknown variable", node);
+    generation_error (gt, "unknown variable", node);
 }
 
 static int
@@ -578,11 +587,11 @@ get_block_temporaries (Generator *gt, STNode *temporaries)
 	
 	for (GList *l = gt->instvars; l; l = l->next) {
 	    if (st_object_equal (node->name, (st_oop) l->data))
-		generation_error ("name is already defined", node);
+		generation_error (gt, "name is already defined", node);
 	}
 	for (GList *l = gt->temporaries; l; l = l->next) {
 	    if (st_object_equal ( node->name, (st_oop) l->data))
-		generation_error ("name already used in method", node);
+		generation_error (gt, "name already used in method", node);
 	}
 	temps = g_list_prepend (temps, (void *) node->name);
     }
@@ -796,7 +805,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	
 	block = msg->arguments;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL)
-	    generation_error ("argument of ifTrue: message must be a 0-argument block", block);  
+	    generation_error (gt, "argument of ifTrue: message must be a 0-argument block", block);  
        
 	generate_expression (gt, msg->receiver);
 	
@@ -835,10 +844,10 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	
 	true_block = msg->arguments;
 	if (true_block->type != ST_BLOCK_NODE || true_block->arguments != NULL)
-	    generation_error ("first argument of ifTrue:ifFalse message must be a 0-argument block", true_block);
+	    generation_error (gt, "first argument of ifTrue:ifFalse message must be a 0-argument block", true_block);
 	false_block = msg->arguments->next;
 	if (false_block->type != ST_BLOCK_NODE || false_block->arguments != NULL)
-	    generation_error ("second argument of ifTrue:ifFalse message must be a 0-argument block", false_block);
+	    generation_error (gt, "second argument of ifTrue:ifFalse message must be a 0-argument block", false_block);
 
 	generate_expression (gt, msg->receiver);
 
@@ -875,9 +884,9 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	block = msg->receiver;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
 	    if (st_object_equal (selector, st_symbol_new ("whileTrue")))
-		generation_error ("receiver of whileTrue message must be a 0-argument block", block);
+		generation_error (gt, "receiver of whileTrue message must be a 0-argument block", block);
 	    else
-		generation_error ("receiver of whileFalse message must be a 0-argument block", block);
+		generation_error (gt, "receiver of whileFalse message must be a 0-argument block", block);
 	}
 
 	generate_statements (gt, block->statements, true);
@@ -912,17 +921,17 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	block = msg->receiver;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
 	    if (st_object_equal (selector, st_symbol_new ("whileTrue:")))
-		generation_error ("receiver of whileTrue: message must be a 0-argument block", block);
+		generation_error (gt, "receiver of whileTrue: message must be a 0-argument block", block);
 	    else
-		generation_error ("receiver of whileFalse: message must be a 0-argument block", block);
+		generation_error (gt, "receiver of whileFalse: message must be a 0-argument block", block);
 	}
 
 	block = msg->arguments;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
 	    if (st_object_equal (selector, st_symbol_new ("whileTrue:")))
-		generation_error ("argument of whileTrue: message must be a 0-argument block", block);
+		generation_error (gt, "argument of whileTrue: message must be a 0-argument block", block);
 	    else
-		generation_error ("argument of whileFalse: message must be a 0-argument block", block);
+		generation_error (gt, "argument of whileFalse: message must be a 0-argument block", block);
 
 	}
 	
@@ -963,9 +972,9 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	block = msg->arguments;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
 	    if (st_object_equal (selector, st_symbol_new ("and:")))
-		generation_error ("argument of and: message must be a 0-argument block", block);
+		generation_error (gt, "argument of and: message must be a 0-argument block", block);
 	    else
-		generation_error ("argument of or: message must be a 0-argument block", block);
+		generation_error (gt, "argument of or: message must be a 0-argument block", block);
 	}
 
 	generate_expression (gt, msg->receiver);
@@ -1116,7 +1125,7 @@ size_expression (Generator *gt, STNode *node)
 	    size += 2;
 	    break;
 	}
-	generation_error ("unknown variable", node);
+	generation_error (gt, "unknown variable", node);
     }
     case ST_LITERAL_NODE:
 	size += 2;
@@ -1183,7 +1192,7 @@ generate_expression (Generator *gt, STNode *node)
 	    push_literal_var (gt, index);
 	    break;
 	}
-	generation_error ("unknown variable", node);
+	generation_error (gt, "unknown variable", node);
 
     case ST_LITERAL_NODE:
 	index = find_literal_const (gt, node->literal);
@@ -1467,9 +1476,14 @@ compute_stack_depth (Generator *gt)
     return stackp_max;
 }
 
+GQuark
+st_compilation_error_quark (void)
+{
+  return g_quark_from_static_string ("st-compilation-error-quark");
+}
 
 st_oop
-st_generate_method (st_oop klass, STNode *node)
+st_generate_method (st_oop klass, STNode *node, GError **error)
 {
     Generator *gt;
     st_oop     method;
@@ -1479,7 +1493,15 @@ st_generate_method (st_oop klass, STNode *node)
     
     init_specials ();
 
-    gt = generator_new (klass, node);
+    gt = generator_new ();
+    gt->error = error;
+
+    if (setjmp (gt->jmploc))
+	goto error;
+
+    gt->klass = klass;
+    gt->instvars = st_behavior_all_instance_variables (klass);
+    gt->temporaries = get_temporaries (gt, gt->instvars, node->arguments, node->temporaries);
 
     // generate bytecode
     generate_method_statements (gt, node->statements);
@@ -1500,7 +1522,15 @@ st_generate_method (st_oop klass, STNode *node)
     st_compiled_code_set_literals (method, create_literals_array (gt));
     st_compiled_code_set_bytecodes (method, create_bytecode_array (gt)); 
 
+    generator_destroy (gt);
+
     return method;
+    
+ error:
+
+    generator_destroy (gt);    
+
+    return st_nil;
 }
 
 static void
@@ -1790,7 +1820,7 @@ print_literals (st_oop literals)
 }
 
 void
-st_generator_print_method (st_oop method)
+st_print_method (st_oop method)
 {
     st_oop  literals;
     guchar *bytecodes;

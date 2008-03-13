@@ -38,26 +38,23 @@
 #  define ST_HOST32         1
 #  define ST_HOST64         0
 #  define ST_BITS_PER_WORD  32
-#  define ST_SMALL_INTEGER_MIN  (-ST_SMALL_INTEGER_MAX - 1)
-#  define ST_SMALL_INTEGER_MAX  536870911
 #elif (SIZEOF_VOID_P == 8)
 #  define ST_HOST32         0
 #  define ST_HOST64         1
 #  define ST_BITS_PER_WORD  64
-#  define ST_SMALL_INTEGER_MIN  (-ST_SMALL_INTEGER_MAX - 1)
-#  define ST_SMALL_INTEGER_MAX  2305843009213693951L
 #else
 #  error platform not supported
 #endif
 
-typedef enum
-{
+#define ST_SMALL_INTEGER_MIN  (-ST_SMALL_INTEGER_MAX - 1)
+#define ST_SMALL_INTEGER_MAX  536870911
+
+enum {
     ST_SMI_TAG,
     ST_POINTER_TAG,
     ST_MARK_TAG,
     ST_TAG_UNUSED,
-
-} st_tag_type_t;
+};
 
 /* basic oop pointer:
  * integral type wide enough to hold a C pointer.

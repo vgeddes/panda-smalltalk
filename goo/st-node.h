@@ -22,8 +22,8 @@
  * THE SOFTWARE.
 */
 
-#ifndef __ST_AST_H__
-#define __ST_AST_H__
+#ifndef __ST_NODE_H__
+#define __ST_NODE_H__
 
 #include <glib.h>
 #include <st-types.h>
@@ -95,15 +95,15 @@ struct STNode
 };
 
 
-STNode *st_node_new (STNodeType type);
+STNode *st_node_new          (STNodeType type);
 
-STNode *st_node_list_append (STNode *list, STNode *node);
+STNode *st_node_list_append  (STNode *list, STNode *node);
 
-guint   st_node_list_length (STNode *list);
+guint   st_node_list_length  (STNode *list);
 
-void    st_print_method (STNode *method);
+void    st_print_method_node (STNode *method);
 
-void    st_node_destroy (STNode *node);
+void    st_node_destroy      (STNode *node);
 
-#endif /* __ST_AST_H__ */
+#endif /* __ST_NODE_H__ */
 

@@ -36,3 +36,6 @@ config.h
 ChangeLog
 tests/test-input
 .dirstamp
+tests/test-generator
+tests/test-parser
+TAGS

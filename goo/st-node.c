@@ -358,9 +358,9 @@ print_expression (STNode *expr)
 }
 
 void
-st_print_method (STNode *method)
+st_print_method_node (STNode *method)
 {
-    g_assert (method->type == ST_METHOD_NODE);
+    g_assert (method && method->type == ST_METHOD_NODE);
     
     print_method (method);
 }
