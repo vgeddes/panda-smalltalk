@@ -78,7 +78,6 @@ st_oop
 st_string_new (const char *bytes)
 {
     return string_new (st_string_class, bytes);
-
 }
 
 st_oop

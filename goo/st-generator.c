@@ -396,6 +396,7 @@ static int
 find_temporary (Generator *gt, st_oop name)
 {   
     int i = 0;
+
     for (GList *l = gt->temporaries; l; l = l->next) {
 
 	if (st_object_equal (name, (st_oop) l->data))
@@ -590,10 +591,11 @@ get_block_temporaries (Generator *gt, STNode *temporaries)
 		generation_error (gt, "name is already defined", node);
 	}
 	for (GList *l = gt->temporaries; l; l = l->next) {
-	    if (st_object_equal ( node->name, (st_oop) l->data))
+	    if (st_object_equal (node->name, (st_oop) l->data))
 		generation_error (gt, "name already used in method", node);
 	}
 	temps = g_list_prepend (temps, (void *) node->name);
+	
     }
 
     return g_list_reverse (temps);
@@ -627,9 +629,9 @@ generate_block (Generator *gt, STNode *node)
     gt->in_block = true;
 
     /* add block temporaries to current known temporaries */
-    gt->temporaries = g_list_append (gt->temporaries,
+    gt->temporaries = g_list_concat (gt->temporaries,
 				     get_block_temporaries (gt, node->arguments));
-    gt->temporaries = g_list_append (gt->temporaries,
+    gt->temporaries = g_list_concat (gt->temporaries,
 				     get_block_temporaries (gt, node->temporaries));
 
     push (gt, BLOCK_COPY);

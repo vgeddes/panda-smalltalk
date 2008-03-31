@@ -140,16 +140,11 @@ st_file_in (const char *filename)
 	if (saw_bang)
 	    st_input_consume (input);
 
-	//g_debug ("%i %c\n", saw_bang, st_input_look_ahead (input, 1));
-
 	chunk = st_input_next_chunk (input);
-
-	printf ("Expression:\n%s\n", chunk);
 
 	klass = st_evaluate_string (chunk);
 
 	if (saw_bang) {
-	    g_debug ("foo");
 	    st_file_in_for_class (klass, input);
 	    g_free (chunk);
 	}

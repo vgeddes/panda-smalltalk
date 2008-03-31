@@ -113,7 +113,7 @@ parse_block_arguments (STParser *parser)
 
 	arg = st_node_new (ST_VARIABLE_NODE);
 	arg->line = st_token_line (token);
-	arg->name = st_symbol_new (st_token_text (token));
+	arg->name = st_string_new (st_token_text (token));
 	arguments = st_node_list_append (arguments, arg);
 
 	token = next (parser, parser->lexer);
