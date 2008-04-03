@@ -303,7 +303,7 @@ parse_tuple (STParser *parser)
 static STNode *
 parse_primary (STParser *parser)
 {
-    STNode *node;
+    STNode *node = NULL;
     STToken *token;
     
     token = current (parser->lexer);

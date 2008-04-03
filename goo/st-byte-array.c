@@ -90,9 +90,9 @@ round_size (st_smi size)
      * depending on the platform).
      * 
      * we also include space for a null terminator. By doing this, we don't
-     * have to allocate and initialize a new terminated string when interfacing with C string functions
+     * have to allocate and initialize a new terminated string when interfacing with C string functions.
      * 
-     * TODO: Only include null terminator for *String subclasses of ByteArray 
+     * TODO: Only include null terminator for String subclasses of ByteArray 
      *
      */
     size += 1;

@@ -58,3 +58,4 @@ st_compiled_block_vtable_init (STVTable * table)
     table->is_compiled_block = is_compiled_block;
 }
 
+

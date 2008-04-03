@@ -6,6 +6,8 @@
 #include "st-class.h"
 #include "st-input.h"
 
+#include "st-lexer.h"
+
 
 /*
  * st_compile_string:

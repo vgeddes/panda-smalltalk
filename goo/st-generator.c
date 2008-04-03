@@ -143,6 +143,8 @@ typedef struct
 
     jmp_buf  jmploc;
     GError   **error;
+
+    guint    max_stack_depth;
  
     /* names of temporaries, in order of appearance */
     GList   *temporaries;
@@ -162,11 +164,10 @@ st_oop specials[NUM_SPECIALS] = { 0 };
 typedef struct
 {
     guint       size;
-    const char *format;
 
 } CodeDescriptor;
 
-CodeDescriptor codes[255] = { { 0 }, }; 
+CodeDescriptor desc[255] = { { 0 }, };
 
 
 static void
@@ -188,7 +189,7 @@ init_specials (void)
     specials[SPECIAL_BITAND]   = st_symbol_new ("bitAnd:");
     specials[SPECIAL_BITOR]    = st_symbol_new ("bitOr:");
     specials[SPECIAL_BITXOR]   = st_symbol_new ("bitXor:");
-    
+
     /* message specials */
     specials[SPECIAL_AT]        = st_symbol_new ("at:");
     specials[SPECIAL_ATPUT]     = st_symbol_new ("at:put:");
@@ -200,54 +201,54 @@ init_specials (void)
     specials[SPECIAL_NEW]       = st_symbol_new ("new");
     specials[SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
 
-    codes[PUSH_TEMP].size             = 2;
-    codes[PUSH_INSTVAR].size          = 2;
-    codes[PUSH_LITERAL_CONST].size    = 2;
-    codes[PUSH_LITERAL_VAR].size      = 2;
-    codes[PUSH_SELF].size             = 1;
-    codes[PUSH_NIL].size              = 1;
-    codes[PUSH_TRUE].size             = 1;
-    codes[PUSH_FALSE].size            = 1;
-    codes[STORE_LITERAL_VAR].size     = 2;
-    codes[STORE_TEMP].size            = 2;
-    codes[STORE_INSTVAR].size         = 2; 
-    codes[STORE_POP_LITERAL_VAR].size = 2;
-    codes[STORE_POP_TEMP].size        = 2;
-    codes[STORE_POP_INSTVAR].size     = 2;
-    codes[RETURN_STACK_TOP].size      = 1;
-    codes[BLOCK_RETURN].size          = 1;
-    codes[POP_STACK_TOP].size         = 1;
-    codes[PUSH_ACTIVE_CONTEXT].size   = 1;
-    codes[BLOCK_COPY].size       = 2;
-    codes[JUMP_TRUE].size        = 3;
-    codes[JUMP_FALSE].size       = 3;
-    codes[JUMP].size             = 3;
-    codes[SEND].size             = 3;    
-    codes[SEND_SUPER].size       = 3;
-    codes[SEND_PLUS].size        = 1;
-    codes[SEND_MINUS].size       = 1;
-    codes[SEND_LT].size          = 1;
-    codes[SEND_GT].size          = 1;
-    codes[SEND_LE].size          = 1;
-    codes[SEND_GE].size          = 1;
-    codes[SEND_EQ].size          = 1;
-    codes[SEND_NE].size          = 1;
-    codes[SEND_MUL].size         = 1;
-    codes[SEND_DIV].size         = 1;
-    codes[SEND_MOD].size         = 1;
-    codes[SEND_BITSHIFT].size    = 1;
-    codes[SEND_BITAND].size      = 1;
-    codes[SEND_BITOR].size       = 1;
-    codes[SEND_BITXOR].size      = 1;
-    codes[SEND_AT].size          = 1; 
-    codes[SEND_AT_PUT].size      = 1;
-    codes[SEND_SIZE].size        = 1;
-    codes[SEND_VALUE].size       = 1;
-    codes[SEND_VALUE_ARG].size   = 1;
-    codes[SEND_IDENTITY_EQ].size = 1;
-    codes[SEND_CLASS].size       = 1;
-    codes[SEND_NEW].size         = 1;
-    codes[SEND_NEW_ARG].size     = 1;
+    desc[PUSH_TEMP].size             = 2;
+    desc[PUSH_INSTVAR].size          = 2;
+    desc[PUSH_LITERAL_CONST].size    = 2;
+    desc[PUSH_LITERAL_VAR].size      = 2;
+    desc[PUSH_SELF].size             = 1;
+    desc[PUSH_NIL].size              = 1;
+    desc[PUSH_TRUE].size             = 1;
+    desc[PUSH_FALSE].size            = 1;
+    desc[STORE_LITERAL_VAR].size     = 2;
+    desc[STORE_TEMP].size            = 2;
+    desc[STORE_INSTVAR].size         = 2; 
+    desc[STORE_POP_LITERAL_VAR].size = 2;
+    desc[STORE_POP_TEMP].size        = 2;
+    desc[STORE_POP_INSTVAR].size     = 2;
+    desc[RETURN_STACK_TOP].size      = 1;
+    desc[BLOCK_RETURN].size          = 1;
+    desc[POP_STACK_TOP].size         = 1;
+    desc[PUSH_ACTIVE_CONTEXT].size   = 1;
+    desc[BLOCK_COPY].size       = 2;
+    desc[JUMP_TRUE].size        = 3;
+    desc[JUMP_FALSE].size       = 3;
+    desc[JUMP].size             = 3;
+    desc[SEND].size             = 3;    
+    desc[SEND_SUPER].size       = 3;
+    desc[SEND_PLUS].size        = 1;
+    desc[SEND_MINUS].size       = 1;
+    desc[SEND_LT].size          = 1;
+    desc[SEND_GT].size          = 1;
+    desc[SEND_LE].size          = 1;
+    desc[SEND_GE].size          = 1;
+    desc[SEND_EQ].size          = 1;
+    desc[SEND_NE].size          = 1;
+    desc[SEND_MUL].size         = 1;
+    desc[SEND_DIV].size         = 1;
+    desc[SEND_MOD].size         = 1;
+    desc[SEND_BITSHIFT].size    = 1;
+    desc[SEND_BITAND].size      = 1;
+    desc[SEND_BITOR].size       = 1;
+    desc[SEND_BITXOR].size      = 1;
+    desc[SEND_AT].size          = 1; 
+    desc[SEND_AT_PUT].size      = 1;
+    desc[SEND_SIZE].size        = 1;
+    desc[SEND_VALUE].size       = 1;
+    desc[SEND_VALUE_ARG].size   = 1;
+    desc[SEND_IDENTITY_EQ].size = 1;
+    desc[SEND_CLASS].size       = 1;
+    desc[SEND_NEW].size         = 1;
+    desc[SEND_NEW_ARG].size     = 1;
 
 }
 
@@ -311,6 +312,8 @@ generator_new (void)
     gt->literals    = NULL;
     gt->temporaries = NULL;
 
+    gt->max_stack_depth = 0;
+
     gt->code  = g_malloc (DEFAULT_CODE_SIZE);
     gt->alloc = DEFAULT_CODE_SIZE;
     gt->size  = 0;
@@ -367,7 +370,7 @@ create_bytecode_array (Generator *gt)
 }
 
 static void
-push (Generator *gt, guchar code)
+emit (Generator *gt, guchar code)
 {
     gt->size++;
     if (gt->size > gt->alloc) {
@@ -443,12 +446,12 @@ jump_offset (Generator *gt, int offset)
 {
     g_assert (offset <= G_MAXINT16);
     
-    push (gt, JUMP);
+    emit (gt, JUMP);
 
     /* push high byte */
-    push (gt, (offset >> 8) & 0xFF);
+    emit (gt, (offset >> 8) & 0xFF);
     /* push low byte */
-    push (gt, offset & 0xFF);
+    emit (gt, offset & 0xFF);
 
 }
 
@@ -459,10 +462,10 @@ assign_temp (Generator *gt, int index, bool pop)
     g_assert (index <= 255);
 
     if (pop)
-	push (gt, STORE_POP_TEMP);
+	emit (gt, STORE_POP_TEMP);
     else
-	push (gt, STORE_TEMP);
-    push (gt, (guchar) index);
+	emit (gt, STORE_TEMP);
+    emit (gt, (guchar) index);
 }
 
 static void
@@ -471,10 +474,10 @@ assign_instvar (Generator *gt, int index, bool pop)
     g_assert (index <= 255);
 
     if (pop)
-	push (gt, STORE_POP_INSTVAR);
+	emit (gt, STORE_POP_INSTVAR);
     else
-	push (gt, STORE_INSTVAR);
-    push (gt, (guchar) index); 
+	emit (gt, STORE_INSTVAR);
+    emit (gt, (guchar) index); 
 }
 
 static void
@@ -483,46 +486,27 @@ assign_literal_var (Generator *gt, int index, bool pop)
     g_assert (index <= 255);
     
     if (pop)
-	push (gt, STORE_POP_LITERAL_VAR);
+	emit (gt, STORE_POP_LITERAL_VAR);
     else
-	push (gt, STORE_LITERAL_VAR);
-    push (gt, (guchar) index); 
+	emit (gt, STORE_LITERAL_VAR);
+    emit (gt, (guchar) index); 
 }
 
 static void
-push_temporary (Generator *gt, int index)
+push (Generator *gt, guchar code, guchar index)
 {
-    g_assert (index <= 255);
-
-    push (gt, PUSH_TEMP);
-    push (gt, (guchar) index);
-}
-
-static void
-push_instance_var (Generator *gt, int index)
-{
-    g_assert (index <= 255);
-
-    push (gt, PUSH_INSTVAR);
-    push (gt, (guchar) index);
-}
-
-static void
-push_literal_var (Generator *gt, int index)
-{
-    g_assert (index <= 255);
+    emit (gt, code);
+    emit (gt, index);
     
-    push (gt, PUSH_LITERAL_VAR);
-    push (gt, (guchar) index);
+    gt->max_stack_depth++;
 }
 
+
 static void
-push_literal_const (Generator *gt, int index)
+push_special (Generator *gt, guchar code)
 {
-    g_assert (index <= 255);
-  
-    push (gt, PUSH_LITERAL_CONST);
-    push (gt, (guchar) index);
+    emit (gt, code);
+    gt->max_stack_depth++;
 }
 
 static int
@@ -576,28 +560,28 @@ generate_return (Generator *gt, STNode *node)
 {
     generate_expression (gt, node->expression);
 
-    push (gt, RETURN_STACK_TOP);
+    emit (gt, RETURN_STACK_TOP);
 }
 
 static GList *
 get_block_temporaries (Generator *gt, STNode *temporaries)
 {
     GList *temps = NULL;
-
+    
     for (STNode *node = temporaries; node; node = node->next) {
-	
-	for (GList *l = gt->instvars; l; l = l->next) {
-	    if (st_object_equal (node->name, (st_oop) l->data))
-		generation_error (gt, "name is already defined", node);
+      
+      for (GList *l = gt->instvars; l; l = l->next) {
+	  if (st_object_equal (node->name, (st_oop) l->data))
+	      generation_error (gt, "name is already defined", node);
 	}
 	for (GList *l = gt->temporaries; l; l = l->next) {
-	    if (st_object_equal (node->name, (st_oop) l->data))
-		generation_error (gt, "name already used in method", node);
+	  if (st_object_equal (node->name, (st_oop) l->data))
+	    generation_error (gt, "name already used in method", node);
 	}
 	temps = g_list_prepend (temps, (void *) node->name);
 	
     }
-
+    
     return g_list_reverse (temps);
 }
 
@@ -606,7 +590,7 @@ static int
 size_block (Generator *gt, STNode *node)
 {
     int size = 0;
-
+    
     /* BLOCKCOPY instruction */
     size += 2;
 
@@ -634,8 +618,8 @@ generate_block (Generator *gt, STNode *node)
     gt->temporaries = g_list_concat (gt->temporaries,
 				     get_block_temporaries (gt, node->temporaries));
 
-    push (gt, BLOCK_COPY);
-    push (gt, st_node_list_length (node->arguments));
+    emit (gt, BLOCK_COPY);
+    emit (gt, st_node_list_length (node->arguments));
 
     // get size of block code and then jump around that code
     size = size_statements (gt, node->statements, false);
@@ -819,21 +803,21 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	    size += 1;
 
 	if (st_object_equal (selector, st_symbol_new ("ifTrue:")))
-	    push (gt, JUMP_FALSE);
+	    emit (gt, JUMP_FALSE);
 	else
-	    push (gt, JUMP_TRUE);
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+	    emit (gt, JUMP_TRUE);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 	
 	generate_statements (gt, block->statements, true);
 	
 	if (is_expr) {
-	    push (gt, JUMP);
-	    push (gt, 0);
-	    push (gt, 1);
-	    push (gt, PUSH_NIL);
+	    emit (gt, JUMP);
+	    emit (gt, 0);
+	    emit (gt, 1);
+	    emit (gt, PUSH_NIL);
 	} else {
-	    push (gt, POP_STACK_TOP);
+	    emit (gt, POP_STACK_TOP);
 	}
 
 	return;
@@ -858,24 +842,24 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	size += 3; 
 	
 	if (st_object_equal (selector, st_symbol_new ("ifTrue:ifFalse:")))
-	    push (gt, JUMP_FALSE);
+	    emit (gt, JUMP_FALSE);
 	else
-	    push (gt, JUMP_TRUE);
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+	    emit (gt, JUMP_TRUE);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 
 	generate_statements (gt, true_block->statements, true);
 
 	size = size_statements (gt, false_block->statements, true);
-      	push (gt, JUMP);
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+      	emit (gt, JUMP);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 
 	generate_statements (gt, false_block->statements, true);
 
 	/* if this is a statement we pop the last value on the stack */
 	if (!is_expr)
-	    push (gt, POP_STACK_TOP);
+	    emit (gt, POP_STACK_TOP);
 
 	return;
     }
@@ -895,11 +879,11 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	
 	// jump around jump statement
 	if (st_object_equal (selector, st_symbol_new ("whileTrue")))
-	    push (gt, JUMP_FALSE);
+	    emit (gt, JUMP_FALSE);
 	else
-	    push (gt, JUMP_TRUE);
-	push (gt, 0);
-	push (gt, 3);
+	    emit (gt, JUMP_TRUE);
+	emit (gt, 0);
+	emit (gt, 3);
 
 	size = size_statements (gt, block->statements, true);
 	// size of JUMP_FALSE instr
@@ -907,12 +891,12 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	// we jump backwards
 	size = - size;
 	
-	push (gt, JUMP);
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+	emit (gt, JUMP);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 	
 	if (is_expr)
-	    push (gt, PUSH_NIL);
+	    emit (gt, PUSH_NIL);
 
 	return;
     }
@@ -940,30 +924,30 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	generate_statements (gt, msg->receiver->statements, true);
 	
 	if (st_object_equal (msg->selector, st_string_new ("whileTrue:")))
-	    push (gt, JUMP_FALSE);
+	    emit (gt, JUMP_FALSE);
 	else
-	    push (gt, JUMP_TRUE);
+	    emit (gt, JUMP_TRUE);
 
 	size = size_statements (gt, msg->arguments->statements, true);
 	// include size of POP and JUMP statement
 	size += 1 + 3;
 
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 
 	generate_statements (gt, msg->arguments->statements, true);
 	
 	size += size_statements (gt, msg->receiver->statements, true);
 	size = - size;
 
-	push (gt, POP_STACK_TOP);
+	emit (gt, POP_STACK_TOP);
 
-	push (gt, JUMP);
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+	emit (gt, JUMP);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 
 	if (is_expr)
-	    push (gt, PUSH_NIL);
+	    emit (gt, PUSH_NIL);
 
 	return;
     }
@@ -986,25 +970,25 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	size += 3;
 
 	if (st_object_equal (selector, st_symbol_new ("and:")))
-	    push (gt, JUMP_FALSE);
+	    emit (gt, JUMP_FALSE);
 	else
-	    push (gt, JUMP_TRUE);
-	push (gt, (size >> 8) & 0xFF);
-	push (gt, size & 0xFF);
+	    emit (gt, JUMP_TRUE);
+	emit (gt, (size >> 8) & 0xFF);
+	emit (gt, size & 0xFF);
 	
 	generate_statements (gt, block->statements, true);
 
-	push (gt, JUMP);
-	push (gt, 0);
-	push (gt, 1);
+	emit (gt, JUMP);
+	emit (gt, 0);
+	emit (gt, 1);
 
 	if (st_object_equal (selector, st_symbol_new ("and:")))
-	    push (gt, PUSH_FALSE);
+	    emit (gt, PUSH_FALSE);
 	else
-	    push (gt, PUSH_TRUE);
+	    emit (gt, PUSH_TRUE);
 
 	if (!is_expr)
-	    push (gt, POP_STACK_TOP);
+	    emit (gt, POP_STACK_TOP);
 
 	return;
     }
@@ -1068,23 +1052,23 @@ generate_message (Generator *gt, STNode *msg)
     /* check if message is a special */
     for (int i = 0; i < G_N_ELEMENTS (specials); i++) {
 	if (!super_send && msg->selector == specials[i]) {
-	    push (gt, SEND_PLUS + i);  
+	    emit (gt, SEND_PLUS + i);  
 	    return;
 	}
     }
 
     /* send type */
     if (super_send)
-	push (gt, SEND_SUPER);
+	emit (gt, SEND_SUPER);
     else
-	push (gt, SEND);
+	emit (gt, SEND);
 
     /* argument count */
-    push (gt, (guchar) argcount);
+    emit (gt, (guchar) argcount);
 	
     /* index of selector in literal frame */
     int index = find_literal_const (gt, msg->selector);
-    push (gt, (guchar) index);
+    emit (gt, (guchar) index);
 }
 
 
@@ -1160,45 +1144,45 @@ static void
 generate_expression (Generator *gt, STNode *node)
 {   
     int index;
- 
+
     switch (node->type) {
     case ST_VARIABLE_NODE:
 		
 	if (st_object_equal (node->name, st_string_new ("self"))
 	    || st_object_equal (node->name, st_string_new ("super"))) {
-	    push (gt, PUSH_SELF);
+	    push_special (gt, PUSH_SELF);
 	    break;
 	} else if (st_object_equal (node->name, st_string_new ("true"))) {
-	    push (gt, PUSH_TRUE);
+	    push_special (gt, PUSH_TRUE);
 	    break;
 	} else if (st_object_equal (node->name, st_string_new ("false"))) {
-	    push (gt, PUSH_FALSE);
+	    push_special (gt, PUSH_FALSE);
 	    break;
 	} else if (st_object_equal (node->name, st_string_new ("nil"))) {
-	    push (gt, PUSH_NIL);
+	    push_special (gt, PUSH_NIL);
 	    break;
 	}
 
 	index = find_temporary (gt, node->name);
 	if (index >= 0) {
-	    push_temporary (gt, index);
+	    push (gt, PUSH_TEMP, index);
 	    break;
 	}
 	index = find_instvar (gt, node->name);
 	if (index >= 0) {
-	    push_instance_var (gt, index);
+	    push (gt, PUSH_INSTVAR, index);
 	    break;
 	}
 	index = find_literal_var (gt, node->name);
 	if (index >= 0) {
-	    push_literal_var (gt, index);
+	    push (gt, PUSH_LITERAL_VAR, index);
 	    break;
 	}
 	generation_error (gt, "unknown variable", node);
 
     case ST_LITERAL_NODE:
 	index = find_literal_const (gt, node->literal);
-	push_literal_const (gt, index);
+	push (gt, PUSH_LITERAL_CONST, index);
 	break;
 
     case ST_ASSIGN_NODE:
@@ -1299,7 +1283,7 @@ static void
 generate_statements (Generator *gt, STNode *statements, bool optimized_block)
 {
     if (statements == NULL) {
-	push (gt, PUSH_NIL);
+	emit (gt, PUSH_NIL);
 	return;
     }
 
@@ -1347,7 +1331,7 @@ generate_statements (Generator *gt, STNode *statements, bool optimized_block)
 		    generate_optimized_message (gt, node, false);
 		} else {
 		    generate_message (gt, node);
-		    push (gt, POP_STACK_TOP);
+		    emit (gt, POP_STACK_TOP);
 		}
 	    } else {
 		if (is_optimization_candidate (node)) {
@@ -1364,7 +1348,7 @@ generate_statements (Generator *gt, STNode *statements, bool optimized_block)
     }
 
     if (!optimized_block)
-	push (gt, BLOCK_RETURN);
+	emit (gt, BLOCK_RETURN);
 }
 
 
@@ -1398,7 +1382,7 @@ generate_method_statements (Generator *gt, STNode *statements)
 		generate_optimized_message (gt, node, false);
 	    else {
 		generate_message (gt, node);
-		push (gt, POP_STACK_TOP);
+		emit (gt, POP_STACK_TOP);
 	    }
 	    break;
 	    
@@ -1407,75 +1391,8 @@ generate_method_statements (Generator *gt, STNode *statements)
        }
     }
    
-   push (gt, PUSH_SELF);
-   push (gt, RETURN_STACK_TOP);
-}
-
-static guint
-compute_stack_depth (Generator *gt)
-{
-    int stackp = 0, stackp_max = 0;
-    
-    for (int ip = 0; ip < gt->size;) {
-
-	switch ((Code) gt->code[ip]) {
-	case PUSH_TEMP:
-	case PUSH_INSTVAR:
-	case PUSH_LITERAL_CONST:
-	case PUSH_LITERAL_VAR:
-	case PUSH_SELF:
-	case PUSH_NIL:
-	case PUSH_TRUE:
-	case PUSH_FALSE:
-	case BLOCK_COPY:
-
-	    stackp++;
-	    if (stackp > stackp_max)
-		stackp_max = stackp;
-
-	    ip += codes[gt->code[ip]].size;
-	    break;
-
-	case STORE_POP_LITERAL_VAR:
-	case STORE_POP_TEMP:
-	case STORE_POP_INSTVAR:
-	case POP_STACK_TOP:
-	    stackp--;
-	    ip += codes[gt->code[ip]].size;
-	    break;
-
-	case SEND:
-	case SEND_SUPER:
-	    stackp -= (int) gt->code[ip + 1];
-	    ip += codes[gt->code[ip]].size;
-	    break;
-	    	   
-	case SEND_PLUS:   case SEND_MINUS:
-	case SEND_LT:     case SEND_GT:
-	case SEND_LE:     case SEND_GE:
-	case SEND_EQ:     case SEND_NE:
-	case SEND_MUL:    case SEND_DIV:
-	case SEND_MOD:    case SEND_BITSHIFT:
-	case SEND_BITAND: case SEND_BITOR:
-	case SEND_BITXOR: case SEND_NEW_ARG:
-	case SEND_AT: case SEND_IDENTITY_EQ:
-	case SEND_VALUE_ARG:
-	    stackp -= 1;
-	    ip += codes[gt->code[ip]].size;
-	    break;
-
-	case SEND_AT_PUT:	    
-	    stackp -= 2;
-	    ip += codes[gt->code[ip]].size;
-	    break;
-
-	default:
-	    // no stack activity
-	    ip += codes[gt->code[ip]].size;
-	}
-    }
-
-    return stackp_max;
+   emit (gt, PUSH_SELF);
+   emit (gt, RETURN_STACK_TOP);
 }
 
 GQuark
@@ -1512,7 +1429,7 @@ st_generate_method (st_oop klass, STNode *node, GError **error)
 
     st_compiled_code_set_arg_count   (method, st_node_list_length (node->arguments));
     st_compiled_code_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
-    st_compiled_code_set_stack_depth (method, compute_stack_depth (gt));
+    st_compiled_code_set_stack_depth (method, gt->max_stack_depth);
 
     if (node->primitive >= 0) {
 	st_compiled_code_set_flags (method, 1);	
@@ -1535,22 +1452,21 @@ st_generate_method (st_oop klass, STNode *node, GError **error)
     return st_nil;
 }
 
+#define NEXT(ip)          \
+    ip += desc[*ip].size; \
+    break
+
+#define FORMAT(ip) (formats[desc[*ip].size-1])
+
 static void
-print_value (int size, guchar b1, guchar b2, guchar b3)
+print_bytecodes (st_oop literals, guchar *codes, int len) 
 {
     static const char * const formats[] = {
 	"<%02x>       ",
 	"<%02x %02x>    ",
 	"<%02x %02x %02x> ",
     };
-    
-    printf (formats[size], b1, b2, b3);
 
-}
-
-static void
-print_bytecodes (st_oop literals, guchar *codes, int len) 
-{
     guchar *ip = codes;
 
     while (*ip) {
@@ -1560,153 +1476,135 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 	switch ((Code) *ip) {
 	    
 	case PUSH_TEMP:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]); 
+	    printf (FORMAT (ip), ip[0], ip[1]); 
 	    printf ("pushTemp: %i", ip[1]);
 	    
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 	    
 	case PUSH_INSTVAR:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("pushInstvar: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 	    
 	case PUSH_LITERAL_CONST:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("pushConst: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case PUSH_LITERAL_VAR:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("pushLit: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case PUSH_SELF:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("push: self");
 
-	    ip += 1;
-	    break;
+	    NEXT (ip);
 
 	case PUSH_TRUE:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("pushConst: true");
 
-	    ip += 1;
-	    break;
+	    NEXT (ip);
 	    
 	case PUSH_FALSE:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("pushConst: false");
 
-	    ip += 1;
-	    break;
-	   
+	    NEXT (ip);
+
 	case PUSH_NIL:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("pushConst: nil");
 
-	    ip += 1;
-	    break; 
+	    NEXT (ip);
 
 	case STORE_TEMP:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("storeTemp: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case STORE_INSTVAR:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("storeInstvar: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case STORE_LITERAL_VAR:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("storeLiteral: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case STORE_POP_TEMP:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("popIntoTemp: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case STORE_POP_INSTVAR:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("popIntoInstvar: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case STORE_POP_LITERAL_VAR:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("popIntoLiteral: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case BLOCK_COPY:
-	    printf ("<%02x %02x>    ", ip[0], ip[1]);
+	    printf (FORMAT (ip), ip[0], ip[1]);
 	    printf ("blockCopy: %i", ip[1]);
 
-	    ip += 2;
-	    break;
+	    NEXT (ip);
 
 	case JUMP:
-	    printf ("<%02x %02x %02x> ", ip[0], ip[1], ip[2]);
+	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
 
 	    short offset = ((ip[1] << 8) | ip[2]);
-	    printf ("jump: %i", (offset >= 0 ? 3 : 0) + (ip - codes) + offset);
-	    
-	    ip += 3;
-	    break;
+	    printf ("jump: %li", (offset >= 0 ? 3 : 0) + (ip - codes) + offset);
+
+	    NEXT (ip);
 
 	case JUMP_TRUE:
-	    printf ("<%02x %02x %02x> ", ip[0], ip[1], ip[2]);
-	    printf ("jumpTrue: %i", 3 + (ip - codes) + ((ip[1] << 8) | ip[2]));
+	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
+	    printf ("jumpTrue: %li", 3 + (ip - codes) + ((ip[1] << 8) | ip[2]));
 
-	    ip += 3;
-	    break;
+	    NEXT (ip);
 
 	case JUMP_FALSE:
-	    printf ("<%02x %02x %02x> ", ip[0], ip[1], ip[2]);
-	    printf ("jumpFalse: %i", 3 + (ip - codes) + ((ip[1] << 8) | ip[2]));
+	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
+	    printf ("jumpFalse: %li", 3 + (ip - codes) + ((ip[1] << 8) | ip[2]));
 
-	    ip += 3;
-	    break;
+	    NEXT (ip);
 
 	case POP_STACK_TOP:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("pop");
 
-	    ip += 1;
-	    break;
+	    NEXT (ip);
 
 	case RETURN_STACK_TOP:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("returnTop");
 
 	    ip += 1;
 	    break;
 
+	    NEXT (ip);
+
 	case BLOCK_RETURN:
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("blockReturn");
 
-	    ip += 1;
-	    break;
+	    NEXT (ip);
 
 	case SEND:
 	{
@@ -1714,12 +1612,11 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 
 	    selector = st_array_at (literals, ip[2] + 1);
 
-	    printf ("<%02x %02x %02x> ", ip[0], ip[1], ip[2]);
+	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
 
 	    printf ("send: #%s", (char *) st_byte_array_bytes (selector));
 
-	    ip += 3;
-	    break;
+	    NEXT (ip);
 	}
 	case SEND_SUPER:
 	{
@@ -1727,12 +1624,11 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 
 	    selector = st_array_at (literals, ip[2] + 1);
 
-	    printf ("<%02x %02x %02x> ", ip[0], ip[1], ip[2]);
+	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
 
 	    printf ("sendSuper: #%s", (char *) st_byte_array_bytes (selector));
 
-	    ip += 3;
-	    break;
+	    NEXT (ip);
 	}
 
 	case SEND_PLUS:
@@ -1760,23 +1656,16 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 	case SEND_NEW:
 	case SEND_NEW_ARG:
 
-	    printf ("<%02x>       ", ip[0]);
+	    printf (FORMAT (ip), ip[0]);
 	    printf ("sendSpecial: #%s", st_byte_array_bytes (specials[ip[0] - SEND_PLUS]));
 
-	    ip += 1;
-	    break;
+	    NEXT (ip);
 
-
-
-	    
 	}
 	printf ("\n");
     }
     
 }
-
-void st_generator_print_method (st_oop method);
-static void print_block (st_oop block);
 
 static void
 print_literal (st_oop lit)
@@ -1800,6 +1689,7 @@ print_literal (st_oop lit)
 	printf ("$%s", outbuf);
     }
 }
+
 
 static void
 print_literals (st_oop literals)
@@ -1844,3 +1734,4 @@ st_print_method (st_oop method)
     
     print_literals (literals);
 }
+
