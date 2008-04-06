@@ -31,7 +31,7 @@ main (int argc, char *argv[])
 
     GError *error = NULL;
 
-    STNode *node = st_parser_parse (lexer, &error);
+    STNode *node = st_parser_parse (lexer, false, &error);
     if (!node) {
 	fprintf (stderr, "error: %s\n", error->message);
 	g_error_free (error);

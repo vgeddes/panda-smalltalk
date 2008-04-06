@@ -1,7 +1,6 @@
 "
 Copyright (c) 2007 Luca Bruno
-
-This file is part of Smalltalk YX.
+Copyright (c) 2008 Vincent Geddes
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the 'Software'), to deal
@@ -22,38 +21,53 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-!Association class methodsFor: 'basic'!
+Association methodsFor: 'basic'
+[
+	key: aKey value: aValue
+	[
+		"Create an association aKey -> aValue"
+    	^ self new key: aKey value: aValue
+	]
 
-key: aKey value: aValue
-    "Create an association aKey -> aValue"
-    ^self new key: aKey value: aValue
-! !
+	key
+	[
+		"Answer the association's key"
+    	^ key
+	]
+]
 
-!Association methodsFor: 'accessing'!
+Association methodsFor: 'accessing'
+[		
+	key
+	[
+		"Answer the association's key"
+    	^ key
+	]
 
-key
-    "Answer the association's key"
-    ^key
-!
+	value: aValue
+	[
+		"Set the value of the association to aValue"
+    	value := aValue
+	]
+	
+	key: aKey value: aValue
+	[
+		"Set the key and the value of the association"
+    	key := aKey.
+    	value := aValue
+	]
 
-value: aValue
-    "Set the value of the association to aValue"
-    value := aValue
-!
+	value
+	[
+		"Answer the association's value"
+    	^ value
+	]
+]
 
-key: aKey value: aValue
-    "Set the key and the value of the association"
-    key := aKey.
-    value := aValue
-!
-
-value
-    "Answer the association's value"
-    ^value
-! !
-
-!Association methodsFor: 'printing'!
-
-printString
-    ^self key printString, '->', self value printString
-! !
+Association methodsFor: 'printing'
+[
+	printString
+	[
+ 		^ self key printString, '->', self value printString
+	]
+]

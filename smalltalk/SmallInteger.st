@@ -22,140 +22,175 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-!SmallInteger methodsFor: 'arithmetic'!
+SmallInteger methodsFor: 'arithmetic'
+[
 
-+ aNumber
-     <primitive: 'SmallInteger_plus'>
-	 ^aNumber isSmallInteger
-	     ifTrue: [ self asLargeInteger + aNumber asLargeInteger ]
-	     ifFalse: [ super + aNumber ]
-!
+	+ aNumber
+	[
+		<primitive: 'SmallInteger_plus'>
+		^ aNumber isSmallInteger
+			 	  ifTrue: [ self asLargeInteger + aNumber asLargeInteger ]
+	     		  ifFalse: [ super + aNumber ]
+	]
 
-- aNumber
-     <primitive: 'SmallInteger_minus'>
-	 ^aNumber isSmallInteger
-	     ifTrue: [ self asLargeInteger - aNumber asLargeInteger ]
-	     ifFalse: [ super - aNumber ]
-!
+	- aNumber
+	[
+		<primitive: 'SmallInteger_minus'>
+		^ aNumber isSmallInteger
+	      		  ifTrue: [ self asLargeInteger - aNumber asLargeInteger ]
+	     		  ifFalse: [ super - aNumber ]
+	]
 
-* aNumber
-     <primitive: 'SmallInteger_mul'>
-	 ^aNumber isSmallInteger
-	     ifTrue: [self asLargeInteger * aNumber asLargeInteger ]
-	     ifFalse: [ super * aNumber ]
-!
+	* aNumber
+	[
+		<primitive: 'SmallInteger_mul'>
+	 	^ aNumber isSmallInteger
+	     	 	  ifTrue: [self asLargeInteger * aNumber asLargeInteger ]
+	     		  ifFalse: [ super * aNumber ]
+	]
 
-< aNumber
-     <primitive: 'SmallInteger_lt'>
-	 ^super < aNumber
-!
+	< aNumber
+	[
+		<primitive: 'SmallInteger_lt'>
+	 	^ super < aNumber
+	]
 
-> aNumber
-     <primitive: 'SmallInteger_gt'>
-	 ^super > aNumber
-!
+	> aNumber
+    [
+		<primitive: 'SmallInteger_gt'>
+		^ super > aNumber
+	]
 
-<= aNumber
-     <primitive: 'SmallInteger_le'>
-	 ^super <= aNumber
-!
+	<= aNumber
+	[
+		<primitive: 'SmallInteger_le'>
+	 	^super <= aNumber
+	]
 
->= aNumber
-     <primitive: 'SmallInteger_ge'>
-	 ^super >= aNumber
-!
+	>= aNumber
+	[
+		<primitive: 'SmallInteger_ge'>
+	 	^super >= aNumber
+	]
 
-= aNumber
-     <primitive: 'SmallInteger_eq'>
-	 ^super = aNumber
-!
+	= aNumber
+	[
+		<primitive: 'SmallInteger_eq'>
+		^ super = aNumber
+	]
 
-== aNumber
-     <primitive: 'SmallInteger_eq'>
-	 ^super == aNumber
-!
+	== aNumber
+	[
+		<primitive: 'SmallInteger_eq'>
+		^ super == aNumber
+	]
 
-~= aNumber
-     <primitive: 'SmallInteger_ne'>
-	 ^super ~= aNumber
-!
+	~= aNumber
+	[
+		<primitive: 'SmallInteger_ne'>
+		^ super ~= aNumber
+	]
 
-~~ aNumber
-     <primitive: 'SmallInteger_ne'>
-	 ^super ~~ aNumber
-!
+	~~ aNumber
+	[
+		<primitive: 'SmallInteger_ne'>
+		^super ~~ aNumber
+	]
 
-quo: aNumber
-     <primitive: 'SmallInteger_quo'>
-	 ^super quo: aNumber
-!
+	quo: aNumber
+	[
+		<primitive: 'SmallInteger_quo'>
+		^ super quo: aNumber
+	]
 
-\\ aNumber
-     <primitive: 'SmallInteger_mod'>
-	 ^super \\ aNumber
-! !
+	\\ aNumber
+	[
+		<primitive: 'SmallInteger_mod'>
+		^ super \\ aNumber
+	]
 
-!SmallInteger methodsFor: 'bit-wise operations'!
 
-bitAnd: aNumber
-    <primitive: 'SmallInteger_bitAnd'>
-	^super bitAnd: aNumber
-!
+SmallInteger methodsFor: 'bit-wise operations'
+[
 
-bitOr: aNumber
-    <primitive: 'SmallInteger_bitOr'>
-	^super bitOr: aNumber
-!
+	bitAnd: aNumber
+    [
+		<primitive: 'SmallInteger_bitAnd'>
+		^super bitAnd: aNumber
+	]
 
-bitXor: aNumber
-    <primitive: 'SmallInteger_bitXor'>
-	^super bitXor: aNumber
-!
+	bitOr: aNumber
+    [
+		<primitive: 'SmallInteger_bitOr'>
+		^ super bitOr: aNumber
+	]
 
-bitShift: aNumber
-    <primitive: 'SmallInteger_bitShift'>
-        ^super bitShift: aNumber
-! !
+	bitXor: aNumber
+	[
+		<primitive: 'SmallInteger_bitXor'>
+		^ super bitXor: aNumber
+	]
 
-!SmallInteger methodsFor: 'testing'!
+	bitShift: aNumber
+	[
+		<primitive: 'SmallInteger_bitShift'>
+        ^ super bitShift: aNumber
+	]
+]
 
-isLargeInteger
-    ^false
-!
+SmallInteger methodsFor: 'testing'
+[
 
-isSmallInteger
-    ^true
-! !
+	isLargeInteger
+	[
+		^ false
+	]
 
-!SmallInteger methodsFor: 'coercing'!
+	isSmallInteger
+	[
+		^ true
+	]
+]
 
-asInteger
-    ^self
-!
+SmallInteger methodsFor: 'coercing'
+[
 
-asFloat
-    <primitive: 'SmallInteger_asFloat'>
-	self primitiveFailed
-!
+	asInteger
+	[    
+		^ self
+	]
 
-asLargeInteger
-    <primitive: 'SmallInteger_asLargeInteger'>
-	self primitiveFailed
-!
+	asFloat
+	[
+		<primitive: 'SmallInteger_asFloat'>
+		self primitiveFailed
+	]
 
-print
-    <primitive: 'SmallInteger_print'>
-	self primitiveFailed
-!
+	asLargeInteger
+	[
+		<primitive: 'SmallInteger_asLargeInteger'>
+		self primitiveFailed
+	]
 
-zero
-    ^0
-!
+	print
+	[
+		<primitive: 'SmallInteger_print'>
+		self primitiveFailed
+	]
 
-generality
-    ^10
-!
+	zero
+	[
+		^ 0
+	]
 
-unity
-    ^1
-! !
+
+	generality
+	[
+		^ 10
+	]
+
+	unity
+	[
+		^ 1
+	]
+]

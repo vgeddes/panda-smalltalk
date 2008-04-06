@@ -1,7 +1,7 @@
 "
 Copyright (c) 2007 Luca Bruno
+Copyright (c) 2008 Vincent Geddes
 
-This file is part of Smalltalk YX.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the 'Software'), to deal
@@ -22,30 +22,39 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-!UndefinedObject methodsFor: 'printing'!
+UndefinedObject methodsFor: 'printing'
+[
+	print
+	[
+    	^ 'nil' print
+	]
 
-print
-    ^'nil' print
-!
+	printString
+    [
+		^ 'nil'
+	]
+]
 
-printString
-    ^'nil'
-! !
+UndefinedObject methodsFor: 'testing'
+[
 
-!UndefinedObject methodsFor: 'testing'!
+	ifNil: aBlock
+    [
+		^ aBlock value
+	]
 
-ifNil: aBlock
-    ^aBlock value
-!
+	ifNotNil: aBlock
+    [
+		^ self
+	]
 
-ifNotNil: aBlock
-    ^self
-!
+	isNil
+	[
+		^ true
+	]
 
-isNil
-    ^true
-!
-
-notNil
-    ^false
-! !
+	notNil
+	[
+		^ false
+	]
+]

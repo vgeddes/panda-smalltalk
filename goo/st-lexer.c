@@ -208,7 +208,7 @@ is_special_char (gunichar c)
 
     case '+': case '/': case '\\': case '*': case '~':
     case '<': case '>': case '=': case '@': case '%':
-    case '|': case '&': case '?': case '!':
+    case '|': case '&': case '?': case '!': case ',':
 	return true;
 
     default:
@@ -511,15 +511,6 @@ match_symbol_constant (STLexer *lexer)
 }
 
 static void
-match_annotation (STLexer *lexer)
-{
-	match (lexer, '@');
-
-	
-
-}
-
-static void
 match_block_begin (STLexer *lexer)
 {
     match (lexer, '[');
@@ -733,8 +724,8 @@ st_lexer_next_token (STLexer *lexer)
 
 	case '+': case '-': case '/': case '\\':
 	case '*': case '<': case '>': case '=':
-	case '%': case '|': case '&':
-	case '?': case '!': case '~':
+	case '@': case '%': case '|': case '&':
+	case '?': case '!': case '~': case ',':
 	    match_binary_selector (lexer, true);
 	    break;
 
@@ -774,11 +765,6 @@ st_lexer_next_token (STLexer *lexer)
 
 	    else if (lookahead (lexer, 1) == ':')
 		match_colon (lexer);
-
-	    // match annotation or '@'
-	    else if (lookahead (lexer, 1) == '@' && lookahead (lexer, 2) == 'c')
-		match_colon (lexer);
-
 
 	    else
 		raise_error (lexer, ERROR_ILLEGAL_CHAR, lookahead (lexer, 1));

@@ -466,11 +466,10 @@ st_bootstrap_universe (void)
     /* parse class declarations */
     parse_classes ("../smalltalk/ClassDefinitions.st");
 
-   //  st_file_in ("../smalltalk/Object.st");
+    st_file_in ("../smalltalk/Association.st");
+    st_file_in ("../smalltalk/UndefinedObject.st");
 
     /*
-    st_file_in ("../smalltalk/UndefinedObject.st");
-    st_file_in ("../smalltalk/SmallInteger.st");
     st_file_in ("../smalltalk/Class.st");
     st_file_in ("../smalltalk/Behavior.st");
     st_file_in ("../smalltalk/Character.st");

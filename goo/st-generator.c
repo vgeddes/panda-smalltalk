@@ -40,6 +40,9 @@
 
 #define DEFAULT_CODE_SIZE 50
 	
+#define CSTR(string) ((char *) st_byte_array_bytes (string))
+
+/* bytecodes */ 
 typedef enum
 {
     PUSH_TEMP = 1,
@@ -102,7 +105,6 @@ typedef enum
     SEND_NEW,
     SEND_NEW_ARG,
 
-    
 } Code;
 
 enum {
@@ -159,20 +161,20 @@ typedef struct
     
 } Generator;
 
-st_oop specials[NUM_SPECIALS] = { 0 };
+static st_oop specials[NUM_SPECIALS] = { 0 };
 
-typedef struct
-{
-    guint       size;
+static guint sizes[255] = {  0, };
 
-} CodeDescriptor;
-
-CodeDescriptor desc[255] = { { 0 }, };
-
-
+// setup global data for compiler
 static void
-init_specials (void)
+check_init (void)
 {
+    static bool initialized = false;
+
+    if (initialized)
+	return;
+    initialized = true;
+
     /* arithmetic specials */
     specials[SPECIAL_PLUS]     = st_symbol_new ("+");
     specials[SPECIAL_MINUS]    = st_symbol_new ("-");
@@ -201,54 +203,57 @@ init_specials (void)
     specials[SPECIAL_NEW]       = st_symbol_new ("new");
     specials[SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
 
-    desc[PUSH_TEMP].size             = 2;
-    desc[PUSH_INSTVAR].size          = 2;
-    desc[PUSH_LITERAL_CONST].size    = 2;
-    desc[PUSH_LITERAL_VAR].size      = 2;
-    desc[PUSH_SELF].size             = 1;
-    desc[PUSH_NIL].size              = 1;
-    desc[PUSH_TRUE].size             = 1;
-    desc[PUSH_FALSE].size            = 1;
-    desc[STORE_LITERAL_VAR].size     = 2;
-    desc[STORE_TEMP].size            = 2;
-    desc[STORE_INSTVAR].size         = 2; 
-    desc[STORE_POP_LITERAL_VAR].size = 2;
-    desc[STORE_POP_TEMP].size        = 2;
-    desc[STORE_POP_INSTVAR].size     = 2;
-    desc[RETURN_STACK_TOP].size      = 1;
-    desc[BLOCK_RETURN].size          = 1;
-    desc[POP_STACK_TOP].size         = 1;
-    desc[PUSH_ACTIVE_CONTEXT].size   = 1;
-    desc[BLOCK_COPY].size       = 2;
-    desc[JUMP_TRUE].size        = 3;
-    desc[JUMP_FALSE].size       = 3;
-    desc[JUMP].size             = 3;
-    desc[SEND].size             = 3;    
-    desc[SEND_SUPER].size       = 3;
-    desc[SEND_PLUS].size        = 1;
-    desc[SEND_MINUS].size       = 1;
-    desc[SEND_LT].size          = 1;
-    desc[SEND_GT].size          = 1;
-    desc[SEND_LE].size          = 1;
-    desc[SEND_GE].size          = 1;
-    desc[SEND_EQ].size          = 1;
-    desc[SEND_NE].size          = 1;
-    desc[SEND_MUL].size         = 1;
-    desc[SEND_DIV].size         = 1;
-    desc[SEND_MOD].size         = 1;
-    desc[SEND_BITSHIFT].size    = 1;
-    desc[SEND_BITAND].size      = 1;
-    desc[SEND_BITOR].size       = 1;
-    desc[SEND_BITXOR].size      = 1;
-    desc[SEND_AT].size          = 1; 
-    desc[SEND_AT_PUT].size      = 1;
-    desc[SEND_SIZE].size        = 1;
-    desc[SEND_VALUE].size       = 1;
-    desc[SEND_VALUE_ARG].size   = 1;
-    desc[SEND_IDENTITY_EQ].size = 1;
-    desc[SEND_CLASS].size       = 1;
-    desc[SEND_NEW].size         = 1;
-    desc[SEND_NEW_ARG].size     = 1;
+
+    /* The size (in bytes) of each bytecode instruction
+     */
+    sizes[PUSH_TEMP]             = 2;
+    sizes[PUSH_INSTVAR]          = 2;
+    sizes[PUSH_LITERAL_CONST]    = 2;
+    sizes[PUSH_LITERAL_VAR]      = 2;
+    sizes[PUSH_SELF]             = 1;
+    sizes[PUSH_NIL]              = 1;
+    sizes[PUSH_TRUE]             = 1;
+    sizes[PUSH_FALSE]            = 1;
+    sizes[STORE_LITERAL_VAR]     = 2;
+    sizes[STORE_TEMP]            = 2;
+    sizes[STORE_INSTVAR]         = 2; 
+    sizes[STORE_POP_LITERAL_VAR] = 2;
+    sizes[STORE_POP_TEMP]        = 2;
+    sizes[STORE_POP_INSTVAR]     = 2;
+    sizes[RETURN_STACK_TOP]      = 1;
+    sizes[BLOCK_RETURN]          = 1;
+    sizes[POP_STACK_TOP]         = 1;
+    sizes[PUSH_ACTIVE_CONTEXT]   = 1;
+    sizes[BLOCK_COPY]       = 2;
+    sizes[JUMP_TRUE]        = 3;
+    sizes[JUMP_FALSE]       = 3;
+    sizes[JUMP]             = 3;
+    sizes[SEND]             = 3;    
+    sizes[SEND_SUPER]       = 3;
+    sizes[SEND_PLUS]        = 1;
+    sizes[SEND_MINUS]       = 1;
+    sizes[SEND_LT]          = 1;
+    sizes[SEND_GT]          = 1;
+    sizes[SEND_LE]          = 1;
+    sizes[SEND_GE]          = 1;
+    sizes[SEND_EQ]          = 1;
+    sizes[SEND_NE]          = 1;
+    sizes[SEND_MUL]         = 1;
+    sizes[SEND_DIV]         = 1;
+    sizes[SEND_MOD]         = 1;
+    sizes[SEND_BITSHIFT]    = 1;
+    sizes[SEND_BITAND]      = 1;
+    sizes[SEND_BITOR]       = 1;
+    sizes[SEND_BITXOR]      = 1;
+    sizes[SEND_AT]          = 1; 
+    sizes[SEND_AT_PUT]      = 1;
+    sizes[SEND_SIZE]        = 1;
+    sizes[SEND_VALUE]       = 1;
+    sizes[SEND_VALUE_ARG]   = 1;
+    sizes[SEND_IDENTITY_EQ] = 1;
+    sizes[SEND_CLASS]       = 1;
+    sizes[SEND_NEW]         = 1;
+    sizes[SEND_NEW_ARG]     = 1;
 
 }
 
@@ -372,8 +377,7 @@ create_bytecode_array (Generator *gt)
 static void
 emit (Generator *gt, guchar code)
 {
-    gt->size++;
-    if (gt->size > gt->alloc) {
+    if (++gt->size > gt->alloc) {
 	gt->alloc += gt->alloc;
 	gt->code = g_realloc (gt->code, gt->alloc);
     }
@@ -550,7 +554,7 @@ size_return (Generator *gt, STNode *node)
 
     size += size_expression (gt, node->expression);
 
-    size += 1;
+    size += sizes[RETURN_STACK_TOP];
 
     return size;
 }
@@ -592,10 +596,10 @@ size_block (Generator *gt, STNode *node)
     int size = 0;
     
     /* BLOCKCOPY instruction */
-    size += 2;
+    size += sizes[BLOCK_COPY];
 
     /* JUMP instruction */
-    size += 3;
+    size += sizes[JUMP];
     
     /* block statements */
     size += size_statements (gt, node->statements, false);
@@ -631,51 +635,44 @@ generate_block (Generator *gt, STNode *node)
 	gt->in_block = false;
     
     return;
-}
-
+} 
 
 static bool
 is_optimization_candidate (STNode *msg)
 {
-    st_oop sel = msg->selector;
+    const char *csel = CSTR (msg->selector);
 
-    if (st_object_equal (sel, st_symbol_new ("ifTrue:")) ||
-	st_object_equal (sel, st_symbol_new ("ifFalse:"))) {
-
+    if (streq (csel, "ifTrue:") || streq (csel, "ifFalse:")) {
 	if (msg->arguments->type == ST_BLOCK_NODE)
 	    return true;
     }
 
-    if (st_object_equal (sel, st_symbol_new ("ifTrue:ifFalse:"))
-	|| st_object_equal (sel, st_symbol_new ("ifFalse:ifTrue:"))) {
+    if (streq (csel, "ifTrue:ifFalse:") || streq (csel, "ifFalse:ifTrue:")) {
 
 	if (msg->arguments->type == ST_BLOCK_NODE
 	    && msg->arguments->next->type == ST_BLOCK_NODE)
 	    return true;
     }
 
-    if (st_object_equal (sel, st_symbol_new ("whileTrue"))
-	|| st_object_equal (sel, st_symbol_new ("whileFalse"))) {
+    if (streq (csel, "whileTrue") || streq (csel, "whileFalse")) {
 
 	if (msg->receiver->type == ST_BLOCK_NODE)
 	    return true;
     }
 
-    if (st_object_equal (sel, st_symbol_new ("whileTrue:"))	
-	|| st_object_equal (sel, st_symbol_new ("whileFalse:"))) {
+    if (streq (csel, "whileTrue:") || streq (csel, "whileFalse:")) {
 
 	if (msg->receiver->type == ST_BLOCK_NODE
 	    && msg->arguments->type == ST_BLOCK_NODE)
 	    return true;
     }
-
-    if (st_object_equal (sel, st_symbol_new ("and:"))
-	|| st_object_equal (sel, st_symbol_new ("or:"))) {
+    
+    if (streq (csel, "and:") || streq (csel, "or:")) {
 	
 	if (msg->arguments->type == ST_BLOCK_NODE)
 	    return true;
     }
-
+    
     return false;
 }
 
@@ -685,124 +682,110 @@ static int
 size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 {
     int size = 0;
+    
+    const char *csel = CSTR (msg->selector);
 
-   if (st_object_equal (msg->selector, st_string_new ("ifTrue:"))
-       || st_object_equal (msg->selector, st_string_new ("ifFalse:"))) {   
+    if (streq (csel, "ifTrue:") || streq (csel, "ifFalse:")) {   
+	
+	size += size_expression (gt, msg->receiver);
+	
+	size += sizes[JUMP_TRUE];
 
-       size += size_expression (gt, msg->receiver);
+	size += size_statements (gt, msg->arguments->statements, true);
+	
+	if (is_expr) {
+	    size += sizes[JUMP];
+	    size += sizes[PUSH_NIL];
+	} else {
+	    size += sizes[POP_STACK_TOP];
+	}
+	
+    }  else if (streq (csel, "ifTrue:ifFalse:") || streq (csel, "ifFalse:ifTrue:")) {
+	
+	size += size_expression (gt, msg->receiver);
+	
+	size += sizes[JUMP_TRUE];
+	
+	// true block
+	size += size_statements (gt, msg->arguments->statements, true);
+	
+	size += sizes[JUMP];
+	
+	size += size_statements (gt, msg->arguments->next->statements, true);
+	
+	if (!is_expr)
+	   size += sizes[POP_STACK_TOP];
+	
+    } else if (streq (csel, "whileTrue") || streq (csel, "whileFalse")) {
+	
+	size += size_statements (gt, msg->receiver->statements, true);
+
+	size += sizes[JUMP_TRUE];
+	
+	size += sizes[JUMP];
+
+	if (is_expr)
+	    size += sizes[PUSH_NIL];
+	
+    } else if (streq (csel, "whileTrue:") || streq (csel, "whileFalse:")) {
+
+	size += size_statements (gt, msg->receiver->statements, true);
+	
+	size += sizes[JUMP_TRUE];
+	
+	size += size_statements (gt, msg->arguments->statements, true);
+
+	size += sizes[JUMP];
+	
+	if (is_expr)
+	    size += sizes[PUSH_NIL];
+	
+    } else if (streq (csel, "and:") || streq (csel, "or:")) {
+	
+	size += size_expression (gt, msg->receiver);
+	
+	size += sizes[JUMP_TRUE];
       
-      // JUMP_{TRUE,FALSE} instr
-       size += 3;
+	size += size_statements (gt, msg->arguments->statements, true);
+	
+	size += sizes[JUMP];
+	
+	size += sizes[PUSH_TRUE];
+	
+	if (!is_expr)
+	    size += sizes[POP_STACK_TOP];
 
-       size += size_statements (gt, msg->arguments->statements, true);
-
-       if (is_expr) {
-	   // JUMP
-	   size += 3;
-	   // PUSH_NIL
-	   size += 1;
-       } else {
-	   size += 1;
-       }
-       
-   }  else if (st_object_equal (msg->selector, st_string_new ("ifTrue:ifFalse:"))) {
-
-       size += size_expression (gt, msg->receiver);
-       
-       // JUMP_TRUE/FALSE instr
-       size += 3;
-       
-       // true block
-       size += size_statements (gt, msg->arguments->statements, true);
-       
-       // JUMP instr
-       size += 3;
-
-       size += size_statements (gt, msg->arguments->next->statements, true);
-
-       if (!is_expr)
-	   // POP
-	   size += 1;
-
-   } else if (st_object_equal (msg->selector, st_string_new ("whileTrue"))
-	      || st_object_equal (msg->selector, st_string_new ("whileFalse"))) {
-
-       size += size_statements (gt, msg->receiver->statements, true);
-
-       // JUMP_FALSE/TRUE instr
-       size += 3;
-
-       // JUMP instr
-       size += 3;
-
-       if (is_expr)
-	   size += 1;
-
-   } else if (st_object_equal (msg->selector, st_string_new ("whileTrue:"))
-	      || st_object_equal (msg->selector, st_string_new ("whileFalse:"))) {
-
-       size += size_statements (gt, msg->receiver->statements, true);
-
-       // JUMP_FALSE/TRUE instr
-       size += 3;
-
-       size += size_statements (gt, msg->arguments->statements, true);
-
-       // JUMP instr
-       size += 3;
-
-       if (is_expr)
-	   size += 1;
-
-   } else if (st_object_equal (msg->selector, st_string_new ("and:"))
-	      || st_object_equal (msg->selector, st_string_new ("or:"))) {
-   
-      size += size_expression (gt, msg->receiver);
-
-      // JUMP_FALSE/TRUE instr
-      size += 3;
-
-      size += size_statements (gt, msg->arguments->statements, true);
-
-      // JUMP instr
-      size += 3;
-
-      // PUSH_{TRUE,FALSE} instr
-      size += 1;
-
-      if (!is_expr)
-	  size += 1;
-
-   }
-  
-   return size;
+    }
+    
+    return size;
 }
 
 
 static void
 generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 {
-    st_oop selector = msg->selector;
     STNode *block;
+    const char *csel;
     int size;
 
-    if (st_object_equal (selector, st_symbol_new ("ifTrue:")) ||
-	st_object_equal (selector, st_symbol_new ("ifFalse:"))) {
+    csel = CSTR (msg->selector);
+
+    if (streq (csel, "ifTrue:") || streq (csel, "ifFalse:")) {
 	
 	block = msg->arguments;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL)
 	    generation_error (gt, "argument of ifTrue: message must be a 0-argument block", block);  
-       
+	
 	generate_expression (gt, msg->receiver);
 	
 	size = size_statements (gt, block->statements, true);
-
+	
 	if (is_expr)
 	    size += 3;
 	else
 	    size += 1;
 
-	if (st_object_equal (selector, st_symbol_new ("ifTrue:")))
+	if (streq (csel, "ifTrue:"))
 	    emit (gt, JUMP_FALSE);
 	else
 	    emit (gt, JUMP_TRUE);
@@ -821,10 +804,8 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	}
 
 	return;
-    }
-
-    if (st_object_equal (selector, st_symbol_new ("ifTrue:ifFalse:")) ||
-	st_object_equal (selector, st_symbol_new ("ifFalse:ifTrue:"))) {
+	
+    } else if (streq (csel, "ifTrue:ifFalse:") || streq (csel, "ifFalse:ifTrue")) {
 	
 	STNode *true_block, *false_block;
 	
@@ -841,7 +822,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	size = size_statements (gt, true_block->statements, true);
 	size += 3; 
 	
-	if (st_object_equal (selector, st_symbol_new ("ifTrue:ifFalse:")))
+	if (streq (csel, "ifTrue:ifFalse:"))
 	    emit (gt, JUMP_FALSE);
 	else
 	    emit (gt, JUMP_TRUE);
@@ -864,12 +845,11 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	return;
     }
 
-    if (st_object_equal (selector, st_symbol_new ("whileTrue")) ||
-	st_object_equal (selector, st_symbol_new ("whileFalse"))) {
+    if (streq (csel, "whileTrue") || streq (csel, "whileFalse")) {
 
 	block = msg->receiver;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
-	    if (st_object_equal (selector, st_symbol_new ("whileTrue")))
+	    if (streq (csel, "whileTrue"))
 		generation_error (gt, "receiver of whileTrue message must be a 0-argument block", block);
 	    else
 		generation_error (gt, "receiver of whileFalse message must be a 0-argument block", block);
@@ -878,7 +858,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	generate_statements (gt, block->statements, true);
 	
 	// jump around jump statement
-	if (st_object_equal (selector, st_symbol_new ("whileTrue")))
+	if (streq (csel, "whileTrue"))
 	    emit (gt, JUMP_FALSE);
 	else
 	    emit (gt, JUMP_TRUE);
@@ -901,12 +881,11 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	return;
     }
     
-    if (st_object_equal (selector, st_symbol_new ("whileTrue:")) ||
-	st_object_equal (selector, st_symbol_new ("whileFalse:"))) {
+    if (streq (csel, "whileTrue:") || streq (csel, "whileFalse:")) {
 
 	block = msg->receiver;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
-	    if (st_object_equal (selector, st_symbol_new ("whileTrue:")))
+	    if (streq (csel, "whileTrue:"))
 		generation_error (gt, "receiver of whileTrue: message must be a 0-argument block", block);
 	    else
 		generation_error (gt, "receiver of whileFalse: message must be a 0-argument block", block);
@@ -914,7 +893,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 
 	block = msg->arguments;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
-	    if (st_object_equal (selector, st_symbol_new ("whileTrue:")))
+	    if (streq (csel, "whileTrue:"))
 		generation_error (gt, "argument of whileTrue: message must be a 0-argument block", block);
 	    else
 		generation_error (gt, "argument of whileFalse: message must be a 0-argument block", block);
@@ -923,7 +902,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	
 	generate_statements (gt, msg->receiver->statements, true);
 	
-	if (st_object_equal (msg->selector, st_string_new ("whileTrue:")))
+	if (streq (csel, "whileTrue:"))
 	    emit (gt, JUMP_FALSE);
 	else
 	    emit (gt, JUMP_TRUE);
@@ -952,12 +931,11 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	return;
     }
 
-    if (st_object_equal (selector, st_symbol_new ("and:")) ||
-	st_object_equal (selector, st_symbol_new ("or:"))) {
+    if (streq (csel, "and:") || streq (csel, "or:")) {
 
 	block = msg->arguments;
 	if (block->type != ST_BLOCK_NODE || block->arguments != NULL) {
-	    if (st_object_equal (selector, st_symbol_new ("and:")))
+	    if (streq (csel, "and:"))
 		generation_error (gt, "argument of and: message must be a 0-argument block", block);
 	    else
 		generation_error (gt, "argument of or: message must be a 0-argument block", block);
@@ -969,7 +947,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	// size of JUMP instr after block statements
 	size += 3;
 
-	if (st_object_equal (selector, st_symbol_new ("and:")))
+	if (streq (csel, "and:"))
 	    emit (gt, JUMP_FALSE);
 	else
 	    emit (gt, JUMP_TRUE);
@@ -982,7 +960,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	emit (gt, 0);
 	emit (gt, 1);
 
-	if (st_object_equal (selector, st_symbol_new ("and:")))
+	if (streq (csel, "and:"))
 	    emit (gt, PUSH_FALSE);
 	else
 	    emit (gt, PUSH_TRUE);
@@ -1022,7 +1000,8 @@ size_message (Generator *gt, STNode *msg)
 	}
     }
 
-    size += 3;
+    g_assert (sizes[SEND] == sizes[SEND_SUPER]);
+    size += sizes[SEND];
     
     return size;
 }
@@ -1080,18 +1059,22 @@ size_expression (Generator *gt, STNode *node)
     switch (node->type) {
     case ST_VARIABLE_NODE:
     {
-	if (st_object_equal (node->name, st_string_new ("self"))
-	    || st_object_equal (node->name, st_string_new ("super"))) {
-	    size += 1;
+	const char *name = CSTR (node->name);
+
+	if (streq (name, "self") || streq (name, "super")) {
+	    size += sizes[PUSH_SELF];
 	    break;
-	} else if (st_object_equal (node->name, st_string_new ("true"))) {
-	    size += 1;
+	} else if (streq (name, "true")) {
+	    size += sizes[PUSH_TRUE];
 	    break;
-	} else if (st_object_equal (node->name, st_string_new ("false"))) {
-	    size += 1;
+	} else if (streq (name, "false")) {
+	    size += sizes[PUSH_FALSE];
 	    break;
-	} else if (st_object_equal (node->name, st_string_new ("nil"))) {
-	    size += 1;
+	} else if (streq (name, "nil")) {
+	    size += sizes[PUSH_NIL];
+	    break;
+	} else if (streq (name, "thisContext")) {
+	    size += sizes[PUSH_ACTIVE_CONTEXT];
 	    break;
 	}
 
@@ -1114,7 +1097,7 @@ size_expression (Generator *gt, STNode *node)
 	generation_error (gt, "unknown variable", node);
     }
     case ST_LITERAL_NODE:
-	size += 2;
+	size += sizes[PUSH_LITERAL_CONST];
 	break;
 
     case ST_ASSIGN_NODE:
@@ -1147,19 +1130,23 @@ generate_expression (Generator *gt, STNode *node)
 
     switch (node->type) {
     case ST_VARIABLE_NODE:
-		
-	if (st_object_equal (node->name, st_string_new ("self"))
-	    || st_object_equal (node->name, st_string_new ("super"))) {
+    {
+	const char *name = CSTR (node->name);
+
+	if (streq (name, "self") || streq (name, "super")) {
 	    push_special (gt, PUSH_SELF);
 	    break;
-	} else if (st_object_equal (node->name, st_string_new ("true"))) {
+	} else if (streq (name, "true")) {
 	    push_special (gt, PUSH_TRUE);
 	    break;
-	} else if (st_object_equal (node->name, st_string_new ("false"))) {
+	} else if (streq (name, "false")) {
 	    push_special (gt, PUSH_FALSE);
 	    break;
-	} else if (st_object_equal (node->name, st_string_new ("nil"))) {
+	} else if (streq (name, "nil")) {
 	    push_special (gt, PUSH_NIL);
+	    break;
+	} else if (streq (name, "thisContext")) {
+	    push_special (gt, PUSH_ACTIVE_CONTEXT);
 	    break;
 	}
 
@@ -1180,6 +1167,7 @@ generate_expression (Generator *gt, STNode *node)
 	}
 	generation_error (gt, "unknown variable", node);
 
+    }
     case ST_LITERAL_NODE:
 	index = find_literal_const (gt, node->literal);
 	push (gt, PUSH_LITERAL_CONST, index);
@@ -1213,7 +1201,7 @@ size_statements (Generator *gt, STNode *statements, bool optimized_block)
     int size = 0;
 
     if (statements == NULL) {
-	size += 1;
+	size += sizes[PUSH_NIL];
     }   
 
     for (STNode *node = statements; node; node = node->next) {
@@ -1256,7 +1244,7 @@ size_statements (Generator *gt, STNode *statements, bool optimized_block)
 		    size += size_optimized_message (gt, node, false);
 		} else {
 		    size += size_message (gt, node);
-		    size += 1;
+		    size += sizes[POP_STACK_TOP];
 		}
 	    } else {
 		if (is_optimization_candidate (node)) {
@@ -1274,7 +1262,7 @@ size_statements (Generator *gt, STNode *statements, bool optimized_block)
     }
 
     if (!optimized_block)
-	size += 1;
+	size += sizes[BLOCK_RETURN];
 
     return size;
 }
@@ -1410,7 +1398,7 @@ st_generate_method (st_oop klass, STNode *node, GError **error)
     g_assert (klass != st_nil);
     g_assert (node != NULL && node->type == ST_METHOD_NODE);
     
-    init_specials ();
+    check_init ();
 
     gt = generator_new ();
     gt->error = error;
@@ -1452,11 +1440,11 @@ st_generate_method (st_oop klass, STNode *node, GError **error)
     return st_nil;
 }
 
-#define NEXT(ip)          \
-    ip += desc[*ip].size; \
+#define NEXT(ip)      \
+    ip += sizes[*ip]; \
     break
 
-#define FORMAT(ip) (formats[desc[*ip].size-1])
+#define FORMAT(ip) (formats[sizes[*ip]-1])
 
 static void
 print_bytecodes (st_oop literals, guchar *codes, int len) 
@@ -1520,6 +1508,12 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 	case PUSH_NIL:
 	    printf (FORMAT (ip), ip[0]);
 	    printf ("pushConst: nil");
+
+	    NEXT (ip);
+
+	case PUSH_ACTIVE_CONTEXT:
+	    printf (FORMAT (ip), ip[0]);
+	    printf ("push: thisContext");
 
 	    NEXT (ip);
 

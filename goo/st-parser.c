@@ -643,10 +643,7 @@ parse_statements (STParser *parser)
     token = current (parser->lexer);
 
     while (st_token_type (token) != ST_TOKEN_EOF
-	   && (st_token_type (token) != ST_TOKEN_BINARY_SELECTOR || !streq (st_token_text (token), "!"))) {
-	       
-	if (parser->in_block && st_token_type (token) == ST_TOKEN_BLOCK_END)
-	    break;
+	   && st_token_type (token) != ST_TOKEN_BLOCK_END) {
 
 	/* check for unreachable statements */
 	if (expression && expression->type == ST_RETURN_NODE) {
@@ -756,7 +753,7 @@ parse_message_pattern (STParser *parser, STNode *method)
     STTokenType  type;
     STNode *arguments = NULL;
 
-    token = next (parser, parser->lexer);    
+    token = current (parser->lexer);    
     type  = st_token_type (token);
 
     if (type == ST_TOKEN_IDENTIFIER) {
@@ -813,25 +810,6 @@ parse_message_pattern (STParser *parser, STNode *method)
     method->arguments = arguments;
 }
 
-static STNode *
-parse_method (STParser *parser)
-{   
-    STNode *method;
-
-    parser->in_block = false;
-
-    method = st_node_new (ST_METHOD_NODE);
-    
-    parse_message_pattern (parser, method);
-    
-    method->temporaries = parse_temporaries (parser);
-    method->primitive   = parse_primitive (parser);
-    method->statements  = parse_statements (parser);
-    
-    return method;
-} 
-
-
 STNode *
 st_parse_expression (STLexer *lexer, GError **error)
 {
@@ -858,8 +836,51 @@ st_parse_expression (STLexer *lexer, GError **error)
 
 }
 
+static STNode *
+parse_method (STParser *parser, bool is_filein)
+{   
+    STNode *method;
+    STToken *token;
+
+    parser->in_block = false;
+
+    method = st_node_new (ST_METHOD_NODE);
+ 
+    if (!is_filein)
+	token = next (parser, parser->lexer);
+   
+    parse_message_pattern (parser, method);
+    
+    token = current (parser->lexer);
+
+    if (is_filein) {
+
+	if (st_token_type (token) != ST_TOKEN_BLOCK_BEGIN)
+	    parse_error (parser, "expected '['", token);
+	token = next (parser, parser->lexer);	
+    }
+    
+    method->temporaries = parse_temporaries (parser);
+    method->primitive   = parse_primitive (parser);
+    method->statements  = parse_statements (parser);
+
+    token = current (parser->lexer);
+
+    if (is_filein) {
+
+	if (st_token_type (token) != ST_TOKEN_BLOCK_END)
+	    parse_error (parser, "expected ']'", token);
+	token = next (parser, parser->lexer);
+    }    
+
+
+    return method;
+} 
+
 STNode *
-st_parser_parse (STLexer *lexer, GError **error)
+st_parser_parse (STLexer *lexer,
+		 bool     is_filein,
+		 GError **error)
 {
     STParser *parser;
     STNode   *method;
@@ -873,13 +894,11 @@ st_parser_parse (STLexer *lexer, GError **error)
     parser->in_block = false;
 
     if (!setjmp (parser->jmploc))
-	method = parse_method (parser);
+	method = parse_method (parser, is_filein);
     else
 	method = NULL;
 
     g_slice_free (STParser, parser);
 
     return method;
-     
 }
-

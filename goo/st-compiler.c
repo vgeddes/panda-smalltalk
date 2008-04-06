@@ -5,9 +5,19 @@
 #include "st-hashed-collection.h"
 #include "st-class.h"
 #include "st-input.h"
+#include "st-node.h"
+#include <string.h>
 
 #include "st-lexer.h"
+#include "stdlib.h"
 
+
+typedef struct {
+    
+    const char *filename;
+    STLexer    *lexer;
+
+} FileInParser;
 
 /*
  * st_compile_string:
@@ -30,7 +40,7 @@ st_compile_string (st_oop klass, const char *string, GError **error)
     
     lexer = st_lexer_new (string);
     
-    node = st_parser_parse (lexer, error);
+    node = st_parser_parse (lexer, false, error);
 
     st_lexer_destroy (lexer);
 
@@ -52,71 +62,116 @@ st_compile_string (st_oop klass, const char *string, GError **error)
     return true;
 }
 
-/* currently limited to "evaluating" simple methodFor statements */
-
-static st_oop
-st_evaluate_string (const char *string)
+static void
+filein_error (FileInParser *parser, STToken *token, const char *message)
 {
-    STNode *node;
-    GError *error = NULL;
+    fprintf (stderr, "%s: %i: %s\n", parser->filename, st_token_line (token), message);
+    exit (1);
+}
+
+
+static STToken *
+next_token (FileInParser *parser)
+{
+    STToken *token;
+
+    token = st_lexer_next_token (parser->lexer);
     
-    if (!string)
-	return st_nil;
+    if (st_token_type (token) == ST_TOKEN_COMMENT)
+	return next_token (parser);
+    else if (st_token_type (token) == ST_TOKEN_INVALID)
+	filein_error (parser, token, st_lexer_error_message (parser->lexer));
+    
+    return token;
+}
 
-    node = st_parse_expression (st_lexer_new (string), &error);
-    if (error) {
-	fprintf (stderr, "error: %s\n", error->message);
-	g_error_free (error);
-	return st_nil;
+/* parse a category of methods */
+static void
+parse_category (FileInParser *parser)
+{
+    st_oop klass;
+    STToken *token;
+    GError *error = NULL;
+
+    token = st_lexer_current_token (parser->lexer);
+    if (st_token_type (token) != ST_TOKEN_IDENTIFIER)
+	filein_error (parser, token, "expected identifier");
+  
+    klass = st_global_get (st_token_text (token));
+    if (!st_object_is_class (klass))
+	filein_error (parser, token, "name does refer to an existing class");
+    
+    token = next_token (parser);
+    if (st_token_type (token) != ST_TOKEN_KEYWORD_SELECTOR
+	|| !streq (st_token_text (token), "methodsFor:"))
+	filein_error (parser, token, "expected 'methodsFor:' message");
+
+    token = next_token (parser);
+    if (st_token_type (token) != ST_TOKEN_STRING_CONST)
+	filein_error (parser, token, "expected string constant");
+
+    token = next_token (parser);
+    if (st_token_type (token) != ST_TOKEN_BLOCK_BEGIN)
+	filein_error (parser, token, "expected '['");
+
+    token = next_token (parser);    
+
+    while (st_token_type (token) != ST_TOKEN_EOF &&
+	   st_token_type (token) != ST_TOKEN_BLOCK_END) {
+
+	STNode *node;
+	st_oop method;
+
+	node = st_parser_parse (parser->lexer, true, &error);
+	if (node == NULL)
+	    goto error;
+
+	method = st_generate_method (klass, node, &error);
+	if (method == st_nil)
+	    goto error;
+	
+	st_dictionary_at_put (st_behavior_method_dictionary (klass),
+			      node->selector,
+			      method);
+	
+	st_node_destroy (node);
+
+	token = st_lexer_current_token (parser->lexer);
+
+	continue;
+
+error:
+	st_node_destroy (node);
+	fprintf (stderr, "%s:%s\n", parser->filename, error->message);
+	exit (1);
     }
 
-    if (node->type != ST_MESSAGE_NODE
-	|| node->selector != st_symbol_new ("methodsFor:")
-	|| node->receiver->type != ST_VARIABLE_NODE) {
-	fprintf (stderr, "error: only methodFor: statements can be evaluated\n");
-	return st_nil;
-    }
+    if (st_token_type (token) != ST_TOKEN_BLOCK_END)
+	filein_error (parser, token, "expected ']'");
 
-    /* ignore categories for the moment
-     * 
-     * return the class the #methodFor was sent to
-     */
-    return st_dictionary_at (st_smalltalk, node->receiver->name);
 }
 
 static void
-st_file_in_for_class (st_oop klass, STInput *input)
+parse_filein (FileInParser *parser)
 {
-    char   *chunk;
-    GError *error = NULL;
+    STToken *token;
 
-    g_assert (st_object_is_class (klass));
-
-    while (st_input_look_ahead (input, 1) != ST_INPUT_EOF) {
+    token = next_token (parser);
+    
+    while (st_token_type (token) != ST_TOKEN_EOF) {
+	    
+	parse_category (parser);
 	
-	chunk = st_input_next_chunk (input);
-	if (!chunk || !strcmp (chunk, " "))
-	    break;
-
-	//	printf ("Chunk:\n%s\n", chunk);
-
-	st_compile_string (klass, chunk, &error);
-	if (error) {
-	    fprintf (stderr, "error: %s\n", error->message);
-	    g_error_free (error);
-	    g_free (chunk);
-	    break;
-	}
-	g_free (chunk);
+	token = next_token (parser);
     }
 }
 
 void
 st_file_in (const char *filename)
 {
-    STInput *input;
     char *contents;
     GError *error = NULL;
+    FileInParser *parser;
 
     g_assert (filename != NULL);
 
@@ -130,26 +185,13 @@ st_file_in (const char *filename)
 	return;
     }
     
-    input = st_input_new (contents);
+    parser = g_slice_new0 (FileInParser);
 
-    while (st_input_look_ahead (input, 1) != ST_INPUT_EOF) {
+    parser->lexer    = st_lexer_new (contents);
+    parser->filename = g_path_get_basename (filename);
 
-	bool saw_bang;
-	char *chunk;
-	st_oop klass;
+    parse_filein (parser);
 
-	saw_bang = st_input_look_ahead (input, 1) == '!';
-	if (saw_bang)
-	    st_input_consume (input);
+    g_slice_free (FileInParser, parser);
 
-	chunk = st_input_next_chunk (input);
-
-	klass = st_evaluate_string (chunk);
-
-	if (saw_bang) {
-	    st_file_in_for_class (klass, input);
-	    g_free (chunk);
-	}
-    }
-   
 }

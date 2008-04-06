@@ -26,7 +26,7 @@ void st_file_in (const char *filename);
 
 
 /* internal methods exposed for unit testing */
-STNode *st_parser_parse     (STLexer *lexer, GError **error);
+STNode *st_parser_parse     (STLexer *lexer, bool is_filein, GError **error);
 STNode *st_parse_expression (STLexer *lexer, GError **error);
 st_oop  st_generate_method  (st_oop klass, STNode *node, GError **error);
 void    st_print_method     (st_oop method);
