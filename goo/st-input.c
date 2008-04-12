@@ -50,10 +50,46 @@ struct STInput
     Marker marker;
 };
 
+static char *
+undouble_bangs (const char *chunk)
+{
+    int count = 0;
+    char *p = (char *) chunk;
+    char *buf;
+    int size;
+
+    size = strlen (chunk);
+
+    if (size < 2)
+	return g_strdup (chunk);
+
+    // count number of redundant bangs
+    while (p[0] && p[1]) {
+	if (p[0] == '!' && p[1] == '!')
+	    count++;
+	p++;
+    }
+    
+    buf = g_malloc (strlen (chunk) - count + 1);
+
+    /* copy over text skipping over redundant bangs */
+    p = (char *) chunk;
+    int i = 0;
+    while (*p) {
+	if (*p == '!')
+	    p++;
+	buf[i++] = *p;
+	p++;
+    }
+    buf[i] = 0;
+
+    return buf;
+}
+
 char *
 st_input_next_chunk (STInput *input)
 {
-    char *chunk = NULL;
+    char *chunk = NULL, *undoubled;
     guint start = st_input_index (input);
 
     while (st_input_look_ahead (input, 1) != ST_INPUT_EOF) {
@@ -78,10 +114,14 @@ st_input_next_chunk (STInput *input)
 	/* consume bang */
 	st_input_consume (input);
 
-	break;
+	undoubled = undouble_bangs (chunk);
+	g_free (chunk);
+	
+	return undoubled;
     }
 
-    return chunk;
+
+    return NULL;
 }
 
 

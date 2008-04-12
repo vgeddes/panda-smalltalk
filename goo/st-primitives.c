@@ -23,230 +23,270 @@
 */
 
 #include "st-primitives.h"
-#include "string.h"
+#include "st-interpreter.h"
+#include "st-object.h"
+
+#include <string.h>
 
 static void
-SmallInteger_add (void)
+SmallInteger_add (STInterpreter *state)
+{
+    st_oop x = ST_STACK_POP (state);
+    st_oop y = ST_STACK_POP (state);
+    st_oop z;
+
+    state->success = true;
+
+    if (!st_object_is_smi (x))
+	goto out;
+
+    if (!st_object_is_smi (y))
+	goto out;
+
+    z = st_smi_new (st_smi_value (x) + st_smi_value (y));
+    
+    ST_STACK_PUSH (state, z);
+
+out:
+    state->success = false;
+
+}
+
+static void
+SmallInteger_minus (STInterpreter *state)
+{
+    st_oop x = ST_STACK_POP (state);
+    st_oop y = ST_STACK_POP (state);
+    st_oop z;
+
+    state->success = true;
+
+    if (!st_object_is_smi (x))
+	goto out;
+
+    if (!st_object_is_smi (y))
+	goto out;
+
+    z = st_smi_new (st_smi_value (y) - st_smi_value (x));
+    
+    ST_STACK_PUSH (state, z);
+
+out:
+    state->success = false;
+}
+
+static void
+SmallInteger_lt (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_minus (void)
+SmallInteger_gt (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_lt (void)
+SmallInteger_le (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_gt (void)
+SmallInteger_ge (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_le (void)
+SmallInteger_eq (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_ge (void)
+SmallInteger_ne (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_eq (void)
+SmallInteger_mul (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_ne (void)
+SmallInteger_div (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_mul (void)
+SmallInteger_bitOr (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_div (void)
+SmallInteger_bitXor (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_bitOr (void)
+SmallInteger_bitAnd (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_bitXor (void)
+SmallInteger_bitShift (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_bitAnd (void)
+Float_add (STInterpreter *state)
 {
 }
 
 static void
-SmallInteger_bitShift (void)
+Float_minus (STInterpreter *state)
 {
 }
 
 static void
-Float_add (void)
+Float_lt (STInterpreter *state)
 {
 }
 
 static void
-Float_minus (void)
+Float_gt (STInterpreter *state)
 {
 }
 
 static void
-Float_lt (void)
+Float_le (STInterpreter *state)
 {
 }
 
 static void
-Float_gt (void)
+Float_ge (STInterpreter *state)
 {
 }
 
 static void
-Float_le (void)
+Float_eq (STInterpreter *state)
 {
 }
 
 static void
-Float_ge (void)
+Float_ne (STInterpreter *state)
 {
 }
 
 static void
-Float_eq (void)
+Float_mul (STInterpreter *state)
 {
 }
 
 static void
-Float_ne (void)
+Float_div (STInterpreter *state)
 {
 }
 
 static void
-Float_mul (void)
+Float_truncated (STInterpreter *state)
 {
 }
 
 static void
-Float_div (void)
+Float_fractionPart (STInterpreter *state)
 {
 }
 
 static void
-Float_truncated (void)
+Float_exponent (STInterpreter *state)
 {
 }
 
 static void
-Float_fractionPart (void)
+Object_at (STInterpreter *state)
 {
 }
 
 static void
-Float_exponent (void)
+Object_at_put (STInterpreter *state)
 {
 }
 
 static void
-Object_at (void)
+Object_size (STInterpreter *state)
 {
 }
 
 static void
-Object_at_put (void)
+Object_class (STInterpreter *state)
 {
 }
 
 static void
-Object_size (void)
+Object_hash (STInterpreter *state)
 {
 }
 
 static void
-Object_class (void)
+Object_identityHash (STInterpreter *state)
 {
 }
 
 static void
-Object_hash (void)
+Object_copy (STInterpreter *state)
 {
 }
 
 static void
-Object_identityHash (void)
+Object_equivalent (STInterpreter *state)
 {
 }
 
 static void
-Object_copy (void)
+Object_perform (STInterpreter *state)
 {
 }
 
 static void
-Object_equivalent (void)
+Object_performWithArguments (STInterpreter *state)
 {
 }
 
 static void
-Object_perform (void)
+Behavior_new (STInterpreter *state)
 {
 }
 
 static void
-Object_performWithArguments (void)
+Behavior_newArgument (STInterpreter *state)
 {
 }
 
 static void
-Behavior_new (void)
+ByteArray_at (STInterpreter *state)
 {
 }
 
 static void
-Behavior_newArgument (void)
+ByteArray_at_put (STInterpreter *state)
 {
 }
 
 static void
-ByteArray_at (void)
+BlockContext_value (STInterpreter *state)
 {
 }
 
 static void
-ByteArray_at_put (void)
+BlockContext_valueArg (STInterpreter *state)
 {
 }
 
 static void
-BlockContext_value (void)
+BlockContext_valueWithArgs (STInterpreter *state)
 {
 }
 
 static void
-BlockContext_valueArg (void)
-{
-}
-
-static void
-BlockContext_valueWithArgs (void)
-{
-}
-
-static void
-SystemDictionary_quit (void)
+SystemDictionary_quit (STInterpreter *state)
 {
 }
 
@@ -305,15 +345,15 @@ const STPrimitive st_primitives[] = {
     { "SystemDictionary_quit",        SystemDictionary_quit       },
 };
 
-/* returns -1 if there no primitive function corresponding
+/* returns 0 if there no primitive function corresponding
  * to the given name */
 int
 st_primitive_index_for_name (const char *name)
 {
     g_assert (name != NULL);
     for (int i = 0; i < G_N_ELEMENTS (st_primitives); i++)
-	if (strcmp (name, st_primitives[i].name) == 0)
+	if (streq (name, st_primitives[i].name))
 	    return i;
-    return -1;
+    return 0xFF;
 }
 

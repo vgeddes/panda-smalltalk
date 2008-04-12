@@ -47,7 +47,7 @@ typedef struct
     STLexer  *lexer;
     bool      in_block;
 
-    GError  **error;  
+    STError  **error;  
     jmp_buf   jmploc;
 } STParser;
     
@@ -57,12 +57,17 @@ parse_error (STParser   *parser,
 	     const char *message,
 	     STToken    *token)
 {
-    g_set_error (parser->error,
-		 ST_COMPILATION_ERROR,
-		 ST_COMPILATION_ERROR_FAILED,
-		 "%i: %s", st_token_line (token), message);
     
-   /* go back to start */
+    if (parser->error) {
+	
+	st_error_set (parser->error,
+		      ST_COMPILER_ERROR,
+		      message);
+	 
+	st_error_set_data (*parser->error, "line", GINT_TO_POINTER (st_token_line (token)));
+    }
+    
+    /* go back to start */
     longjmp (parser->jmploc, 0);
 }
 
@@ -753,7 +758,7 @@ parse_message_pattern (STParser *parser, STNode *method)
     STTokenType  type;
     STNode *arguments = NULL;
 
-    token = current (parser->lexer);    
+    token = next (parser, parser->lexer);    
     type  = st_token_type (token);
 
     if (type == ST_TOKEN_IDENTIFIER) {
@@ -810,77 +815,27 @@ parse_message_pattern (STParser *parser, STNode *method)
     method->arguments = arguments;
 }
 
-STNode *
-st_parse_expression (STLexer *lexer, GError **error)
-{
-    STNode   *node;
-    STParser *parser;
-
-    g_assert (lexer != NULL);
-
-    parser = g_slice_new0 (STParser);
-    
-    parser->lexer = lexer;
-    parser->error = error;
-    parser->in_block = false;
-
-    if (!setjmp (parser->jmploc)) {
-	next (parser, parser->lexer);
-	node = parse_expression (parser);
-    } else
-	node = NULL;
-
-    g_slice_free (STParser, parser);
-
-    return node;
-
-}
-
 static STNode *
-parse_method (STParser *parser, bool is_filein)
+parse_method (STParser *parser)
 {   
     STNode *method;
-    STToken *token;
 
     parser->in_block = false;
 
     method = st_node_new (ST_METHOD_NODE);
- 
-    if (!is_filein)
-	token = next (parser, parser->lexer);
    
     parse_message_pattern (parser, method);
-    
-    token = current (parser->lexer);
-
-    if (is_filein) {
-
-	if (st_token_type (token) != ST_TOKEN_BLOCK_BEGIN)
-	    parse_error (parser, "expected '['", token);
-	token = next (parser, parser->lexer);	
-    }
     
     method->temporaries = parse_temporaries (parser);
     method->primitive   = parse_primitive (parser);
     method->statements  = parse_statements (parser);
-
-    token = current (parser->lexer);
-
-    if (is_filein) {
-
-	if (st_token_type (token) != ST_TOKEN_BLOCK_END)
-	    parse_error (parser, "expected ']'", token);
-	token = next (parser, parser->lexer);
-    }    
-
 
     return method;
 } 
 
 STNode *
 st_parser_parse (STLexer *lexer,
-		 bool     is_filein,
-		 GError **error)
+		 STError **error)
 {
     STParser *parser;
     STNode   *method;
@@ -894,7 +849,7 @@ st_parser_parse (STLexer *lexer,
     parser->in_block = false;
 
     if (!setjmp (parser->jmploc))
-	method = parse_method (parser, is_filein);
+	method = parse_method (parser);
     else
 	method = NULL;
 

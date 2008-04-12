@@ -36,12 +36,12 @@ Object subclass: #Behavior
        classVariableNames: ''!
 
 Behavior subclass: #Class
-	 instanceVariableNames: 'name classPool'
-         classVariableNames: ''!
+         instanceVariableNames: 'name classPool'
+	     classVariableNames: ''!
 
 Behavior subclass: #Metaclass
-	 instanceVariableNames: 'instanceClass'
-         classVariableNames: ''!
+	instanceVariableNames: 'instanceClass'
+	classVariableNames: ''!
 
 
 "Collections"
@@ -89,15 +89,15 @@ SequenceableCollection subclass: #OrderedCollection
 "Execution"
 
 Object subclass: #ContextPart
-       instanceVariableNames: 'parent method stack sp ip receiver temporaries returnContext'
+       instanceVariableNames: 'sender method ip sp'
        classVariableNames: ''!
 
 ContextPart subclass: #MethodContext
-	    instanceVariableNames: ''
+	    instanceVariableNames: 'receiver'
             classVariableNames: ''!
 
 MethodContext subclass: #BlockContext
-	    instanceVariableNames: 'outerContext handledException handlerBlock ensureBlock'
+	    instanceVariableNames: ''
             classVariableNames: ''!
 
 Object subclass: #Process

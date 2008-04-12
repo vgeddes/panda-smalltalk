@@ -22,25 +22,21 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-SmallInteger methodsFor: 'arithmetic'
-[
+SmallInteger methodFor: 'arithmetic'!
++ aNumber
+	<primitive: 'SmallInteger_add'>
+	^ aNumber isSmallInteger
+		 	  ifTrue: [ self asLargeInteger + aNumber asLargeInteger ]
+     		  ifFalse: [ super + aNumber ]!
 
-	+ aNumber
-	[
-		<primitive: 'SmallInteger_plus'>
-		^ aNumber isSmallInteger
-			 	  ifTrue: [ self asLargeInteger + aNumber asLargeInteger ]
-	     		  ifFalse: [ super + aNumber ]
-	]
-
-	- aNumber
-	[
-		<primitive: 'SmallInteger_minus'>
-		^ aNumber isSmallInteger
-	      		  ifTrue: [ self asLargeInteger - aNumber asLargeInteger ]
-	     		  ifFalse: [ super - aNumber ]
-	]
-
+SmallInteger methodFor: 'arithmetic'!
+- aNumber
+	<primitive: 'SmallInteger_minus'>
+	^ aNumber isSmallInteger
+	      	  ifTrue: [ self asLargeInteger - aNumber asLargeInteger ]
+	     	  ifFalse: [ super - aNumber ]!
+	
+"
 	* aNumber
 	[
 		<primitive: 'SmallInteger_mul'>
@@ -194,3 +190,4 @@ SmallInteger methodsFor: 'coercing'
 		^ 1
 	]
 ]
+"

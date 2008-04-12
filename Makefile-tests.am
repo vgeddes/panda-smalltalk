@@ -4,17 +4,20 @@ noinst_PROGRAMS += tests/test-lexer tests/test-parser tests/test-generator
 tests_test_lexer_SOURCES = tests/test-lexer.c
 
 tests_test_lexer_LDADD =    $(GLIB_LIBS) libgoo.la
-tests_test_lexer_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS) -Igoo
-tests_test_lexer_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -Igoo
+tests_test_lexer_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
+tests_test_lexer_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/goo
 
 tests_test_parser_SOURCES = tests/test-parser.c
 
 tests_test_parser_LDADD =    $(GLIB_LIBS) libgoo.la
-tests_test_parser_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS) -Igoo
-tests_test_parser_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -Igoo -Ilibs/libtommath
+tests_test_parser_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
+tests_test_parser_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/goo -I$(top_srcdir)/libs/libtommath
 
 tests_test_generator_SOURCES = tests/test-generator.c
 
 tests_test_generator_LDADD =    $(GLIB_LIBS) libgoo.la
-tests_test_generator_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS) -Igoo
-tests_test_generator_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -Igoo -Ilibs/libtommath
+tests_test_generator_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
+tests_test_generator_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/goo -I$(top_srcdir)/libs/libtommath
+
+
+DISTCLEANFILES += tests/test-lexer tests/test-parser tests/test-generator

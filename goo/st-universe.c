@@ -27,7 +27,7 @@
 #include "st-object.h"
 #include "st-float.h"
 #include "st-association.h"
-#include "st-compiled-code.h"
+#include "st-compiled-method.h"
 #include "st-array.h"
 #include "st-byte-array.h"
 #include "st-small-integer.h"
@@ -67,7 +67,7 @@ st_oop
     st_string_class          = 0,
     st_symbol_class          = 0,
     st_compiled_method_class = 0,
-    st_compiled_block_class  = 0;
+    st_method_context_class  = 0;
 
 st_oop
 st_global_get (const char *name)
@@ -94,7 +94,7 @@ enum
     INSTANCE_SIZE_ASSOCIATION = 2,
     INSTANCE_SIZE_STRING = 0,
     INSTANCE_SIZE_COMPILED_METHOD = 3,
-    INSTANCE_SIZE_COMPILED_BLOCK = 4,
+    INSTANCE_SIZE_METHOD_CONTEXT = 5,
 
 };
 
@@ -414,7 +414,7 @@ st_bootstrap_universe (void)
     st_symbol_class = st_class_new (st_symbol_vtable ());
     st_association_class = st_class_new (st_association_vtable ());
     st_compiled_method_class = st_class_new (st_compiled_method_vtable ());
-    st_compiled_block_class = st_class_new (st_compiled_block_vtable ());
+    st_method_context_class = st_class_new (st_method_context_vtable ());
 
     st_heap_object_set_class (st_nil, st_undefined_object_class);
 
@@ -434,6 +434,7 @@ st_bootstrap_universe (void)
     st_behavior_set_instance_size (st_false_class, 0);
     st_behavior_set_instance_size (st_set_class, 2);
     st_behavior_set_instance_size (st_dictionary_class, 2);
+    st_behavior_set_instance_size (st_method_context_class, 5);
 
     /* create special object instances */
     st_true = st_object_new (st_true_class);
@@ -461,13 +462,14 @@ st_bootstrap_universe (void)
     declare_class ("Dictionary", st_dictionary_class);
     declare_class ("Association", st_association_class);
     declare_class ("CompiledMethod", st_compiled_method_class);
-    declare_class ("CompiledBlock", st_compiled_block_class);
+    declare_class ("MethodContext", st_method_context_class);
 
     /* parse class declarations */
     parse_classes ("../smalltalk/ClassDefinitions.st");
 
+	/* parse methods */
     st_file_in ("../smalltalk/Association.st");
-    st_file_in ("../smalltalk/UndefinedObject.st");
+    st_file_in ("../smalltalk/SmallInteger.st");
 
     /*
     st_file_in ("../smalltalk/Class.st");

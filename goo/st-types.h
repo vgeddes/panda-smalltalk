@@ -65,7 +65,7 @@ typedef uintptr_t st_oop;
 /* signed integral type which can hold the value of a smi immediate
  */
 #if ST_HOST32 == 1
-typedef int32_t st_smi;
+typedef int st_smi;
 #else
 typedef int64_t st_smi;
 #endif

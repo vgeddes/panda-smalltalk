@@ -22,15 +22,6 @@
  * THE SOFTWARE.
 */
 
-/* Definition of Class objects
- *
- * Inspired by Strongtalk, we include a vtable in each class object
- * See the descriptions in st-vtable.[ch] for an overview of the virtual dispatch
- * mechanism. The vtable is only used in the VM layer, and allows the VM
- * to work with oops's in an object-orientated way.
- *
- */
-
 #ifndef __ST_CLASS_H__
 #define __ST_CLASS_H__
 

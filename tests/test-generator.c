@@ -3,7 +3,9 @@
 #include <st-lexer.h>
 #include <st-node.h>
 #include <st-universe.h>
+#include <st-object.h>
 
+#include <stdlib.h>
 #include <glib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -19,7 +21,6 @@ main (int argc, char *argv[])
     char c;
     int i = 0;
 
-
     printf ("Enter a Smalltalk method (for the Association class):\n");
 
     while ((c = getchar ()) != EOF && i < (BUF_SIZE - 1))
@@ -29,21 +30,25 @@ main (int argc, char *argv[])
     /* the big bang ! */
     st_bootstrap_universe ();
     
+    /* compile */
     STLexer *lexer = st_lexer_new (buffer);
+    STError *error = NULL;
+    STNode  *node;
+    st_oop   method;
 
-    GError *error = NULL;
-    
-    STNode *node = st_parser_parse (lexer, false, &error);
-    if (!node) {
-	fprintf (stderr, "error: %s\n", error->message);
-	g_error_free (error);
+    node = st_parser_parse (lexer, &error);
+    if (error) {
+	fprintf (stderr, "%s:%i: %s\n", "test-generator",
+		 ST_ERROR_LINE (error),
+		 error->message);
 	exit (1);
     }
 
-    st_oop method = st_generate_method (st_association_class, node, &error);
+    method = st_generate_method (st_object_class (st_association_class), node, &error);
     if (error) {
-	fprintf (stderr, "error: %s\n", error->message);
-	g_error_free (error);
+	fprintf (stderr, "%s:%i: %s\n", "test-generator",
+		 ST_ERROR_LINE (error),
+		 error->message);
 	exit (1);
     }
 

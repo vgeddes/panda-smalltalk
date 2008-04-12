@@ -1,14 +1,17 @@
 
+SUBDIRS = po
+
 ACLOCAL_AMFLAGS = -I .
 
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 bin_PROGRAMS = 
 noinst_PROGRAMS =
+DISTCLEANFILES =
 
 EXTRA_DIST = \
-	COPYING.GPL \
-	COPYING.LGPL \
+	COPYING    \
+	st-mode.el \
 	autogen.sh
 
 include Makefile-libtommath.am

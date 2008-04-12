@@ -28,7 +28,7 @@
 #include "st-object.h"
 #include "st-symbol.h"
 #include "st-hashed-collection.h"
-#include "st-compiled-code.h"
+#include "st-compiled-method.h"
 #include "st-byte-array.h"
 #include "st-universe.h"
 #include "st-class.h"
@@ -42,70 +42,7 @@
 	
 #define CSTR(string) ((char *) st_byte_array_bytes (string))
 
-/* bytecodes */ 
-typedef enum
-{
-    PUSH_TEMP = 1,
-    PUSH_INSTVAR,
-    PUSH_LITERAL_CONST,
-    PUSH_LITERAL_VAR,
 
-    STORE_LITERAL_VAR,
-    STORE_TEMP,
-    STORE_INSTVAR,
-
-    STORE_POP_LITERAL_VAR,
-    STORE_POP_TEMP,
-    STORE_POP_INSTVAR,
-
-    PUSH_SELF,
-    PUSH_NIL,
-    PUSH_TRUE,
-    PUSH_FALSE,
-
-    RETURN_STACK_TOP,
-    BLOCK_RETURN,
-
-    POP_STACK_TOP,
-
-    PUSH_ACTIVE_CONTEXT,
-
-    BLOCK_COPY,
-
-    JUMP_TRUE,
-    JUMP_FALSE,
-    JUMP,
-
-    SEND,        /* B, B (arg count), B (selector index) */ 
-    SEND_SUPER,
-
-    SEND_PLUS,
-    SEND_MINUS,
-    SEND_LT,
-    SEND_GT,
-    SEND_LE,
-    SEND_GE,
-    SEND_EQ,
-    SEND_NE,
-    SEND_MUL,
-    SEND_DIV,
-    SEND_MOD,
-    SEND_BITSHIFT,
-    SEND_BITAND,
-    SEND_BITOR,
-    SEND_BITXOR,
-
-    SEND_AT,
-    SEND_AT_PUT,
-    SEND_SIZE,
-    SEND_VALUE,
-    SEND_VALUE_ARG,
-    SEND_IDENTITY_EQ,
-    SEND_CLASS,
-    SEND_NEW,
-    SEND_NEW_ARG,
-
-} Code;
 
 enum {
     SPECIAL_PLUS,
@@ -144,7 +81,7 @@ typedef struct
     st_oop   klass;
 
     jmp_buf  jmploc;
-    GError   **error;
+    STError **error;
 
     guint    max_stack_depth;
  
@@ -268,10 +205,14 @@ static void generate_statements (Generator *gt, STNode *statements, bool optimiz
 static void
 generation_error (Generator *gt, const char *msg, STNode *node)
 {
-    g_set_error (gt->error,
-		 ST_COMPILATION_ERROR,
-		 ST_COMPILATION_ERROR_FAILED,
-		 "%i: %s", node->line, msg);
+    if (gt->error) {
+
+	st_error_set (gt->error,
+		      ST_COMPILER_ERROR,
+		      msg);
+
+	st_error_set_data (*gt->error, "line", (gpointer) node->line);
+    }
 
     longjmp (gt->jmploc, 0);
 }
@@ -1390,7 +1331,7 @@ st_compilation_error_quark (void)
 }
 
 st_oop
-st_generate_method (st_oop klass, STNode *node, GError **error)
+st_generate_method (st_oop klass, STNode *node, STError **error)
 {
     Generator *gt;
     st_oop     method;
@@ -1415,19 +1356,20 @@ st_generate_method (st_oop klass, STNode *node, GError **error)
 
     method = st_object_new (st_compiled_method_class);
 
-    st_compiled_code_set_arg_count   (method, st_node_list_length (node->arguments));
-    st_compiled_code_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
-    st_compiled_code_set_stack_depth (method, gt->max_stack_depth);
+    st_compiled_method_set_arg_count   (method, st_node_list_length (node->arguments));
+    st_compiled_method_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
+    st_compiled_method_set_stack_depth (method, gt->max_stack_depth);
 
-    if (node->primitive >= 0) {
-	st_compiled_code_set_flags (method, 1);	
-	st_compiled_code_set_primitive_index (method, node->primitive);
+    if (node->primitive < 0xFF) {
+	st_compiled_method_set_flags (method, 1);	
+	st_compiled_method_set_primitive_index (method, node->primitive);
     } else {
-	st_compiled_code_set_flags (method, 0);	
+	st_compiled_method_set_primitive_index (method, 0xFF);
+	st_compiled_method_set_flags (method, 0);	
     }
 
-    st_compiled_code_set_literals (method, create_literals_array (gt));
-    st_compiled_code_set_bytecodes (method, create_bytecode_array (gt)); 
+    st_compiled_method_set_literals (method, create_literals_array (gt));
+    st_compiled_method_set_bytecodes (method, create_bytecode_array (gt)); 
 
     generator_destroy (gt);
 
@@ -1712,17 +1654,17 @@ st_print_method (st_oop method)
     guchar *bytecodes;
     int     size;
 
-    printf ("flags: %i; ", st_compiled_code_flags (method));
-    printf ("arg-count: %i; ", st_compiled_code_arg_count (method));
-    printf ("temp-count: %i; ", st_compiled_code_temp_count (method));
-    printf ("stack-depth: %i; ", st_compiled_code_stack_depth (method));
-    printf ("primitive: %i;\n", st_compiled_code_primitive_index (method));
+    printf ("flags: %i; ", st_compiled_method_flags (method));
+    printf ("arg-count: %i; ", st_compiled_method_arg_count (method));
+    printf ("temp-count: %i; ", st_compiled_method_temp_count (method));
+    printf ("stack-depth: %i; ", st_compiled_method_stack_depth (method));
+    printf ("primitive: %i;\n", st_compiled_method_primitive_index (method));
     
     printf ("\n");
 
-    literals = st_compiled_code_literals (method);
-    bytecodes = (guchar *) st_byte_array_bytes (st_compiled_code_bytecodes (method));
-    size = st_byte_array_size (st_compiled_code_bytecodes (method));
+    literals = st_compiled_method_literals (method);
+    bytecodes = (guchar *) st_byte_array_bytes (st_compiled_method_bytecodes (method));
+    size = st_byte_array_size (st_compiled_method_bytecodes (method));
 
     print_bytecodes (literals, bytecodes, size);
     

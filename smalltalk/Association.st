@@ -21,53 +21,33 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-Association methodsFor: 'basic'
-[
-	key: aKey value: aValue
-	[
-		"Create an association aKey -> aValue"
-    	^ self new key: aKey value: aValue
-	]
+Association methodFor: 'basic'!
+key: aKey value: aValue
+	"Create an association aKey -> aValue"
+	^ self new key: aKey value: aValue!
 
-	key
-	[
-		"Answer the association's key"
-    	^ key
-	]
-]
+Association methodFor: 'accessing'!
+key
+	"Answer the association's key"
+	^ key!
 
-Association methodsFor: 'accessing'
-[		
-	key
-	[
-		"Answer the association's key"
-    	^ key
-	]
+Association methodFor: 'accessing'!
+value
+	"Answer the association's value"
+	^ value!
 
-	value: aValue
-	[
-		"Set the value of the association to aValue"
-    	value := aValue
-	]
-	
-	key: aKey value: aValue
-	[
-		"Set the key and the value of the association"
-    	key := aKey.
-    	value := aValue
-	]
+Association methodFor: 'accessing'!
+value: aValue
+	"Set the value of the association to aValue"
+	value := aValue!
 
-	value
-	[
-		"Answer the association's value"
-    	^ value
-	]
-]
+Association methodFor: 'accessing'!
+key: aKey value: aValue
+	"Set the key and the value of the association"
+	key := aKey.
+	value := aValue!
 
-Association methodsFor: 'printing'
-[
-	printString
-	[
- 		^ self key printString, '->', self value printString
-	]
-]
+Association methodFor: 'printing'!
+printString
+	^ self key printString, '->', self value printString!
+

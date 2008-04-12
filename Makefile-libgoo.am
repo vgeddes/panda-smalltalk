@@ -17,8 +17,8 @@ libgoo_la_SOURCES = \
 	goo/st-small-integer.c \
 	goo/st-large-integer.h \
 	goo/st-large-integer.c \
-	goo/st-compiled-code.h \
-	goo/st-compiled-code.c \
+	goo/st-compiled-method.h \
+	goo/st-compiled-method.c \
 	goo/st-universe.h \
 	goo/st-universe.c \
 	goo/st-association.h \
@@ -29,6 +29,8 @@ libgoo_la_SOURCES = \
 	goo/st-symbol.c \
 	goo/st-class.h \
 	goo/st-class.c \
+	goo/st-context.h \
+	goo/st-context.c \
 	goo/st-object.h \
 	goo/st-object.c \
 	goo/st-vtable.c \
@@ -45,10 +47,14 @@ libgoo_la_SOURCES = \
 	goo/st-lexer.h \
 	goo/st-input.h \
 	goo/st-input.c \
+	goo/st-interpreter.h \
+	goo/st-interpreter.c \
 	goo/st-types.h
 
-libgoo_la_CPPFLAGS =      \
-	-I$(top_srcdir)   \
+libgoo_la_CPPFLAGS =          \
+	-I$(top_srcdir)       \
+	-I$(top_srcdir)/goo   \
+	-I$(top_builddir)   \
         -I$(top_srcdir)/libs/libtommath \
         -Igoo \
         $(AM_CPPFLAGS) \
@@ -66,5 +72,5 @@ noinst_PROGRAMS += goo/bootstrap
 goo_bootstrap_SOURCES = goo/st-bootstrap.c
 goo_bootstrap_LDADD =    libgoo.la 
 goo_bootstrap_CFLAGS =   $(WARN_CFLAGS)
-goo_bootstrap_CPPFLAGS = $(GLIB_CFLAGS) -Igoo
+goo_bootstrap_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)/goo
 

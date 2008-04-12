@@ -51,7 +51,7 @@ extern st_oop
     st_string_class,
     st_symbol_class,
     st_compiled_method_class,
-    st_compiled_block_class;
+    st_method_context_class;
 
 
 void   st_bootstrap_universe (void);

@@ -49,9 +49,29 @@ enum
     st_tag_mask = ST_NTH_MASK (2),
 };
 
-extern GList *objects;
-
 st_oop st_allocate_object (gsize size);
 
+
+/* generic error object */
+typedef struct {
+    guint   code;
+    char   *message;
+    GData  *datalist;
+} STError;
+
+void     st_error_set        (STError   **error,
+                              guint       code,
+                              const char *message);
+
+void     st_error_destroy    (STError *error);
+
+gpointer st_error_get_data   (STError    *error,
+			      const char *key);
+
+void     st_error_set_data   (STError    *error,
+			      const char *key,
+			      gpointer    data);
+
+#define ST_ERROR_LINE(error) (GPOINTER_TO_INT (st_error_get_data (error, "line")))
 
 #endif /* __ST_UTILS_H__ */

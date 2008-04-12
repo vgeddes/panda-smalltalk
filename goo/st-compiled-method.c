@@ -1,5 +1,5 @@
 /*
- * st-compiled-code.c
+ * st-compiled-method.c
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -22,7 +22,7 @@
  * THE SOFTWARE.
 */
 
-#include "st-compiled-code.h"
+#include "st-compiled-method.h"
 
 /* CompiledMethod */
 
@@ -40,22 +40,4 @@ st_compiled_method_vtable_init (STVTable * table)
 {
     table->is_compiled_method = is_compiled_method;
 }
-
-
-/* CompiledBlock */
-
-ST_DEFINE_VTABLE (st_compiled_block, st_heap_object_vtable ());
-
-static bool
-is_compiled_block (void)
-{
-    return true;
-}
-
-static void
-st_compiled_block_vtable_init (STVTable * table)
-{
-    table->is_compiled_block = is_compiled_block;
-}
-
 

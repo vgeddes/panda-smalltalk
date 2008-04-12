@@ -26,6 +26,8 @@
 #include "st-utils.h"
 #include "st-universe.h"
 
+#include "st-interpreter.h"
+
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +37,9 @@ int
 main (int argc, char *argv[])
 {
     st_bootstrap_universe ();
-    return 0;
-    
+
+    st_interpreter_main ();
+
+    return 0;    
 }
 

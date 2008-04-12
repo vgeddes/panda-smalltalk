@@ -28,33 +28,62 @@
 
 #include <stdint.h>
 
-GList *objects = NULL;
-
 st_oop
 st_allocate_object (gsize size)
 {
     // all heap objects have at least a header of two st_oops
     g_assert (size >= 2);
-    /* no gc fanciness yet */
 
+    /* no gc fanciness yet ! */
     st_oop object = ST_OOP (g_malloc (size * sizeof (st_oop)));
-    objects = g_list_append (objects, (void*) object);
 
     return object;
-
 }
 
-st_oop
-st_allocate_class (gsize size)
+void
+st_error_set (STError   **error,
+	      guint       code,
+              const char *message)
 {
-    // all class objects have at least a header of two st_oops
-    g_assert (size >= 2);
-    /* no gc fanciness yet */
+    if (!error)
+	return;
 
-    STVTable** object = g_malloc (sizeof (STVTable*) + sizeof (st_oop) * size);
+    *error = g_slice_new0 (STError);
 
-    objects = g_list_append (objects, ST_OOP (object + 1));
-    
-    return ST_OOP (object + 1);
+    (*error)->code = code;
+    (*error)->message = g_strdup (message);
 
+    g_datalist_init (&(*error)->datalist);
+}
+
+void
+st_error_destroy (STError *error)
+{
+    if (!error)
+	return;
+
+    g_free (error->message);
+    g_datalist_clear (&error->datalist);
+    g_slice_free (STError, error);
+}
+
+gpointer
+st_error_get_data (STError     *error,
+		   const char  *key)
+{
+    g_assert (error != NULL);
+
+    g_datalist_get_data (&error->datalist, key);
+}
+
+void
+st_error_set_data (STError    *error,
+		   const char *key,
+		   gpointer   data)
+{
+    g_assert (error != NULL);
+
+    g_datalist_set_data (&error->datalist,
+			 key,
+			 data);
 }

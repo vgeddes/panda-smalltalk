@@ -26,8 +26,9 @@
 #define __ST_PRIMITIVES_H__
 
 #include <glib.h>
+#include <st-interpreter.h>
 
-typedef void (*STPrimitiveFunc) (void);
+typedef void (*STPrimitiveFunc) (STInterpreter *state);
 
 typedef struct
 {
