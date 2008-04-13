@@ -49,7 +49,7 @@ typedef enum
     ST_COMPILED_METHOD_RETURN_LITERAL,
     ST_COMPILED_METHOD_PRIMITIVE,
 
-} st_compiled_method_flag;
+} STCompiledMethodFlags;
 
 typedef enum
 {
@@ -61,7 +61,7 @@ typedef enum
     ST_COMPILED_METHOD_LITERAL_ONE,
     ST_COMPILED_METHOD_LITERAL_TWO,
 
-} st_compiled_method_literal_type;
+} STCompiledMethodLiteralType;
 
 
 INLINE st_oop   st_compiled_method_header          (st_oop code);
@@ -76,10 +76,10 @@ INLINE int      st_compiled_method_stack_depth     (st_oop code);
 
 INLINE int      st_compiled_method_primitive_index (st_oop code);
 
-INLINE int      st_compiled_method_flags           (st_oop code);
+INLINE STCompiledMethodFlags      st_compiled_method_flags           (st_oop code);
 
 
-INLINE void     st_compiled_method_set_flags           (st_oop code, int flags);
+INLINE void     st_compiled_method_set_flags           (st_oop code, STCompiledMethodFlags flags);
 
 INLINE void     st_compiled_method_set_arg_count       (st_oop code, int count);
 
@@ -89,7 +89,7 @@ INLINE void     st_compiled_method_set_stack_depth     (st_oop code, int depth);
 
 INLINE void     st_compiled_method_set_instvar_index   (st_oop code, int depth);
 
-INLINE void     st_compiled_method_set_literal_type    (st_oop code, st_compiled_method_literal_type literal_type);
+INLINE void     st_compiled_method_set_literal_type    (st_oop code, STCompiledMethodLiteralType literal_type);
 
 INLINE void     st_compiled_method_set_primitive_index (st_oop code, int index);
 
@@ -236,14 +236,14 @@ st_compiled_method_primitive_index (st_oop code)
     return GET_BITFIELD (HEADER (code), primitive);
 }
 
-INLINE int
+INLINE STCompiledMethodFlags
 st_compiled_method_flags (st_oop code)
 {   
     return GET_BITFIELD (HEADER (code), flag);
 }
 
 INLINE void
-st_compiled_method_set_flags (st_oop code, int flags)
+st_compiled_method_set_flags (st_oop code, STCompiledMethodFlags flags)
 {
     HEADER (code) = SET_BITFIELD (HEADER (code), flag, flags);
 }
@@ -279,7 +279,7 @@ st_compiled_method_set_instvar_index (st_oop code, int index)
 }
 
 INLINE void
-st_compiled_method_set_literal_type (st_oop code, st_compiled_method_literal_type literal_type)
+st_compiled_method_set_literal_type (st_oop code, STCompiledMethodLiteralType literal_type)
 {
     HEADER (code) = SET_BITFIELD (HEADER (code), literal, literal_type);
 }

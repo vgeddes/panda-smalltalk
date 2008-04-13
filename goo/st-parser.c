@@ -823,6 +823,8 @@ parse_method (STParser *parser)
     parser->in_block = false;
 
     method = st_node_new (ST_METHOD_NODE);
+
+    method->primitive = -1;
    
     parse_message_pattern (parser, method);
     

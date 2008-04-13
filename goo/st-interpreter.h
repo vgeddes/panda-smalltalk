@@ -12,14 +12,16 @@ typedef struct {
 
     st_oop  receiver;
     st_oop  method;  
-    st_oop *literals;
+
     guchar *bytecodes;
     guint   sp;
     guint   ip;
-    
+
+    st_oop *literals;    
+    st_oop *temps;
     st_oop *stack;
 
-    bool success;
+    bool    success;
 
 } STInterpreter;
 

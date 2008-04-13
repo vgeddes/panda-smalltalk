@@ -55,13 +55,13 @@ typedef struct
     st_oop stack[];
 } STBlockContext;
 
+st_oop  st_method_context_new (st_oop method);
 
+st_oop *st_method_context_temporary_frame (st_oop context);
+st_oop *st_method_context_stack_frame     (st_oop context);
 
-st_oop st_method_context_new (guint stack_size);
-
-guint st_method_context_vtable (void);
-guint st_block_context_vtable (void);
-
+guint   st_method_context_vtable  (void);
+guint   st_block_context_vtable   (void);
 
 
 #define ST_CONTEXT_PART(oop)       ((STContextPart *)   ST_POINTER (oop))

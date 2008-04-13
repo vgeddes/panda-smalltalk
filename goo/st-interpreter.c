@@ -18,11 +18,21 @@ create_doIt_method (void)
 {
     STError *error = NULL;
     
-    static const char string[] = 
+    static const char string1[] = 
 	"doIt"
-	"    ^ 3 - 12 + 2";
+	"    | x y |"
+	"    x := 2 + 1."
+	"    y := 2 - 1."
+	"    ^ (x + y) increment";
 
-    st_compile_string (st_undefined_object_class, string, &error);
+    static const char string2[] = 
+	"increment"
+	"    ^ self + 1";
+
+    st_compile_string (st_undefined_object_class, string1, &error);
+    g_assert (error == NULL);
+
+    st_compile_string (st_smi_class, string2, &error);
     g_assert (error == NULL);
 
     return st_dictionary_at (st_behavior_method_dictionary (st_undefined_object_class), st_symbol_new ("doIt"));
@@ -71,14 +81,29 @@ send_unary_message (st_oop sender,
     int stack_size;
 
     method = lookup_method (receiver, selector);
-    if (!method)
-	return st_nil;
+    g_assert (method != st_nil); 
 
-    stack_size = st_compiled_method_stack_depth (method); 
-
-    context = st_method_context_new (stack_size);
+    context = st_method_context_new (method);
 
     ST_CONTEXT_PART_SENDER (context) = sender;
+    ST_CONTEXT_PART_METHOD (context) = method;
+
+    ST_CONTEXT_PART_IP (context) = st_smi_new (0);
+    ST_CONTEXT_PART_SP (context) = st_smi_new (0);
+
+    ST_METHOD_CONTEXT_RECEIVER (context) = receiver;
+
+    return context;
+}
+
+static st_oop
+create_new_context (st_oop parent, st_oop receiver, st_oop method)
+{
+    st_oop context;
+
+    context = st_method_context_new (method);
+
+    ST_CONTEXT_PART_SENDER (context) = parent;
     ST_CONTEXT_PART_METHOD (context) = method;
 
     ST_CONTEXT_PART_IP (context) = st_smi_new (0);
@@ -121,13 +146,34 @@ interpreter_loop (STInterpreter *state)
 
 	switch (*ip) {
 
+	case STORE_POP_TEMP:
+	
+	    state->temps[ip[1]] = ST_STACK_POP (state);
+	    
+	    ip += 2;
+	    break;
+
+	case STORE_TEMP:
+	
+	    state->temps[ip[1]] = ST_STACK_PEEK (state);
+	    
+	    ip += 2;
+	    break;
+
+	case PUSH_TEMP:
+	
+	    ST_STACK_PUSH (state, state->temps[ip[1]]);
+	    
+	    ip += 2;
+	    break;
+
 	case PUSH_SELF:
 	    
 	    ST_STACK_PUSH (state, state->receiver);
-
+	    
 	    ip++;
 	    break;
-
+	    
 	case PUSH_TRUE:
 	    
 	    ST_STACK_PUSH (state, st_true);
@@ -161,6 +207,7 @@ interpreter_loop (STInterpreter *state)
 	{
 	    st_oop receiver;
 	    st_oop method;
+	    STCompiledMethodFlags flags;
 	    guint  prim;
 
 	    receiver = state->stack[state->sp - 1];
@@ -168,9 +215,10 @@ interpreter_loop (STInterpreter *state)
 	    method = lookup_method (st_object_class (receiver), st_symbol_new ("+"));
 	    g_assert (method != st_nil);
 
+	    flags = st_compiled_method_flags (method);
 	    prim = st_compiled_method_primitive_index (method);
-	    
-	    if (prim < 255)
+
+	    if (flags == ST_COMPILED_METHOD_PRIMITIVE)
 		execute_primitive (state, prim, method);
 	    else
 		g_assert_not_reached ();
@@ -182,6 +230,7 @@ interpreter_loop (STInterpreter *state)
 	{
 	    st_oop receiver;
 	    st_oop method;
+	    STCompiledMethodFlags flags;
 	    guint  prim;
 
 	    receiver = state->stack[state->sp - 1];
@@ -189,9 +238,10 @@ interpreter_loop (STInterpreter *state)
 	    method = lookup_method (st_object_class (receiver), st_symbol_new ("-"));
 	    g_assert (method != st_nil);
 
+	    flags = st_compiled_method_flags (method);
 	    prim = st_compiled_method_primitive_index (method);
-	    
-	    if (prim < 255)
+
+	    if (flags == ST_COMPILED_METHOD_PRIMITIVE)
 		execute_primitive (state, prim, method);
 	    else
 		g_assert_not_reached ();
@@ -199,6 +249,56 @@ interpreter_loop (STInterpreter *state)
 	    ip++;
 	    break;
 	}
+	case SEND:
+	{
+	    st_oop receiver;
+	    guint argcount;
+	    st_oop selector;
+	    guint prim;
+	    st_oop method;
+
+	    argcount = ip[1];
+	    selector = state->literals[ip[2]];
+
+	    receiver = state->stack[state->sp - argcount];
+
+	    method = lookup_method (st_object_class (receiver), selector);
+	    g_assert (method != st_nil);
+	    
+	    /* create new context */
+	    st_oop context;
+	    
+	    context = create_new_context (state->context, receiver, method);
+	    
+	    ip += 3;
+
+	    /* pop receiver and args off the stack */
+	    state->sp -= argcount + 1;
+
+	    /* activate context */
+	    
+	    state->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
+	    state->method = method;
+	    
+	    /* store current executation state */ 
+	    ST_CONTEXT_PART_IP (state->context) = st_smi_new (ip - state->bytecodes);
+	    ST_CONTEXT_PART_SP (state->context) = st_smi_new (state->sp);
+	    	    
+	    state->sp = 0;
+	    state->ip = 0;
+
+	    state->bytecodes = st_byte_array_bytes (st_compiled_method_bytecodes (method));
+	    state->literals = st_array_element (st_compiled_method_literals (method), 1);
+	    
+	    state->temps = st_method_context_temporary_frame (context);
+	    state->stack = st_method_context_stack_frame (context);
+
+	    state->context = context;
+
+	    ip = state->bytecodes;
+	    break;
+	}
+	
 	case POP_STACK_TOP:
 
 	    ST_STACK_POP (state);
@@ -207,12 +307,43 @@ interpreter_loop (STInterpreter *state)
 	    break;
 
 	case RETURN_STACK_TOP:
-	
-	    return ST_STACK_PEEK (state);
-    
-	    ip++;
+	{
+	    st_oop sender;
+	    st_oop value;
+
+	    sender = ST_CONTEXT_PART_SENDER (state->context);
+	    value = ST_STACK_PEEK (state);
+
+	    if (sender == st_nil)
+		return value;
+
+	    state->context = sender;
+
+	    state->receiver = ST_METHOD_CONTEXT_RECEIVER (sender);
+	    state->method = ST_CONTEXT_PART_METHOD (sender);
+	    
+	    state->bytecodes = st_byte_array_bytes (st_compiled_method_bytecodes (state->method));
+
+	    /* resume executation state */ 
+	    state->ip = st_smi_value (ST_CONTEXT_PART_IP (sender));
+	    state->sp = st_smi_value (ST_CONTEXT_PART_SP (sender));
+
+	    state->bytecodes = st_byte_array_bytes (st_compiled_method_bytecodes (state->method));
+	    state->literals = st_array_element (st_compiled_method_literals (state->method), 1);
+	    
+	    state->temps = st_method_context_temporary_frame (sender);
+	    state->stack = st_method_context_stack_frame (sender);
+
+	    state->context = sender;
+
+	    /* push value onto stack */
+	    ST_STACK_PUSH (state, value);
+
+
+	    /* restore instruction pointer */
+	    ip = state->bytecodes + st_smi_value (ST_CONTEXT_PART_IP (sender));
 	    break;
-	
+	}
 	default:
 	    
 	    g_assert_not_reached ();
@@ -239,10 +370,10 @@ switch_context (STInterpreter *state,
     
     state->bytecodes = st_byte_array_bytes (st_compiled_method_bytecodes (state->method));
     state->literals = st_array_element (st_compiled_method_literals (state->method), 1);
-    state->stack = ST_METHOD_CONTEXT_STACK (context);
-}
 
-#define DUMMY_CONTEXT_STACK_SIZE 1
+    state->temps = st_method_context_temporary_frame (context);
+    state->stack = st_method_context_stack_frame (context);
+}
 
 
 void

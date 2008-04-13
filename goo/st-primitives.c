@@ -354,6 +354,6 @@ st_primitive_index_for_name (const char *name)
     for (int i = 0; i < G_N_ELEMENTS (st_primitives); i++)
 	if (streq (name, st_primitives[i].name))
 	    return i;
-    return 0xFF;
+    return -1;
 }
 

@@ -1360,13 +1360,13 @@ st_generate_method (st_oop klass, STNode *node, STError **error)
     st_compiled_method_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
     st_compiled_method_set_stack_depth (method, gt->max_stack_depth);
 
-    if (node->primitive < 0xFF) {
-	st_compiled_method_set_flags (method, 1);	
-	st_compiled_method_set_primitive_index (method, node->primitive);
+    if (node->primitive >= 0) {
+	st_compiled_method_set_flags (method, ST_COMPILED_METHOD_PRIMITIVE);	
     } else {
-	st_compiled_method_set_primitive_index (method, 0xFF);
-	st_compiled_method_set_flags (method, 0);	
+	st_compiled_method_set_flags (method, ST_COMPILED_METHOD_NORMAL);
     }
+
+    st_compiled_method_set_primitive_index (method, node->primitive);
 
     st_compiled_method_set_literals (method, create_literals_array (gt));
     st_compiled_method_set_bytecodes (method, create_bytecode_array (gt)); 
