@@ -42,38 +42,6 @@
 	
 #define CSTR(string) ((char *) st_byte_array_bytes (string))
 
-
-
-enum {
-    SPECIAL_PLUS,
-    SPECIAL_MINUS,
-    SPECIAL_LT,
-    SPECIAL_GT,
-    SPECIAL_LE,
-    SPECIAL_GE,
-    SPECIAL_EQ,
-    SPECIAL_NE,
-    SPECIAL_MUL,
-    SPECIAL_DIV,
-    SPECIAL_MOD,
-    SPECIAL_BITSHIFT,
-    SPECIAL_BITAND,
-    SPECIAL_BITOR,
-    SPECIAL_BITXOR,
-    
-    SPECIAL_AT,
-    SPECIAL_ATPUT,
-    SPECIAL_SIZE,
-    SPECIAL_VALUE,
-    SPECIAL_VALUE_ARG,
-    SPECIAL_IDEQ,
-    SPECIAL_CLASS,
-    SPECIAL_NEW,
-    SPECIAL_NEW_ARG,
-
-    NUM_SPECIALS,
-} STSpecialType;
-
 typedef struct 
 {
     bool     in_block;
@@ -98,7 +66,6 @@ typedef struct
     
 } Generator;
 
-static st_oop specials[NUM_SPECIALS] = { 0 };
 
 static guint sizes[255] = {  0, };
 
@@ -111,35 +78,6 @@ check_init (void)
     if (initialized)
 	return;
     initialized = true;
-
-    /* arithmetic specials */
-    specials[SPECIAL_PLUS]     = st_symbol_new ("+");
-    specials[SPECIAL_MINUS]    = st_symbol_new ("-");
-    specials[SPECIAL_LT]       = st_symbol_new ("<");
-    specials[SPECIAL_GT]       = st_symbol_new (">");
-    specials[SPECIAL_LE]       = st_symbol_new ("<=");
-    specials[SPECIAL_GE]       = st_symbol_new (">=");
-    specials[SPECIAL_EQ]       = st_symbol_new ("=");
-    specials[SPECIAL_NE]       = st_symbol_new ("~=");
-    specials[SPECIAL_MUL]      = st_symbol_new ("*");
-    specials[SPECIAL_DIV]      = st_symbol_new ("/");
-    specials[SPECIAL_MOD]      = st_symbol_new ("\\");
-    specials[SPECIAL_BITSHIFT] = st_symbol_new ("bitShift:");
-    specials[SPECIAL_BITAND]   = st_symbol_new ("bitAnd:");
-    specials[SPECIAL_BITOR]    = st_symbol_new ("bitOr:");
-    specials[SPECIAL_BITXOR]   = st_symbol_new ("bitXor:");
-
-    /* message specials */
-    specials[SPECIAL_AT]        = st_symbol_new ("at:");
-    specials[SPECIAL_ATPUT]     = st_symbol_new ("at:put:");
-    specials[SPECIAL_SIZE]      = st_symbol_new ("size");
-    specials[SPECIAL_VALUE]     = st_symbol_new ("value");
-    specials[SPECIAL_VALUE_ARG] = st_symbol_new ("value:");
-    specials[SPECIAL_IDEQ]      = st_symbol_new ("==");
-    specials[SPECIAL_CLASS]     = st_symbol_new ("class");
-    specials[SPECIAL_NEW]       = st_symbol_new ("new");
-    specials[SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
-
 
     /* The size (in bytes) of each bytecode instruction
      */
@@ -161,7 +99,7 @@ check_init (void)
     sizes[BLOCK_RETURN]          = 1;
     sizes[POP_STACK_TOP]         = 1;
     sizes[PUSH_ACTIVE_CONTEXT]   = 1;
-    sizes[BLOCK_COPY]       = 2;
+    sizes[BLOCK_COPY]       = 1;
     sizes[JUMP_TRUE]        = 3;
     sizes[JUMP_FALSE]       = 3;
     sizes[JUMP]             = 3;
@@ -211,7 +149,7 @@ generation_error (Generator *gt, const char *msg, STNode *node)
 		      ST_COMPILER_ERROR,
 		      msg);
 
-	st_error_set_data (*gt->error, "line", (gpointer) node->line);
+	st_error_set_data (*gt->error, "line", GINT_TO_POINTER (node->line));
     }
 
     longjmp (gt->jmploc, 0);
@@ -537,6 +475,8 @@ size_block (Generator *gt, STNode *node)
     int size = 0;
     
     /* BLOCKCOPY instruction */
+    size += sizes[PUSH_ACTIVE_CONTEXT];
+    size += sizes[PUSH_LITERAL_CONST];
     size += sizes[BLOCK_COPY];
 
     /* JUMP instruction */
@@ -563,8 +503,9 @@ generate_block (Generator *gt, STNode *node)
     gt->temporaries = g_list_concat (gt->temporaries,
 				     get_block_temporaries (gt, node->temporaries));
 
+    emit (gt, PUSH_ACTIVE_CONTEXT);
+    push (gt, PUSH_LITERAL_CONST, find_literal_const (gt, st_smi_new (st_node_list_length (node->arguments))));
     emit (gt, BLOCK_COPY);
-    emit (gt, st_node_list_length (node->arguments));
 
     // get size of block code and then jump around that code
     size = size_statements (gt, node->statements, false);
@@ -934,8 +875,8 @@ size_message (Generator *gt, STNode *msg)
 	super_send = true;
 
     /* check if message is a special */
-    for (int i = 0; i < G_N_ELEMENTS (specials); i++) {
-	if (!super_send && msg->selector == specials[i]) {
+    for (int i = 0; i < G_N_ELEMENTS (st_specials); i++) {
+	if (!super_send && msg->selector == st_specials[i]) {
 	    size += 1;
 	    return size;
 	}
@@ -970,8 +911,8 @@ generate_message (Generator *gt, STNode *msg)
 	super_send = true;
 
     /* check if message is a special */
-    for (int i = 0; i < G_N_ELEMENTS (specials); i++) {
-	if (!super_send && msg->selector == specials[i]) {
+    for (int i = 0; i < G_N_ELEMENTS (st_specials); i++) {
+	if (!super_send && msg->selector == st_specials[i]) {
 	    emit (gt, SEND_PLUS + i);  
 	    return;
 	}
@@ -1593,7 +1534,7 @@ print_bytecodes (st_oop literals, guchar *codes, int len)
 	case SEND_NEW_ARG:
 
 	    printf (FORMAT (ip), ip[0]);
-	    printf ("sendSpecial: #%s", st_byte_array_bytes (specials[ip[0] - SEND_PLUS]));
+	    printf ("sendSpecial: #%s", st_byte_array_bytes (st_specials[ip[0] - SEND_PLUS]));
 
 	    NEXT (ip);
 

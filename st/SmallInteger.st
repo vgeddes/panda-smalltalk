@@ -25,56 +25,50 @@ DEALINGS IN THE SOFTWARE.
 SmallInteger methodFor: 'arithmetic'!
 + aNumber
 	<primitive: 'SmallInteger_add'>
-	^ aNumber isSmallInteger
-		 	  ifTrue: [ self asLargeInteger + aNumber asLargeInteger ]
-     		  ifFalse: [ super + aNumber ]!
+	^ self!
 
 SmallInteger methodFor: 'arithmetic'!
 - aNumber
 	<primitive: 'SmallInteger_minus'>
-	^ aNumber isSmallInteger
-	      	  ifTrue: [ self asLargeInteger - aNumber asLargeInteger ]
-	     	  ifFalse: [ super - aNumber ]!
+	^ self!
 	
+SmallInteger methodFor: 'arithmetic'!
+* aNumber
+	<primitive: 'SmallInteger_mul'>
+	^ self!
+
+SmallInteger methodFor: 'arithmetic'!
+< aNumber
+	<primitive: 'SmallInteger_lt'>
+	^ self!
+
+SmallInteger methodFor: 'arithmetic'!
+> aNumber
+	<primitive: 'SmallInteger_gt'>
+	^ self!
+
+SmallInteger methodFor: 'arithmetic'!
+<= aNumber
+	<primitive: 'SmallInteger_le'>
+ 	^ self!
+
+SmallInteger methodFor: 'arithmetic'!
+>= aNumber
+	<primitive: 'SmallInteger_ge'>
+ 	^ self!
+
+SmallInteger methodFor: 'arithmetic'!
+= aNumber
+	<primitive: 'SmallInteger_eq'>
+	^ self!
+
+SmallInteger methodFor: 'mathematics'!
+fibonacci
+	self <= 2
+		ifTrue: [ ^ 1 ]
+	    ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
+
 "
-	* aNumber
-	[
-		<primitive: 'SmallInteger_mul'>
-	 	^ aNumber isSmallInteger
-	     	 	  ifTrue: [self asLargeInteger * aNumber asLargeInteger ]
-	     		  ifFalse: [ super * aNumber ]
-	]
-
-	< aNumber
-	[
-		<primitive: 'SmallInteger_lt'>
-	 	^ super < aNumber
-	]
-
-	> aNumber
-    [
-		<primitive: 'SmallInteger_gt'>
-		^ super > aNumber
-	]
-
-	<= aNumber
-	[
-		<primitive: 'SmallInteger_le'>
-	 	^super <= aNumber
-	]
-
-	>= aNumber
-	[
-		<primitive: 'SmallInteger_ge'>
-	 	^super >= aNumber
-	]
-
-	= aNumber
-	[
-		<primitive: 'SmallInteger_eq'>
-		^ super = aNumber
-	]
-
 	== aNumber
 	[
 		<primitive: 'SmallInteger_eq'>
@@ -110,13 +104,13 @@ SmallInteger methodsFor: 'bit-wise operations'
 [
 
 	bitAnd: aNumber
-    [
+
 		<primitive: 'SmallInteger_bitAnd'>
 		^super bitAnd: aNumber
 	]
 
 	bitOr: aNumber
-    [
+ 
 		<primitive: 'SmallInteger_bitOr'>
 		^ super bitOr: aNumber
 	]

@@ -1,6 +1,7 @@
 
 
 #include "st-context.h"
+#include "st-array.h"
 #include "st-compiled-method.h"
 
 #include "st-object.h"
@@ -22,9 +23,9 @@ st_method_context_new (st_oop method)
     st_object_initialize_header (context, st_method_context_class);
 
     ST_CONTEXT_PART_SENDER (context) = st_nil;
-    ST_CONTEXT_PART_METHOD (context) = st_nil;
-    ST_CONTEXT_PART_IP (context) = st_nil;
-    ST_CONTEXT_PART_SP (context) = st_nil;
+    ST_CONTEXT_PART_METHOD (context) = method;
+    ST_CONTEXT_PART_IP (context) = st_smi_new (0);
+    ST_CONTEXT_PART_SP (context) = st_smi_new (0);
     ST_METHOD_CONTEXT_RECEIVER (context) = st_nil;
 
     return context;
@@ -33,7 +34,7 @@ st_method_context_new (st_oop method)
 st_oop *
 st_method_context_temporary_frame (st_oop context)
 {
-    return ST_METHOD_CONTEXT_STACK (context);
+    return ST_METHOD_CONTEXT (context)->stack;
 }
 
 st_oop *
@@ -46,9 +47,48 @@ st_method_context_stack_frame (st_oop context)
 
     frame_size = st_compiled_method_temp_count (method) + st_compiled_method_arg_count (method);
 
-    return ST_METHOD_CONTEXT_STACK (context) + frame_size;
+    return ST_METHOD_CONTEXT (context)->stack + frame_size;
 }
 
+st_oop
+st_block_context_new (st_oop home, guint argcount)
+{
+    st_oop context;
+    st_oop method;
+    int stack_size;
+
+    method = ST_CONTEXT_PART_METHOD (home);
+ 
+    stack_size = st_compiled_method_stack_depth (method) + argcount;
+
+    context = st_allocate_object (ST_TYPE_SIZE (STBlockContext) + argcount);
+    st_object_initialize_header (context, st_block_context_class);
+
+    ST_CONTEXT_PART_SENDER (context) = st_nil;
+    ST_CONTEXT_PART_METHOD (context) = method;
+    ST_CONTEXT_PART_IP (context) = st_smi_new (0);
+    ST_CONTEXT_PART_SP (context) = st_smi_new (0);
+    ST_BLOCK_CONTEXT_HOME (context) = home;
+
+    return context;
+}
+
+st_oop
+st_message_new (st_oop selector, st_oop *args, guint args_size)
+{
+    st_oop msg;
+    st_oop array;
+
+    msg = st_object_new (st_global_get ("Message"));
+
+    array = st_object_new_arrayed (st_array_class, args_size);
+
+    for (guint i = 1; i <= args_size; i++)
+	* st_array_element (array, i) = args[i - 1];
+
+    st_heap_object_instvars (msg)[0] = selector;
+    st_heap_object_instvars (msg)[1] = array;
+}
 
 static void
 st_method_context_vtable_init (STVTable *table)

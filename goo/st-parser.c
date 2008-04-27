@@ -298,8 +298,6 @@ parse_tuple (STParser *parser)
     node->literal = tuple;
     node->line = st_token_line (token);
 
-    g_debug ("%i\n", g_list_length (items)); 
-
     return node;
 }
 

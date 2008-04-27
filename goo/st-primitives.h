@@ -28,7 +28,7 @@
 #include <glib.h>
 #include <st-interpreter.h>
 
-typedef void (*STPrimitiveFunc) (STInterpreter *state);
+typedef void (*STPrimitiveFunc) (STExecutionState *es);
 
 typedef struct
 {

@@ -93,11 +93,11 @@ Object subclass: #ContextPart
        classVariableNames: ''!
 
 ContextPart subclass: #MethodContext
-	    instanceVariableNames: 'receiver'
+	        instanceVariableNames: 'receiver'
             classVariableNames: ''!
 
-MethodContext subclass: #BlockContext
-	    instanceVariableNames: ''
+ContextPart subclass: #BlockContext
+	        instanceVariableNames: 'home'
             classVariableNames: ''!
 
 Object subclass: #Process
@@ -110,12 +110,22 @@ Object subclass: #CompiledCode
 
 CompiledCode subclass: #CompiledMethod
 	     instanceVariableNames: ''
-             classVariableNames: ''!
+	     classVariableNames: ''!
 
 CompiledCode subclass: #CompiledBlock
 	     instanceVariableNames: 'method'
 	     classVariableNames: ''!
 
+Object subclass: #Message
+	   instanceVariableNames: 'selector arguments'
+	   classVariableNames: ''!
+
+
+"Streams"
+
+Object subclass: #OutputStream
+	   instanceVariableNames: ''
+	   classVariableNames: ''!
 
 "Basic data types"
 

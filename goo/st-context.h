@@ -43,7 +43,7 @@ typedef struct
 {
     STContextPart parent;
    
-    st_oop receiver;    
+    st_oop receiver;
     st_oop stack[];
 } STMethodContext;
 
@@ -55,6 +55,7 @@ typedef struct
     st_oop stack[];
 } STBlockContext;
 
+
 st_oop  st_method_context_new (st_oop method);
 
 st_oop *st_method_context_temporary_frame (st_oop context);
@@ -62,6 +63,11 @@ st_oop *st_method_context_stack_frame     (st_oop context);
 
 guint   st_method_context_vtable  (void);
 guint   st_block_context_vtable   (void);
+
+
+st_oop  st_message_new (st_oop selector, st_oop *args, guint args_size);
+
+
 
 
 #define ST_CONTEXT_PART(oop)       ((STContextPart *)   ST_POINTER (oop))
@@ -77,7 +83,7 @@ guint   st_block_context_vtable   (void);
 #define ST_METHOD_CONTEXT_RECEIVER(oop)  (ST_METHOD_CONTEXT (oop)->receiver)
 #define ST_METHOD_CONTEXT_STACK(oop)     (ST_METHOD_CONTEXT (oop)->stack)
 
-#define ST_BLOCK_CONTEXT_HOME(oop)       (ST_BLOCK_CONTEXT (oop)->receiver)
+#define ST_BLOCK_CONTEXT_HOME(oop)       (ST_BLOCK_CONTEXT (oop)->home)
 #define ST_BLOCK_CONTEXT_STACK(oop)      (ST_BLOCK_CONTEXT (oop)->stack)
 
 #endif /* __ST_CONTEXT_H__ */

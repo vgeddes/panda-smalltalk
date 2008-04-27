@@ -28,6 +28,7 @@
 #include <st-types.h>
 #include <st-vtable.h>
 #include <st-heap-object.h>
+#include <st-byte-array.h>
 #include <glib.h>
 
 typedef struct
@@ -96,6 +97,7 @@ INLINE void     st_compiled_method_set_primitive_index (st_oop code, int index);
 INLINE void     st_compiled_method_set_bytecodes       (st_oop code, st_oop bytecode);
 
 INLINE void     st_compiled_method_set_literals        (st_oop code, st_oop literals);
+
 
 guint            st_compiled_method_vtable (void);
 
@@ -306,6 +308,12 @@ INLINE void
 st_compiled_method_set_literals (st_oop code, st_oop literals)
 {
     ST_COMPILED_METHOD (code)->literals = literals;
+}
+
+INLINE guchar *
+st_compiled_method_code (st_oop method)
+{
+    return st_byte_array_bytes (st_compiled_method_bytecodes (method));    
 }
 
 #endif /* __ST_COMPILED_METHOD_H__ */

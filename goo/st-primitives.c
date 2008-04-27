@@ -24,270 +24,681 @@
 
 #include "st-primitives.h"
 #include "st-interpreter.h"
+#include "st-array.h"
+#include "st-byte-array.h"
+#include "st-float.h"
 #include "st-object.h"
-
+#include "st-context.h"
+#include <math.h>
 #include <string.h>
 
-static void
-SmallInteger_add (STInterpreter *state)
+INLINE st_smi
+pop_integer (STExecutionState *es)
 {
-    st_oop x = ST_STACK_POP (state);
-    st_oop y = ST_STACK_POP (state);
-    st_oop z;
+    st_oop object = ST_STACK_POP (es);
 
-    state->success = true;
+    es->success = st_object_is_smi (object);
 
-    if (!st_object_is_smi (x))
-	goto out;
+    return st_smi_value (object);
+}
 
-    if (!st_object_is_smi (y))
-	goto out;
+static void
+SmallInteger_add (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result;
 
-    z = st_smi_new (st_smi_value (x) + st_smi_value (y));
+    if (es->success)
+	result = st_smi_new (x + y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_minus (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_smi_new (x - y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_lt (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x < y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_gt (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x > y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_le (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x <= y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_ge (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x >= y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_eq (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x == y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_ne (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x != y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_mul (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_smi_new (x * y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+/* selector: // */
+static void
+SmallInteger_div (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success) {
+	es->success = y != 0;
+	if (es->success)
+	    result = st_smi_new (x / y);
+    }
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_mod (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success) {
+	es->success = y != 0;
+	if (es->success)
+	    result = st_smi_new (x % y);
+    }
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_bitOr (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_smi_new (x | y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_bitXor (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_smi_new (x ^ y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_bitAnd (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_smi_new (x & y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+SmallInteger_bitShift (STExecutionState *es)
+{
+    st_smi y = pop_integer (es);
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success) {
+	if (y > 0)
+	    result = st_smi_new (x << y);
+	else if (y < 0)
+	    result = st_smi_new (x >> (-y));
+	else
+	    result = st_smi_new (x);
+    }
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+
+
+INLINE st_smi
+pop_float (STExecutionState *es)
+{
+    st_oop object = ST_STACK_POP (es);
+
+    es->success = st_object_class (object) == st_float_class;
+
+    return st_float_value (object);
+}
+
+
+static void
+Float_add (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_float_new (x + y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_minus (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_float_new (x - y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_lt (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = isless (x, y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_gt (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = isgreater (x, y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_le (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = islessequal (x, y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_ge (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = isgreaterequal (x, y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_eq (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x == y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_ne (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (x != y) ? st_true : st_false;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_mul (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_float_new (x * y);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_div (STExecutionState *es)
+{
+    double y = pop_float (es);
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success) {
+	es->success = y != 0;
+	result = st_float_new (x / y);
+    }
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
+Float_truncated (STExecutionState *es)
+{
+    double x = pop_float (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = (int) x;
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+
+static void
+Object_at (STExecutionState *es)
+{
+    st_oop object;
+    st_oop result;
+    st_smi index;
     
-    ST_STACK_PUSH (state, z);
+    index = pop_integer (es);
+    object = ST_STACK_POP (es);
 
-out:
-    state->success = false;
+    if (!es->success) {
+	ST_STACK_UNPOP (es, 2);
+	return;
+    }
+
+    if (st_object_is_array (object)) {
+	
+	if (!st_array_range_check (object, index)) {
+	    es->success = false;
+	    ST_STACK_UNPOP (es, 2);
+	    return;
+	}
+	    
+	ST_STACK_PUSH (es, st_array_at (object, index));
+
+    } else if (st_object_is_byte_array (object)) {
+	
+	if (!st_byte_array_range_check (object, index)) {
+	    es->success = false;
+	    ST_STACK_UNPOP (es, 2);
+	    return;
+	}
+	    
+	ST_STACK_PUSH (es, st_smi_new (st_byte_array_at (object, index)));
+
+    } else {
+	es->success = false;
+
+    }
+}
+
+static void
+Object_at_put (STExecutionState *es)
+{
+    st_oop object;
+    st_oop put_object;
+    st_smi index;
+
+    put_object = ST_STACK_POP (es);
+    index = pop_integer (es);
+    object = ST_STACK_POP (es);
+
+    if (!es->success) {
+	ST_STACK_UNPOP (es, 2);
+	return;
+    }
+
+    if (st_object_is_array (object)) {
+	
+	if (!st_array_range_check (object, index)) {
+	    es->success = false;
+	    ST_STACK_UNPOP (es, 2);
+	    return;
+	}
+
+	st_array_at_put (object, index, put_object);
+	ST_STACK_PUSH (es, put_object);
+
+    } else if (st_object_is_byte_array (object)) {
+	
+	if (!st_byte_array_range_check (object, index)) {
+	    es->success = false;
+	    ST_STACK_UNPOP (es, 2);
+	    return;
+	}
+
+	if (!st_object_is_smi (put_object)) {
+	    es->success = false;
+	    ST_STACK_UNPOP (es, 2);
+	    return;
+	}
+
+	st_byte_array_at_put (object, index, st_smi_value (put_object));	    
+	ST_STACK_PUSH (es, put_object);
+
+    } else {
+	es->success = false;
+
+    }
+}
+
+static void
+Object_size (STExecutionState *es)
+{
 
 }
 
 static void
-SmallInteger_minus (STInterpreter *state)
+Object_class (STExecutionState *es)
 {
-    st_oop x = ST_STACK_POP (state);
-    st_oop y = ST_STACK_POP (state);
-    st_oop z;
+    st_oop object;
 
-    state->success = true;
+    object = ST_STACK_POP (es);
 
-    if (!st_object_is_smi (x))
-	goto out;
+    ST_STACK_PUSH (es, st_object_class (object));
+}
 
-    if (!st_object_is_smi (y))
-	goto out;
-
-    z = st_smi_new (st_smi_value (y) - st_smi_value (x));
+static void
+Object_identityHash (STExecutionState *es)
+{
+    st_oop object;
+    st_oop result;
     
-    ST_STACK_PUSH (state, z);
-
-out:
-    state->success = false;
+    object = ST_STACK_POP (es);
+    
+    if (st_object_is_smi (object))
+	result = st_smi_new (st_smi_hash (object));
+    else
+	result = st_smi_new (st_heap_object_hash (object));
+    
+    ST_STACK_PUSH (es, result);
 }
 
 static void
-SmallInteger_lt (STInterpreter *state)
+Object_copy (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_gt (STInterpreter *state)
+Object_equivalent (STExecutionState *es)
+{
+    st_oop y = ST_STACK_POP (es);
+    st_oop x = ST_STACK_POP (es);
+    
+    ST_STACK_PUSH (es, ((x == y) ? st_true : st_false));
+}
+
+static void
+Object_perform (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_le (STInterpreter *state)
+Object_performWithArguments (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_ge (STInterpreter *state)
+Behavior_new (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_eq (STInterpreter *state)
+Behavior_newArgument (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_ne (STInterpreter *state)
+ByteArray_at (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_mul (STInterpreter *state)
+ByteArray_at_put (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_div (STInterpreter *state)
+BlockContext_value (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_bitOr (STInterpreter *state)
+BlockContext_valueArg (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_bitXor (STInterpreter *state)
+BlockContext_valueWithArgs (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_bitAnd (STInterpreter *state)
+SystemDictionary_quit (STExecutionState *es)
 {
 }
 
 static void
-SmallInteger_bitShift (STInterpreter *state)
+ContextPart_blockCopy (STExecutionState *es)
 {
-}
+    st_oop active_context;
+    st_smi argcount;
+    st_oop block;
+    st_oop home;
+    st_oop method;
 
-static void
-Float_add (STInterpreter *state)
-{
-}
+    argcount = pop_integer (es);
+    active_context = ST_STACK_POP (es);
 
-static void
-Float_minus (STInterpreter *state)
-{
-}
+    if (!es->success)
+	return;
 
-static void
-Float_lt (STInterpreter *state)
-{
-}
+    method = ST_CONTEXT_PART_METHOD (active_context);
 
-static void
-Float_gt (STInterpreter *state)
-{
-}
+    if (st_object_class (active_context) == st_block_context_class)
+	home = ST_BLOCK_CONTEXT_HOME (active_context);
+    else
+	home = active_context;
 
-static void
-Float_le (STInterpreter *state)
-{
-}
+    block = st_block_context_new (active_context, argcount);
 
-static void
-Float_ge (STInterpreter *state)
-{
-}
+    ST_STACK_PUSH (es, block);
 
-static void
-Float_eq (STInterpreter *state)
-{
-}
-
-static void
-Float_ne (STInterpreter *state)
-{
-}
-
-static void
-Float_mul (STInterpreter *state)
-{
-}
-
-static void
-Float_div (STInterpreter *state)
-{
-}
-
-static void
-Float_truncated (STInterpreter *state)
-{
-}
-
-static void
-Float_fractionPart (STInterpreter *state)
-{
-}
-
-static void
-Float_exponent (STInterpreter *state)
-{
-}
-
-static void
-Object_at (STInterpreter *state)
-{
-}
-
-static void
-Object_at_put (STInterpreter *state)
-{
-}
-
-static void
-Object_size (STInterpreter *state)
-{
-}
-
-static void
-Object_class (STInterpreter *state)
-{
-}
-
-static void
-Object_hash (STInterpreter *state)
-{
-}
-
-static void
-Object_identityHash (STInterpreter *state)
-{
-}
-
-static void
-Object_copy (STInterpreter *state)
-{
-}
-
-static void
-Object_equivalent (STInterpreter *state)
-{
-}
-
-static void
-Object_perform (STInterpreter *state)
-{
-}
-
-static void
-Object_performWithArguments (STInterpreter *state)
-{
-}
-
-static void
-Behavior_new (STInterpreter *state)
-{
-}
-
-static void
-Behavior_newArgument (STInterpreter *state)
-{
-}
-
-static void
-ByteArray_at (STInterpreter *state)
-{
-}
-
-static void
-ByteArray_at_put (STInterpreter *state)
-{
-}
-
-static void
-BlockContext_value (STInterpreter *state)
-{
-}
-
-static void
-BlockContext_valueArg (STInterpreter *state)
-{
-}
-
-static void
-BlockContext_valueWithArgs (STInterpreter *state)
-{
-}
-
-static void
-SystemDictionary_quit (STInterpreter *state)
-{
 }
 
 const STPrimitive st_primitives[] = {
@@ -318,14 +729,11 @@ const STPrimitive st_primitives[] = {
     { "Float_mul",             Float_mul           },
     { "Float_div",             Float_div           },
     { "Float_truncated",       Float_truncated     },
-    { "Float_fractionPart",    Float_fractionPart  },
-    { "Float_exponent",        Float_exponent      },
 
     { "Object_at",                    Object_at                   },
     { "Object_at_put",                Object_at_put               },
     { "Object_size",                  Object_size                 },
     { "Object_class",                 Object_class                },
-    { "Object_hash",                  Object_hash                 },
     { "Object_identityHash",          Object_identityHash         },
     { "Object_copy",                  Object_copy                 },
     { "Object_equivalent",            Object_equivalent           },
@@ -337,6 +745,8 @@ const STPrimitive st_primitives[] = {
 
     { "ByteArray_at",                 ByteArray_at                },
     { "ByteArray_at_put",             ByteArray_at_put            },
+
+    { "ContextPart_blockCopy",        ContextPart_blockCopy       },
 
     { "BlockContext_value",           BlockContext_value          },
     { "BlockContext_valueArg",        BlockContext_valueArg       },

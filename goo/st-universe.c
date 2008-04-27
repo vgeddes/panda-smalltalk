@@ -67,7 +67,11 @@ st_oop
     st_string_class          = 0,
     st_symbol_class          = 0,
     st_compiled_method_class = 0,
-    st_method_context_class  = 0;
+    st_method_context_class  = 0,
+    st_block_context_class   = 0;
+
+
+st_oop st_specials[ST_NUM_SPECIALS];
 
 st_oop
 st_global_get (const char *name)
@@ -464,12 +468,45 @@ st_bootstrap_universe (void)
     declare_class ("CompiledMethod", st_compiled_method_class);
     declare_class ("MethodContext", st_method_context_class);
 
-    /* parse class declarations */
-    parse_classes ("../smalltalk/ClassDefinitions.st");
+    /* arithmetic specials */
+    st_specials[ST_SPECIAL_PLUS]     = st_symbol_new ("+");
+    st_specials[ST_SPECIAL_MINUS]    = st_symbol_new ("-");
+    st_specials[ST_SPECIAL_LT]       = st_symbol_new ("<");
+    st_specials[ST_SPECIAL_GT]       = st_symbol_new (">");
+    st_specials[ST_SPECIAL_LE]       = st_symbol_new ("<=");
+    st_specials[ST_SPECIAL_GE]       = st_symbol_new (">=");
+    st_specials[ST_SPECIAL_EQ]       = st_symbol_new ("=");
+    st_specials[ST_SPECIAL_NE]       = st_symbol_new ("~=");
+    st_specials[ST_SPECIAL_MUL]      = st_symbol_new ("*");
+    st_specials[ST_SPECIAL_DIV]      = st_symbol_new ("/");
+    st_specials[ST_SPECIAL_MOD]      = st_symbol_new ("\\");
+    st_specials[ST_SPECIAL_BITSHIFT] = st_symbol_new ("bitShift:");
+    st_specials[ST_SPECIAL_BITAND]   = st_symbol_new ("bitAnd:");
+    st_specials[ST_SPECIAL_BITOR]    = st_symbol_new ("bitOr:");
+    st_specials[ST_SPECIAL_BITXOR]   = st_symbol_new ("bitXor:");
 
-	/* parse methods */
-    st_file_in ("../smalltalk/Association.st");
-    st_file_in ("../smalltalk/SmallInteger.st");
+    /* message specials */
+    st_specials[ST_SPECIAL_AT]        = st_symbol_new ("at:");
+    st_specials[ST_SPECIAL_ATPUT]     = st_symbol_new ("at:put:");
+    st_specials[ST_SPECIAL_SIZE]      = st_symbol_new ("size");
+    st_specials[ST_SPECIAL_VALUE]     = st_symbol_new ("value");
+    st_specials[ST_SPECIAL_VALUE_ARG] = st_symbol_new ("value:");
+    st_specials[ST_SPECIAL_IDEQ]      = st_symbol_new ("==");
+    st_specials[ST_SPECIAL_CLASS]     = st_symbol_new ("class");
+    st_specials[ST_SPECIAL_NEW]       = st_symbol_new ("new");
+    st_specials[ST_SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
+
+
+    /* parse class declarations */
+    parse_classes ("../st/class-defs.st");
+
+    /* parse methods */
+    st_file_in ("../st/Array.st");
+    st_file_in ("../st/Association.st");
+    st_file_in ("../st/SmallInteger.st");
+    st_file_in ("../st/Object.st");
+    st_file_in ("../st/ContextPart.st");
+    st_file_in ("../st/Message.st");
 
     /*
     st_file_in ("../smalltalk/Class.st");

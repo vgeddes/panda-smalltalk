@@ -72,7 +72,7 @@ st_smi_equal (st_oop m, st_oop n)
 INLINE st_smi
 st_smi_hash (st_oop smi)
 {
-    return smi;
+    return st_smi_value (smi);
 }
 
 #endif /* __ST_SMALL_INTEGER_H__ */

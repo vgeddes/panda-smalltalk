@@ -74,3 +74,14 @@ goo_bootstrap_LDADD =    libgoo.la
 goo_bootstrap_CFLAGS =   $(WARN_CFLAGS)
 goo_bootstrap_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)/goo
 
+
+smalltalk_files = \
+	st/class-defs.st \
+	st/Array.st \
+	st/Association.st \
+	st/ContextPart.st \
+	st/Object.st \
+	st/Message.st \
+	st/SmallInteger.st
+
+EXTRA_DIST += $(smalltalk_files)

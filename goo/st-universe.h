@@ -51,8 +51,38 @@ extern st_oop
     st_string_class,
     st_symbol_class,
     st_compiled_method_class,
-    st_method_context_class;
+    st_method_context_class,
+    st_block_context_class;
 
+enum {
+    ST_SPECIAL_PLUS,
+    ST_SPECIAL_MINUS,
+    ST_SPECIAL_LT,
+    ST_SPECIAL_GT,
+    ST_SPECIAL_LE,
+    ST_SPECIAL_GE,
+    ST_SPECIAL_EQ,
+    ST_SPECIAL_NE,
+    ST_SPECIAL_MUL,
+    ST_SPECIAL_DIV,
+    ST_SPECIAL_MOD,
+    ST_SPECIAL_BITSHIFT,
+    ST_SPECIAL_BITAND,
+    ST_SPECIAL_BITOR,
+    ST_SPECIAL_BITXOR,
+    ST_SPECIAL_AT,
+    ST_SPECIAL_ATPUT,
+    ST_SPECIAL_SIZE,
+    ST_SPECIAL_VALUE,
+    ST_SPECIAL_VALUE_ARG,
+    ST_SPECIAL_IDEQ,
+    ST_SPECIAL_CLASS,
+    ST_SPECIAL_NEW,
+    ST_SPECIAL_NEW_ARG,
+    ST_NUM_SPECIALS,
+};
+
+extern st_oop st_specials[ST_NUM_SPECIALS];
 
 void   st_bootstrap_universe (void);
 
