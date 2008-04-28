@@ -99,7 +99,7 @@ check_init (void)
     sizes[BLOCK_RETURN]          = 1;
     sizes[POP_STACK_TOP]         = 1;
     sizes[PUSH_ACTIVE_CONTEXT]   = 1;
-    sizes[BLOCK_COPY]       = 1;
+    sizes[BLOCK_COPY]       = 2;
     sizes[JUMP_TRUE]        = 3;
     sizes[JUMP_FALSE]       = 3;
     sizes[JUMP]             = 3;
@@ -395,6 +395,11 @@ push_special (Generator *gt, guchar code)
 static int
 size_assign (Generator *gt, STNode *node)
 {
+    g_assert ((sizes[STORE_POP_INSTVAR] == sizes[STORE_INSTVAR])
+	      && sizes[STORE_POP_INSTVAR] == 2);
+    g_assert ((sizes[STORE_POP_TEMP] == sizes[STORE_INSTVAR])
+	      && sizes[STORE_POP_TEMP] == 2);
+
     return size_expression (gt, node->expression) + 2;
 }
 
@@ -475,12 +480,13 @@ size_block (Generator *gt, STNode *node)
     int size = 0;
     
     /* BLOCKCOPY instruction */
-    size += sizes[PUSH_ACTIVE_CONTEXT];
-    size += sizes[PUSH_LITERAL_CONST];
     size += sizes[BLOCK_COPY];
 
     /* JUMP instruction */
     size += sizes[JUMP];
+
+    /* argument stores */
+    size += 2 * st_node_list_length (node->arguments);
     
     /* block statements */
     size += size_statements (gt, node->statements, false);
@@ -503,20 +509,26 @@ generate_block (Generator *gt, STNode *node)
     gt->temporaries = g_list_concat (gt->temporaries,
 				     get_block_temporaries (gt, node->temporaries));
 
-    emit (gt, PUSH_ACTIVE_CONTEXT);
-    push (gt, PUSH_LITERAL_CONST, find_literal_const (gt, st_smi_new (st_node_list_length (node->arguments))));
     emit (gt, BLOCK_COPY);
+    emit (gt, st_node_list_length (node->arguments));
 
     // get size of block code and then jump around that code
     size = size_statements (gt, node->statements, false);
+    size += 2 * st_node_list_length (node->arguments);
     jump_offset (gt, size);
+
+    /* store all block arguments into the temporary frame */
+    for (STNode *l = node->arguments; l; l = l->next) {
+	int index;
+	index = find_temporary (gt, l->name);
+	g_assert (index >= 0);
+	assign_temp (gt, index, true); 	
+    }
 
     generate_statements (gt, node->statements, false);
 
     if (in_block == false)
 	gt->in_block = false;
-    
-    return;
 } 
 
 static bool

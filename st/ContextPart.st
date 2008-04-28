@@ -22,10 +22,3 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-ContextPart methodFor: 'blocks'!
-blockCopy: argumentCount
-	<primitive: 'ContextPart_blockCopy'>
-	^ self
-!
-
-

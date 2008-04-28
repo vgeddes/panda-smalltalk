@@ -51,6 +51,12 @@ enum
 
 st_oop st_allocate_object (gsize size);
 
+INLINE void
+st_oops_copy (st_oop *to, st_oop *from, guint count)
+{
+    memcpy (to, from, sizeof (st_oop) * count);
+}
+
 
 /* generic error object */
 typedef struct {

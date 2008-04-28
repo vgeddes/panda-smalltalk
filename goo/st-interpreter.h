@@ -17,17 +17,23 @@ typedef struct {
 
     st_oop *stack;
     guint   sp;
+    guint   ip;
+
+    /* argument count of last sent selector */
+    guint   argcount;
 
     bool    success;
 
 } STExecutionState;
 
 
-#define ST_STACK_POP(es)           (es->stack[--es->sp])
-#define ST_STACK_PUSH(es, oop)     (es->stack[es->sp++] = oop)
-#define ST_STACK_PEEK(es)          (es->stack[es->sp-1])
-#define ST_STACK_UNPOP(es, count)  (es->sp += count)
+#define ST_STACK_POP(es)          (es->stack[--es->sp])
+#define ST_STACK_PUSH(es, oop)    (es->stack[es->sp++] = oop)
+#define ST_STACK_PEEK(es)         (es->stack[es->sp-1])
+#define ST_STACK_UNPOP(es, count) (es->sp += count)
 
 void st_interpreter_main (void);
+
+void st_interpreter_set_active_context (STExecutionState *es, st_oop context);
 
 #endif //* __ST_INTERPRETER_H__ */

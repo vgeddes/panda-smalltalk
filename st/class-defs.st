@@ -1,6 +1,5 @@
 "
 Copyright (c) 2008 Vincent Geddes
-Copyright (c) 2007 Luca Bruno
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the 'Software'), to deal
@@ -23,177 +22,171 @@ DEALINGS IN THE SOFTWARE.
 
 "Basic meta"
 
-nil subclass: #Object
-    instanceVariableNames: ''
-    classVariableNames: ''!
+Class named: 'Object'
+	  superclass: 'nil'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Object subclass: #UndefinedObject
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'UndefinedObject'
+	  superclass: 'Object'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Object subclass: #Behavior
-       instanceVariableNames: 'superclass instanceSize methodDictionary instanceVariables'
-       classVariableNames: ''!
+Class named: 'Behavior'
+	  superclass: 'Object'
+	  instanceVariableNames: 'superclass instanceSize methodDictionary instanceVariables'
+      classVariableNames: ''!
 
-Behavior subclass: #Class
-         instanceVariableNames: 'name classPool'
-	     classVariableNames: ''!
+Class named: 'Class'
+	  superclass: 'Behavior'
+	  instanceVariableNames: 'name classPool'
+      classVariableNames: ''!
 
-Behavior subclass: #Metaclass
-	instanceVariableNames: 'instanceClass'
-	classVariableNames: ''!
+Class named: 'Metaclass'
+	  superclass: 'Behavior'
+	  instanceVariableNames: 'instanceClass'
+      classVariableNames: ''!
 
 
 "Collections"
 
-Object subclass: #Collection
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'Collection'
+	  superclass: 'Object'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Collection subclass: #HashedCollection
-           instanceVariableNames: 'tally array'
-           classVariableNames: ''!
+Class named: 'HashedCollection'
+	  superclass: 'Collection'
+	  instanceVariableNames: 'tally array'
+      classVariableNames: ''!
 
-HashedCollection subclass: #Set
-		 instanceVariableNames: ''
-		 classVariableNames: ''!
+Class named: 'Set'
+	  superclass: 'HashedCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-HashedCollection subclass: #Dictionary
-		 instanceVariableNames: ''
-		 classVariableNames: ''!
+Class named: 'Dictionary'
+	  superclass: 'HashedCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Collection subclass: #SequenceableCollection
-	   instanceVariableNames: ''
-           classVariableNames: ''!
+Class named: 'SequenceableCollection'
+	  superclass: 'Collection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-SequenceableCollection subclass: #Interval
-	   instanceVariableNames: 'start stop step'
-	   classVariableNames: ''!
+Class named: 'ArrayedCollection'
+	  superclass: 'SequenceableCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-SequenceableCollection subclass: #ArrayedCollection
-		       instanceVariableNames: ''
-                       classVariableNames: ''!
+Class named: 'Array'
+	  superclass: 'ArrayedCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-ArrayedCollection subclass: #Array
-		  instanceVariableNames: ''
-                  classVariableNames: ''!
+Class named: 'ByteArray'
+	  superclass: 'ArrayedCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-ArrayedCollection subclass: #ByteArray
-		  instanceVariableNames: ''
-                  classVariableNames: ''!
-
-SequenceableCollection subclass: #OrderedCollection
-		       instanceVariableNames: 'tally array'
-                       classVariableNames: ''!
+Class named: 'Association'
+	  superclass: 'Object'
+	  instanceVariableNames: 'key value'
+      classVariableNames: ''!
 
 "Execution"
 
-Object subclass: #ContextPart
-       instanceVariableNames: 'sender method ip sp'
-       classVariableNames: ''!
+Class named: 'ContextPart'
+	  superclass: 'Object'
+	  instanceVariableNames: 'sender ip sp'
+      classVariableNames: ''!
 
-ContextPart subclass: #MethodContext
-	        instanceVariableNames: 'receiver'
-            classVariableNames: ''!
+Class named: 'MethodContext'
+	  superclass: 'ContextPart'
+	  instanceVariableNames: 'method receiver'
+      classVariableNames: ''!
 
-ContextPart subclass: #BlockContext
-	        instanceVariableNames: 'home'
-            classVariableNames: ''!
+Class named: 'BlockContext'
+	  superclass: 'ContextPart'
+	  instanceVariableNames: 'initialIP argcount caller home'
+      classVariableNames: ''!
 
-Object subclass: #Process
-       instanceVariableNames: 'context suspended returnedObject next scheduled'
-       classVariableNames: ''!
+Class named: 'CompiledMethod'
+	  superclass: 'Object'
+	  instanceVariableNames: 'header bytecode literals'
+      classVariableNames: ''!
 
-Object subclass: #CompiledCode
-       instanceVariableNames: 'header bytecode literals'
-       classVariableNames: ''!
+Class named: 'Message'
+	  superclass: 'Object'
+	  instanceVariableNames: 'selector arguments'
+      classVariableNames: ''!
 
-CompiledCode subclass: #CompiledMethod
-	     instanceVariableNames: ''
-	     classVariableNames: ''!
-
-CompiledCode subclass: #CompiledBlock
-	     instanceVariableNames: 'method'
-	     classVariableNames: ''!
-
-Object subclass: #Message
-	   instanceVariableNames: 'selector arguments'
-	   classVariableNames: ''!
-
-
-"Streams"
-
-Object subclass: #OutputStream
-	   instanceVariableNames: ''
-	   classVariableNames: ''!
 
 "Basic data types"
 
-ByteArray subclass: #String
+Class named: 'String'
+	  superclass: 'ByteArray'
 	  instanceVariableNames: ''
-          classVariableNames: ''!
+      classVariableNames: ''!
 
-String subclass: #Symbol
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'Symbol'
+	  superclass: 'String'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Object subclass: #Magnitude
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'Magnitude'
+	  superclass: 'Object'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Magnitude subclass: #Character
+Class named: 'Character'
+	  superclass: 'Magnitude'
 	  instanceVariableNames: 'value'
-          classVariableNames: 'WhiteSpaceTable XDigitsTable'!
+      classVariableNames: ''!
 
-Magnitude subclass: #Number
+Class named: 'Number'
+	  superclass: 'Magnitude'
 	  instanceVariableNames: ''
-          classVariableNames: ''!
+      classVariableNames: ''!
 
+Class named: 'Integer'
+	  superclass: 'Number'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Number subclass: #Integer
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'SmallInteger'
+	  superclass: 'Integer'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Integer subclass: #SmallInteger
-	instanceVariableNames: ''
-	classVariableNames: ''!
+Class named: 'LargeInteger'
+	  superclass: 'Integer'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Integer subclass: #LargeInteger
-	instanceVariableNames: ''
-	classVariableNames: ''!
+Class named: 'Fraction'
+	  superclass: 'Number'
+	  instanceVariableNames: 'numerator denominator'
+      classVariableNames: ''!
 
-Number subclass: #Fraction
-       instanceVariableNames: 'numerator denominator'
-       classVariableNames: ''!
+Class named: 'Float'
+	  superclass: 'Number'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Number subclass: #Float
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'Boolean'
+	  superclass: 'Object'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Object subclass: #Boolean
-       instanceVariableNames: ''
-       classVariableNames: ''!
+Class named: 'True'
+	  superclass: 'Boolean'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
-Boolean subclass: #True
-	instanceVariableNames: ''
-        classVariableNames: ''!
-
-Boolean subclass: #False
-	instanceVariableNames: ''
-        classVariableNames: ''!
-
-"Dictionaries"
-
-Object subclass: #Association
-       instanceVariableNames: 'key value'
-       classVariableNames: ''!
-
-
-Dictionary subclass: #IdentityDictionary
-	   instanceVariableNames: ''
-	   classVariableNames: ''!
-
-IdentityDictionary subclass: #SystemDictionary
-		   instanceVariableNames: 'systemInitializationRequests commandLineArguments startupProcess startupObject continueStartup'
-		   classVariableNames: ''!
+Class named: 'False'
+	  superclass: 'Boolean'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 

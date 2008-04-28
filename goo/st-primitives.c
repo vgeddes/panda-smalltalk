@@ -651,54 +651,97 @@ ByteArray_at (STExecutionState *es)
 static void
 ByteArray_at_put (STExecutionState *es)
 {
+} 
+
+INLINE void
+activate_block_context (STExecutionState *es)
+{
+    st_oop  home;
+    st_oop  block;
+    st_smi  argcount;
+
+    block = es->stack[es->sp - es->argcount - 1];
+    argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
+    if (argcount != es->argcount) {
+	es->success = false;
+	return;
+    }
+
+    st_oops_copy (ST_BLOCK_CONTEXT_STACK (context),
+		  es->stack + es->sp - argcount,
+		  argcount);
+
+    es->sp -= argcount + 1;
+    
+    ST_CONTEXT_PART_IP (context) = ST_BLOCK_CONTEXT_INITIAL_IP (context);
+    ST_CONTEXT_PART_SP (context) = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT_CALLER (context) = es->context;
+
+    st_interpreter_set_active_context (es, block);
 }
 
 static void
 BlockContext_value (STExecutionState *es)
 {
+    activate_block_context (es);
 }
 
 static void
-BlockContext_valueArg (STExecutionState *es)
+BlockContext_valueColon (STExecutionState *es)
 {
+    activate_block_context (es);
 }
 
 static void
-BlockContext_valueWithArgs (STExecutionState *es)
+BlockContext_value_value (STExecutionState *es)
 {
+    activate_block_context (es);
+}
+
+static void
+BlockContext_value_value_value (STExecutionState *es)
+{
+    activate_block_context (es);
+}
+
+static void
+BlockContext_valueWithArguments: (STExecutionState *es)
+{
+    st_oop home;
+    st_oop block;
+    st_oop values;
+    st_smi argcount;
+
+    values = es->stack[es->sp - es->argcount]
+    block =  es->stack[es->sp - es->argcount - 1]
+
+    if (st_object_class (values) != st_array_class) {
+	es->success = false;
+	return;
+    }
+
+    argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
+    if (argcount != st_smi_value (st_array_size (values))) {
+	es->success = false;
+	return;
+    }
+    
+    st_oops_copy (ST_BLOCK_CONTEXT_STACK (context),
+		  st_array_element (values, 1),
+		  argcount);
+    
+    es->sp -= argcount + 1;    
+    
+    ST_CONTEXT_PART_IP (context) = ST_BLOCK_CONTEXT_INITIAL_IP (context);
+    ST_CONTEXT_PART_SP (context) = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT_CALLER (context) = es->context;
+
+    st_interpreter_set_active_context (es, block);
 }
 
 static void
 SystemDictionary_quit (STExecutionState *es)
 {
-}
-
-static void
-ContextPart_blockCopy (STExecutionState *es)
-{
-    st_oop active_context;
-    st_smi argcount;
-    st_oop block;
-    st_oop home;
-    st_oop method;
-
-    argcount = pop_integer (es);
-    active_context = ST_STACK_POP (es);
-
-    if (!es->success)
-	return;
-
-    method = ST_CONTEXT_PART_METHOD (active_context);
-
-    if (st_object_class (active_context) == st_block_context_class)
-	home = ST_BLOCK_CONTEXT_HOME (active_context);
-    else
-	home = active_context;
-
-    block = st_block_context_new (active_context, argcount);
-
-    ST_STACK_PUSH (es, block);
-
 }
 
 const STPrimitive st_primitives[] = {
@@ -746,11 +789,11 @@ const STPrimitive st_primitives[] = {
     { "ByteArray_at",                 ByteArray_at                },
     { "ByteArray_at_put",             ByteArray_at_put            },
 
-    { "ContextPart_blockCopy",        ContextPart_blockCopy       },
-
-    { "BlockContext_value",           BlockContext_value          },
-    { "BlockContext_valueArg",        BlockContext_valueArg       },
-    { "BlockContext_valueWithArgs",   BlockContext_valueWithArgs  },
+    { "BlockContext_value",               BlockContext_value               },
+    { "BlockContext_valueColon",          BlockContext_valueColon          },
+    { "BlockContext_value_value",         BlockContext_value_value         },
+    { "BlockContext_value_value_value",   BlockContext_value_value_value   },
+    { "BlockContext_valueWithArguments", BlockContext_valueWithArguments  },
 
     { "SystemDictionary_quit",        SystemDictionary_quit       },
 };

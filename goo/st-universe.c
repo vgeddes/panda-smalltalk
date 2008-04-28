@@ -289,37 +289,45 @@ parse_class (STLexer *lexer, STToken *token)
     char *class_name = NULL;
     char *superclass_name = NULL;
 
-    // superclass name
-    if (st_token_type (token) == ST_TOKEN_IDENTIFIER) {
-        
-	superclass_name = g_strdup (st_token_text (token));
-	token = st_lexer_next_token (lexer);
-    } else {
-	parse_error ("expected identifier", token);
-    }
+    // 'Class' token
+    if (st_token_type (token) != ST_TOKEN_IDENTIFIER
+	|| !streq (st_token_text (token), "Class"))
+	parse_error ("expected class definition", token);	
 
-    // 'subclass:' keyword selector
-    if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
-	streq (st_token_text (token), "subclass:")) {
-
-	token = st_lexer_next_token (lexer);
-    } else {
-	parse_error ("expected 'subclass:' selector", token);
-    }
+    // `named:' token
+    token = st_lexer_next_token (lexer);
+    if (st_token_type (token) != ST_TOKEN_KEYWORD_SELECTOR
+	|| !streq (st_token_text (token), "named:"))
+	parse_error ("expected 'name:'", token);
 
     // class name
-    if (st_token_type (token) == ST_TOKEN_SYMBOL_CONST) {
-
+    token = st_lexer_next_token (lexer);
+    if (st_token_type (token) == ST_TOKEN_STRING_CONST) {
 	class_name = g_strdup (st_token_text (token));
-
-	token = st_lexer_next_token (lexer);
     } else {
-	parse_error ("expected identifier", token);
+	parse_error ("expected string literal", token);
+    }
+
+    // `superclass:' token
+    token = st_lexer_next_token (lexer);	
+    if (st_token_type (token) != ST_TOKEN_KEYWORD_SELECTOR
+	|| !streq (st_token_text (token), "superclass:"))
+	parse_error ("expected 'superclass:'", token);
+
+    // superclass name
+    token = st_lexer_next_token (lexer);
+    if (st_token_type (token) == ST_TOKEN_STRING_CONST) {
+        
+	superclass_name = g_strdup (st_token_text (token));
+
+    } else {
+	parse_error ("expected string literal", token);
     }
 
     GList *ivarnames = NULL, *cvarnames = NULL;;
 
     // 'instanceVariableNames:' keyword selector        
+    token = st_lexer_next_token (lexer);
     if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
 	streq (st_token_text (token), "instanceVariableNames:")) {
 
@@ -347,7 +355,7 @@ parse_class (STLexer *lexer, STToken *token)
     g_list_free (cvarnames);
 
     token = st_lexer_next_token (lexer);
-
+    
     return;
 }
 
@@ -418,7 +426,7 @@ st_bootstrap_universe (void)
     st_symbol_class = st_class_new (st_symbol_vtable ());
     st_association_class = st_class_new (st_association_vtable ());
     st_compiled_method_class = st_class_new (st_compiled_method_vtable ());
-    st_method_context_class = st_class_new (st_method_context_vtable ());
+
 
     st_heap_object_set_class (st_nil, st_undefined_object_class);
 
@@ -438,7 +446,6 @@ st_bootstrap_universe (void)
     st_behavior_set_instance_size (st_false_class, 0);
     st_behavior_set_instance_size (st_set_class, 2);
     st_behavior_set_instance_size (st_dictionary_class, 2);
-    st_behavior_set_instance_size (st_method_context_class, 5);
 
     /* create special object instances */
     st_true = st_object_new (st_true_class);
@@ -466,7 +473,6 @@ st_bootstrap_universe (void)
     declare_class ("Dictionary", st_dictionary_class);
     declare_class ("Association", st_association_class);
     declare_class ("CompiledMethod", st_compiled_method_class);
-    declare_class ("MethodContext", st_method_context_class);
 
     /* arithmetic specials */
     st_specials[ST_SPECIAL_PLUS]     = st_symbol_new ("+");
@@ -507,6 +513,11 @@ st_bootstrap_universe (void)
     st_file_in ("../st/Object.st");
     st_file_in ("../st/ContextPart.st");
     st_file_in ("../st/Message.st");
+
+    st_method_context_class = st_global_get ("MethodContext");
+    st_block_context_class = st_global_get ("BlockContext");
+    g_assert (st_method_context_class != st_nil);
+    g_assert (st_block_context_class != st_nil);
 
     /*
     st_file_in ("../smalltalk/Class.st");

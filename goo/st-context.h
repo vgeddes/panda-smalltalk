@@ -33,7 +33,6 @@ typedef struct
     STHeader header;
 
     st_oop sender;
-    st_oop method;
     st_oop ip;
     st_oop sp;
 
@@ -42,7 +41,7 @@ typedef struct
 typedef struct
 {
     STContextPart parent;
-   
+    st_oop method;   
     st_oop receiver;
     st_oop stack[];
 } STMethodContext;
@@ -50,7 +49,9 @@ typedef struct
 typedef struct
 {
     STContextPart parent;
-
+    st_oop initial_ip;
+    st_oop argcount;
+    st_oop caller;
     st_oop home;
     st_oop stack[];
 } STBlockContext;
@@ -61,8 +62,7 @@ st_oop  st_method_context_new (st_oop method);
 st_oop *st_method_context_temporary_frame (st_oop context);
 st_oop *st_method_context_stack_frame     (st_oop context);
 
-guint   st_method_context_vtable  (void);
-guint   st_block_context_vtable   (void);
+st_oop  st_block_context_new     (st_oop home, guint initial_ip, guint argcount);
 
 
 st_oop  st_message_new (st_oop selector, st_oop *args, guint args_size);
@@ -75,15 +75,20 @@ st_oop  st_message_new (st_oop selector, st_oop *args, guint args_size);
 #define ST_BLOCK_CONTEXT(oop)      ((STBlockContext *)  ST_POINTER (oop))
 
 #define ST_CONTEXT_PART_SENDER(oop)      (ST_CONTEXT_PART (oop)->sender)
-#define ST_CONTEXT_PART_METHOD(oop)      (ST_CONTEXT_PART (oop)->method)
 
 #define ST_CONTEXT_PART_IP(oop)          (ST_CONTEXT_PART (oop)->ip)
 #define ST_CONTEXT_PART_SP(oop)          (ST_CONTEXT_PART (oop)->sp)
 
+#define ST_METHOD_CONTEXT_METHOD(oop)    (ST_METHOD_CONTEXT (oop)->method)
 #define ST_METHOD_CONTEXT_RECEIVER(oop)  (ST_METHOD_CONTEXT (oop)->receiver)
 #define ST_METHOD_CONTEXT_STACK(oop)     (ST_METHOD_CONTEXT (oop)->stack)
 
+#define ST_BLOCK_CONTEXT_INITIAL_IP(oop) (ST_BLOCK_CONTEXT (oop)->initial_ip)
 #define ST_BLOCK_CONTEXT_HOME(oop)       (ST_BLOCK_CONTEXT (oop)->home)
+#define ST_BLOCK_CONTEXT_ARGCOUNT(oop)   (ST_BLOCK_CONTEXT (oop)->argcount)
+#define ST_BLOCK_CONTEXT_CALLER(oop)     (ST_BLOCK_CONTEXT (oop)->caller)
 #define ST_BLOCK_CONTEXT_STACK(oop)      (ST_BLOCK_CONTEXT (oop)->stack)
+
+
 
 #endif /* __ST_CONTEXT_H__ */
