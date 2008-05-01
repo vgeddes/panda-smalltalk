@@ -12,16 +12,21 @@ typedef struct {
     st_oop  receiver;
     st_oop  method;
 
+    guchar *bytecode;
+
     st_oop *literals;    
     st_oop *temps;
-
+ 
     st_oop *stack;
     guint   sp;
     guint   ip;
 
-    /* argument count of last sent selector */
-    guint   argcount;
-
+    /* information on last message send */
+    st_oop  msg_receiver;
+    st_oop  msg_selector;
+    guint   msg_argcount;
+    
+    /* primitives error control */
     bool    success;
 
 } STExecutionState;
@@ -35,5 +40,12 @@ typedef struct {
 void st_interpreter_main (void);
 
 void st_interpreter_set_active_context (STExecutionState *es, st_oop context);
+
+INLINE void
+st_interpreter_set_success (STExecutionState *es, bool success)
+{
+    es->success = es->success && success;
+}
+
 
 #endif //* __ST_INTERPRETER_H__ */

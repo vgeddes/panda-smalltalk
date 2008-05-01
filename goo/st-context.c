@@ -57,7 +57,10 @@ st_block_context_new (st_oop home, guint initial_ip, guint argcount)
 
     method = ST_METHOD_CONTEXT_METHOD (home);
  
-    context = st_allocate_object (ST_TYPE_SIZE (STBlockContext) + argcount);
+    stack_size = st_compiled_method_stack_depth (method);
+    stack_size += argcount;
+
+    context = st_allocate_object (ST_TYPE_SIZE (STBlockContext) + stack_size);
     st_object_initialize_header (context, st_block_context_class);
 
     ST_CONTEXT_PART_SENDER (context) = st_nil;

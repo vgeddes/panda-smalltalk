@@ -1,51 +1,46 @@
 
 
-Object methodFor: ''!
+Object method!
 at: anIndex
-	^ self
-!
+	^ self!
 
-Object methodFor: ''!
+Object method!
 at: anIndex put: anObject
-	^ self
-!
+	^ self!
 
-Object methodFor: ''!
+Object method!
 basicAt: anIndex
-	<primitive: 'Object_at'>
-!
+	<primitive: 'Object_at'>!
 
-Object methodFor: ''!
+Object method!
 basicAt: anIndex put: anObject
-	<primitive: 'Object_at_put'>
-!
+	<primitive: 'Object_at_put'>!
 
-Object methodFor: ''!
+Object method!
 doesNotUnderstand: aMessage
-	^ self
-!
+	^ self!
 
-Object methodFor: 'accessing'!
+Object method!
 class
-	<primitive: 'Object_class'>
-!
+	<primitive: 'Object_class'>!
+Annotation key: 'category' value: 'accessing'!
 
-Object methodFor: 'accessing'!
+Object method!
 hash
-	^ self identityHash
-!
+	^ self identityHash!
+Annotation key: 'category' value: 'accessing'!
 
-Object methodFor: 'accessing'!
+Object method!
 identityHash
-	<primitive: 'Object_identityHash'>
-!
+	<primitive: 'Object_identityHash'>!
+Annotation key: 'category' value: 'accessing'!
 
-Object methodFor: 'testing'!
+Object method!
 = anObject
-	^ self == anObject 
-!
+	^ self == anObject!
+Annotation key: 'category' value: 'testing'!
 
-Object methodFor: 'testing'!
+Object method!
 == anObject
-	<primitive: 'Object_equivalent'>
-!
+	<primitive: 'Object_equivalent'>!
+Annotation key: 'category' value: 'testing'!

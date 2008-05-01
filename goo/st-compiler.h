@@ -28,6 +28,7 @@ st_oop  st_generate_method  (st_oop    klass,
 void    st_print_method     (st_oop method);
 
 
+
 /* bytecodes */ 
 typedef enum
 {

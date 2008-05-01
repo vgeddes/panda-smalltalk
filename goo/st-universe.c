@@ -512,6 +512,7 @@ st_bootstrap_universe (void)
     st_file_in ("../st/SmallInteger.st");
     st_file_in ("../st/Object.st");
     st_file_in ("../st/ContextPart.st");
+    st_file_in ("../st/BlockContext.st");
     st_file_in ("../st/Message.st");
 
     st_method_context_class = st_global_get ("MethodContext");

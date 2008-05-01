@@ -28,6 +28,7 @@
 #include <glib.h>
 #include <st-types.h>
 #include <stdio.h>
+#include <string.h>
 
 /* bit utilities */
 #define ST_NTH_BIT(n)       (1 << (n))

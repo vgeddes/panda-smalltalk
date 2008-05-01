@@ -36,8 +36,8 @@ INLINE st_smi
 pop_integer (STExecutionState *es)
 {
     st_oop object = ST_STACK_POP (es);
-
-    es->success = st_object_is_smi (object);
+    
+    st_interpreter_set_success (es, st_object_is_smi (object));    
 
     return st_smi_value (object);
 }
@@ -490,7 +490,6 @@ static void
 Object_at (STExecutionState *es)
 {
     st_oop object;
-    st_oop result;
     st_smi index;
     
     index = pop_integer (es);
@@ -656,26 +655,25 @@ ByteArray_at_put (STExecutionState *es)
 INLINE void
 activate_block_context (STExecutionState *es)
 {
-    st_oop  home;
     st_oop  block;
     st_smi  argcount;
 
-    block = es->stack[es->sp - es->argcount - 1];
+    block = es->msg_receiver;
     argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
-    if (argcount != es->argcount) {
+    if (argcount != es->msg_argcount) {
 	es->success = false;
 	return;
     }
 
-    st_oops_copy (ST_BLOCK_CONTEXT_STACK (context),
+    st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
 		  es->stack + es->sp - argcount,
 		  argcount);
 
-    es->sp -= argcount + 1;
+    es->sp -= es->msg_argcount + 1;
     
-    ST_CONTEXT_PART_IP (context) = ST_BLOCK_CONTEXT_INITIAL_IP (context);
-    ST_CONTEXT_PART_SP (context) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (context) = es->context;
+    ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIAL_IP (block);
+    ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT_CALLER (block) = es->context;
 
     st_interpreter_set_active_context (es, block);
 }
@@ -705,36 +703,35 @@ BlockContext_value_value_value (STExecutionState *es)
 }
 
 static void
-BlockContext_valueWithArguments: (STExecutionState *es)
+BlockContext_valueWithArguments (STExecutionState *es)
 {
-    st_oop home;
     st_oop block;
     st_oop values;
     st_smi argcount;
 
-    values = es->stack[es->sp - es->argcount]
-    block =  es->stack[es->sp - es->argcount - 1]
+    block  = es->msg_receiver;
+    values = ST_STACK_PEEK (es);
 
     if (st_object_class (values) != st_array_class) {
-	es->success = false;
+	st_interpreter_set_success (es, false);
 	return;
     }
 
     argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
     if (argcount != st_smi_value (st_array_size (values))) {
-	es->success = false;
+	st_interpreter_set_success (es, false);
 	return;
     }
     
-    st_oops_copy (ST_BLOCK_CONTEXT_STACK (context),
+    st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
 		  st_array_element (values, 1),
 		  argcount);
     
-    es->sp -= argcount + 1;    
+    es->sp -= es->msg_argcount + 1;    
     
-    ST_CONTEXT_PART_IP (context) = ST_BLOCK_CONTEXT_INITIAL_IP (context);
-    ST_CONTEXT_PART_SP (context) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (context) = es->context;
+    ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIAL_IP (block);
+    ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT_CALLER (block) = es->context;
 
     st_interpreter_set_active_context (es, block);
 }
@@ -793,7 +790,7 @@ const STPrimitive st_primitives[] = {
     { "BlockContext_valueColon",          BlockContext_valueColon          },
     { "BlockContext_value_value",         BlockContext_value_value         },
     { "BlockContext_value_value_value",   BlockContext_value_value_value   },
-    { "BlockContext_valueWithArguments", BlockContext_valueWithArguments  },
+    { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
 
     { "SystemDictionary_quit",        SystemDictionary_quit       },
 };

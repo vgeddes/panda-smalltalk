@@ -22,52 +22,60 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 + aNumber
 	<primitive: 'SmallInteger_add'>
 	^ self!
+Annotation key: 'category' value: 'arithmetic'!
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 - aNumber
 	<primitive: 'SmallInteger_minus'>
 	^ self!
+Annotation key: 'category' value: 'arithmetic'!
 	
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 * aNumber
 	<primitive: 'SmallInteger_mul'>
-	^ self!
+	^ 42!
+Annotation key: 'category' value: 'arithmetic'!
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 < aNumber
 	<primitive: 'SmallInteger_lt'>
 	^ self!
+Annotation key: 'category' value: 'testing'!
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 > aNumber
 	<primitive: 'SmallInteger_gt'>
 	^ self!
+Annotation key: 'category' value: 'testing'!
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 <= aNumber
 	<primitive: 'SmallInteger_le'>
  	^ self!
+Annotation key: 'category' value: 'testing'!
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 >= aNumber
 	<primitive: 'SmallInteger_ge'>
  	^ self!
+Annotation key: 'category' value: 'testing'!
 
-SmallInteger methodFor: 'arithmetic'!
+SmallInteger method!
 = aNumber
 	<primitive: 'SmallInteger_eq'>
 	^ self!
+Annotation key: 'category' value: 'testing'!
 
-SmallInteger methodFor: 'mathematics'!
+SmallInteger method!
 fibonacci
 	self <= 2
 		ifTrue: [ ^ 1 ]
 	    ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
-
+Annotation key: 'category' value: 'mathematics'!
 "
 	== aNumber
 	[

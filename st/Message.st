@@ -1,12 +1,10 @@
 
 
-Message methodFor: 'accessing'!
+Message method!
 selector
-	^ selector
-!
+	^ selector!
 
-Message methodFor: 'accessing'!
+Message method!
 arguments
-	^ arguments
-!
+	^ arguments!
 

@@ -117,10 +117,6 @@ parse_method (FileInParser *parser,
     st_oop   klass;
     STError *error = NULL;
 
-    token = next_token (parser, lexer);
-    if (st_token_type (token) != ST_TOKEN_STRING_CONST)
-	filein_error (parser, token, "expected string literal")	;
-
     st_lexer_destroy (lexer);
 
     /* get class or metaclass */
@@ -187,13 +183,13 @@ parse_chunk (FileInParser *parser, STLexer *lexer)
 
 	token = next_token (parser, lexer);
 
-	if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR
-	    && (streq (st_token_text (token), "methodFor:")))
+	if (st_token_type (token) == ST_TOKEN_IDENTIFIER
+	    && (streq (st_token_text (token), "method")))
 	
 	    parse_method (parser, lexer, name, false);
 	
-	else if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR
-		 || streq (st_token_text (token), "classMethodFor:"))
+	else if (st_token_type (token) == ST_TOKEN_IDENTIFIER
+		 || streq (st_token_text (token), "classMethod"))
 
 	    parse_method (parser, lexer, name, true);
 	    
@@ -202,6 +198,13 @@ parse_chunk (FileInParser *parser, STLexer *lexer)
 
 	    parse_class (parser, lexer, name);
 
+	else if (streq (name, "Annotation") &&
+		 st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
+		 streq (st_token_text (token), "key:")) {
+
+	    return;
+		 
+	}
 	else
 	    goto error;
 
