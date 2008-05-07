@@ -27,7 +27,6 @@
 
 #include <st-heap-object.h>
 #include <st-types.h>
-#include <st-vtable.h>
 
 typedef struct
 {
@@ -38,43 +37,16 @@ typedef struct
 
 } STAssociation;
 
-st_oop st_association_new (st_oop key, st_oop value);
+st_oop st_association_new   (st_oop key, st_oop value);
 
-INLINE st_oop st_association_key (st_oop assoc);
+guint  st_association_hash  (st_oop object);
 
-INLINE st_oop st_association_value (st_oop assoc);
+bool   st_association_equal (st_oop object, st_oop other);
 
-INLINE void st_association_set_key (st_oop assoc, st_oop key);
+#define ST_ASSOCIATION(oop)         ((STAssociation *) ST_POINTER (oop))
+#define st_association_key(assoc)   (ST_ASSOCIATION (assoc)->key)
+#define st_association_value(assoc) (ST_ASSOCIATION (assoc)->value)
 
-INLINE void st_association_set_value (st_oop assoc, st_oop value);
 
-guint st_association_vtable (void);
-
-/* inline definitions */
-#define ST_ASSOCIATION(oop) ((STAssociation *) ST_POINTER (oop))
-
-INLINE st_oop
-st_association_key (st_oop assoc)
-{
-    return ST_ASSOCIATION (assoc)->key;
-}
-
-INLINE st_oop
-st_association_value (st_oop assoc)
-{
-    return ST_ASSOCIATION (assoc)->value;
-}
-
-INLINE void
-st_association_set_key (st_oop assoc, st_oop key)
-{
-    ST_ASSOCIATION (assoc)->key = key;
-}
-
-INLINE void
-st_association_set_value (st_oop assoc, st_oop value)
-{
-    ST_ASSOCIATION (assoc)->value = value;
-}
 
 #endif /* __ST_ASSOCIATION_H__ */

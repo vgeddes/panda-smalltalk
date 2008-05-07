@@ -26,7 +26,6 @@
 #define __ST_ARRAY_H__
 
 #include <st-types.h>
-#include <st-class.h>
 #include <st-object.h>
 #include <glib.h>
 
@@ -51,8 +50,7 @@ INLINE st_oop st_array_at (st_oop object, st_smi i);
 
 INLINE void st_array_at_put (st_oop object, st_smi i, st_oop value);
 
-guint st_array_vtable (void);
-
+const STDescriptor *st_array_descriptor (void);
 
 /* inline definitions */
 #define ST_ARRAY(oop) ((STArray *) ST_POINTER (oop))
@@ -86,7 +84,7 @@ st_array_at (st_oop object, st_smi i)
 {
     g_assert (1 <= i && i <= st_array_size (object));
 
-    return *st_array_element (object, i);
+    return * st_array_element (object, i);
 }
 
 INLINE void

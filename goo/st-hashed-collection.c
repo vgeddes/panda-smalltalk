@@ -28,8 +28,7 @@
 #include "st-utils.h"
 #include "st-universe.h"
 #include "st-association.h"
-
-#include "st-vtable.h"
+#include "st-heap-object.h"
 
 #include <glib.h>
 
@@ -38,7 +37,7 @@
 #define ARRAY(collection)    (ST_HASHED_COLLECTION (collection)->array)
 #define ARRAY_SIZE(array)    (st_smi_value (st_array_size (array)))
 
-#define ST_HASHED_COLLECTION(oop) ((STHashedCollection *) (ST_POINTER (oop)))
+#define ST_HASHED_COLLECTION(oop) ((STHashedCollection *) ST_POINTER (oop))
 
 typedef struct
 {
@@ -49,6 +48,14 @@ typedef struct
 
 } STHashedCollection;
 
+static st_smi  dict_scan_for_object (st_oop dict, st_oop object);
+
+static void    dict_no_check_add    (st_oop dict, st_oop object);
+
+static void    set_no_check_add     (st_oop set, st_oop object);
+
+static st_smi  set_scan_for_object  (st_oop set, st_oop object);
+
 
 /* Hashed Collection methods */
 
@@ -57,7 +64,12 @@ collection_find_element_or_nil (st_oop collection, st_oop object)
 {
     st_smi index;
 
-    index = st_object_virtual (collection)->scan_for_object (collection, object);
+    if (st_object_class (collection) == st_dictionary_class)
+	index = dict_scan_for_object (collection, object);
+    else if (st_object_class (collection) == st_set_class)
+	index = set_scan_for_object (collection, object);
+    else
+	g_assert_not_reached ();
 
     if (index > 0)
 	return index;
@@ -83,8 +95,16 @@ collection_grow (st_oop collection)
     st_smi n = ARRAY_SIZE (old_array);
 
     for (st_smi i = 1; i <= n; i++)
-	if (st_array_at (old_array, i) != st_nil)
-	    st_object_virtual (collection)->no_check_add (collection, st_array_at (old_array, i));
+	if (st_array_at (old_array, i) != st_nil) {
+
+	    if (st_object_class (collection) == st_dictionary_class) {
+		dict_no_check_add (collection, st_array_at (old_array, i));
+	    } else if (st_object_class (collection) == st_set_class) {
+		set_no_check_add (collection, st_array_at (old_array, i));
+	    } else {
+		g_assert_not_reached ();
+	    }
+	}
 }
 
 static void
@@ -116,13 +136,6 @@ collection_initialize (st_oop collection, st_smi capacity)
     ARRAY (collection) = st_object_new_arrayed (st_array_class, capacity);
 }
 
-
-
-
-/* Dictionary methods */
-
-ST_DEFINE_VTABLE (st_dictionary, st_heap_object_vtable ());
-
 static st_smi
 dict_scan_for_object (st_oop dict, st_oop object)
 {
@@ -153,14 +166,12 @@ dict_scan_for_object (st_oop dict, st_oop object)
     return 0;
 }
 
-
 static void
 dict_no_check_add (st_oop dict, st_oop object)
 {
     st_array_at_put (ARRAY (dict),
 		     collection_find_element_or_nil (dict, st_association_key (object)), object);
 }
-
 
 void
 st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
@@ -175,9 +186,8 @@ st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
 	collection_at_new_index_put (dict, index, assoc);
 
     } else {
-	st_association_set_value (assoc, value);
+	st_association_value (assoc) = value;
     }
-
 }
 
 st_oop
@@ -219,26 +229,6 @@ st_dictionary_new_with_capacity (st_smi capacity)
     return dict;
 }
 
-
-static bool
-is_dictionary (void)
-{
-    return true;
-}
-
-static void
-st_dictionary_vtable_init (STVTable * table)
-{
-    table->scan_for_object = dict_scan_for_object;
-    table->no_check_add = dict_no_check_add;
-
-    table->is_dictionary = is_dictionary;
-}
-
-/* Set methods */
-
-ST_DEFINE_VTABLE (st_set, st_heap_object_vtable ());
-
 static st_smi
 set_scan_for_object (st_oop set, st_oop object)
 {
@@ -274,7 +264,6 @@ set_no_check_add (st_oop set, st_oop object)
 {
     st_array_at_put (ARRAY (set), collection_find_element_or_nil (set, object), object);
 }
-
 
 void
 st_set_add (st_oop set, st_oop object)
@@ -322,19 +311,4 @@ st_oop
 st_set_new (void)
 {
     return st_set_new_with_capacity (DEFAULT_CAPACITY);
-}
-
-static bool
-is_set (void)
-{
-    return true;
-}
-
-static void
-st_set_vtable_init (STVTable * table)
-{
-    table->scan_for_object = set_scan_for_object;
-    table->no_check_add = set_no_check_add;
-
-    table->is_set = is_set;
 }

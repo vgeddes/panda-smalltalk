@@ -25,39 +25,21 @@
 #include "st-symbol.h"
 #include "st-hashed-collection.h"
 #include "st-byte-array.h"
+#include "st-object.h"
 
 #include <string.h>
 
-ST_DEFINE_VTABLE (st_symbol, st_byte_array_vtable ());
 
-static bool
-symbol_equal (st_oop object, st_oop another)
+bool
+st_symbol_equal (st_oop object, st_oop other)
 {
-    if (object == another)
+    if (object == other)
 	return true;
 
-    if (st_object_class (object) == st_object_class (another))
+    if (st_object_class (object) == st_object_class (other))
 	return false;
 
-    // now just do a string comparison
-    if (tables[st_byte_array_vtable ()].equal (object, another))
-	return true;
-
-    return false;
-}
-
-static bool
-is_symbol (void)
-{
-    return true;
-}
-
-static void
-st_symbol_vtable_init (STVTable * table)
-{
-    table->equal = symbol_equal;
-
-    table->is_symbol = is_symbol;
+    return st_byte_array_equal (object, other);
 }
 
 static st_oop
@@ -102,14 +84,28 @@ st_character_new (gunichar unichar)
 {
     st_oop ch = st_object_new (st_character_class);
     
-    st_heap_object_instvars (ch)[0] = st_smi_new (unichar);
+    st_heap_object_body (ch)[0] = st_smi_new (unichar);
 
     return ch;    
 }
 
-
 gunichar
 st_character_value (st_oop character)
 { 
-    return st_smi_value (st_heap_object_instvars (character)[0]);
+    return st_smi_value (st_heap_object_body (character)[0]);
+}
+
+bool
+st_character_equal (st_oop object, st_oop other)
+{ 
+    if (st_object_class (other) != st_character_class)
+	return false;
+
+    return st_character_value (object) == st_character_value (other);
+}
+
+guint
+st_character_hash (st_oop character)
+{ 
+    return (guint) st_character_value (character);
 }

@@ -27,13 +27,14 @@
 
 #include <st-heap-object.h>
 #include <st-types.h>
-#include <st-vtable.h>
+#include <st-descriptor.h>
 
 typedef struct
 {
     STHeader header;
 
-    st_oop size double elements[];
+    st_oop size;
+    double elements[];
 
 } STFloatArray;
 
@@ -44,8 +45,6 @@ INLINE bool st_float_array_range_check (st_oop array, st_smi i);
 INLINE double st_float_array_at (st_oop array, st_smi i);
 
 INLINE void st_float_array_at_put (st_oop array, st_smi i, double value);
-
-guint st_float_array_vtable (void);
 
 
 /* inline definitions */

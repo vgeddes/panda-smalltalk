@@ -59,6 +59,12 @@ st_oops_copy (st_oop *to, st_oop *from, guint count)
 }
 
 
+
+bool   st_util_equal (st_oop object, st_oop another);
+
+guint  st_util_hash (st_oop object);
+
+
 /* generic error object */
 typedef struct {
     guint   code;

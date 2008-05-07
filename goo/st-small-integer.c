@@ -23,14 +23,5 @@
 */
 
 #include "st-small-integer.h"
-#include "st-vtable.h"
+#include "st-descriptor.h"
 #include "st-object.h"
-
-
-ST_DEFINE_VTABLE (st_smi, st_object_vtable ());
-
-static void
-st_smi_vtable_init (STVTable * table)
-{
-
-}

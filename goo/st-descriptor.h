@@ -1,7 +1,7 @@
 /*
- * st-association.c
+ * st-descriptor.h
  *
- * Copyright (c) 2008 Vincent Geddes
+ * Copyright (C) 2008 Vincent Geddes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,36 +22,37 @@
  * THE SOFTWARE.
 */
 
-#include "st-association.h"
-#include "st-object.h"
+#ifndef __ST_DESCRIPTOR_H__
+#define __ST_DESCRIPTOR_H__
 
-guint
-st_association_hash (st_oop object)
+#include <st-types.h>
+#include <glib.h>
+
+typedef enum
 {
-    STAssociation *a = ST_ASSOCIATION (object);
+    ST_FORMAT_FIXED,
+    ST_FORMAT_FLOAT,
+    ST_FORMAT_LARGE_INTEGER,
+    ST_FORMAT_ARRAY,
+    ST_FORMAT_BYTE_ARRAY,
+    ST_FORMAT_FLOAT_ARRAY,
+    ST_FORMAT_INTEGER_ARRAY,
+    ST_FORMAT_CONTEXT,
+
+    ST_NUM_FORMATS
+} STFormat;
+
+typedef struct
+{
+    STFormat format;
+
+    /* allocation */
+    st_oop (*allocate) (st_oop klass);
+
+    st_oop (*allocate_arrayed) (st_oop klass, st_smi size);
     
-    return st_object_hash (a->key) ^ st_object_hash (a->value);
-}
+} STDescriptor;
 
-bool
-st_association_equal (st_oop object, st_oop other)
-{
-    if (st_object_class (other) != st_association_class)
-	return false;
+extern const STDescriptor *st_descriptors[ST_NUM_FORMATS];
 
-    STAssociation *a = ST_ASSOCIATION (object);
-    STAssociation *b = ST_ASSOCIATION (other);
-
-    return st_object_equal (a->key, b->key) && st_object_equal (a->value, b->value);
-}
-
-st_oop
-st_association_new (st_oop key, st_oop value)
-{
-    st_oop assoc = st_object_new (st_association_class);
-
-    st_association_key (assoc) =  key;
-    st_association_value (assoc) = value;    
-
-    return assoc;
-}
+#endif /* __ST_VTABLE_H__ */

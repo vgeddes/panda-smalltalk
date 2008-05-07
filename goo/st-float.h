@@ -26,7 +26,9 @@
 #define __ST_FLOAT_H__
 
 #include <st-types.h>
+#include <st-descriptor.h>
 #include <st-heap-object.h>
+#include <st-object.h>
 
 typedef struct
 {
@@ -36,15 +38,17 @@ typedef struct
 
 } STFloat;
 
+st_oop        st_float_new       (double value);
 
-st_oop st_float_new (double value);
+INLINE double st_float_value     (st_oop f);
 
-INLINE double st_float_value (st_oop f);
+INLINE void   st_float_set_value (st_oop f, double value);
 
-INLINE void st_float_set_value (st_oop f, double value);
+INLINE bool   st_float_equal     (st_oop object, st_oop other);
 
-guint st_float_vtable (void);
+INLINE guint  st_float_hash      (st_oop object);
 
+const STDescriptor *st_float_descriptor (void);
 
 /* inline definitions */
 #define ST_FLOAT(oop) ((STFloat *) ST_POINTER (oop))
@@ -60,5 +64,21 @@ st_float_set_value (st_oop f, double value)
 {
     ST_FLOAT (f)->value = value;
 }
+
+INLINE bool
+st_float_equal (st_oop object, st_oop other)
+{
+    if (st_object_class (other) != st_float_class)
+	return false;
+
+    return st_float_value (object) == st_float_value (other);
+}
+
+INLINE guint
+st_float_hash (st_oop object)
+{
+    return (guint) st_float_value (object);
+}
+
 
 #endif /* __ST_FLOAT_H__ */

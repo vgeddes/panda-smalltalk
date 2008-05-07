@@ -25,15 +25,11 @@
 #include "st-byte-array.h"
 #include "st-object.h"
 #include "st-utils.h"
-#include "st-vtable.h"
+#include "st-descriptor.h"
 
 #include <string.h>
 
-ST_DEFINE_VTABLE (st_byte_array, st_heap_object_vtable ());
-
-
 #define ST_BYTE_ARRAY(oop) ((STByteArray *) ST_POINTER (oop))
-
 
 st_oop
 st_byte_array_size (st_oop object)
@@ -69,20 +65,6 @@ st_byte_array_at_put (st_oop object, st_smi i, guchar value)
     st_byte_array_bytes (object)[i - 1] = value;
 }
 
-
-static bool
-byte_array_verify (st_oop object)
-{    
-    if (!tables[st_heap_object_vtable ()].verify (object))
-	return false;
-
-    st_oop size = st_byte_array_size (object);
-    if (!st_object_is_smi (size) || !(st_smi_value (size) > 0))
-	return false;
-
-    return true;
-}
-
 INLINE st_smi
 round_size (st_smi size)
 {
@@ -113,7 +95,7 @@ allocate_arrayed (st_oop klass, st_smi size)
     st_smi size_rounded = round_size (size);
     st_oop array = st_allocate_object (ST_TYPE_SIZE (STByteArray) + (size_rounded / sizeof (st_oop)));
 
-    st_object_initialize_header (array, klass);
+    st_heap_object_initialize_header (array, klass);
     ST_BYTE_ARRAY (array)->size = st_smi_new (size);
 
     memset (st_byte_array_bytes (array), 0, size_rounded);
@@ -127,37 +109,27 @@ allocate (st_oop klass)
     return allocate_arrayed (klass, 0);
 }
 
-static bool
-is_byte_array (void)
+bool
+st_byte_array_equal (st_oop object, st_oop other)
 {
-    return true;
-}
+    st_smi size, size_other;
 
-static bool
-is_arrayed (void)
-{
-    return true;
-}
-
-static bool
-byte_array_equal (st_oop object, st_oop another)
-{
-    st_smi size1, size2;
-
-    if (!st_object_is_byte_array (another))
+    if (st_object_class (other) != st_byte_array_class &&
+	st_object_class (other) != st_string_class &&
+	st_object_class (other) != st_symbol_class) 
 	return false;
 
-    size1 = st_smi_value (st_byte_array_size (object));
-    size2 = st_smi_value (st_byte_array_size (another));
+    size = st_smi_value (st_byte_array_size (object));
+    size_other = st_smi_value (st_byte_array_size (other));
 
-    if (size1 != size2)
+    if (size != size_other)
 	return false;
 
-    return memcmp (st_byte_array_bytes (object), st_byte_array_bytes (another), size1) == 0;
+    return memcmp (st_byte_array_bytes (object), st_byte_array_bytes (other), size) == 0;
 }
 
-static guint
-byte_array_hash (st_oop object)
+guint
+st_byte_array_hash (st_oop object)
 {
     const signed char *p = (signed char *) st_byte_array_bytes (object);
     guint32 h = *p;
@@ -174,19 +146,14 @@ byte_array_hash (st_oop object)
     return h;
 }
 
-static void
-st_byte_array_vtable_init (STVTable * table)
+
+const STDescriptor *
+st_byte_array_descriptor (void)
 {
-    assert_static (sizeof (STByteArray) == (sizeof (STHeader) + sizeof (st_oop)));
+    static const STDescriptor __descriptor =
+	{ .allocate         = allocate,
+	  .allocate_arrayed = allocate_arrayed,
+	};
 
-    table->allocate = allocate;
-    table->allocate_arrayed = allocate_arrayed;
-
-    table->verify = byte_array_verify;
-
-    table->is_byte_array = is_byte_array;
-    table->is_arrayed = is_arrayed;
-
-    table->equal = byte_array_equal;
-    table->hash = byte_array_hash;
+    return & __descriptor;
 }

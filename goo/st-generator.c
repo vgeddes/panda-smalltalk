@@ -28,7 +28,8 @@
 #include "st-object.h"
 #include "st-symbol.h"
 #include "st-hashed-collection.h"
-#include "st-compiled-method.h"
+#include "st-method.h"
+#include "st-array.h"
 #include "st-byte-array.h"
 #include "st-universe.h"
 #include "st-class.h"
@@ -1277,12 +1278,6 @@ generate_method_statements (Generator *gt, STNode *statements)
    emit (gt, RETURN_STACK_TOP);
 }
 
-GQuark
-st_compilation_error_quark (void)
-{
-  return g_quark_from_static_string ("st-compilation-error-quark");
-}
-
 st_oop
 st_generate_method (st_oop klass, STNode *node, STError **error)
 {
@@ -1309,20 +1304,20 @@ st_generate_method (st_oop klass, STNode *node, STError **error)
 
     method = st_object_new (st_compiled_method_class);
 
-    st_compiled_method_set_arg_count   (method, st_node_list_length (node->arguments));
-    st_compiled_method_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
-    st_compiled_method_set_stack_depth (method, gt->max_stack_depth);
+    st_method_set_arg_count   (method, st_node_list_length (node->arguments));
+    st_method_set_temp_count  (method, g_list_length (gt->temporaries) - st_node_list_length (node->arguments));
+    st_method_set_stack_depth (method, gt->max_stack_depth);
 
     if (node->primitive >= 0) {
-	st_compiled_method_set_flags (method, ST_COMPILED_METHOD_PRIMITIVE);	
+	st_method_set_flags (method, ST_METHOD_PRIMITIVE);	
     } else {
-	st_compiled_method_set_flags (method, ST_COMPILED_METHOD_NORMAL);
+	st_method_set_flags (method, ST_METHOD_NORMAL);
     }
 
-    st_compiled_method_set_primitive_index (method, node->primitive);
+    st_method_set_primitive_index (method, node->primitive);
 
-    st_compiled_method_set_literals (method, create_literals_array (gt));
-    st_compiled_method_set_bytecodes (method, create_bytecode_array (gt)); 
+    st_method_literals (method) = create_literals_array (gt);
+    st_method_bytecode (method) = create_bytecode_array (gt); 
 
     generator_destroy (gt);
 
@@ -1607,17 +1602,17 @@ st_print_method (st_oop method)
     guchar *bytecodes;
     int     size;
 
-    printf ("flags: %i; ", st_compiled_method_flags (method));
-    printf ("arg-count: %i; ", st_compiled_method_arg_count (method));
-    printf ("temp-count: %i; ", st_compiled_method_temp_count (method));
-    printf ("stack-depth: %i; ", st_compiled_method_stack_depth (method));
-    printf ("primitive: %i;\n", st_compiled_method_primitive_index (method));
+    printf ("flags: %i; ", st_method_flags (method));
+    printf ("arg-count: %i; ", st_method_arg_count (method));
+    printf ("temp-count: %i; ", st_method_temp_count (method));
+    printf ("stack-depth: %i; ", st_method_stack_depth (method));
+    printf ("primitive: %i;\n", st_method_primitive_index (method));
     
     printf ("\n");
 
-    literals = st_compiled_method_literals (method);
-    bytecodes = (guchar *) st_byte_array_bytes (st_compiled_method_bytecodes (method));
-    size = st_byte_array_size (st_compiled_method_bytecodes (method));
+    literals = st_method_literals (method);
+    bytecodes = (guchar *) st_byte_array_bytes (st_method_bytecode (method));
+    size = st_byte_array_size (st_method_bytecode (method));
 
     print_bytecodes (literals, bytecodes, size);
     

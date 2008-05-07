@@ -1,5 +1,5 @@
 /*
- * st-compiled-method.h
+ * st-method.h
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -22,13 +22,13 @@
  * THE SOFTWARE.
 */
 
-#ifndef __ST_COMPILED_METHOD_H__
-#define __ST_COMPILED_METHOD_H__
+#ifndef __ST_METHOD_H__
+#define __ST_METHOD_H__
 
 #include <st-types.h>
-#include <st-vtable.h>
 #include <st-heap-object.h>
 #include <st-byte-array.h>
+
 #include <glib.h>
 
 typedef struct
@@ -39,74 +39,70 @@ typedef struct
     st_oop bytecode;
     st_oop literals;
 
-} STCompiledMethod;
+} STMethod;
 
 
 typedef enum
 {
-    ST_COMPILED_METHOD_NORMAL,
-    ST_COMPILED_METHOD_RETURN_RECEIVER,
-    ST_COMPILED_METHOD_RETURN_INSTVAR,
-    ST_COMPILED_METHOD_RETURN_LITERAL,
-    ST_COMPILED_METHOD_PRIMITIVE,
+    ST_METHOD_NORMAL,
+    ST_METHOD_RETURN_RECEIVER,
+    ST_METHOD_RETURN_INSTVAR,
+    ST_METHOD_RETURN_LITERAL,
+    ST_METHOD_PRIMITIVE,
 
-} STCompiledMethodFlags;
+} STMethodFlags;
 
 typedef enum
 {
-    ST_COMPILED_METHOD_LITERAL_NIL,
-    ST_COMPILED_METHOD_LITERAL_TRUE,
-    ST_COMPILED_METHOD_LITERAL_FALSE,
-    ST_COMPILED_METHOD_LITERAL_MINUS_ONE,
-    ST_COMPILED_METHOD_LITERAL_ZERO,
-    ST_COMPILED_METHOD_LITERAL_ONE,
-    ST_COMPILED_METHOD_LITERAL_TWO,
+    ST_METHOD_LITERAL_NIL,
+    ST_METHOD_LITERAL_TRUE,
+    ST_METHOD_LITERAL_FALSE,
+    ST_METHOD_LITERAL_MINUS_ONE,
+    ST_METHOD_LITERAL_ZERO,
+    ST_METHOD_LITERAL_ONE,
+    ST_METHOD_LITERAL_TWO,
 
-} STCompiledMethodLiteralType;
-
-
-INLINE st_oop   st_compiled_method_header          (st_oop code);
-
-INLINE void     st_compiled_method_set_header      (st_oop code, st_oop header);
-
-INLINE int      st_compiled_method_temp_count      (st_oop code);
-
-INLINE int      st_compiled_method_arg_count       (st_oop code);
-
-INLINE int      st_compiled_method_stack_depth     (st_oop code);
-
-INLINE int      st_compiled_method_primitive_index (st_oop code);
-
-INLINE STCompiledMethodFlags      st_compiled_method_flags           (st_oop code);
+} STMethodLiteralType;
 
 
-INLINE void     st_compiled_method_set_flags           (st_oop code, STCompiledMethodFlags flags);
-
-INLINE void     st_compiled_method_set_arg_count       (st_oop code, int count);
-
-INLINE void     st_compiled_method_set_temp_count      (st_oop code, int count);
-
-INLINE void     st_compiled_method_set_stack_depth     (st_oop code, int depth);
-
-INLINE void     st_compiled_method_set_instvar_index   (st_oop code, int depth);
-
-INLINE void     st_compiled_method_set_literal_type    (st_oop code, STCompiledMethodLiteralType literal_type);
-
-INLINE void     st_compiled_method_set_primitive_index (st_oop code, int index);
-
-INLINE void     st_compiled_method_set_bytecodes       (st_oop code, st_oop bytecode);
-
-INLINE void     st_compiled_method_set_literals        (st_oop code, st_oop literals);
+#define ST_METHOD(oop) ((STMethod *) (ST_POINTER (oop)))
 
 
-guint            st_compiled_method_vtable (void);
+#define st_method_header(oop) (ST_METHOD (oop)->header)
+#define st_method_literals(oop) (ST_METHOD(oop)->literals)
+#define st_method_bytecode(oop) (ST_METHOD(oop)->bytecode)
+
+INLINE int      st_method_temp_count      (st_oop method);
+
+INLINE int      st_method_arg_count       (st_oop method);
+
+INLINE int      st_method_stack_depth     (st_oop method);
+
+INLINE int      st_method_primitive_index (st_oop method);
+
+INLINE STMethodFlags st_method_flags          (st_oop method);
+
+INLINE void     st_method_set_flags           (st_oop method, STMethodFlags flags);
+
+INLINE void     st_method_set_arg_count       (st_oop method, int count);
+
+INLINE void     st_method_set_temp_count      (st_oop method, int count);
+
+INLINE void     st_method_set_stack_depth     (st_oop method, int depth);
+
+INLINE void     st_method_set_instvar_index   (st_oop method, int depth);
+
+INLINE void     st_method_set_literal_type    (st_oop method, STMethodLiteralType literal_type);
+
+INLINE void     st_method_set_primitive_index (st_oop method, int index);
+
 
 
 
 /*
- * CompiledCode Header:
+ * CompiledMethod Header:
  *
- * The CompiledCode header is a smi containing various bitfields.
+ * The CompiledMethod header is a smi containing various bitfields.
  *
  * A flag bitfield in the header indicates how the method must be executed. Generally
  * it provides various optimization hints to the interpreter. The flag bitfield
@@ -198,122 +194,86 @@ enum
     st_flag_mask_aligned        = st_flag_mask << st_flag_shift,
 };
 
-#define ST_COMPILED_METHOD(oop) ((STCompiledMethod *) (ST_POINTER (oop)))
 
-#define HEADER(code) (ST_COMPILED_METHOD (code)->header)
 
-INLINE st_oop
-st_compiled_method_header (st_oop code)
+
+INLINE int
+st_method_temp_count (st_oop method)
 {
-    return ST_COMPILED_METHOD (code)->header;
-}
-
-INLINE void
-st_compiled_method_set_header (st_oop code, st_oop header)
-{
-    ST_COMPILED_METHOD (code)->header = header;
+    return GET_BITFIELD (st_method_header (method), temp);
 }
 
 INLINE int
-st_compiled_method_temp_count (st_oop code)
+st_method_arg_count (st_oop method)
 {
-    return GET_BITFIELD (HEADER (code), temp);
+    return GET_BITFIELD (st_method_header (method), arg);
 }
 
 INLINE int
-st_compiled_method_arg_count (st_oop code)
+st_method_stack_depth (st_oop method)
 {
-    return GET_BITFIELD (HEADER (code), arg);
+    return GET_BITFIELD (st_method_header (method), stack);
 }
 
 INLINE int
-st_compiled_method_stack_depth (st_oop code)
+st_method_primitive_index (st_oop method)
 {
-    return GET_BITFIELD (HEADER (code), stack);
+    return GET_BITFIELD (st_method_header (method), primitive);
 }
 
-INLINE int
-st_compiled_method_primitive_index (st_oop code)
-{
-    return GET_BITFIELD (HEADER (code), primitive);
-}
-
-INLINE STCompiledMethodFlags
-st_compiled_method_flags (st_oop code)
+INLINE STMethodFlags
+st_method_flags (st_oop method)
 {   
-    return GET_BITFIELD (HEADER (code), flag);
+    return GET_BITFIELD (st_method_header (method), flag);
 }
 
 INLINE void
-st_compiled_method_set_flags (st_oop code, STCompiledMethodFlags flags)
+st_method_set_flags (st_oop method, STMethodFlags flags)
 {
-    HEADER (code) = SET_BITFIELD (HEADER (code), flag, flags);
+    st_method_header (method) = SET_BITFIELD (st_method_header (method), flag, flags);
 }
 
 INLINE void
-st_compiled_method_set_arg_count (st_oop code, int count)
+st_method_set_arg_count (st_oop method, int count)
 {	
-    HEADER (code) = SET_BITFIELD (HEADER (code), arg, count);
+    st_method_header (method) = SET_BITFIELD (st_method_header (method), arg, count);
 }
 
 INLINE void
-st_compiled_method_set_temp_count (st_oop code, int count)
+st_method_set_temp_count (st_oop method, int count)
 {
-    HEADER (code) = SET_BITFIELD (HEADER (code), temp, count);
+    st_method_header (method) = SET_BITFIELD (st_method_header (method), temp, count);
 }
 
 INLINE void
-st_compiled_method_set_stack_depth (st_oop code, int depth)
+st_method_set_stack_depth (st_oop method, int depth)
 {
-    HEADER (code) = SET_BITFIELD (HEADER (code), stack, depth);
+    st_method_header (method) = SET_BITFIELD (st_method_header (method), stack, depth);
 }
 
 INLINE void
-st_compiled_method_set_primitive_index (st_oop code, int index)
+st_method_set_primitive_index (st_oop method, int index)
 {
-    HEADER (code) = SET_BITFIELD (HEADER (code), primitive, index);
+    st_method_header (method) = SET_BITFIELD (st_method_header (method), primitive, index);
 }
 
 INLINE void
-st_compiled_method_set_instvar_index (st_oop code, int index)
+st_method_set_instvar_index (st_oop method, int index)
 {
-    HEADER (code) = SET_BITFIELD (HEADER (code), instvar, index);
+    st_method_header (method) = SET_BITFIELD (st_method_header (method), instvar, index);
 }
 
 INLINE void
-st_compiled_method_set_literal_type (st_oop code, STCompiledMethodLiteralType literal_type)
+st_method_set_literal_type (st_oop method, STMethodLiteralType literal_type)
 {
-    HEADER (code) = SET_BITFIELD (HEADER (code), literal, literal_type);
+    st_method_header (method) = SET_BITFIELD (st_method_header  (method), literal, literal_type);
 }
 
-INLINE st_oop
-st_compiled_method_literals (st_oop code)
-{
-    return ST_COMPILED_METHOD (code)->literals;
-}
-
-INLINE st_oop
-st_compiled_method_bytecodes (st_oop code)
-{
-    return ST_COMPILED_METHOD (code)->bytecode;
-}
-
-INLINE void
-st_compiled_method_set_bytecodes (st_oop code, st_oop bytecode)
-{
-    ST_COMPILED_METHOD (code)->bytecode = bytecode;
-}
-
-INLINE void
-st_compiled_method_set_literals (st_oop code, st_oop literals)
-{
-    ST_COMPILED_METHOD (code)->literals = literals;
-}
 
 INLINE guchar *
-st_compiled_method_code (st_oop method)
+st_method_bytecode_bytes (st_oop method)
 {
-    return st_byte_array_bytes (st_compiled_method_bytecodes (method));    
+    return st_byte_array_bytes (st_method_bytecode (method));    
 }
 
-#endif /* __ST_COMPILED_METHOD_H__ */
+#endif /* __ST_METHOD_H__ */

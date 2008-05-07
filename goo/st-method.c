@@ -1,5 +1,5 @@
 /*
- * st-compiled-method.c
+ * st-method.c
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -22,22 +22,4 @@
  * THE SOFTWARE.
 */
 
-#include "st-compiled-method.h"
-
-/* CompiledMethod */
-
-ST_DEFINE_VTABLE (st_compiled_method, st_heap_object_vtable ());
-
-
-static bool
-is_compiled_method (void)
-{
-    return true;
-}
-
-static void
-st_compiled_method_vtable_init (STVTable * table)
-{
-    table->is_compiled_method = is_compiled_method;
-}
-
+#include "st-method.h"

@@ -26,10 +26,8 @@
 #include "st-small-integer.h"
 #include "st-byte-array.h"
 #include "st-object.h"
+#include "st-descriptor.h"
 
-ST_DEFINE_VTABLE (st_heap_object, st_object_vtable ());
-
-#define ST_HEADER(oop) ((STHeader *) ST_POINTER (oop))
 
 #define HEADER(object) (ST_POINTER (object)->header)
 
@@ -51,7 +49,6 @@ void
 st_heap_object_set_format (st_oop object, guint format)
 {
     HEADER (object) = (HEADER (object) & ~st_format_mask_in_place) | (format << st_format_shift);   
-
 }
 
 bool
@@ -78,26 +75,14 @@ st_heap_object_set_nonpointer (st_oop object, bool nonpointer)
     HEADER (object) = (HEADER (object) & ~st_nonpointer_mask_in_place) | ((nonpointer ? 1 : 0) << st_nonpointer_shift);
 }
 
-st_oop
-st_heap_object_class (st_oop object)
-{
-    return ST_HEADER (object)->klass;
-}
-
-void
-st_heap_object_set_class (st_oop object, st_oop klass)
-{
-    ST_HEADER (object)->klass = klass;
-}
-
 st_oop *
 st_heap_object_instvars (st_oop object)
 {
-    return ST_HEADER (object)->fields;
+    return ST_POINTER (object)->fields;
 }
 
 void
-st_object_initialize_header (st_oop object, st_oop klass)
+st_heap_object_initialize_header (st_oop object, st_oop klass)
 {
     /* header */
     st_heap_object_set_format (object, st_smi_value (st_behavior_format (klass)));
@@ -108,13 +93,13 @@ st_object_initialize_header (st_oop object, st_oop klass)
     st_heap_object_set_hash (object, st_current_hash++);
 
     /* klass */
-    st_heap_object_set_class (object, klass);
+    st_heap_object_class (object) = klass;
 }
 
 void
-st_object_initialize_body (st_oop object, st_smi instance_size)
+st_heap_object_initialize_body (st_oop object, st_smi instance_size)
 {
-    st_oop *instvars = st_heap_object_instvars (object);
+    st_oop *instvars = st_heap_object_body (object);
 
     for (st_smi i = 0; i < instance_size; i++)
 	instvars[i] = st_nil;
@@ -122,84 +107,25 @@ st_object_initialize_body (st_oop object, st_smi instance_size)
 
 
 static st_oop
-heap_object_allocate (st_oop klass)
+allocate (st_oop klass)
 {
     st_smi instance_size = st_smi_value (st_behavior_instance_size (klass));
 
     st_oop object = st_allocate_object (ST_TYPE_SIZE (STHeader) + instance_size);
 
-    st_object_initialize_header (object, klass);
-    st_object_initialize_body (object, instance_size);
+    st_heap_object_initialize_header (object, klass);
+    st_heap_object_initialize_body (object, instance_size);
 
     return object;
 }
 
-static st_oop
-heap_object_allocate_arrayed (st_oop klass, st_smi size)
+const STDescriptor *
+st_heap_object_descriptor (void)
 {
-    g_critical ("class is not arrayed, use non-arrayed allocation instead");
+    static const STDescriptor __descriptor =
+	{ .allocate         = allocate,
+	  .allocate_arrayed = NULL,
+	};
 
-    return st_nil;
-}
-
-static bool
-heap_object_verify (st_oop object)
-{
-    bool verified = true;
-
-    st_oop klass = st_heap_object_class (object);
-
-    verified = verified && st_object_is_heap (object);
-    verified = verified && (st_object_is_class (klass)
-			    || st_object_is_metaclass (klass));
-
-    return verified;
-}
-
-static char *
-heap_object_describe (st_oop object)
-{
-    static const char format[] =
-	"mark:\t[nonpointer: %i; frozen: %i; hash: %i]\n" "class:\t\n" "name:\t%s\n";
-
-    /* for other object formats, delegate to other implementations */
-/*    if (st_object_is_arrayed (object) &&
-	st_object_is_class (object) &&
-	st_object_is_metaclass (object) &&
-	st_object_is_large_integer (object) &&
-        st_object_is_float (object))
-	return st_object_virtual (object)->describe (object);
-  */
-
-    return g_strdup (format);
-   
-
-
-
-}
-
-static bool
-heap_object_equal (st_oop object, st_oop another)
-{
-    return ST_POINTER (object) == ST_POINTER (another);
-}
-
-static guint
-heap_object_hash (st_oop object)
-{
-    return st_heap_object_hash (object);
-}
-
-static void
-st_heap_object_vtable_init (STVTable * table)
-{
-    /* ensure that STHeader is not padded */
-    assert_static (sizeof (STHeader) == 3 * sizeof (st_oop));
-
-    table->allocate = heap_object_allocate;
-    table->allocate_arrayed = heap_object_allocate_arrayed;
-    table->verify = heap_object_verify;
-    table->describe = heap_object_describe;
-    table->equal = heap_object_equal;
-    table->hash = heap_object_hash;
+    return & __descriptor;
 }

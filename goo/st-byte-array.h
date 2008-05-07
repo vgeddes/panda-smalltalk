@@ -51,7 +51,11 @@ void    st_byte_array_at_put (st_oop object, st_smi i, guchar value);
 
 bool    st_byte_array_range_check (st_oop object, st_smi i);
 
+bool    st_byte_array_equal (st_oop object, st_oop other);
 
-guint st_byte_array_vtable (void);
+guint   st_byte_array_hash (st_oop object);
+
+const STDescriptor *st_byte_array_descriptor (void);
+
 
 #endif /* __ST_BYTE_ARRAY__ */

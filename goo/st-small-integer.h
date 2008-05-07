@@ -26,7 +26,7 @@
 #define __ST_SMALL_INTEGER_H__
 
 #include <st-types.h>
-#include <st-vtable.h>
+#include <st-descriptor.h>
 
 INLINE st_oop st_smi_new (st_smi num);
 INLINE st_smi st_smi_value (st_oop smi);
@@ -36,6 +36,8 @@ INLINE bool st_smi_equal (st_oop m, st_oop n);
 INLINE st_smi st_smi_hash (st_oop smi);
 guint st_smi_vtable (void);
 
+
+const STDescriptor *st_smi_descriptor (void) G_GNUC_CONST;
 
 /* inline definitions */
 

@@ -27,7 +27,7 @@
 #include "st-object.h"
 #include "st-float.h"
 #include "st-association.h"
-#include "st-compiled-method.h"
+#include "st-method.h"
 #include "st-array.h"
 #include "st-byte-array.h"
 #include "st-small-integer.h"
@@ -36,7 +36,7 @@
 #include "st-universe.h"
 #include "st-heap-object.h"
 #include "st-lexer.h"
-#include "st-vtable.h"
+#include "st-descriptor.h"
 #include "st-compiler.h"
 
 #include <glib.h>
@@ -103,28 +103,28 @@ enum
 };
 
 static st_oop
-st_class_new (guint format)
+st_class_new (STFormat format)
 {
     st_oop klass;
 
     klass = st_allocate_object (ST_TYPE_SIZE (STClass));
 
     /* TODO refactor this initialising */
-    st_heap_object_set_format (klass, st_class_vtable ());
+    st_heap_object_set_format (klass, ST_FORMAT_FIXED);
 
     st_heap_object_set_readonly (klass, false);
     st_heap_object_set_nonpointer (klass, false);
     st_heap_object_set_hash (klass, st_current_hash++);			       
-    st_heap_object_set_class (klass, st_nil);
+    st_heap_object_class (klass) = st_nil;
 
-    st_behavior_set_format (klass, st_smi_new (format));
+    st_behavior_format (klass)             = st_smi_new (format);
+    st_behavior_instance_size (klass)      = st_nil;
+    st_behavior_superclass (klass)         = st_nil;
+    st_behavior_method_dictionary (klass)  = st_nil;
+    st_behavior_instance_variables (klass) = st_nil;
 
-    st_behavior_set_instance_size (klass, st_nil);
-    st_behavior_set_superclass (klass, st_nil);
-    st_behavior_set_method_dictionary (klass, st_nil);
-    st_behavior_set_instance_variables (klass, st_nil);
-    st_class_set_name (klass, st_nil);
-    st_class_set_pool (klass, st_nil);
+    st_class_name (klass) = st_nil;
+    st_class_pool (klass) = st_nil;
 
     return klass;
 }
@@ -171,20 +171,19 @@ setup_class_final (const char *class_name,
 	klass = st_dictionary_at (st_smalltalk, st_symbol_new ("Object"));
 	g_assert (klass != st_nil);
 
-	st_behavior_set_superclass (klass, st_nil);
+	st_behavior_superclass (klass) = st_nil;
 
 	// get metaclass or create a new one
 	if (st_object_class (klass) == st_nil) {
 	    metaclass = st_object_new (st_metaclass_class);
-	    st_heap_object_set_class (klass, metaclass);
+	    st_heap_object_class (klass) =  metaclass;
 	} else {
 	    metaclass = st_object_class (klass);
 	}
 
-	st_behavior_set_superclass (metaclass,
-				    st_dictionary_at (st_smalltalk, st_symbol_new ("Class")));
+	st_behavior_superclass (metaclass) = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
 
-	st_behavior_set_instance_size (klass, 0);
+	st_behavior_instance_size (klass)  = st_smi_new (0);
 
     } else {
 
@@ -199,30 +198,30 @@ setup_class_final (const char *class_name,
 	    klass = st_class_new (st_smi_value (st_behavior_format (superclass)));
 	}
 
-	st_behavior_set_superclass (klass, superclass);
+	st_behavior_superclass (klass) = superclass;
 
 	// get metaclass or create a new one
 	if (st_object_class (klass) == st_nil) {
 	    metaclass = st_object_new (st_metaclass_class);
-	    st_heap_object_set_class (klass, metaclass);
+	    st_heap_object_class (klass) = metaclass;
 	} else {
 	    metaclass = st_object_class (klass);
 	}
 
-	st_behavior_set_superclass (metaclass, st_object_class (superclass));
+	st_behavior_superclass (metaclass) = st_object_class (superclass);
 
 	// set the instance size
 	st_smi n_ivars = g_list_length (ivarnames) + st_smi_value (st_behavior_instance_size (superclass));
-	st_behavior_set_instance_size (klass, n_ivars);
+	st_behavior_instance_size (klass) = st_smi_new (n_ivars);
     }
 
-    st_behavior_set_method_dictionary (metaclass, st_dictionary_new ());
-    st_behavior_set_instance_variables (metaclass, st_nil);
-    st_behavior_set_instance_size (metaclass, INSTANCE_SIZE_CLASS);
-    st_metaclass_set_instance_class (metaclass, klass);
+    st_behavior_method_dictionary (metaclass) =  st_dictionary_new ();
+    st_behavior_instance_variables (metaclass) = st_nil;
+    st_behavior_instance_size (metaclass) = st_smi_new (INSTANCE_SIZE_CLASS);
+    st_metaclass_instance_class (metaclass) = klass;
 
     // set the class name
-    st_class_set_name (klass, st_symbol_new (class_name));
+    st_class_name (klass) = st_symbol_new (class_name);
 
     // create instanceVariableNames array
     st_oop instance_variable_names =
@@ -233,17 +232,17 @@ setup_class_final (const char *class_name,
     for (GList * l = ivarnames; l; l = l->next) {
 	st_array_at_put (instance_variable_names, i++, st_symbol_new (l->data));
     }
-    st_behavior_set_instance_variables (klass, instance_variable_names);
+    st_behavior_instance_variables (klass) = instance_variable_names;
 
     // create classPool dictionary
     st_oop class_pool = st_dictionary_new ();
     for (GList * l = cvarnames; l; l = l->next) {
 	st_dictionary_at_put (class_pool, st_symbol_new (l->data), st_nil);
     }
-    st_class_set_pool (klass, class_pool);
+    st_class_pool (klass) = class_pool;
 
     // add methodDictionary
-    st_behavior_set_method_dictionary (klass, st_dictionary_new ());
+    st_behavior_method_dictionary (klass) = st_dictionary_new ();
 
     // add class to SystemDictionary if it's not already there
     st_dictionary_at_put (st_smalltalk, st_symbol_new (class_name), klass);
@@ -397,55 +396,61 @@ st_bootstrap_universe (void)
 {
     st_oop _st_object_class, _st_class_class;
 
+    /* object format descriptors */
+    st_descriptors[ST_FORMAT_FIXED]      = st_heap_object_descriptor ();
+    st_descriptors[ST_FORMAT_ARRAY]      = st_array_descriptor       ();
+    st_descriptors[ST_FORMAT_BYTE_ARRAY] = st_byte_array_descriptor  ();
+    st_descriptors[ST_FORMAT_FLOAT]      = st_float_descriptor       ();
+
     /* must create nil first, since the fields of all newly created objects
      * are initialized to it's st_oop.
      */
-    st_nil = st_allocate_object (sizeof (STHeader) / sizeof (st_oop));
-    st_heap_object_set_readonly (st_nil, false);
+    st_nil = st_allocate_object   (sizeof (STHeader) / sizeof (st_oop));
+    st_heap_object_set_readonly   (st_nil, false);
     st_heap_object_set_nonpointer (st_nil, false);
-    st_heap_object_set_format (st_nil, st_heap_object_vtable ());
-    st_heap_object_set_hash (st_nil, st_current_hash++);
-    st_heap_object_set_class (st_nil, st_nil);
+    st_heap_object_set_format     (st_nil, ST_FORMAT_FIXED);
+    st_heap_object_set_hash       (st_nil, st_current_hash++);
+    st_heap_object_class          (st_nil) = st_nil;
 
-    _st_object_class = st_class_new (st_object_vtable ()); 
-    st_undefined_object_class = st_class_new (st_heap_object_vtable ());
-    st_metaclass_class = st_class_new (st_metaclass_vtable ());
-    st_behavior_class = st_class_new (st_heap_object_vtable ());
-    _st_class_class = st_class_new (st_class_vtable ());
-    st_smi_class = st_class_new (st_smi_vtable ());
-    st_large_integer_class = st_class_new (st_heap_object_vtable ());
-    st_character_class = st_class_new (st_heap_object_vtable ());
-    st_true_class = st_class_new (st_heap_object_vtable ());
-    st_false_class = st_class_new (st_heap_object_vtable ());
-    st_float_class = st_class_new (st_float_vtable ());
-    st_array_class = st_class_new (st_array_vtable ());
-    st_byte_array_class = st_class_new (st_byte_array_vtable ());
-    st_dictionary_class = st_class_new (st_dictionary_vtable ());
-    st_set_class = st_class_new (st_set_vtable ());
-    st_string_class = st_class_new (st_byte_array_vtable ());
-    st_symbol_class = st_class_new (st_symbol_vtable ());
-    st_association_class = st_class_new (st_association_vtable ());
-    st_compiled_method_class = st_class_new (st_compiled_method_vtable ());
+    _st_object_class          = st_class_new (ST_FORMAT_FIXED); 
+    st_undefined_object_class = st_class_new (ST_FORMAT_FIXED);
+    st_metaclass_class        = st_class_new (ST_FORMAT_FIXED);
+    st_behavior_class         = st_class_new (ST_FORMAT_FIXED);
+    _st_class_class           = st_class_new (ST_FORMAT_FIXED);
+    st_smi_class              = st_class_new (ST_FORMAT_FIXED);
+    st_large_integer_class    = st_class_new (ST_FORMAT_LARGE_INTEGER);
+    st_character_class        = st_class_new (ST_FORMAT_FIXED);
+    st_true_class             = st_class_new (ST_FORMAT_FIXED);
+    st_false_class            = st_class_new (ST_FORMAT_FIXED);
+    st_float_class            = st_class_new (ST_FORMAT_FLOAT);
+    st_array_class            = st_class_new (ST_FORMAT_ARRAY);
+    st_dictionary_class       = st_class_new (ST_FORMAT_FIXED);
+    st_set_class              = st_class_new (ST_FORMAT_FIXED);
+    st_byte_array_class       = st_class_new (ST_FORMAT_BYTE_ARRAY);
+    st_string_class           = st_class_new (ST_FORMAT_BYTE_ARRAY);
+    st_symbol_class           = st_class_new (ST_FORMAT_BYTE_ARRAY);
+    st_association_class      = st_class_new (ST_FORMAT_FIXED);
+    st_compiled_method_class  = st_class_new (ST_FORMAT_FIXED);
 
 
-    st_heap_object_set_class (st_nil, st_undefined_object_class);
+    st_heap_object_class (st_nil) = st_undefined_object_class;
 
     /* setup some initial instance sizes so that we can start instantiating
      * critical objects:
      *   Association, String, Symbol, Set, Dictionary, True, False, Array, ByteArray
      */
-    st_behavior_set_instance_size (_st_object_class, 0);
-    st_behavior_set_instance_size (st_association_class, 2);
-    st_behavior_set_instance_size (st_undefined_object_class, 0);
-    st_behavior_set_instance_size (st_symbol_class, 0);
-    st_behavior_set_instance_size (st_string_class, 0);
-    st_behavior_set_instance_size (st_large_integer_class, 0);
-    st_behavior_set_instance_size (st_byte_array_class, 0);
-    st_behavior_set_instance_size (st_array_class, 0);
-    st_behavior_set_instance_size (st_true_class, 0);
-    st_behavior_set_instance_size (st_false_class, 0);
-    st_behavior_set_instance_size (st_set_class, 2);
-    st_behavior_set_instance_size (st_dictionary_class, 2);
+    st_behavior_instance_size (_st_object_class)          = st_smi_new (0);
+    st_behavior_instance_size (st_association_class)      = st_smi_new (2);
+    st_behavior_instance_size (st_undefined_object_class) = st_smi_new (0);
+    st_behavior_instance_size (st_symbol_class)           = st_smi_new (0);
+    st_behavior_instance_size (st_string_class)           = st_smi_new (0);
+    st_behavior_instance_size (st_large_integer_class)    = st_smi_new (0);
+    st_behavior_instance_size (st_byte_array_class)       = st_smi_new (0);
+    st_behavior_instance_size (st_array_class)            = st_smi_new (0);
+    st_behavior_instance_size (st_true_class)             = st_smi_new (0);
+    st_behavior_instance_size (st_false_class)            = st_smi_new (0);
+    st_behavior_instance_size (st_set_class)              = st_smi_new (2);
+    st_behavior_instance_size (st_dictionary_class)       = st_smi_new (2);
 
     /* create special object instances */
     st_true = st_object_new (st_true_class);
@@ -549,5 +554,5 @@ st_bootstrap_universe (void)
        
 	}
     */
-    
+
 }

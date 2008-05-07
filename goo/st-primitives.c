@@ -659,21 +659,21 @@ activate_block_context (STExecutionState *es)
     st_smi  argcount;
 
     block = es->msg_receiver;
-    argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
+    argcount = st_smi_value (st_block_context_argcount (block));
     if (argcount != es->msg_argcount) {
 	es->success = false;
 	return;
     }
 
-    st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
+    st_oops_copy (st_block_context_stack (block),
 		  es->stack + es->sp - argcount,
 		  argcount);
 
     es->sp -= es->msg_argcount + 1;
     
-    ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIAL_IP (block);
-    ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (block) = es->context;
+    st_context_part_ip (block) = st_block_context_initial_ip (block);
+    st_context_part_sp (block) = st_smi_new (argcount);
+    st_block_context_caller (block) = es->context;
 
     st_interpreter_set_active_context (es, block);
 }
@@ -717,21 +717,21 @@ BlockContext_valueWithArguments (STExecutionState *es)
 	return;
     }
 
-    argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
+    argcount = st_smi_value (st_block_context_argcount (block));
     if (argcount != st_smi_value (st_array_size (values))) {
 	st_interpreter_set_success (es, false);
 	return;
     }
     
-    st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
+    st_oops_copy (st_block_context_stack (block),
 		  st_array_element (values, 1),
 		  argcount);
     
     es->sp -= es->msg_argcount + 1;    
     
-    ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIAL_IP (block);
-    ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (block) = es->context;
+    st_context_part_ip (block) = st_block_context_initial_ip (block);
+    st_context_part_sp (block) = st_smi_new (argcount);
+    st_block_context_caller (block) = es->context;
 
     st_interpreter_set_active_context (es, block);
 }

@@ -8,6 +8,8 @@
 #include "st-node.h"
 
 #include "st-lexer.h"
+#include "st-array.h"
+
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>

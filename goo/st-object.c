@@ -26,86 +26,70 @@
 #include "st-universe.h"
 #include "st-class.h"
 #include "st-small-integer.h"
+#include "st-association.h"
+#include "st-float.h"
+#include "st-array.h"
+#include "st-byte-array.h"
+#include "st-symbol.h"
 #include "st-heap-object.h"
 
 st_oop
 st_object_new (st_oop klass)
 {  
-    return tables[st_smi_value (st_behavior_format (klass))].allocate (klass);
+    return st_descriptors[st_smi_value (st_behavior_format (klass))]->allocate (klass);
 }
 
 st_oop
 st_object_new_arrayed (st_oop klass, st_smi size)
 {
-    return tables[st_smi_value (st_behavior_format (klass))].allocate_arrayed (klass, size);
+    return st_descriptors[st_smi_value (st_behavior_format (klass))]->allocate_arrayed (klass, size);
 }
 
-/* Meta table */
 
-ST_DEFINE_VTABLE (st_object, 0);
-
-static bool
-is_not_type (void)
+bool
+st_object_equal (st_oop object, st_oop other)
 {
-    return false;
+    if (st_object_class (object) == st_smi_class)
+	return st_smi_equal (object, other);
+
+    if (st_object_class (object) == st_float_class)
+	return st_float_equal (object, other);
+
+    if (st_object_class (object) == st_character_class)
+	return st_character_equal (object, other);
+
+    if (st_object_class (object) == st_association_class)
+	return st_association_equal (object, other);
+
+    if (st_object_class (object) == st_symbol_class)
+	return st_symbol_equal (object, other);
+    
+    if (st_object_class (object) == st_byte_array_class ||
+	st_object_class (object) == st_string_class)
+	return st_byte_array_equal (object, other);
+    
+    return object == other;    
 }
 
-static bool
-object_equal (st_oop object, st_oop another)
+guint
+st_object_hash (st_oop object)
 {
-    /* identity test */
-    return object == another;
-}
+    if (st_object_class (object) == st_smi_class)
+	return st_smi_hash (object);
 
-static bool
-object_verify (st_oop object)
-{
-    return false;
-}
+    if (st_object_class (object) == st_byte_array_class ||
+	st_object_class (object) == st_string_class     ||
+	st_object_class (object) == st_symbol_class)
+	return st_byte_array_hash (object);
 
-static char *
-object_describe (st_oop object)
-{
-    return NULL;
-}
+    if (st_object_class (object) == st_float_class)
+	return st_float_hash (object);
 
-static st_oop
-allocate (st_oop klass)
-{
-    g_assert_not_reached ();
-    return 0;
-}
+    if (st_object_class (object) == st_character_class)
+	return st_character_hash (object);
 
-static st_oop
-allocate_arrayed (st_oop klass, st_smi size)
-{
-    g_assert_not_reached ();
-    return 0;
-}
-
-static void
-st_object_vtable_init (STVTable *table)
-{
-    table->allocate = allocate;
-    table->allocate_arrayed = allocate_arrayed;
-
-    table->equal = object_equal;
-    table->verify = object_verify;
-    table->describe = object_describe;
-
-    table->is_association = is_not_type;
-    table->is_class = is_not_type;
-    table->is_metaclass = is_not_type;
-    table->is_symbol = is_not_type;
-    table->is_float = is_not_type;
-    table->is_set = is_not_type;
-    table->is_dictionary = is_not_type;
-    table->is_compiled_method = is_not_type;
-    table->is_compiled_block = is_not_type;
-    table->is_block_closure = is_not_type;
-    table->is_method_context = is_not_type;
-    table->is_block_context = is_not_type;
-    table->is_arrayed = is_not_type;
-    table->is_array = is_not_type;
-    table->is_byte_array = is_not_type;
+    if (st_object_class (object) == st_association_class)
+	return st_association_hash (object);
+    
+    return st_heap_object_hash (object);
 }

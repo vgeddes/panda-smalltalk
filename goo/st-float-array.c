@@ -39,7 +39,7 @@ allocate_arrayed (st_oop klass, st_smi size)
 
     st_oop object = st_allocate_object (ST_TYPE_SIZE (st_float_array) + size);
     
-    st_object_initialize_header (object, klass);
+    st_heap_object_initialize_header (object, klass);
 
     ST_FLOAT_ARRAY (object)->size = size;
 
@@ -57,7 +57,7 @@ allocate (st_oop klass)
 }
 
 static void
-st_float_vtable_init (STVTable * table)
+st_float_descriptor_init (STDescriptor * table)
 {
     assert_static (sizeof (st_float_array) == (sizeof (STHeader) + sizeof (st_oop)));
 

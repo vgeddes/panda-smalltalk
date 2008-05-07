@@ -26,18 +26,23 @@
 #define __ST_SYMBOL_H__
 
 #include <st-types.h>
-#include <st-vtable.h>
+#include <st-descriptor.h>
 #include <glib.h>
 
 st_oop st_string_new (const char *bytes);
 
+
 st_oop st_symbol_new (const char *bytes);
 
-st_oop st_character_new (gunichar unichar);
+bool   st_symbol_equal (st_oop object, st_oop other);
+
+
+st_oop   st_character_new   (gunichar unichar);
 
 gunichar st_character_value (st_oop character);
 
+bool     st_character_equal (st_oop object, st_oop other);
 
-guint st_symbol_vtable (void);
+guint    st_character_hash (st_oop object);
 
 #endif /* __ST_SYMBOL_H__ */

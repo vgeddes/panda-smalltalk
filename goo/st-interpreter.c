@@ -8,7 +8,7 @@
 #include "st-class.h"
 #include "st-context.h"
 #include "st-primitives.h"
-#include "st-compiled-method.h"
+#include "st-method.h"
 #include "st-byte-array.h"
 #include "st-array.h"
 #include "st-association.h"
@@ -21,9 +21,9 @@ create_doIt_method (void)
     
     static const char string1[] = 
 	"doIt"
-	"    | block |"
-	"    block := [ :x | x * self ]."
-	" ^  block value: 10";
+	"   | block |"
+	"   block := [ :x | x + 5 ]."
+	" ^ block value: 10";
 
     static const char string2[] = 
 	"increment"
@@ -73,12 +73,12 @@ send_unary_message (st_oop sender,
     context = st_method_context_new (method);
 
 
-    ST_CONTEXT_PART_SENDER (context) = sender;
-    ST_CONTEXT_PART_IP (context) = st_smi_new (0);
-    ST_CONTEXT_PART_SP (context) = st_smi_new (0);
+    st_context_part_sender (context) = sender;
+    st_context_part_ip (context) = st_smi_new (0);
+    st_context_part_sp (context) = st_smi_new (0);
 
-    ST_METHOD_CONTEXT_RECEIVER (context) = receiver;
-    ST_METHOD_CONTEXT_METHOD (context) = method;
+    st_method_context_receiver (context) = receiver;
+    st_method_context_method (context) = method;
 
     return context;
 }
@@ -110,11 +110,11 @@ new_context (STExecutionState *es,
     for (guint i = 0; i < argcount; i++)
 	arguments[i] = es->stack[es->sp - argcount + i];
 
-    ST_CONTEXT_PART_SENDER (context) = sender;
-    ST_CONTEXT_PART_IP (context) = st_smi_new (0);
-    ST_CONTEXT_PART_SP (context) = st_smi_new (0);
-    ST_METHOD_CONTEXT_RECEIVER (context) = receiver;
-    ST_METHOD_CONTEXT_METHOD (context) = method;
+    st_context_part_sender (context) = sender;
+    st_context_part_ip (context) = st_smi_new (0);
+    st_context_part_sp (context) = st_smi_new (0);
+    st_method_context_receiver (context) = receiver;
+    st_method_context_method (context) = method;
 
     es->sp -= argcount + 1;
 
@@ -129,31 +129,31 @@ st_interpreter_set_active_context (STExecutionState *es,
 
     /* save executation state of active context */
     if (es->context != st_nil) {
-	ST_CONTEXT_PART_IP (es->context) = st_smi_new (es->ip);
-	ST_CONTEXT_PART_SP (es->context) = st_smi_new (es->sp);
+	st_context_part_ip (es->context) = st_smi_new (es->ip);
+	st_context_part_sp (es->context) = st_smi_new (es->sp);
     }
     
     if (st_object_class (context) == st_block_context_class) {
 
-	home = ST_BLOCK_CONTEXT_HOME (context);
+	home = st_block_context_home (context);
 	
-	es->method   = ST_METHOD_CONTEXT_METHOD (home);
-	es->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-	es->literals = st_array_element (st_compiled_method_literals (es->method), 1);
+	es->method   = st_method_context_method (home);
+	es->receiver = st_method_context_receiver (home);
+	es->literals = st_array_element (st_method_literals (es->method), 1);
 	es->temps    = st_method_context_temporary_frame (home);
-	es->stack    = ST_BLOCK_CONTEXT_STACK (context);
+	es->stack    = st_block_context_stack (context);
     } else {
-	es->method   = ST_METHOD_CONTEXT_METHOD (context);
-	es->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
-	es->literals = st_array_element (st_compiled_method_literals (es->method), 1);
+	es->method   = st_method_context_method (context);
+	es->receiver = st_method_context_receiver (context);
+	es->literals = st_array_element (st_method_literals (es->method), 1);
 	es->temps    = st_method_context_temporary_frame (context);
 	es->stack    = st_method_context_stack_frame (context);
     }
 
     es->context  = context;
-    es->sp       = st_smi_value (ST_CONTEXT_PART_SP (context));
-    es->ip       = st_smi_value (ST_CONTEXT_PART_IP (context));
-    es->bytecode = st_compiled_method_code (es->method);
+    es->sp       = st_smi_value (st_context_part_sp (context));
+    es->ip       = st_smi_value (st_context_part_ip (context));
+    es->bytecode = st_method_bytecode_bytes (es->method);
 }
 
 INLINE guchar *
@@ -214,7 +214,7 @@ execute_primitive (STExecutionState *es,
     st_oop context;							\
     guint  prim;							\
     guchar *ip_ret = NULL;						\
-    STCompiledMethodFlags flags;					\
+    STMethodFlags flags;						\
     									\
     ip += 1;								\
     									\
@@ -225,11 +225,11 @@ execute_primitive (STExecutionState *es,
 	ip = set_active_context (es, ip, context);			\
 	break;								\
     }									\
-									\
-    flags = st_compiled_method_flags (method);				\
-    if (flags == ST_COMPILED_METHOD_PRIMITIVE) {			\
     									\
-	prim = st_compiled_method_primitive_index (method);		\
+    flags = st_method_flags (method);					\
+    if (flags == ST_METHOD_PRIMITIVE) {					\
+    									\
+	prim = st_method_primitive_index (method);			\
 									\
 	execute_primitive (es, prim, ip, &ip_ret);			\
 									\
@@ -249,12 +249,10 @@ execute_primitive (STExecutionState *es,
 static st_oop
 interpreter_loop (STExecutionState *es)
 {
-    register guchar *ip = st_compiled_method_code (es->method);
+    register guchar *ip = st_method_bytecode_bytes (es->method);
     
     for (;;) {
-
-	g_debug ("%i", *ip);
-
+	
 	switch (*ip) {
 	    
 	case STORE_POP_TEMP:
@@ -266,18 +264,18 @@ interpreter_loop (STExecutionState *es)
 	    
 	case STORE_TEMP:
 	    
-	     es->temps[ip[1]] = ST_STACK_PEEK (es);
-	     
-	     ip += 2;
-	     break;
-	     
+	    es->temps[ip[1]] = ST_STACK_PEEK (es);
+	    
+	    ip += 2;
+	    break;
+	    
 	case PUSH_TEMP:
 	    
 	    ST_STACK_PUSH (es, es->temps[ip[1]]);
 	    
 	    ip += 2;
 	    break;
-
+	    
 	case PUSH_SELF:
 	    
 	    ST_STACK_PUSH (es, es->receiver);
@@ -301,10 +299,10 @@ interpreter_loop (STExecutionState *es)
 	    
 	case PUSH_NIL:
 	    
-	     ST_STACK_PUSH (es, st_nil);
-	     
-	     ip += 1;
-	     break;
+	    ST_STACK_PUSH (es, st_nil);
+	    
+	    ip += 1;
+	    break;
 	     
 	case PUSH_LITERAL_CONST:
 	    
@@ -320,7 +318,7 @@ interpreter_loop (STExecutionState *es)
 	    else
 		ip += 3;
 	    
-	     break;
+	    break;
 	     
 	case JUMP_FALSE:
 	    
@@ -335,16 +333,16 @@ interpreter_loop (STExecutionState *es)
 	{
 	    short offset = (ip[1] << 8) | ip[2];
 	    
-	     ip += ((offset >= 0) ? 3 : 0) + offset;
-	     break;
+	    ip += ((offset >= 0) ? 3 : 0) + offset;
+	    break;
 	}
 	
 	case PUSH_LITERAL_VAR:
 	{
-	     st_oop var;
-	     
-	     var = st_association_value (es->literals[ip[1]]);
-	     
+	    st_oop var;
+	    
+	    var = st_association_value (es->literals[ip[1]]);
+	    
 	     ST_STACK_PUSH (es, var);
 	     
 	     ip += 2;
@@ -502,7 +500,7 @@ interpreter_loop (STExecutionState *es)
 	    st_oop context;
 	    guint  pindex;
 	    guchar *ip_ret = NULL;
-	    STCompiledMethodFlags flags;
+	    STMethodFlags flags;
 	    
 	    es->msg_argcount = ip[1];
 	    es->msg_selector = es->literals[ip[2]];
@@ -511,8 +509,8 @@ interpreter_loop (STExecutionState *es)
 	    ip += 3;
 	    
 	    method = lookup_method (st_object_class (es->msg_receiver), es->msg_selector);
-	    
-	    if (method == st_nil) {
+   
+	    if (G_UNLIKELY (method == st_nil)) {
 		context = send_does_not_understand (es,
 						    es->msg_receiver,
 						    es->msg_selector,
@@ -522,13 +520,13 @@ interpreter_loop (STExecutionState *es)
 	    }
 	    
 	    /* call primitive function if there is one */
-	    flags = st_compiled_method_flags (method);
+	    flags = st_method_flags (method);
 
-	    if (flags == ST_COMPILED_METHOD_PRIMITIVE) {
-		pindex = st_compiled_method_primitive_index (method);
+	    if (flags == ST_METHOD_PRIMITIVE) {
+		pindex = st_method_primitive_index (method);
 		
 		execute_primitive (es, pindex, ip, &ip_ret);
-		if (es->success) {
+		if (G_LIKELY (es->success)) {
 		    ip = ip_ret;
 		    break;
 		}
@@ -572,7 +570,7 @@ interpreter_loop (STExecutionState *es)
 	    st_oop sender;
 	    st_oop value;
 	    
-	    sender = ST_CONTEXT_PART_SENDER (es->context);
+	    sender = st_context_part_sender (es->context);
 	    value = ST_STACK_PEEK (es);
 	    
 	    /* exit loop if sender is nil */
@@ -592,7 +590,7 @@ interpreter_loop (STExecutionState *es)
 	    st_oop caller;
 	    st_oop value;
 	    
-	    caller = ST_BLOCK_CONTEXT_CALLER (es->context);
+	    caller = st_block_context_caller (es->context);
 	    value = ST_STACK_PEEK (es);
 
 	    ip = set_active_context (es, ip, caller);

@@ -22,36 +22,6 @@
  * THE SOFTWARE.
 */
 
-#include "st-vtable.h"
+#include "st-descriptor.h"
 
-#include <glib.h>
-
-/* Max number of tables
- * please do increase if more tables are needed
- */ 
-#define NUM_TABLES_MAX 16
-
-STVTable tables[NUM_TABLES_MAX] = { { 0 }, };
-static guint num_tables = 1;
-
-/*
- * Creates a new vtable, derived from a parent_table.
- */
-guint
-st_vtable_register (guint             parent_table_id,
-		    STVTableInitFunc  init_func)
-{
-    guint table_id;
-
-    g_assert (init_func != NULL);
-    g_assert (num_tables < NUM_TABLES_MAX);
-    
-    table_id = num_tables++;
-    
-    if (parent_table_id != 0)
-	tables[table_id] = tables[parent_table_id];
-
-    init_func (&tables[table_id]);
-
-    return table_id;
-}
+const STDescriptor *st_descriptors[ST_NUM_FORMATS] = { NULL, };

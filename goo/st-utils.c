@@ -34,10 +34,7 @@ st_allocate_object (gsize size)
     // all heap objects have at least a header of two st_oops
     g_assert (size >= 2);
 
-    /* no gc fanciness yet ! */
-    st_oop object = ST_OOP (g_malloc (size * sizeof (st_oop)));
-
-    return object;
+    return ST_OOP (g_malloc (size * sizeof (st_oop)));
 }
 
 void

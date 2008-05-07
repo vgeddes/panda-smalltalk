@@ -27,7 +27,7 @@
 
 #include <st-types.h>
 #include <st-utils.h>
-#include <st-vtable.h>
+#include <st-descriptor.h>
 
 /* Every heap-allocated object starts with this layout */
 /* format of mark oop
@@ -54,50 +54,48 @@ extern int st_current_hash;
 
 enum
 {
-    st_unused_bits = 9,
+    st_unused_bits     = 9,
     st_nonpointer_bits = 1,
-    st_readonly_bits = 1,
-    st_format_bits = 6,
+    st_readonly_bits   = 1,
+    st_format_bits     = 6,
 
-    st_format_shift = 0,
-    st_readonly_shift = st_format_bits + st_format_shift,
+    st_format_shift     = 0,
+    st_readonly_shift   = st_format_bits + st_format_shift,
     st_nonpointer_shift = st_readonly_bits + st_readonly_shift,
-    st_unused_shift = st_nonpointer_bits + st_nonpointer_shift,
+    st_unused_shift     = st_nonpointer_bits + st_nonpointer_shift,
 
-    st_format_mask = ST_NTH_MASK (st_format_bits),
-    st_format_mask_in_place = st_format_mask << st_format_shift,
-    st_readonly_mask = ST_NTH_MASK (st_readonly_bits),
-    st_readonly_mask_in_place = st_readonly_mask << st_readonly_shift,
-    st_nonpointer_mask = ST_NTH_MASK (st_nonpointer_bits),
+    st_format_mask              = ST_NTH_MASK (st_format_bits),
+    st_format_mask_in_place     = st_format_mask << st_format_shift,
+    st_readonly_mask            = ST_NTH_MASK (st_readonly_bits),
+    st_readonly_mask_in_place   = st_readonly_mask << st_readonly_shift,
+    st_nonpointer_mask          = ST_NTH_MASK (st_nonpointer_bits),
     st_nonpointer_mask_in_place = st_nonpointer_mask << st_nonpointer_shift,
-    st_unused_mask = ST_NTH_MASK (st_unused_bits),
-    st_unused_mask_in_place = st_unused_mask << st_unused_shift,
+    st_unused_mask              = ST_NTH_MASK (st_unused_bits),
+    st_unused_mask_in_place     = st_unused_mask << st_unused_shift,
 };
 
-#define ST_OBJECT_FORMAT(object) (ST_POINTER (object)->header & st_format_mask)
+#define  st_heap_object_format(oop) (ST_POINTER (oop)->header & st_format_mask)
+#define  st_heap_object_class(oop)  (ST_POINTER (oop)->klass)
+#define  st_heap_object_body(oop)   (ST_POINTER (oop)->fields)
 
-st_oop   st_heap_object_class     (st_oop object);
+void     st_heap_object_initialize_header (st_oop object, st_oop klass);
 
-void     st_heap_object_set_class (st_oop object, st_oop klass);
+void     st_heap_object_initialize_body   (st_oop object, st_smi instance_size);
 
-guint    st_heap_object_hash      (st_oop object);
+guint    st_heap_object_hash              (st_oop object);
 
-void     st_heap_object_set_hash  (st_oop object, int hash);
+void     st_heap_object_set_hash          (st_oop object, int hash);
 
-void     st_heap_object_set_format  (st_oop object, guint format);
+void     st_heap_object_set_format        (st_oop object, guint format);
 
-bool     st_heap_object_readonly  (st_oop object);
+bool     st_heap_object_readonly          (st_oop object);
 
-void     st_heap_object_set_readonly  (st_oop object, bool readonly);
+void     st_heap_object_set_readonly      (st_oop object, bool readonly);
 
-bool     st_heap_object_nonpointer  (st_oop object);
+bool     st_heap_object_nonpointer        (st_oop object);
 
-void     st_heap_object_set_nonpointer  (st_oop object, bool nonpointer);
+void     st_heap_object_set_nonpointer    (st_oop object, bool nonpointer);
 
-
-st_oop  *st_heap_object_instvars  (st_oop object);
-
-guint    st_heap_object_vtable    (void);
-
+const STDescriptor *st_heap_object_descriptor (void) G_GNUC_CONST;
 
 #endif /* __ST_HEAP_OBJECT_H__ */

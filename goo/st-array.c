@@ -24,43 +24,8 @@
 #include "st-array.h"
 #include "st-universe.h"
 #include "st-utils.h"
-#include "st-vtable.h"
+#include "st-descriptor.h"
 
-ST_DEFINE_VTABLE (st_array, st_heap_object_vtable ());
-
-static bool
-is_array (void)
-{
-    return true;
-}
-
-static bool
-is_arrayed (void)
-{
-    return true;
-}
-
-static bool
-array_verify (st_oop object)
-{
-    if (!tables[st_heap_object_vtable ()].verify (object))
-	return false;
-   
-    // variable size
-    st_oop size = st_array_size (object);
-    if (!(st_object_is_smi (size) && (st_smi_value (size) > 0)))
-	return false;
-
-    for (st_smi i = 1; i <= st_smi_value (size); i++) {
-
-	st_oop el = st_array_at (object, i);
-
-	if ((!st_object_is_smi (el)) && (!st_object_is_heap (el)))
-	    return false;
-    }
-
-    return true;
-}
 
 static st_oop
 allocate_arrayed (st_oop klass, st_smi size)
@@ -69,7 +34,7 @@ allocate_arrayed (st_oop klass, st_smi size)
 
     st_oop array = st_allocate_object (ST_TYPE_SIZE (STArray) + size);
 
-    st_object_initialize_header (array, klass);
+    st_heap_object_initialize_header (array, klass);
     ST_ARRAY (array)->size = st_smi_new (size);    
 
     st_oop *elements = st_array_element (array, 1);
@@ -85,13 +50,13 @@ allocate (st_oop klass)
     return allocate_arrayed (klass, 0);
 }
 
-static void
-st_array_vtable_init (STVTable * table)
+const STDescriptor *
+st_array_descriptor (void)
 {
-    table->allocate = allocate;
-    table->allocate_arrayed = allocate_arrayed;
+    static const STDescriptor __descriptor =
+	{ .allocate         = allocate,
+	  .allocate_arrayed = allocate_arrayed,
+	};
 
-    table->is_array = is_array;
-    table->is_arrayed = is_arrayed;
-    table->verify = array_verify;
+    return & __descriptor;
 }
