@@ -1318,6 +1318,7 @@ st_generate_method (st_oop klass, STNode *node, STError **error)
 
     st_method_literals (method) = create_literals_array (gt);
     st_method_bytecode (method) = create_bytecode_array (gt); 
+    st_method_selector (method) = node->selector; 
 
     generator_destroy (gt);
 

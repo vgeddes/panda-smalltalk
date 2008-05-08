@@ -38,6 +38,7 @@ typedef struct
     st_oop header;
     st_oop bytecode;
     st_oop literals;
+    st_oop selector;
 
 } STMethod;
 
@@ -71,6 +72,7 @@ typedef enum
 #define st_method_header(oop) (ST_METHOD (oop)->header)
 #define st_method_literals(oop) (ST_METHOD(oop)->literals)
 #define st_method_bytecode(oop) (ST_METHOD(oop)->bytecode)
+#define st_method_selector(oop) (ST_METHOD(oop)->selector)
 
 INLINE int      st_method_temp_count      (st_oop method);
 

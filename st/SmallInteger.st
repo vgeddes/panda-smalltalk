@@ -28,19 +28,19 @@ DEALINGS IN THE SOFTWARE.
 SmallInteger method!
 + aNumber
 	<primitive: 'SmallInteger_add'>
-	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'arithmetic'!
 
 SmallInteger method!
 - aNumber
 	<primitive: 'SmallInteger_minus'>
-	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'arithmetic'!
 	
 SmallInteger method!
 * aNumber
 	<primitive: 'SmallInteger_mul'>
-	^ 42!
+	self primitiveFailed!
 Annotation key: 'category' value: 'arithmetic'!
 
 
@@ -49,37 +49,37 @@ Annotation key: 'category' value: 'arithmetic'!
 SmallInteger method!
 < aNumber
 	<primitive: 'SmallInteger_lt'>
-	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 > aNumber
 	<primitive: 'SmallInteger_gt'>
-	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 <= aNumber
 	<primitive: 'SmallInteger_le'>
- 	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 >= aNumber
 	<primitive: 'SmallInteger_ge'>
- 	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 = aNumber
 	<primitive: 'SmallInteger_eq'>
-	^ self!
+	self primitiveFailed!
 Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 ~= aNumber
 	<primitive: 'SmallInteger_ne'>
-	^ super ~= aNumber!
+	self primitiveFailed!
 Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
@@ -98,25 +98,25 @@ Annotation key: 'category' value: 'comparing'!
 SmallInteger method!
 bitAnd: aNumber
 	<primitive: 'SmallInteger_bitAnd'>
-	^ super bitAnd: aNumber!
+	self primitiveFailed!
 Annotation key: 'category' value: 'bit-wise operations'!
 
 SmallInteger method!
 bitOr: aNumber
 	<primitive: 'SmallInteger_bitOr'>
-	^ super bitOr: aNumber!
+	self primitiveFailed!
 Annotation key: 'category' value: 'bit-wise operations'!
 
 SmallInteger method!
 bitXor: aNumber
 	<primitive: 'SmallInteger_bitXor'>
-	^ super bitXor: aNumber!
+	self primitiveFailed!
 Annotation key: 'category' value: 'bit-wise operations'!
 
 SmallInteger method!
 bitShift: aNumber
 	<primitive: 'SmallInteger_bitShift'>
-    ^ super bitShift: aNumber!
+	self primitiveFailed!
 Annotation key: 'category' value: 'bit-wise operations'!
 
 
@@ -127,6 +127,20 @@ fibonacci
 	self <= 2
 		ifTrue: [ ^ 1 ]
 		ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
+Annotation key: 'category' value: 'mathematics'!
+
+SmallInteger method!
+max: aNumber
+	(self >= aNumber)
+		ifTrue: [ ^ self ]
+		ifFalse: [ ^ aNumber ]!
+
+SmallInteger method!
+min: aNumber
+	(self >= aNumber)
+		ifTrue: [ ^ aNumber ]
+		ifFalse: [ ^ self ]!
+
 Annotation key: 'category' value: 'mathematics'!
 
 

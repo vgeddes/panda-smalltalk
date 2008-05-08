@@ -112,8 +112,7 @@ static void
 parse_method (FileInParser *parser,
 	      STLexer *lexer,
 	      char *class_name,
-	      bool class_method
-    )
+	      bool class_method)
 {
     STToken *token;
     st_oop   klass;
@@ -128,7 +127,6 @@ parse_method (FileInParser *parser,
 
     if (class_method)
 	klass = st_object_class (klass);
-    
 
     /* parse method chunk */
     lexer = next_chunk (parser);

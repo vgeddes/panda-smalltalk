@@ -19,11 +19,19 @@ create_doIt_method (void)
 {
     STError *error = NULL;
     
+    /* static const char string1[] =  */
+    /* 	"doIt" */
+    /* 	"   | object |" */
+    /* 	"   object := Array new: 45." */
+    /* 	"   object at: 4 put: 78." */
+    /* 	" ^ object at: 4."; */
+
     static const char string1[] = 
 	"doIt"
-	"   | block |"
-	"   block := [ :x | x + 5 ]."
-	" ^ (block value: 10) increment";
+	"   | object selected |"
+	"   object := #(1 1 2 3 5)."
+	"   selected := object select: [ :element | (element > $c)]."
+	" ^ selected at: 1";
 
     static const char string2[] = 
 	"increment"
@@ -67,7 +75,7 @@ send_unary_message (st_oop sender,
     st_oop context;
     st_oop method;
 
-    method = lookup_method (receiver, selector);
+    method = lookup_method (st_object_class (receiver), selector);
     g_assert (method != st_nil); 
 
     context = st_method_context_new (method);
@@ -91,8 +99,6 @@ message_not_understand (STExecutionState *es, st_oop selector, guint argcount)
    
 }
 
-
-
 INLINE st_oop
 new_context (STExecutionState *es,
 	     st_oop  sender,
@@ -107,7 +113,7 @@ new_context (STExecutionState *es,
     /* transfer arguments to context */
     st_oop *arguments = st_method_context_temporary_frame (context);
     for (guint i = 0; i < argcount; i++)
-	arguments[i] = es->stack[es->sp - argcount + i];
+	arguments[i] =  es->stack[es->sp - argcount + i];
 
     st_context_part_sender (context) = sender;
     st_context_part_ip (context) = st_smi_new (0);
@@ -224,6 +230,7 @@ execute_primitive (STExecutionState *es,
     if (method == st_nil) {						\
 	context = send_does_not_understand (es, es->msg_receiver, es->msg_selector, es->msg_argcount); \
 	ip = set_active_context (es, ip, context);			\
+	g_assert_not_reached ();					\
 	break;								\
     }									\
     									\
@@ -280,6 +287,20 @@ interpreter_loop (STExecutionState *es)
 	case PUSH_INSTVAR:
 	    
 	    ST_STACK_PUSH (es, es->instvars[ip[1]]);
+	    
+	    ip += 2;
+	    break;
+
+	case STORE_POP_INSTVAR:
+	    
+	    es->instvars[ip[1]] = ST_STACK_POP (es);
+	    
+	    ip += 2;
+	    break;
+	    
+	case STORE_INSTVAR:
+	    
+	    es->instvars[ip[1]] = ST_STACK_PEEK (es);
 	    
 	    ip += 2;
 	    break;
@@ -446,6 +467,17 @@ interpreter_loop (STExecutionState *es)
 	    
 	    break;
 	 }
+
+	case SEND_SIZE:
+	{
+	    es->msg_argcount = 0;
+	    es->msg_selector = st_specials[ST_SPECIAL_SIZE];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	 }
 	
 	case SEND_AT:
 	{
@@ -468,6 +500,18 @@ interpreter_loop (STExecutionState *es)
 	    
 	    break;
 	}
+
+	case SEND_EQ:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_EQ];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
 	
 	case SEND_IDENTITY_EQ:
 	{
@@ -502,6 +546,28 @@ interpreter_loop (STExecutionState *es)
 	    break;
 	}
 
+	case SEND_NEW:
+	{
+	    es->msg_argcount = 0;
+	    es->msg_selector = st_specials[ST_SPECIAL_NEW];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_NEW_ARG:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_NEW_ARG];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
 	case SEND:
 	{
 	    st_oop method;
@@ -523,6 +589,57 @@ interpreter_loop (STExecutionState *es)
 						    es->msg_receiver,
 						    es->msg_selector,
 						    es->msg_argcount);
+		g_debug ("selector: %s", st_byte_array_bytes (es->msg_selector));
+		g_assert_not_reached ();
+		ip = set_active_context (es, ip, context);
+		break;
+	    }
+	    
+	    /* call primitive function if there is one */
+	    flags = st_method_flags (method);
+
+	    if (flags == ST_METHOD_PRIMITIVE) {
+		pindex = st_method_primitive_index (method);
+		
+		execute_primitive (es, pindex, ip, &ip_ret);
+		if (G_LIKELY (es->success)) {
+		    ip = ip_ret;
+		    break;
+		}
+	    }
+	    
+	    context = new_context (es, es->context,
+				   es->msg_receiver, method,
+				   es->msg_argcount);
+	    
+	    ip = set_active_context (es, ip, context);
+	    
+	    break;
+	}
+
+	case SEND_SUPER:
+	{
+	    st_oop method;
+	    st_oop context;
+	    guint  pindex;
+	    guchar *ip_ret = NULL;
+	    STMethodFlags flags;
+	    
+	    es->msg_argcount = ip[1];
+	    es->msg_selector = es->literals[ip[2]];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    ip += 3;
+	    
+	    method = lookup_method (st_behavior_superclass (st_object_class (es->msg_receiver)), es->msg_selector);
+   
+	    if (G_UNLIKELY (method == st_nil)) {
+		context = send_does_not_understand (es,
+						    es->msg_receiver,
+						    es->msg_selector,
+						    es->msg_argcount);
+		g_debug ("selector: %s", st_byte_array_bytes (es->msg_selector));
+		g_assert_not_reached ();
 		ip = set_active_context (es, ip, context);
 		break;
 	    }
@@ -612,7 +729,7 @@ interpreter_loop (STExecutionState *es)
 	}
 	
 	default:
-	    
+	    g_debug ("%i\n", *ip);
 	    g_assert_not_reached ();
 	}
 	
@@ -631,7 +748,7 @@ st_interpreter_main (void)
     create_doIt_method ();
 
     context = send_unary_message (st_nil,
-				  st_undefined_object_class,
+				  st_nil,
 				  st_symbol_new ("doIt"));
     es.context = st_nil;
     st_interpreter_set_active_context (&es, context);

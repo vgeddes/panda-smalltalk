@@ -472,8 +472,8 @@ st_bootstrap_universe (void)
     declare_class ("Float", st_float_class);
     declare_class ("Array", st_array_class);
     declare_class ("ByteArray", st_byte_array_class);
-    declare_class ("String", st_string_class);
-    declare_class ("Symbol", st_symbol_class);
+    declare_class ("ByteString", st_string_class);
+    declare_class ("ByteSymbol", st_symbol_class);
     declare_class ("Set", st_set_class);
     declare_class ("Dictionary", st_dictionary_class);
     declare_class ("Association", st_association_class);
@@ -514,10 +514,17 @@ st_bootstrap_universe (void)
 
     static const char * files[] = 
 	{
+	    "Stream.st",
+	    "PositionableStream.st",
+	    "WriteStream.st",
+	    "Collection.st",
+	    "SequenceableCollection.st",
+	    "ArrayedCollection.st",
 	    "Array.st",
 	    "Association.st",
 	    "SmallInteger.st",
 	    "Object.st",
+	    "Behavior.st",
 	    "ContextPart.st",
 	    "BlockContext.st",
 	    "Message.st"
@@ -525,7 +532,7 @@ st_bootstrap_universe (void)
 
     for (guint i = 0; i < G_N_ELEMENTS (files); i++) {
 	char *filename;
-	filename = g_build_filename ("..", "st", files[i]);
+	filename = g_build_filename ("..", "st", files[i], NULL);
 	st_file_in (filename);
 	g_free (filename);
     }

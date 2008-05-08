@@ -29,6 +29,7 @@
 #include "st-float.h"
 #include "st-object.h"
 #include "st-context.h"
+#include "st-method.h"
 #include <math.h>
 #include <string.h>
 
@@ -492,6 +493,58 @@ Float_truncated (STExecutionState *es)
 	ST_STACK_UNPOP (es, 1);
 }
 
+static void
+print_backtrace (STExecutionState *es)
+{
+    st_oop context;
+    
+    context = es->context;
+
+    while (context != st_nil) {
+
+	char *selector;
+	char *klass;
+	st_oop home;
+	st_oop receiver;
+
+	if (st_object_class (context) == st_block_context_class)
+	    home = st_block_context_home (context);
+	else
+	    home = context;
+
+	receiver = st_method_context_receiver (home);
+
+	selector = (char*) st_byte_array_bytes (st_method_selector (st_method_context_method (home)));
+	klass    = (char*) st_byte_array_bytes (st_class_name (st_object_class (receiver)));
+
+	printf ("%s>>#%s", klass, selector);
+	if (st_object_class (context) == st_block_context_class)
+	    printf ("[]\n");
+	else
+	    printf ("\n");
+
+	if (st_object_class (context) == st_block_context_class)
+	    context = st_block_context_caller (context);
+	else
+	    context = st_context_part_sender (context);
+    }
+}
+
+static void
+Object_error (STExecutionState *es)
+{
+    st_oop message;
+
+    message = ST_STACK_POP (es);
+
+    printf ("= An error occurred during program execution\n");
+    printf ("== %s\n", st_byte_array_bytes (message));
+
+    printf ("\nTraceback:\n");
+    print_backtrace (es); 
+
+    exit (1);
+}
 
 static void
 Object_at (STExecutionState *es)
@@ -586,7 +639,19 @@ Object_at_put (STExecutionState *es)
 static void
 Object_size (STExecutionState *es)
 {
+    st_oop object;
 
+    object = ST_STACK_POP (es);
+    
+    if (!st_object_is_heap (object)
+	|| st_heap_object_format (object) != ST_FORMAT_ARRAY)
+	set_success (es, false);
+
+    if (es->success) {
+	ST_STACK_PUSH (es, st_array_size (object));
+    } else {
+	ST_STACK_UNPOP (es, 2);
+    }
 }
 
 static void
@@ -642,11 +707,29 @@ Object_performWithArguments (STExecutionState *es)
 static void
 Behavior_new (STExecutionState *es)
 {
+    st_oop klass;
+    st_oop instance;
+
+    klass = ST_STACK_POP (es);
+
+    instance = st_object_new (klass);
+
+    ST_STACK_PUSH (es, instance);
 }
 
 static void
-Behavior_newArgument (STExecutionState *es)
+Behavior_newSize (STExecutionState *es)
 {
+    st_oop klass;
+    st_smi size;
+    st_oop instance;
+
+    size = pop_integer (es);
+    klass = ST_STACK_POP (es);
+
+    instance = st_object_new_arrayed (klass, size);
+
+    ST_STACK_PUSH (es, instance);
 }
 
 static void
@@ -777,6 +860,7 @@ const STPrimitive st_primitives[] = {
     { "Float_div",             Float_div           },
     { "Float_truncated",       Float_truncated     },
 
+    { "Object_error",                 Object_error                },
     { "Object_at",                    Object_at                   },
     { "Object_at_put",                Object_at_put               },
     { "Object_size",                  Object_size                 },
@@ -788,7 +872,7 @@ const STPrimitive st_primitives[] = {
     { "Object_performWithArguments",  Object_performWithArguments },
     
     { "Behavior_new",                 Behavior_new                },
-    { "Behavior_newArgument",         Behavior_newArgument        },
+    { "Behavior_newSize",             Behavior_newSize            },
 
     { "ByteArray_at",                 ByteArray_at                },
     { "ByteArray_at_put",             ByteArray_at_put            },

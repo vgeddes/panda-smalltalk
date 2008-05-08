@@ -95,6 +95,25 @@ Class named: 'Association'
 	  instanceVariableNames: 'key value'
       classVariableNames: ''!
 
+
+"Streams"
+
+Class named: 'Stream'
+	  superclass: 'Object'
+	  instanceVariableNames: ''
+	  classVariableNames: ''!
+
+Class named: 'PositionableStream'
+	  superclass: 'Stream'
+	  instanceVariableNames: 'collection position readLimit'
+	  classVariableNames: ''!
+
+Class named: 'WriteStream'
+	  superclass: 'PositionableStream'
+	  instanceVariableNames: 'writeLimit'
+	  classVariableNames: ''!
+
+
 "Execution"
 
 Class named: 'ContextPart'
@@ -114,7 +133,7 @@ Class named: 'BlockContext'
 
 Class named: 'CompiledMethod'
 	  superclass: 'Object'
-	  instanceVariableNames: 'header bytecode literals'
+	  instanceVariableNames: 'header bytecode literals selector'
       classVariableNames: ''!
 
 Class named: 'Message'
@@ -123,10 +142,20 @@ Class named: 'Message'
       classVariableNames: ''!
 
 
-"Basic data types"
+"Strings"
 
 Class named: 'String'
-	  superclass: 'ByteArray'
+	  superclass: 'ArrayedCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+Class named: 'ByteString'
+	  superclass: 'String'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+Class named: 'WideString'
+	  superclass: 'String'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
@@ -134,6 +163,18 @@ Class named: 'Symbol'
 	  superclass: 'String'
 	  instanceVariableNames: ''
       classVariableNames: ''!
+
+Class named: 'ByteSymbol'
+	  superclass: 'String'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+Class named: 'WideSymbol'
+	  superclass: 'String'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+"Basic data types"
 
 Class named: 'Magnitude'
 	  superclass: 'Object'
@@ -190,3 +231,8 @@ Class named: 'False'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
+
+Class named: 'Exception'
+	  superclass: 'Object'
+	  instanceVariableNames: 'messageString'
+      classVariableNames: ''!
