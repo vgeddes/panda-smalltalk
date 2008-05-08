@@ -511,14 +511,24 @@ st_bootstrap_universe (void)
     /* parse class declarations */
     parse_classes ("../st/class-defs.st");
 
-    /* parse methods */
-    st_file_in ("../st/Array.st");
-    st_file_in ("../st/Association.st");
-    st_file_in ("../st/SmallInteger.st");
-    st_file_in ("../st/Object.st");
-    st_file_in ("../st/ContextPart.st");
-    st_file_in ("../st/BlockContext.st");
-    st_file_in ("../st/Message.st");
+
+    static const char * files[] = 
+	{
+	    "Array.st",
+	    "Association.st",
+	    "SmallInteger.st",
+	    "Object.st",
+	    "ContextPart.st",
+	    "BlockContext.st",
+	    "Message.st"
+	};
+
+    for (guint i = 0; i < G_N_ELEMENTS (files); i++) {
+	char *filename;
+	filename = g_build_filename ("..", "st", files[i]);
+	st_file_in (filename);
+	g_free (filename);
+    }
 
     st_method_context_class = st_global_get ("MethodContext");
     st_block_context_class = st_global_get ("BlockContext");

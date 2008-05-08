@@ -42,27 +42,35 @@
     st-mode-map)
   "Keymap for Smalltalk major mode")
 
-(defconst st-font-lock-keywords-1
-  (list
-   ; "pseudo" keywords
-   '("\\(false\\|nil\\|s\\(?:elf\\|uper\\)\\|t\\(?:hisContext\\|rue\\)\\)" . font-lock-keyword-face)
-   ; character constants
-   '("\\(\$[]a-zA-Z0-9!@#$%^&*()\-_=+{};:,./<>?\\|]\\)" . font-lock-constant-face)
-   ; symbol constants
-   '("\#[a-zA-Z][a-zA-Z0-9]*" . font-lock-constant-face)
-   ; number constants
-   '("\\([0-9][0-9]r\\)?[0-9]\\(\.[0-9]\\(e-?[0-9]\\)?\\)?" . font-lock-constant-face))
-  "Highlighting expressions for Smalltalk mode")
+;;;    ; "pseudo" keywords
+;;;    '("\\(false\\|nil\\|s\\(?:elf\\|uper\\)\\|t\\(?:hisContext\\|rue\\)\\)" . font-lock-keyword-face)
+;;;    ; character constants
+;;;    '("\\(\$[]a-zA-Z0-9!@#$%^&*()\-_=+{};:,./<>?\\|]\\)" . font-lock-constant-face)
+;;;    ; symbol constants
+;;;    '("\#[a-zA-Z][a-zA-Z0-9]*" . font-lock-constant-face)
+;;;    ; number constants
+;;;    '("\\([0-9][0-9]r\\)?[0-9]\\(\.[0-9]\\(e-?[0-9]\\)?\\)?" . font-lock-constant-face))
+
+(defvar st-font-lock-keywords
+   `((,(rx symbol-start
+	(or "false" "true" "nil" "self" "super" "thisContext")
+	symbol-end)
+      . font-lock-keyword-face)
+     (,(rx (regexp "\\([0-9][0-9]r\\)?[0-9]\\(\.[0-9]\\(e-?[0-9]\\)?\\)?"))
+      . font-lock-constant-face)
+     (,(rx (regexp "\#[a-zA-Z][a-zA-Z0-9]*"))
+      . font-lock-constant-face)
+     (,(rx (regexp "\\(\$[]a-zA-Z0-9!@#$%^&*()\-_=+{};:,./<>?\\|]\\)"))
+      . font-lock-constant-face))
+     "Highlighting expressions for Smalltalk mode")
+
 
 (defvar st-mode-syntax-table
   (let ((st-mode-syntax-table (make-syntax-table)))
     (modify-syntax-entry ?' "|" st-mode-syntax-table)
     (modify-syntax-entry ?\" "!" st-mode-syntax-table)
     st-mode-syntax-table)
-  "Syntax table for Smalltalk mode")
-
-(defvar st-font-lock-keywords st-font-lock-keywords-1
-  "Default highlighting expressions for Smalltalk mode")
+  "Syntax table for Smalltalk mode") 
 
 (defvar st-indent-level 4
   "Default indent level for indenting")

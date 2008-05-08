@@ -32,12 +32,19 @@
 #include <math.h>
 #include <string.h>
 
+
+INLINE void
+set_success (STExecutionState *es, bool success)
+{
+    es->success = es->success && success;
+}
+
 INLINE st_smi
 pop_integer (STExecutionState *es)
 {
     st_oop object = ST_STACK_POP (es);
     
-    st_interpreter_set_success (es, st_object_is_smi (object));    
+    set_success (es, st_object_is_smi (object));    
 
     return st_smi_value (object);
 }
@@ -195,11 +202,11 @@ SmallInteger_div (STExecutionState *es)
     st_oop result = st_nil;
 
     if (es->success) {
-	es->success = y != 0;
+	set_success (es, y != 0);
 	if (es->success)
 	    result = st_smi_new (x / y);
     }
-
+    
     if (es->success)
 	ST_STACK_PUSH (es, result);
     else
@@ -214,7 +221,7 @@ SmallInteger_mod (STExecutionState *es)
     st_oop result = st_nil;
 
     if (es->success) {
-	es->success = y != 0;
+	set_success (es, y != 0);
 	if (es->success)
 	    result = st_smi_new (x % y);
     }

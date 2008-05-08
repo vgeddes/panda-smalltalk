@@ -23,7 +23,7 @@ create_doIt_method (void)
 	"doIt"
 	"   | block |"
 	"   block := [ :x | x + 5 ]."
-	" ^ block value: 10";
+	" ^ (block value: 10) increment";
 
     static const char string2[] = 
 	"increment"
@@ -71,7 +71,6 @@ send_unary_message (st_oop sender,
     g_assert (method != st_nil); 
 
     context = st_method_context_new (method);
-
 
     st_context_part_sender (context) = sender;
     st_context_part_ip (context) = st_smi_new (0);
@@ -140,12 +139,14 @@ st_interpreter_set_active_context (STExecutionState *es,
 	es->method   = st_method_context_method (home);
 	es->receiver = st_method_context_receiver (home);
 	es->literals = st_array_element (st_method_literals (es->method), 1);
+	es->instvars = st_heap_object_body (es->receiver);
 	es->temps    = st_method_context_temporary_frame (home);
 	es->stack    = st_block_context_stack (context);
     } else {
 	es->method   = st_method_context_method (context);
 	es->receiver = st_method_context_receiver (context);
 	es->literals = st_array_element (st_method_literals (es->method), 1);
+	es->instvars = st_heap_object_body (es->receiver);
 	es->temps    = st_method_context_temporary_frame (context);
 	es->stack    = st_method_context_stack_frame (context);
     }
@@ -272,6 +273,13 @@ interpreter_loop (STExecutionState *es)
 	case PUSH_TEMP:
 	    
 	    ST_STACK_PUSH (es, es->temps[ip[1]]);
+	    
+	    ip += 2;
+	    break;
+
+	case PUSH_INSTVAR:
+	    
+	    ST_STACK_PUSH (es, es->instvars[ip[1]]);
 	    
 	    ip += 2;
 	    break;

@@ -22,6 +22,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
+
+"arithmetic"
+
 SmallInteger method!
 + aNumber
 	<primitive: 'SmallInteger_add'>
@@ -40,60 +43,96 @@ SmallInteger method!
 	^ 42!
 Annotation key: 'category' value: 'arithmetic'!
 
+
+"comparing"
+
 SmallInteger method!
 < aNumber
 	<primitive: 'SmallInteger_lt'>
 	^ self!
-Annotation key: 'category' value: 'testing'!
+Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 > aNumber
 	<primitive: 'SmallInteger_gt'>
 	^ self!
-Annotation key: 'category' value: 'testing'!
+Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 <= aNumber
 	<primitive: 'SmallInteger_le'>
  	^ self!
-Annotation key: 'category' value: 'testing'!
+Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 >= aNumber
 	<primitive: 'SmallInteger_ge'>
  	^ self!
-Annotation key: 'category' value: 'testing'!
+Annotation key: 'category' value: 'comparing'!
 
 SmallInteger method!
 = aNumber
 	<primitive: 'SmallInteger_eq'>
 	^ self!
-Annotation key: 'category' value: 'testing'!
+Annotation key: 'category' value: 'comparing'!
+
+SmallInteger method!
+~= aNumber
+	<primitive: 'SmallInteger_ne'>
+	^ super ~= aNumber!
+Annotation key: 'category' value: 'comparing'!
+
+SmallInteger method!
+isSmallInteger
+	^ true!
+Annotation key: 'category' value: 'comparing'!
+
+SmallInteger method!
+isLargeInteger
+	^ false!
+Annotation key: 'category' value: 'comparing'!
+
+
+"bit-wise operations"
+
+SmallInteger method!
+bitAnd: aNumber
+	<primitive: 'SmallInteger_bitAnd'>
+	^ super bitAnd: aNumber!
+Annotation key: 'category' value: 'bit-wise operations'!
+
+SmallInteger method!
+bitOr: aNumber
+	<primitive: 'SmallInteger_bitOr'>
+	^ super bitOr: aNumber!
+Annotation key: 'category' value: 'bit-wise operations'!
+
+SmallInteger method!
+bitXor: aNumber
+	<primitive: 'SmallInteger_bitXor'>
+	^ super bitXor: aNumber!
+Annotation key: 'category' value: 'bit-wise operations'!
+
+SmallInteger method!
+bitShift: aNumber
+	<primitive: 'SmallInteger_bitShift'>
+    ^ super bitShift: aNumber!
+Annotation key: 'category' value: 'bit-wise operations'!
+
+
+"mathematics"
 
 SmallInteger method!
 fibonacci
 	self <= 2
 		ifTrue: [ ^ 1 ]
-	    ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
+		ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
 Annotation key: 'category' value: 'mathematics'!
+
+
+
+
 "
-	== aNumber
-	[
-		<primitive: 'SmallInteger_eq'>
-		^ super == aNumber
-	]
-
-	~= aNumber
-	[
-		<primitive: 'SmallInteger_ne'>
-		^ super ~= aNumber
-	]
-
-	~~ aNumber
-	[
-		<primitive: 'SmallInteger_ne'>
-		^super ~~ aNumber
-	]
 
 	quo: aNumber
 	[
@@ -107,48 +146,6 @@ Annotation key: 'category' value: 'mathematics'!
 		^ super \\ aNumber
 	]
 
-
-SmallInteger methodsFor: 'bit-wise operations'
-[
-
-	bitAnd: aNumber
-
-		<primitive: 'SmallInteger_bitAnd'>
-		^super bitAnd: aNumber
-	]
-
-	bitOr: aNumber
- 
-		<primitive: 'SmallInteger_bitOr'>
-		^ super bitOr: aNumber
-	]
-
-	bitXor: aNumber
-	[
-		<primitive: 'SmallInteger_bitXor'>
-		^ super bitXor: aNumber
-	]
-
-	bitShift: aNumber
-	[
-		<primitive: 'SmallInteger_bitShift'>
-        ^ super bitShift: aNumber
-	]
-]
-
-SmallInteger methodsFor: 'testing'
-[
-
-	isLargeInteger
-	[
-		^ false
-	]
-
-	isSmallInteger
-	[
-		^ true
-	]
-]
 
 SmallInteger methodsFor: 'coercing'
 [
