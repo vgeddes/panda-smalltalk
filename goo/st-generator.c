@@ -70,6 +70,7 @@ typedef struct
 
 static guint sizes[255] = {  0, };
 
+
 // setup global data for compiler
 static void
 check_init (void)
@@ -130,7 +131,6 @@ check_init (void)
     sizes[SEND_CLASS]       = 1;
     sizes[SEND_NEW]         = 1;
     sizes[SEND_NEW_ARG]     = 1;
-
 }
 
 static int size_message (Generator *gt, STNode *node);
@@ -543,27 +543,23 @@ is_optimization_candidate (STNode *msg)
     }
 
     if (streq (csel, "ifTrue:ifFalse:") || streq (csel, "ifFalse:ifTrue:")) {
-
 	if (msg->arguments->type == ST_BLOCK_NODE
 	    && msg->arguments->next->type == ST_BLOCK_NODE)
 	    return true;
     }
 
     if (streq (csel, "whileTrue") || streq (csel, "whileFalse")) {
-
 	if (msg->receiver->type == ST_BLOCK_NODE)
 	    return true;
     }
 
     if (streq (csel, "whileTrue:") || streq (csel, "whileFalse:")) {
-
 	if (msg->receiver->type == ST_BLOCK_NODE
 	    && msg->arguments->type == ST_BLOCK_NODE)
 	    return true;
     }
     
     if (streq (csel, "and:") || streq (csel, "or:")) {
-	
 	if (msg->arguments->type == ST_BLOCK_NODE)
 	    return true;
     }
@@ -583,9 +579,7 @@ size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
     if (streq (csel, "ifTrue:") || streq (csel, "ifFalse:")) {   
 	
 	size += size_expression (gt, msg->receiver);
-	
 	size += sizes[JUMP_TRUE];
-
 	size += size_statements (gt, msg->arguments->statements, true);
 	
 	if (is_expr) {
@@ -598,14 +592,11 @@ size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
     }  else if (streq (csel, "ifTrue:ifFalse:") || streq (csel, "ifFalse:ifTrue:")) {
 	
 	size += size_expression (gt, msg->receiver);
-	
 	size += sizes[JUMP_TRUE];
 	
 	// true block
 	size += size_statements (gt, msg->arguments->statements, true);
-	
 	size += sizes[JUMP];
-	
 	size += size_statements (gt, msg->arguments->next->statements, true);
 	
 	if (!is_expr)
@@ -614,9 +605,7 @@ size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
     } else if (streq (csel, "whileTrue") || streq (csel, "whileFalse")) {
 	
 	size += size_statements (gt, msg->receiver->statements, true);
-
-	size += sizes[JUMP_TRUE];
-	
+	size += sizes[JUMP_TRUE];	
 	size += sizes[JUMP];
 
 	if (is_expr)
@@ -625,11 +614,8 @@ size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
     } else if (streq (csel, "whileTrue:") || streq (csel, "whileFalse:")) {
 
 	size += size_statements (gt, msg->receiver->statements, true);
-	
 	size += sizes[JUMP_TRUE];
-	
 	size += size_statements (gt, msg->arguments->statements, true);
-
 	size += sizes[JUMP];
 	
 	if (is_expr)
@@ -638,13 +624,9 @@ size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
     } else if (streq (csel, "and:") || streq (csel, "or:")) {
 	
 	size += size_expression (gt, msg->receiver);
-	
-	size += sizes[JUMP_TRUE];
-      
+	size += sizes[JUMP_TRUE];   
 	size += size_statements (gt, msg->arguments->statements, true);
-	
-	size += sizes[JUMP];
-	
+	size += sizes[JUMP];	
 	size += sizes[PUSH_TRUE];
 	
 	if (!is_expr)

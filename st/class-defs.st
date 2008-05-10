@@ -20,7 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-"Basic meta"
+"Basic"
 
 Class named: 'Object'
 	  superclass: 'nil'
@@ -34,7 +34,7 @@ Class named: 'UndefinedObject'
 
 Class named: 'Behavior'
 	  superclass: 'Object'
-	  instanceVariableNames: 'superclass instanceSize methodDictionary instanceVariables'
+	  instanceVariableNames: 'format superclass instanceSize methodDictionary instanceVariableNames'
       classVariableNames: ''!
 
 Class named: 'Class'
@@ -154,11 +154,6 @@ Class named: 'ByteString'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
-Class named: 'WideString'
-	  superclass: 'String'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
-
 Class named: 'Symbol'
 	  superclass: 'String'
 	  instanceVariableNames: ''
@@ -169,10 +164,6 @@ Class named: 'ByteSymbol'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
-Class named: 'WideSymbol'
-	  superclass: 'String'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
 
 "Basic data types"
 

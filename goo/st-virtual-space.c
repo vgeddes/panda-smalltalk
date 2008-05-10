@@ -26,25 +26,15 @@
 #include "st-types.h"
 
 #include <unistd.h>
-
-struct _GooVirtualSpace
-{
-    char *end;
-    char *end;
-};
-
-
-static int
-get_page_size (void)
-{
-    return getpagesize (void);
-}
+#include <errno.h>
+#include <sys/mman.h>
+#include <string.h>
 
 // adjust reserved size to be a integral multiple of the page size
 static guint
 adjust_size (int reserved_size)
 {
-    int page_size = get_page_size ();
+    int page_size = getpagesize ();
 
     if (reserved_size % page_size != 0) {
 	return (reserved_size / page_size) * page_size + page_size;
@@ -53,8 +43,8 @@ adjust_size (int reserved_size)
     return reserved_size;
 }
 
-static void
-map_size (GooVirtualSpace * space, guint size)
+static bool
+map_size (STVirtualSpace *space, guint size)
 {
     void *start;
 
@@ -62,33 +52,43 @@ map_size (GooVirtualSpace * space, guint size)
 
     start = mmap (NULL, adjusted_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 
-    if (start == -1)
-	return NULL;
-
-    space->start = start;
-    space->end = start + adjusted_size / SIZEOF_VOID_P;
-
-    return start;
-
+    if (((long) start) == -1) {
+	g_debug (strerror (errno));
+	return false;
+    }
+    
+    space->start = (st_oop*) start;
+    space->end = ((st_oop*) start) + adjusted_size / SIZEOF_VOID_P;
+    
+    return true;
 }
 
-/* reserved_size is in bytes */
-GooVirtualSpace *
-st_virtual_space_new (guint size)
+STVirtualSpace *
+st_virtual_space_new (void)
 {
-    g_assert (reserved_size > 0);
-
-    GooVirtualSpace *space = g_new (GooVirtualSpace, 1);
-
-    map_size (space, size);
-
-    return space;
+    return g_new (STVirtualSpace, 1);
 }
 
+bool
+st_virtual_space_reserve (STVirtualSpace *space, guint size)
+{
+    return map_size (space, size);
+}
+
+void *
+st_virtual_space_start (STVirtualSpace *space)
+{
+    return space->start;
+}
+
+void *
+st_virtual_space_end (STVirtualSpace *space)
+{
+    return space->end;
+}
 
 void
-st_virtual_space_destroy (GooVirtualSpace * space)
+st_virtual_space_destroy (STVirtualSpace *space)
 {
-
     g_free (space);
 }

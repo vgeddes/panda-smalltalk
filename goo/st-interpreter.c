@@ -18,20 +18,20 @@ static st_oop
 create_doIt_method (void)
 {
     STError *error = NULL;
-    
-    /* static const char string1[] =  */
-    /* 	"doIt" */
-    /* 	"   | object |" */
-    /* 	"   object := Array new: 45." */
-    /* 	"   object at: 4 put: 78." */
-    /* 	" ^ object at: 4."; */
 
-    static const char string1[] = 
-	"doIt"
-	"   | object selected |"
-	"   object := #(1 1 2 3 5)."
-	"   selected := object select: [ :element | (element > $c)]."
-	" ^ selected at: 1";
+    /* static const char string1[] = */
+    /* 	"doIt" */
+    /* 	"   | object selected |" */
+    /* 	"   object := #(1 1 2 3 5)." */
+    /* 	"   selected := object select: [ :element | element = 1 or: [element = 2] ]." */
+    /* 	" ^ selected size"; */
+
+    static const char string1[] =
+    	"doIt"
+    	"   | object selected |"
+	" ^ 56 increment";
+
+
 
     static const char string2[] = 
 	"increment"
@@ -145,14 +145,12 @@ st_interpreter_set_active_context (STExecutionState *es,
 	es->method   = st_method_context_method (home);
 	es->receiver = st_method_context_receiver (home);
 	es->literals = st_array_element (st_method_literals (es->method), 1);
-	es->instvars = st_heap_object_body (es->receiver);
 	es->temps    = st_method_context_temporary_frame (home);
 	es->stack    = st_block_context_stack (context);
     } else {
 	es->method   = st_method_context_method (context);
 	es->receiver = st_method_context_receiver (context);
 	es->literals = st_array_element (st_method_literals (es->method), 1);
-	es->instvars = st_heap_object_body (es->receiver);
 	es->temps    = st_method_context_temporary_frame (context);
 	es->stack    = st_method_context_stack_frame (context);
     }
@@ -229,8 +227,8 @@ execute_primitive (STExecutionState *es,
 									\
     if (method == st_nil) {						\
 	context = send_does_not_understand (es, es->msg_receiver, es->msg_selector, es->msg_argcount); \
+	g_debug ("selector: %s", st_byte_array_bytes (es->msg_selector)); \
 	ip = set_active_context (es, ip, context);			\
-	g_assert_not_reached ();					\
 	break;								\
     }									\
     									\
@@ -286,21 +284,21 @@ interpreter_loop (STExecutionState *es)
 
 	case PUSH_INSTVAR:
 	    
-	    ST_STACK_PUSH (es, es->instvars[ip[1]]);
-	    
+	    ST_STACK_PUSH (es, st_heap_object_body (es->receiver)[ip[1]]);
+
 	    ip += 2;
 	    break;
 
 	case STORE_POP_INSTVAR:
 	    
-	    es->instvars[ip[1]] = ST_STACK_POP (es);
-	    
+	    st_heap_object_body (es->receiver)[ip[1]] = ST_STACK_POP (es);
+
 	    ip += 2;
 	    break;
 	    
 	case STORE_INSTVAR:
-	    
-	    es->instvars[ip[1]] = ST_STACK_PEEK (es);
+
+	    st_heap_object_body (es->receiver)[ip[1]] = ST_STACK_PEEK (es);
 	    
 	    ip += 2;
 	    break;
@@ -339,6 +337,18 @@ interpreter_loop (STExecutionState *es)
 	    
 	    ip += 2;
 	    break;
+
+	case PUSH_LITERAL_VAR:
+	{
+	    st_oop var;
+	    
+	    var = st_association_value (es->literals[ip[1]]);
+	    
+	    ST_STACK_PUSH (es, var);
+	    
+	    ip += 2;
+	    break;
+	}
 	    
 	case JUMP_TRUE:
 	    
@@ -364,18 +374,6 @@ interpreter_loop (STExecutionState *es)
 	    
 	    ip += ((offset >= 0) ? 3 : 0) + offset;
 	    break;
-	}
-	
-	case PUSH_LITERAL_VAR:
-	{
-	    st_oop var;
-	    
-	    var = st_association_value (es->literals[ip[1]]);
-	    
-	     ST_STACK_PUSH (es, var);
-	     
-	     ip += 2;
-	     break;
 	}
 	
 	case SEND_PLUS:
@@ -512,6 +510,16 @@ interpreter_loop (STExecutionState *es)
 	    break;
 	}
 
+	case SEND_NE:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_NE];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
 	
 	case SEND_IDENTITY_EQ:
 	{
@@ -589,8 +597,6 @@ interpreter_loop (STExecutionState *es)
 						    es->msg_receiver,
 						    es->msg_selector,
 						    es->msg_argcount);
-		g_debug ("selector: %s", st_byte_array_bytes (es->msg_selector));
-		g_assert_not_reached ();
 		ip = set_active_context (es, ip, context);
 		break;
 	    }
@@ -638,8 +644,6 @@ interpreter_loop (STExecutionState *es)
 						    es->msg_receiver,
 						    es->msg_selector,
 						    es->msg_argcount);
-		g_debug ("selector: %s", st_byte_array_bytes (es->msg_selector));
-		g_assert_not_reached ();
 		ip = set_active_context (es, ip, context);
 		break;
 	    }

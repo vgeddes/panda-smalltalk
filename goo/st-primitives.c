@@ -30,6 +30,7 @@
 #include "st-object.h"
 #include "st-context.h"
 #include "st-method.h"
+#include "st-symbol.h"
 #include <math.h>
 #include <string.h>
 
@@ -582,7 +583,6 @@ Object_at (STExecutionState *es)
 
     } else {
 	es->success = false;
-
     }
 }
 
@@ -740,7 +740,33 @@ ByteArray_at (STExecutionState *es)
 static void
 ByteArray_at_put (STExecutionState *es)
 {
-} 
+}
+
+static void
+ByteString_at (STExecutionState *es)
+{
+    st_smi  index = pop_integer (es);
+    st_oop  receiver = ST_STACK_POP (es);
+    st_oop  character;
+    char   *charptr;
+
+    if (G_UNLIKELY (!es->success)) {
+	ST_STACK_UNPOP (es, 2);
+	return;
+    }
+
+    if (G_UNLIKELY (!st_byte_array_range_check (receiver, index))) {
+	ST_STACK_UNPOP (es, 2);
+	return;	
+    }
+    
+    charptr = g_utf8_offset_to_pointer ((const char *)st_byte_array_bytes (receiver),
+					index);
+    
+    character = st_character_new (g_utf8_get_char (charptr));
+
+    ST_STACK_PUSH (es, character);
+}
 
 INLINE void
 activate_block_context (STExecutionState *es)
@@ -876,6 +902,8 @@ const STPrimitive st_primitives[] = {
 
     { "ByteArray_at",                 ByteArray_at                },
     { "ByteArray_at_put",             ByteArray_at_put            },
+
+    { "ByteString_at",                 ByteString_at                },
 
     { "BlockContext_value",               BlockContext_value               },
     { "BlockContext_valueColon",          BlockContext_valueColon          },

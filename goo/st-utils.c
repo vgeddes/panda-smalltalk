@@ -25,16 +25,33 @@
 #include "st-utils.h"
 #include "st-array.h"
 #include "st-byte-array.h"
+#include "st-virtual-space.h"
 
 #include <stdint.h>
+#include <stdlib.h>
+
+
+extern STVirtualSpace *st_virtual_space;
 
 st_oop
 st_allocate_object (gsize size)
 {
-    // all heap objects have at least a header of two st_oops
-    g_assert (size >= 2);
+    static st_oop *mark = NULL;
+    st_oop *object;
 
-    return ST_OOP (g_malloc (size * sizeof (st_oop)));
+    g_assert (size >= 2);
+    
+    if (G_UNLIKELY (mark == NULL)) {
+	mark = st_virtual_space->start;
+    }
+
+    if (G_UNLIKELY ((mark + size) >= st_virtual_space->end))
+	abort ();
+
+    object = mark;    
+    mark = mark + size;
+
+    return ST_OOP (object);
 }
 
 void
@@ -70,7 +87,7 @@ st_error_get_data (STError     *error,
 {
     g_assert (error != NULL);
 
-    g_datalist_get_data (&error->datalist, key);
+    return g_datalist_get_data (&error->datalist, key);
 }
 
 void

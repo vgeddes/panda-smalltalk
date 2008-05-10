@@ -49,6 +49,8 @@ libgoo_la_SOURCES = \
 	goo/st-input.c \
 	goo/st-interpreter.h \
 	goo/st-interpreter.c \
+	goo/st-virtual-space.h \
+	goo/st-virtual-space.c \
 	goo/st-types.h
 
 libgoo_la_CPPFLAGS =          \

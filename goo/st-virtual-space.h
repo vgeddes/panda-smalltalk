@@ -25,25 +25,26 @@
 #ifndef __ST_VIRTUAL_SPACE__
 #define __ST_VIRTUAL_SPACE__
 
+#include <st-types.h>
+
 #include <glib.h>
+#include <stdbool.h>
 
-typedef struct _GooVirtualSpace GooVirtualSpace;
-
-GooVirtualSpace *st_virtual_space_new (gsize size);
-
-static inline char *
-st_virtual_space_get_start (GooVirtualSpace * space)
+typedef struct 
 {
-    return space->start;
-}
+    st_oop *start;
+    st_oop *end;
+} STVirtualSpace;
 
-static inline char *
-st_virtual_space_get_end (GooVirtualSpace * space)
-{
-    return space->end;
-}
+STVirtualSpace  *st_virtual_space_new      (void);
 
-void st_virtual_space_destroy (GooVirtualSpace * space);
+bool             st_virtual_space_reserve (STVirtualSpace *space, guint size);
+
+void            *st_virtual_space_start    (STVirtualSpace *space);
+
+void            *st_virtual_space_end      (STVirtualSpace *space);
+
+void             st_virtual_space_destroy  (STVirtualSpace *space);
 
 
 #endif /* __ST_VIRTUAL_SPACE__ */

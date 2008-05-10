@@ -31,11 +31,12 @@ basicSize
 
 Object method!
 doesNotUnderstand: aMessage
-	^ self!
+	self error: 'Object does not understand message'!
 
 Object method!
 class
-	<primitive: 'Object_class'>!
+	<primitive: 'Object_class'>
+	self primitiveFailed!
 Annotation key: 'category' value: 'accessing'!
 
 Object method!
@@ -48,15 +49,44 @@ identityHash
 	<primitive: 'Object_identityHash'>!
 Annotation key: 'category' value: 'accessing'!
 
+
+"comparing"
+
 Object method!
 = anObject
 	^ self == anObject!
-Annotation key: 'category' value: 'testing'!
+Annotation key: 'category' value: 'comparing'!
+
+Object method!
+~= anObject
+	^ self = anObject == false!
+Annotation key: 'category' value: 'comparing'!
 
 Object method!
 == anObject
 	<primitive: 'Object_equivalent'>!
+Annotation key: 'category' value: 'comparing'!
+
+
+"testing"
+
+Object method!
+isNil
+	^ false!
 Annotation key: 'category' value: 'testing'!
+
+
+"controlling"
+
+Object method!
+ifNil: alternativeBlock
+	^ nil!
+Annotation key: 'category' value: 'controlling'!
+
+Object method!
+ifNotNil: alternativeBlock
+	^ alternativeBlock value!
+Annotation key: 'category' value: 'controlling'!
 
 
 "error handling"

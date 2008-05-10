@@ -12,6 +12,8 @@ st_method_context_new (st_oop method)
 {
     st_oop context;
     int stack_size;
+    st_oop *temps;
+    st_smi temps_size;
 
     stack_size = st_method_stack_depth (method);
     stack_size += st_method_temp_count (method);
@@ -26,6 +28,12 @@ st_method_context_new (st_oop method)
     st_method_context_receiver (context) = st_nil;
     st_method_context_method (context)   = method;
     
+    /* nil temporary frame */
+    temps_size = st_method_temp_count (method) + st_method_arg_count (method);
+    temps = st_method_context_temporary_frame (context);
+    for (guint i=0; i < temps_size; i++)
+	temps[i] = st_nil;
+
     return context;
 }
 

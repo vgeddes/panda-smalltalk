@@ -15,10 +15,8 @@ typedef struct {
     guchar *bytecode;
 
     st_oop *literals;
-    st_oop *instvars;
     st_oop *temps;
 
- 
     st_oop *stack;
     guint   sp;
     guint   ip;

@@ -79,6 +79,7 @@ enum {
     ST_SPECIAL_CLASS,
     ST_SPECIAL_NEW,
     ST_SPECIAL_NEW_ARG,
+
     ST_NUM_SPECIALS,
 };
 
