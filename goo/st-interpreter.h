@@ -39,7 +39,15 @@ typedef struct {
 
 void st_interpreter_main (void);
 
+void st_interpreter_initialize_state   (STExecutionState *es);
+
+void st_interpreter_enter              (STExecutionState *es);
+
 void st_interpreter_set_active_context (STExecutionState *es, st_oop context);
+
+st_oop st_send_unary_message (st_oop sender,
+	  	              st_oop receiver,
+		              st_oop selector);
 
 INLINE void
 st_interpreter_set_success (STExecutionState *es, bool success)

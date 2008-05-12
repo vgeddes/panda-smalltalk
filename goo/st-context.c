@@ -64,7 +64,7 @@ st_block_context_new (st_oop home, guint initial_ip, guint argcount)
     int stack_size;
 
     method = st_method_context_method (home);
- 
+
     stack_size = st_method_stack_depth (method);
     stack_size += argcount;
 

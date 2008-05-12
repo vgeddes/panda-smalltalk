@@ -31,8 +31,6 @@ create_doIt_method (void)
     	"   | object selected |"
 	" ^ 56 increment";
 
-
-
     static const char string2[] = 
 	"increment"
 	"    ^ self + 1";
@@ -67,10 +65,10 @@ lookup_method (st_oop class, st_oop selector)
 }
 
 
-static st_oop
-send_unary_message (st_oop sender,
-		    st_oop receiver,
-		    st_oop selector)
+st_oop
+st_send_unary_message (st_oop sender,
+	  	       st_oop receiver,
+		       st_oop selector)
 {
     st_oop context;
     st_oop method;
@@ -141,7 +139,7 @@ st_interpreter_set_active_context (STExecutionState *es,
     if (st_object_class (context) == st_block_context_class) {
 
 	home = st_block_context_home (context);
-	
+
 	es->method   = st_method_context_method (home);
 	es->receiver = st_method_context_receiver (home);
 	es->literals = st_array_element (st_method_literals (es->method), 1);
@@ -680,6 +678,7 @@ interpreter_loop (STExecutionState *es)
 	case BLOCK_COPY:
 	{
 	    st_oop block;
+	    st_oop home;
 	    guint argcount = ip[1];
 	    guint initial_ip;
 	    
@@ -687,7 +686,12 @@ interpreter_loop (STExecutionState *es)
 	    
 	    initial_ip = ip - es->bytecode + 3;
 
-	    block = st_block_context_new (es->context, initial_ip, argcount);
+	    if (st_object_class (es->context) == st_block_context_class)
+		home = st_block_context_home (es->context);
+	    else
+		home = es->context;
+
+	    block = st_block_context_new (home, initial_ip, argcount);
 
 	    ST_STACK_PUSH (es, block);
 	    
@@ -742,6 +746,24 @@ interpreter_loop (STExecutionState *es)
     return st_nil;
 }
 
+
+void
+st_interpreter_initialize_state (STExecutionState *es)
+{
+    memset (es, 0, sizeof (STExecutionState));
+    
+    es->context = st_nil;
+    es->receiver = st_nil;
+    es->method = st_nil;
+}
+
+void
+st_interpreter_enter (STExecutionState *es)
+{
+    interpreter_loop (es);
+}
+
+
 void
 st_interpreter_main (void)
 {
@@ -751,7 +773,7 @@ st_interpreter_main (void)
 
     create_doIt_method ();
 
-    context = send_unary_message (st_nil,
+    context = st_send_unary_message (st_nil,
 				  st_nil,
 				  st_symbol_new ("doIt"));
     es.context = st_nil;

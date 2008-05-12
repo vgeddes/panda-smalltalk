@@ -31,8 +31,10 @@
 #include "st-context.h"
 #include "st-method.h"
 #include "st-symbol.h"
+
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 INLINE void

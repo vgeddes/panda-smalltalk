@@ -1,5 +1,5 @@
 
-noinst_PROGRAMS += tests/test-lexer tests/test-parser tests/test-generator
+noinst_PROGRAMS += tests/test-lexer tests/test-parser tests/test-generator tests/test-interpreter
 
 tests_test_lexer_SOURCES = tests/test-lexer.c
 
@@ -19,5 +19,11 @@ tests_test_generator_LDADD =    $(GLIB_LIBS) libgoo.la
 tests_test_generator_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
 tests_test_generator_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/goo -I$(top_srcdir)/libs/libtommath
 
+tests_test_interpreter_SOURCES = tests/test-interpreter.c
 
-DISTCLEANFILES += tests/test-lexer tests/test-parser tests/test-generator
+tests_test_interpreter_LDADD =    $(GLIB_LIBS) libgoo.la
+tests_test_interpreter_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
+tests_test_interpreter_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/goo -I$(top_srcdir)/libs/libtommath
+
+
+DISTCLEANFILES += tests/test-lexer tests/test-parser tests/test-generator tests/test-interpreter

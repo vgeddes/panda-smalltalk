@@ -140,67 +140,12 @@ min: aNumber
 	(self >= aNumber)
 		ifTrue: [ ^ aNumber ]
 		ifFalse: [ ^ self ]!
-
 Annotation key: 'category' value: 'mathematics'!
 
 
+"coercing"
 
-
-"
-
-	quo: aNumber
-	[
-		<primitive: 'SmallInteger_quo'>
-		^ super quo: aNumber
-	]
-
-	\\ aNumber
-	[
-		<primitive: 'SmallInteger_mod'>
-		^ super \\ aNumber
-	]
-
-
-SmallInteger methodsFor: 'coercing'
-[
-
-	asInteger
-	[    
-		^ self
-	]
-
-	asFloat
-	[
-		<primitive: 'SmallInteger_asFloat'>
-		self primitiveFailed
-	]
-
-	asLargeInteger
-	[
-		<primitive: 'SmallInteger_asLargeInteger'>
-		self primitiveFailed
-	]
-
-	print
-	[
-		<primitive: 'SmallInteger_print'>
-		self primitiveFailed
-	]
-
-	zero
-	[
-		^ 0
-	]
-
-
-	generality
-	[
-		^ 10
-	]
-
-	unity
-	[
-		^ 1
-	]
-]
-"
+SmallInteger method!
+asInteger    
+		^ self!
+Annotation key: 'category' value: 'coercing'!
