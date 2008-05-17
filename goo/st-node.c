@@ -370,7 +370,6 @@ st_node_new (STNodeType type)
 {
     STNode *node = g_slice_new0 (STNode);
     node->type = type;
-    node->next = NULL;
     return node;
 }
 
@@ -432,3 +431,6 @@ st_node_destroy (STNode *node)
 
     g_slice_free (STNode, node);
 }
+
+
+

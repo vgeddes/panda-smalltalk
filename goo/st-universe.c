@@ -167,8 +167,14 @@ initialize_class  (const char *name,
 
     } else {
 
+
+	
 	superclass = st_global_get (super_name);
-	g_assert (superclass != st_nil);
+	if (superclass == st_nil) {
+	    g_debug (name);
+	    g_assert (superclass != st_nil);
+	}
+
 
 	klass = st_global_get (name);
 	if (klass == st_nil)
@@ -372,6 +378,8 @@ file_in_classes (void)
 	    "ArrayedCollection.st",
 	    "Array.st",
 	    "Association.st",
+//	    "Number.st",
+//	    "Integer.st",
 	    "SmallInteger.st",
 	    "Object.st",
 	    "UndefinedObject.st",

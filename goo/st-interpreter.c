@@ -328,6 +328,13 @@ interpreter_loop (STExecutionState *es)
 	    
 	    ip += 1;
 	    break;
+
+	case PUSH_ACTIVE_CONTEXT:
+	    
+	    ST_STACK_PUSH (es, es->context);
+	    
+	    ip += 1;
+	    break;
 	     
 	case PUSH_LITERAL_CONST:
 	    
@@ -402,6 +409,72 @@ interpreter_loop (STExecutionState *es)
 	{
 	    es->msg_argcount = 1;
 	    es->msg_selector = st_specials[ST_SPECIAL_MUL];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_MOD:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_MOD];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_DIV:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_DIV];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_BITSHIFT:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_BITSHIFT];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_BITAND:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_BITAND];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_BITOR:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_BITOR];
+	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    
+	    SEND_TEMPLATE (es);
+	    
+	    break;
+	}
+
+	case SEND_BITXOR:
+	{
+	    es->msg_argcount = 1;
+	    es->msg_selector = st_specials[ST_SPECIAL_BITOR];
 	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);

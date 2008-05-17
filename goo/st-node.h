@@ -94,7 +94,6 @@ struct STNode
     };
 };
 
-
 STNode *st_node_new          (STNodeType type);
 
 STNode *st_node_list_append  (STNode *list, STNode *node);

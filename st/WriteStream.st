@@ -1,17 +1,11 @@
 
 
 
-WriteStream method!
-on: aCollection
-	super on: aCollection.
-	readLimit := 0.
-	writeLimit := aCollection size!
-
+"Accessing"
 
 WriteStream method!
 next
 	self shouldNotImplement!
-Annotation key: 'category' value: 'accessing'!
 
 WriteStream method!
 nextPut: anObject	
@@ -19,7 +13,6 @@ nextPut: anObject
 		ifTrue: [self pastEndPut: anObject]
 		ifFalse: [ position := position + 1.
 				   collection at: position put: anObject]!
-Annotation key: 'category' value: 'accessing'!
 
 WriteStream method!
 pastEndPut: anObject
@@ -36,11 +29,16 @@ pastEndPut: anObject
 	collection at: (position := position + 1) put: anObject.
 
 	^ anObject!
-Annotation key: 'category' value: 'accessing'!
-
 
 WriteStream method!
 contents
 	readLimit := readLimit max: position.
 	^ collection copyFrom: 1 to: position!
-Annotation key: 'category' value: 'accessing'!
+
+"private"
+
+WriteStream method!
+on: aCollection
+	super on: aCollection.
+	readLimit := 0.
+	writeLimit := aCollection size!

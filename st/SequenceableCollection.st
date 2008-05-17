@@ -5,7 +5,6 @@
 SequenceableCollection method!
 size
 	self subclassResponsibility!
-Annotation key: 'category' value: 'accessing'!
 
 SequenceableCollection method!
 replaceFrom: start to: stop with: replacement startingAt: repStart 
@@ -19,7 +18,6 @@ replaceFrom: start to: stop with: replacement startingAt: repStart
 	index := start - 1.
 	[(index := index + 1) <= stop]
 		whileTrue: [self at: index put: (replacement at: repOff + index)]!
-Annotation key: 'category' value: 'accessing'!
 
 
 "removing "
@@ -27,7 +25,6 @@ Annotation key: 'category' value: 'accessing'!
 SequenceableCollection method!
 remove: anObject ifAbsent: anExceptionBlock
 	self shouldNotImplement!
-Annotation key: 'category' value: 'removing'!
 
 
 "enumerating"
@@ -39,7 +36,6 @@ do: aBlock
 	length := self size.
 	[(index := index + 1) <= length]
 		whileTrue: [ aBlock value: (self at: index) ].!
-Annotation key: 'category' value: 'enumerating'!
 
 SequenceableCollection method!
 collect: aBlock
@@ -50,7 +46,6 @@ collect: aBlock
 	[(index := index + 1) <= length]
 		whileTrue: [aStream nextPut: (aBlock value: (self at: index))].
 	^ aStream contents!
-Annotation key: 'category' value: 'enumerating'!
 
 SequenceableCollection method!
 select: aBlock
@@ -62,7 +57,6 @@ select: aBlock
 		whileTrue: [(aBlock value: (self at: index))
 						ifTrue: [aStream nextPut: (self at: index)]]. 
 	^ aStream contents!
-Annotation key: 'category' value: 'enumerating'!
 
 
 "copying"
@@ -79,4 +73,3 @@ copyFrom: start to: stop
 		to: newSize
 		with: self
 		startingAt: start!
-Annotation key: 'category' value: 'copying'!

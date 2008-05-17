@@ -155,7 +155,10 @@ parse_block (STParser *parser)
     if (st_token_type (token) == ST_TOKEN_BINARY_SELECTOR
 	&& streq (st_token_text (token), "|"))
 	block->temporaries = parse_temporaries (parser);
-    
+
+    if (block->temporaries)
+	g_debug ("%p %i %s", block, st_node_list_length (block->temporaries), st_byte_array_bytes (block->temporaries->name));
+
     nested = parser->in_block;
     parser->in_block = true;
 
@@ -175,14 +178,16 @@ parse_block (STParser *parser)
 static STNode *
 parse_number (STParser *parser)
 {    
-    int radix;
-    int exponent;   
-    char *number, *p;
-    STNode *node;
+    int      radix;
+    int      sign;
+    int      exponent;   
+    char    *number, *p;
+    STNode  *node;
     STToken *token;
 
     token = current (parser->lexer);
     
+    sign     = st_number_token_negative (token) ? -1 : 1;
     radix    = st_number_token_radix (token);
     exponent = st_number_token_exponent (token);
     
@@ -204,7 +209,7 @@ parse_number (STParser *parser)
 
 	format = g_strdup_printf ("%se%i", number, exponent);
 	
-	node->literal = st_float_new (strtod (format, NULL));
+	node->literal = st_float_new (sign * strtod (format, NULL));
 	
 	g_free (format);
 
@@ -213,9 +218,9 @@ parse_number (STParser *parser)
 	/* we use strtoll() when smi's are 64-bits wide.
 	 */
 #if ST_HOST32 == 1
-	long int integer = strtol (number, NULL, radix);
+	long int integer = sign * strtol (number, NULL, radix);
 #else
-	long long int integer = strtoll (number, NULL, radix);
+	long long int integer = sign * strtoll (number, NULL, radix);
 #endif
 	/* check for overflow */
 	if (errno == ERANGE
@@ -232,6 +237,9 @@ parse_number (STParser *parser)
 	    if (result != MP_OKAY)
 		parse_error (parser,"memory exhausted while trying parse LargeInteger", token);
 	
+	    if (sign == -1)
+		mp_neg (&value, &value);
+
 	    node->literal = st_large_integer_new (&value);
 
 	} else {

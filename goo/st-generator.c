@@ -283,7 +283,7 @@ static int
 find_temporary (Generator *gt, st_oop name)
 {   
     int i = 0;
-
+    
     for (GList *l = gt->temporaries; l; l = l->next) {
 
 	if (st_object_equal (name, (st_oop) l->data))
@@ -459,14 +459,16 @@ get_block_temporaries (Generator *gt, STNode *temporaries)
     
     for (STNode *node = temporaries; node; node = node->next) {
       
-      for (GList *l = gt->instvars; l; l = l->next) {
+	for (GList *l = gt->instvars; l; l = l->next) {
 	  if (st_object_equal (node->name, (st_oop) l->data))
 	      generation_error (gt, "name is already defined", node);
 	}
+
 	for (GList *l = gt->temporaries; l; l = l->next) {
 	  if (st_object_equal (node->name, (st_oop) l->data))
-	    generation_error (gt, "name already used in method", node);
+	      generation_error (gt, "name already used in method", node);
 	}
+
 	temps = g_list_prepend (temps, (void *) node->name);
 	
     }
@@ -503,12 +505,6 @@ generate_block (Generator *gt, STNode *node)
 
     in_block = gt->in_block;
     gt->in_block = true;
-
-    /* add block temporaries to current known temporaries */
-    gt->temporaries = g_list_concat (gt->temporaries,
-				     get_block_temporaries (gt, node->arguments));
-    gt->temporaries = g_list_concat (gt->temporaries,
-				     get_block_temporaries (gt, node->temporaries));
 
     emit (gt, BLOCK_COPY);
     emit (gt, st_node_list_length (node->arguments));
@@ -931,6 +927,7 @@ generate_message (Generator *gt, STNode *msg)
 static int
 size_expression (Generator *gt, STNode *node)
 {
+    int index;
     int size = 0;
 
     switch (node->type) {
@@ -954,8 +951,7 @@ size_expression (Generator *gt, STNode *node)
 	    size += sizes[PUSH_ACTIVE_CONTEXT];
 	    break;
 	}
-
-	int index;	
+	
 	index = find_temporary (gt, node->name);
 	if (index >= 0) {
 	    size += 2;
@@ -1260,6 +1256,44 @@ generate_method_statements (Generator *gt, STNode *statements)
    emit (gt, RETURN_STACK_TOP);
 }
 
+static GList *
+collect_block_temporaries (Generator *gt, STNode *node)
+{
+    GList *temps = NULL;
+
+    if (node == NULL)
+	return NULL;
+
+    if (node->type == ST_BLOCK_NODE)
+	temps = g_list_concat (get_block_temporaries (gt, node->arguments),
+			       get_block_temporaries (gt, node->temporaries));
+
+    switch (node->type) {
+    case ST_BLOCK_NODE:
+	temps = g_list_concat (temps, collect_block_temporaries (gt, node->statements));
+	break;
+
+    case ST_ASSIGN_NODE:
+    case ST_RETURN_NODE:
+	temps = g_list_concat (temps, collect_block_temporaries (gt, node->expression));
+	break;
+
+    case ST_MESSAGE_NODE:
+	temps = g_list_concat (temps, collect_block_temporaries (gt, node->receiver));
+	temps = g_list_concat (temps, collect_block_temporaries (gt, node->arguments));
+	break;
+
+    case ST_METHOD_NODE:
+    case ST_VARIABLE_NODE:
+    case ST_LITERAL_NODE:
+	break;
+    }
+
+    temps = g_list_concat (temps, collect_block_temporaries (gt, node->next));
+
+    return temps;
+}
+
 st_oop
 st_generate_method (st_oop klass, STNode *node, STError **error)
 {
@@ -1280,6 +1314,9 @@ st_generate_method (st_oop klass, STNode *node, STError **error)
     gt->klass = klass;
     gt->instvars = st_behavior_all_instance_variables (klass);
     gt->temporaries = get_temporaries (gt, gt->instvars, node->arguments, node->temporaries);
+
+    /* collect all block-level temporaries */
+    gt->temporaries = g_list_concat (gt->temporaries, collect_block_temporaries (gt, node->statements));
 
     // generate bytecode
     generate_method_statements (gt, node->statements);

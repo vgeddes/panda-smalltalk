@@ -86,12 +86,12 @@ guint          st_token_line   (STToken *token);
 guint          st_token_column (STToken *token);
 
 
+bool           st_number_token_negative (STToken *token);
+
 char          *st_number_token_number   (STToken *token);
 
 guint          st_number_token_radix    (STToken *token);
 
 int            st_number_token_exponent (STToken *token);
-
-
 
 #endif /* __ST_LEXER_H__ */

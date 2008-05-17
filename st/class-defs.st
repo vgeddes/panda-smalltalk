@@ -90,6 +90,11 @@ Class named: 'ByteArray'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
+Class named: 'Interval'
+	  superclass: 'SequenceableCollection'
+	  instanceVariableNames: 'start stop step'
+      classVariableNames: ''!
+
 Class named: 'Association'
 	  superclass: 'Object'
 	  instanceVariableNames: 'key value'
@@ -165,16 +170,11 @@ Class named: 'ByteSymbol'
       classVariableNames: ''!
 
 
-"Basic data types"
+"Numbers"
 
 Class named: 'Magnitude'
 	  superclass: 'Object'
 	  instanceVariableNames: ''
-      classVariableNames: ''!
-
-Class named: 'Character'
-	  superclass: 'Magnitude'
-	  instanceVariableNames: 'value'
       classVariableNames: ''!
 
 Class named: 'Number'
@@ -205,6 +205,14 @@ Class named: 'Fraction'
 Class named: 'Float'
 	  superclass: 'Number'
 	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+
+"Basic data types"
+
+Class named: 'Character'
+	  superclass: 'Magnitude'
+	  instanceVariableNames: 'value'
       classVariableNames: ''!
 
 Class named: 'Boolean'

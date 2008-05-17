@@ -7,7 +7,6 @@ new: sizeRequested
 	self == String
 		ifTrue: [ ^ ByteString new: sizeRequested ]
 		ifFalse: [ ^ (self basicNew: sizeRequested) initialize ]!
-Annotation key: 'category' value: 'instance creation'!
 
 
 "testing"
@@ -15,4 +14,3 @@ Annotation key: 'category' value: 'instance creation'!
 String method!
 isString
 	^ true!
-Annotation key: 'category' value: 'testing'!

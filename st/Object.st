@@ -4,6 +4,9 @@ Object method!
 initialize
 	^ self!
 
+
+"accessing"
+
 Object method!
 at: anIndex
 	<primitive: 'Object_at'>
@@ -37,35 +40,33 @@ Object method!
 class
 	<primitive: 'Object_class'>
 	self primitiveFailed!
-Annotation key: 'category' value: 'accessing'!
 
 Object method!
 hash
 	^ self identityHash!
-Annotation key: 'category' value: 'accessing'!
 
 Object method!
 identityHash
 	<primitive: 'Object_identityHash'>!
-Annotation key: 'category' value: 'accessing'!
 
 
 "comparing"
 
 Object method!
-= anObject
-	^ self == anObject!
-Annotation key: 'category' value: 'comparing'!
-
-Object method!
 ~= anObject
 	^ self = anObject == false!
-Annotation key: 'category' value: 'comparing'!
+
+Object method!
+= anObject
+	^ self == anObject!
+
+Object method!
+~~ anObject
+	^ self == anObject == false!
 
 Object method!
 == anObject
 	<primitive: 'Object_equivalent'>!
-Annotation key: 'category' value: 'comparing'!
 
 
 "testing"
@@ -73,8 +74,10 @@ Annotation key: 'category' value: 'comparing'!
 Object method!
 isNil
 	^ false!
-Annotation key: 'category' value: 'testing'!
 
+Object method!
+isNotNil
+	^ true!
 
 "controlling"
 
@@ -115,4 +118,10 @@ subclassResponsibility
 	 Announce that the subclass should have implemented this message."
 
 	self error: 'My subclass should have overridden '!
+Annotation key: 'category' value: 'error handling'!
+
+
+Object method!
+notYetImplemented
+	self error: 'This method is not yet implemented'!
 Annotation key: 'category' value: 'error handling'!

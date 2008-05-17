@@ -1,15 +1,16 @@
 
+"accessing"
+
 ArrayedCollection method!
 size
 	^ self basicSize!
-Annotation key: 'category' value: 'accessing'!
+
+"adding"
 
 ArrayedCollection method!
 add: anObject
 	^ self shouldNotImplement!
-Annotation key: 'category' value: 'adding'!
 
 ArrayedCollection method!
 add: anObject
 	^ self shouldNotImplement!
-Annotation key: 'category' value: 'adding'!

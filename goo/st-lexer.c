@@ -113,6 +113,7 @@ struct STToken
 	};
 	/* Number Token */
 	struct {
+	    bool  negative;
 	    char *number;
 	    int   radix;
 	    int   exponent;
@@ -140,7 +141,7 @@ make_token (STLexer      *lexer,
 }
 
 static void
-make_number_token (STLexer *lexer, int radix, int exponent, char *number)
+make_number_token (STLexer *lexer, int radix, int exponent, char *number, bool negative)
 {
     STToken *token;
 
@@ -150,6 +151,7 @@ make_number_token (STLexer *lexer, int radix, int exponent, char *number)
     token->line   = lexer->line;
     token->column = lexer->column;
 
+    token->negative = negative;
     token->number   = number;
     token->radix    = radix;
     token->exponent = exponent;
@@ -242,29 +244,33 @@ match_number (STLexer *lexer)
     /* We don't match any leading '-'. The parser will resolve whether a '-'
      * specifies a negative number or a binary selector
      */
-
+    
+    bool negative = false;
     long radix = 10;
     long exponent = 0;
-    int start, end, exponent_start;
+    int k, j, l;
     char *string;
     
-    start = st_input_index (lexer->input);
+    if (lookahead (lexer, 1) == '-') {
+	negative = true;
+	consume (lexer);
+    }
+
+    k = st_input_index (lexer->input);
     
     do {
-    
 	match_range (lexer, '0', '9');
-	
     } while (isdigit (lookahead (lexer, 1)));
    
     if (lookahead (lexer, 1) != 'r') {
     
-	end = st_input_index (lexer->input);
+	j = st_input_index (lexer->input);
 	goto out1;
 	    
     } else {
     
-	char *string = st_input_range (lexer->input, lexer->start,
-				       st_input_index (lexer->input));
+	string = st_input_range (lexer->input, k,
+				 st_input_index (lexer->input));
 				       			
 	radix = strtol (string, NULL, 10);
 	g_free (string);
@@ -276,10 +282,10 @@ match_number (STLexer *lexer)
     
     }
 
-    start = st_input_index (lexer->input);
+    k = st_input_index (lexer->input);
 
     if (lookahead (lexer, 1) == '-')
-	consume (lexer);
+	raise_error (lexer, ERROR_NO_VIABLE_ALT_FOR_CHAR, lookahead (lexer, 1));	
 	
 out1:
 
@@ -294,13 +300,13 @@ out1:
 	} while (is_radix_numeral (radix, lookahead (lexer, 1)));
     }  
 
-    end = st_input_index (lexer->input);
+    j = st_input_index (lexer->input);
 
     if (lookahead (lexer, 1) == 'e') {
 
 	consume (lexer);
 	
-	exponent_start = st_input_index (lexer->input);
+	l = st_input_index (lexer->input);
 
 	if (lookahead (lexer, 1) == '-' && isdigit (lookahead (lexer, 2)))
 	    consume (lexer);
@@ -308,10 +314,10 @@ out1:
 	while (isdigit (lookahead (lexer, 1)))
 		consume (lexer);
 		
-	if (exponent_start == st_input_index (lexer->input))
+	if (l == st_input_index (lexer->input))
 	    goto out2;
 	
-	string = st_input_range (lexer->input, exponent_start,
+	string = st_input_range (lexer->input, l,
 				 st_input_index (lexer->input));				    
 	exponent = strtol (string, NULL, 10);
     }
@@ -319,7 +325,8 @@ out1:
 out2:
 
     make_number_token (lexer, radix, exponent,
-		       st_input_range (lexer->input, start, end));
+		       st_input_range (lexer->input, k, j),
+		       negative);
 }
 
 
@@ -722,7 +729,7 @@ st_lexer_next_token (STLexer *lexer)
 	    match_semicolon (lexer);
 	    break;
 
-	case '+': case '-': case '/': case '\\':
+	case '+': case '/': case '\\':
 	case '*': case '<': case '>': case '=':
 	case '@': case '%': case '|': case '&':
 	case '?': case '!': case '~': case ',':
@@ -750,8 +757,14 @@ st_lexer_next_token (STLexer *lexer)
 	    if (g_unichar_isalpha (lookahead (lexer, 1)))
 		match_keyword_or_identifier (lexer, true);
 
+	    else if (lookahead (lexer, 1) == '-' && isdigit (lookahead (lexer, 2)))
+		match_number (lexer);
+
 	    else if (isdigit (lookahead (lexer, 1)))
 		match_number (lexer);
+
+	    else if (lookahead (lexer, 1) == '-')
+		match_binary_selector (lexer, true);
 
 	    else if (lookahead (lexer, 1) == '#' && lookahead (lexer, 2) == '(')
 		match_tuple_begin (lexer);
@@ -924,6 +937,12 @@ void
 st_lexer_filter_comments (STLexer *lexer, bool filter)
 {
     lexer->filter_comments = filter;
+}
+
+bool
+st_number_token_negative (STToken *token)
+{
+    return token->negative;
 }
 
 char *

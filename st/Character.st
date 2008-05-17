@@ -5,7 +5,6 @@
 Character classMethod!
 new: unicodeValue
 	^ self basicNew value: unicodeValue!
-Annotation key: 'category' value: 'instance creation'!
 
 
 "accessing"
@@ -13,7 +12,6 @@ Annotation key: 'category' value: 'instance creation'!
 Character method!
 value
 	^ value!
-Annotation key: 'category' value: 'accessing'!
 
 
 "private"
@@ -21,4 +19,3 @@ Annotation key: 'category' value: 'accessing'!
 Character method!
 value: unicodeValue
 	value := unicodeValue!
-Annotation key: 'category' value: 'private'!

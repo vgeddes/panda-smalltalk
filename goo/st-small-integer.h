@@ -34,8 +34,6 @@ INLINE st_oop st_smi_increment (st_oop smi);
 INLINE st_oop st_smi_decrement (st_oop smi);
 INLINE bool st_smi_equal (st_oop m, st_oop n);
 INLINE st_smi st_smi_hash (st_oop smi);
-guint st_smi_vtable (void);
-
 
 const STDescriptor *st_smi_descriptor (void) G_GNUC_CONST;
 
@@ -44,13 +42,13 @@ const STDescriptor *st_smi_descriptor (void) G_GNUC_CONST;
 INLINE st_oop
 st_smi_new (st_smi num)
 {
-    return (st_oop) (num << ST_TAG_SIZE);
+    return ((st_oop) num) << ST_TAG_SIZE;
 }
 
 INLINE st_smi
 st_smi_value (st_oop smi)
 {
-    return (st_smi) (smi >> ST_TAG_SIZE);
+    return ((st_smi) smi) >> ST_TAG_SIZE;
 }
 
 INLINE st_oop

@@ -26,30 +26,24 @@ DEALINGS IN THE SOFTWARE.
 Boolean classMethod!
 new
 	self error: 'Boolean can only have two instances, true and false'!
-Annotation key: 'category' value: 'logical operations'!
-
 
 "logical operations"
 
 Boolean method!
 & aBoolean
 	self subclassResponsibility!
-Annotation key: 'category' value: 'logical operations'!
 
 Boolean method!
 | aBoolean
 	self subclassResponsibility!
-Annotation key: 'category' value: 'logical operations'!
 
 Boolean method!
 not
 	self subclassResponsibility!
-Annotation key: 'category' value: 'logical operations'!
 
 Boolean method!
 xor: aBoolean
 	^ aBoolean ~= self!
-Annotation key: 'category' value: 'logical operations'!
 
 
 "controlling"
@@ -57,22 +51,18 @@ Annotation key: 'category' value: 'logical operations'!
 Boolean method!
 ifTrue: trueBlock ifFalse: falseBlock
 	self subclassResponsibility!
-Annotation key: 'category' value: 'controlling'!
 
 Boolean method!
 ifFalse: falseBlock ifTrue: trueBlock
 	self subclassResponsibility!
-Annotation key: 'category' value: 'controlling'!
 
 Boolean method!
 ifFalse: falseBlock
 	self subclassResponsibility!
-Annotation key: 'category' value: 'controlling'!
 
 Boolean method!
 ifTrue: trueBlock
 	self subclassResponsibility!
-Annotation key: 'category' value: 'controlling'!
 
 
 "testing"
