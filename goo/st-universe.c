@@ -69,7 +69,11 @@ st_oop
     st_symbol_class          = 0,
     st_compiled_method_class = 0,
     st_method_context_class  = 0,
-    st_block_context_class   = 0;
+    st_block_context_class   = 0,
+    st_selector_doesNotUnderstand   = 0,
+    st_selector_mustBeBoolean     = 0,
+    st_selector_startupSystem     = 0;
+
 
 
 st_oop st_specials[ST_NUM_SPECIALS];
@@ -373,17 +377,23 @@ file_in_classes (void)
 	    "Stream.st",
 	    "PositionableStream.st",
 	    "WriteStream.st",
+	    "StringStream.st",
 	    "Collection.st",
 	    "SequenceableCollection.st",
 	    "ArrayedCollection.st",
 	    "Array.st",
+	    "ByteArray.st",
 	    "Association.st",
-//	    "Number.st",
-//	    "Integer.st",
+	    "Number.st",
+	    "Integer.st",
 	    "SmallInteger.st",
+	    "LargeInteger.st",
+	    "Fraction.st",
+	    "Float.st",
 	    "Object.st",
 	    "UndefinedObject.st",
 	    "String.st",
+	    "Symbol.st",
 	    "ByteString.st",
 	    "Character.st",
 	    "Behavior.st",
@@ -447,6 +457,11 @@ init_specials (void)
     st_specials[ST_SPECIAL_CLASS]     = st_symbol_new ("class");
     st_specials[ST_SPECIAL_NEW]       = st_symbol_new ("new");
     st_specials[ST_SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
+
+    st_selector_doesNotUnderstand   = st_symbol_new ("doesNotUnderstand:");
+    st_selector_mustBeBoolean       = st_symbol_new ("mustBeBoolean");
+    st_selector_startupSystem       = st_symbol_new ("startupSystem");
+
 }
 
 // RESERVE 100 MB worth of virtual address space
@@ -519,7 +534,6 @@ st_bootstrap_universe (void)
     declare_class ("Float", st_float_class);
     declare_class ("Array", st_array_class);
     declare_class ("ByteArray", st_byte_array_class);
-//    declare_class ("String", st_string_class);
     declare_class ("ByteString", st_string_class);
     declare_class ("ByteSymbol", st_symbol_class);
     declare_class ("Set", st_set_class);

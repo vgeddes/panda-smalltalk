@@ -70,5 +70,4 @@ ifTrue: trueBlock
 Boolean method!
 isBoolean
 	^ true!
-Annotation key: 'category' value: 'testing'!
  

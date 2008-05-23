@@ -42,7 +42,16 @@ SmallInteger method!
 
 SmallInteger method!
 / aNumber
-	<primitive: 'SmallInteger_mod'>
+	<primitive: 'SmallInteger_div'>
+	aNumber = 0
+		ifTrue: [ self error: 'cannot divide by 0' ].
+	aNumber isInteger
+		ifTrue: [ ^ Fraction numerator: self denominator: aNumber ]
+		ifFalse: [ ^ super / aNumber ]!
+
+SmallInteger method!
+// aNumber
+	<primitive: 'SmallInteger_intDiv'>
 	self primitiveFailed!
 
 SmallInteger method!
@@ -50,10 +59,6 @@ SmallInteger method!
 	<primitive: 'SmallInteger_mod'>
 	self primitiveFailed!
 
-SmallInteger method!
-// aNumber
-	<primitive: 'SmallInteger_mod'>
-	self primitiveFailed!
 
 
 "comparing"
@@ -76,6 +81,16 @@ SmallInteger method!
 SmallInteger method!
 >= aNumber
 	<primitive: 'SmallInteger_ge'>
+	self primitiveFailed!
+
+SmallInteger method!
+= aNumber
+	<primitive: 'SmallInteger_eq'>
+	self primitiveFailed!
+
+SmallInteger method!
+~= aNumber
+	<primitive: 'SmallInteger_ne'>
 	self primitiveFailed!
 
 SmallInteger method!
@@ -136,6 +151,10 @@ min: aNumber
 		ifTrue: [ ^ aNumber ]
 		ifFalse: [ ^ self ]!
 
+SmallInteger method!
+abs
+	^ super abs!
+
 
 "testing"
 
@@ -147,13 +166,22 @@ SmallInteger method!
 isLargeInteger
 	^ false!
 
-
 "coercing"
 
 SmallInteger method!
 asInteger    
-		^ self!
+	^ self!
+
+SmallInteger method!
+asFloat    
+	<primitive: 'SmallInteger_asFloat'>
+	self primitiveFailed!
 
 SmallInteger method!
 generality    
-		^ 10!
+	^ 10!
+
+SmallInteger method!
+zero    
+	^ 0!
+

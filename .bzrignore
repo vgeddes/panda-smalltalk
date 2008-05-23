@@ -39,3 +39,5 @@ tests/test-input
 tests/test-generator
 tests/test-parser
 TAGS
+tests/test-interpreter
+po/goo.pot

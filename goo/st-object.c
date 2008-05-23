@@ -93,3 +93,45 @@ st_object_hash (st_oop object)
     
     return st_heap_object_hash (object);
 }
+
+char *
+st_object_printString (st_oop object)
+{
+    char *class_name;
+    char *string;
+
+    class_name = (char *) st_byte_array_bytes (st_class_name (st_object_class (object)));
+    
+    // SmallInteger
+    if (st_object_is_smi (object))
+	string = g_strdup_printf ("%li", st_smi_value (object));
+
+    // Float
+    else if (st_object_class (object) == st_float_class)
+	string = g_strdup_printf ("%f", st_float_value (object));
+
+    // Fraction
+    else if (st_object_class (object) == st_global_get ("Fraction"))
+	string = g_strdup_printf ("%li/%li", st_smi_value (st_heap_object_body (object)[0]),
+		st_smi_value (st_heap_object_body (object)[1]));
+
+    // ByteString
+    else if (st_object_is_string (object))
+	string = g_strdup_printf ("'%s'", (char *) st_byte_array_bytes (object));
+
+    // ByteSymbol
+    else if (st_object_is_symbol (object))
+	string = g_strdup_printf ("#%s", (char *) st_byte_array_bytes (object));
+
+    // Character
+    else if (st_object_class (object) == st_character_class) {
+	char outbuf[6] = { 0 };
+	g_unichar_to_utf8 (st_character_value (object), outbuf);
+	string = g_strdup_printf ("$%s", outbuf);
+
+    // Other
+    } else
+	string = g_strdup_printf ("%s", class_name);
+
+    return string;
+}

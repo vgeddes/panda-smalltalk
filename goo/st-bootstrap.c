@@ -38,8 +38,6 @@ main (int argc, char *argv[])
 {
     st_bootstrap_universe ();
 
-    st_interpreter_main ();
-
     return 0;    
 }
 

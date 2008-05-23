@@ -52,7 +52,11 @@ extern st_oop
     st_symbol_class,
     st_compiled_method_class,
     st_method_context_class,
-    st_block_context_class;
+    st_block_context_class,
+
+    st_selector_doesNotUnderstand, 
+    st_selector_mustBeBoolean,
+    st_selector_startupSystem;
 
 enum {
     ST_SPECIAL_PLUS,

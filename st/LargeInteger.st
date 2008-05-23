@@ -1,171 +1,124 @@
-"
-Copyright (c) 2007 Luca Bruno
 
-This file is part of Smalltalk YX.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the 'Software'), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+"arithmetic"
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-"
-
-!LargeInteger class methodsFor: 'initialize-release'!
-
-initialize
-    finalizationRequest := true
-! !
-
-!LargeInteger methodsFor: 'finalization'!
-
-clear
-    <primitive: 'LargeInteger_clear'>
-	self primitiveFailed
-!
-
-finalize
-    self clear
-! !
-
-!LargeInteger methodsFor: 'coercing'!
-
-asLargeInteger
-    ^self
-!
-
-asInteger
-    ^self
-!
-
-generality
-    ^20
-!
-
-zero
-    ^0 asLargeInteger
-!
-
-unity
-    ^1 asLargeInteger
-!
-
-coerce: aNumber
-    ^aNumber asLargeInteger
-! !
-
-!LargeInteger methodsFor: 'testing'!
-
-isSmallInteger
-    ^false
-!
-
-isLargeInteger
-    ^true
-! !
-
-!LargeInteger methodsFor: 'printing'!
-
-print
-    <primitive: 'LargeInteger_print'>
-	self primitiveFailed
-! !
-
-!LargeInteger methodsFor: 'arithmetic'!
-
+LargeInteger method!
 + aNumber
-     <primitive: 'LargeInteger_plus'>
-	 ^super + aNumber
-!
+	<primitive: 'LargeInteger_add'>
+	^ super + aNumber!
 
+LargeInteger method!
 - aNumber
-     <primitive: 'LargeInteger_minus'>
-	 ^super - aNumber
-!
+	<primitive: 'LargeInteger_sub'>
+	^ super + aNumber!
 
+LargeInteger method!
+* aNumber
+	<primitive: 'LargeInteger_mul'>
+	^ super * aNumber!
+
+LargeInteger method!
+/ aNumber
+	<primitive: 'LargeInteger_div'>
+	^ super / aNumber!
+
+LargeInteger method!
+// aNumber
+     <primitive: 'LargeInteger_div'>
+	^ super // aNumber!
+
+LargeInteger method!
+\\ aNumber
+	<primitive: 'LargeInteger_mod'>
+	^ super / aNumber!
+
+
+"comparing"
+
+LargeInteger method!
 < aNumber
      <primitive: 'LargeInteger_lt'>
-	 ^super < aNumber
-!
+	 ^ super < aNumber!
 
+LargeInteger method!
 > aNumber
      <primitive: 'LargeInteger_gt'>
-	 ^super > aNumber
-!
+	 ^ super > aNumber!
 
+LargeInteger method!
 <= aNumber
      <primitive: 'LargeInteger_le'>
-	 ^super <= aNumber
-!
+	 ^ super <= aNumber!
 
+LargeInteger method!
 >= aNumber
      <primitive: 'LargeInteger_ge'>
-	 ^super >= aNumber
-!
+	 ^ super >= aNumber!
 
+LargeInteger method!
 = aNumber
      <primitive: 'LargeInteger_eq'>
-	 ^super = aNumber
-!
+	 ^ super = aNumber!
 
-== aNumber
-     <primitive: 'LargeInteger_eq'>
-	 ^super == aNumber
-!
-
+LargeInteger method!
 ~= aNumber
      <primitive: 'LargeInteger_ne'>
-	 ^super ~= aNumber
-!
+	 ^ super ~= aNumber!
 
-~~ aNumber
-     <primitive: 'LargeInteger_ne'>
-	 ^super ~~ aNumber
-!
 
-/ aNumber
-     self notYetImplemented
-!
+"bit-wise operations"
 
-* aNumber
-     <primitive: 'LargeInteger_mul'>
-	 ^super * aNumber
-!
+LargeInteger method!
+bitOr: aNumber
+     <primitive: 'LargeInteger_bitOr'>
+	 ^ super bitOr: aNumber!
 
-\\ aNumber
-     <primitive: 'LargeInteger_mod'>
-	 ^super \\ aNumber
-! !
+LargeInteger method!
+bitAnd: aNumber
+     <primitive: 'LargeInteger_bitAnd'>
+	 ^ super bitAnd: aNumber!
 
-!LargeInteger methodsFor: 'bit-wise operations'!
+LargeInteger method!
+bitXor: aNumber
+     <primitive: 'LargeInteger_bitAnd'>
+	 ^ super bitXor: aNumber!
 
-bitAnd: aSmallInteger
-    <primitive: 'LargeInteger_bitAnd'>
-	self primitiveFailed
-!
 
-bitOr: aSmallInteger
-    <primitive: 'LargeInteger_bitOr'>
-	self primitiveFailed
-!
+"coercion"
 
-bitXor: aSmallInteger
-    <primitive: 'LargeInteger_bitXor'>
-	self primtiveFailed
-!
+LargeInteger method!
+asFloat
+	self notYetImplemented!
 
-bitShift: aSmallInteger
-    <primitive: 'LargeInteger_bitShift'>
-	self primitiveFailed
-! !
+LargeInteger method!
+asLargeInteger
+    ^ self!
+
+LargeInteger method!
+asInteger
+    ^ self!
+
+LargeInteger method!
+generality
+    ^ 20!
+
+LargeInteger method!
+zero
+    ^ 0 asLargeInteger!
+
+LargeInteger method!
+unity
+    ^ 1 asLargeInteger!
+
+LargeInteger method!
+coerce: aNumber
+    ^ aNumber asLargeInteger!
+
+
+"printing"
+
+LargeInteger method!
+printStringRadix: anInteger
+	<primitive: 'LargeInteger_printString'>
+	anInteger isSmallInteger
+		ifFalse: [ self error: 'expected a small integer' ]!

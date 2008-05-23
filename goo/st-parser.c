@@ -156,9 +156,6 @@ parse_block (STParser *parser)
 	&& streq (st_token_text (token), "|"))
 	block->temporaries = parse_temporaries (parser);
 
-    if (block->temporaries)
-	g_debug ("%p %i %s", block, st_node_list_length (block->temporaries), st_byte_array_bytes (block->temporaries->name));
-
     nested = parser->in_block;
     parser->in_block = true;
 

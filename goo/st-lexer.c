@@ -475,6 +475,9 @@ match_binary_selector (STLexer *lexer, bool create_token)
     if (lookahead (lexer, 1) == '-') {
 	match (lexer, '-');
 
+	if (is_special_char (lookahead (lexer, 1)))
+	    match (lexer, lookahead (lexer, 1));
+
     } else if (is_special_char (lookahead (lexer, 1))) {
 	match (lexer, lookahead (lexer, 1));
 
@@ -484,6 +487,7 @@ match_binary_selector (STLexer *lexer, bool create_token)
     } else {
 	raise_error (lexer, ERROR_NO_VIABLE_ALT_FOR_CHAR, lookahead (lexer, 1));
     }
+
     if (create_token) {
 	make_token (lexer, ST_TOKEN_BINARY_SELECTOR,
 		    st_input_range (lexer->input,

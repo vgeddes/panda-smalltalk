@@ -118,6 +118,15 @@ Class named: 'WriteStream'
 	  instanceVariableNames: 'writeLimit'
 	  classVariableNames: ''!
 
+Class named: 'StringStream'
+	  superclass: 'WriteStream'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+Class named: 'TranscriptionStream'
+	  superclass: 'StringStream'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
 
 "Execution"
 

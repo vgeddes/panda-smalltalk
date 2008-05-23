@@ -13,115 +13,92 @@
 #include "st-array.h"
 #include "st-association.h"
 
-/* 3 + 4 ! */
-static st_oop
-create_doIt_method (void)
+#include <stdlib.h>
+#include <glib.h>
+
+
+static void
+create_actual_message (STExecutionState *es)
 {
-    STError *error = NULL;
+    st_oop array;
 
-    /* static const char string1[] = */
-    /* 	"doIt" */
-    /* 	"   | object selected |" */
-    /* 	"   object := #(1 1 2 3 5)." */
-    /* 	"   selected := object select: [ :element | element = 1 or: [element = 2] ]." */
-    /* 	" ^ selected size"; */
+    array = st_object_new_arrayed (st_array_class, es->message_argcount);
+    for (guint i = 0; i < es->message_argcount; i++)
+	(* st_array_element (array, i + 1)) =  es->stack[es->sp - es->message_argcount + i];
 
-    static const char string1[] =
-    	"doIt"
-    	"   | object selected |"
-	" ^ 56 increment";
+    es->sp -= es->message_argcount;
+    es->message_argcount = 1;
+    es->message_selector = st_selector_doesNotUnderstand;
 
-    static const char string2[] = 
-	"increment"
-	"    ^ self + 1";
-
-    st_compile_string (st_undefined_object_class, string1, &error);
-    g_assert (error == NULL);
-
-    st_compile_string (st_smi_class, string2, &error);
-    g_assert (error == NULL);
-
-    return st_dictionary_at (st_behavior_method_dictionary (st_undefined_object_class), st_symbol_new ("doIt"));
+    ST_STACK_PUSH (es, st_message_new (es->message_selector, array));
 }
-
-static st_oop
-lookup_method (st_oop class, st_oop selector)
-{
-    st_oop dict;
-    st_oop method = st_nil;
-
-    while (method == st_nil) {
-
-	dict = st_behavior_method_dictionary (class);
-	
-	method = st_dictionary_at (dict, selector);
-	
-	class = st_behavior_superclass (class);
-	if (class == st_nil)
-	    break;
-    }
-
-    return method;
-}
-
 
 st_oop
-st_send_unary_message (st_oop sender,
-	  	       st_oop receiver,
-		       st_oop selector)
+st_interpreter_lookup_method (STExecutionState *es, st_oop klass)
 {
-    st_oop context;
     st_oop method;
+    st_oop parent = klass;
 
-    method = lookup_method (st_object_class (receiver), selector);
-    g_assert (method != st_nil); 
+    while (parent != st_nil) {
+	method = st_dictionary_at (st_behavior_method_dictionary (parent), es->message_selector);
+	if (method != st_nil)
+	    return method;
+	parent = st_behavior_superclass (parent);
+    }
 
-    context = st_method_context_new (method);
+    if (es->message_selector == st_selector_doesNotUnderstand) {
+	g_critical ("no method found for #doesNotUnderstand:");
+	exit(1);
+    }
 
-    st_context_part_sender (context) = sender;
-    st_context_part_ip (context) = st_smi_new (0);
-    st_context_part_sp (context) = st_smi_new (0);
-
-    st_method_context_receiver (context) = receiver;
-    st_method_context_method (context) = method;
-
-    return context;
+    create_actual_message (es);
+    
+    return st_interpreter_lookup_method (es, klass);
 }
 
+
+/* 
+ * Creates a new method context. Parameterised by
+ * @sender, @receiver, @method, and @argcount
+ *
+ * Message arguments are copied into the new context's temporary
+ * frame. Receiver and arguments are then popped off the stack.
+ *
+ */
 INLINE void
-message_not_understand (STExecutionState *es, st_oop selector, guint argcount)
+activate_method (STExecutionState *es, st_oop method)
 {
-    st_oop message;
+    st_oop  context;
+    st_oop *arguments;
+    
+    context = st_method_context_new (es->context, es->message_receiver,  method);
 
-    message = st_message_new (selector, es->stack + es->sp + 1, argcount);
-   
+    arguments = st_method_context_temporary_frame (context);
+    for (guint i = 0; i < es->message_argcount; i++)
+	arguments[i] =  es->stack[es->sp - es->message_argcount + i];
+
+
+    es->sp -= es->message_argcount + 1;
+
+    st_interpreter_set_active_context (es, context);
 }
 
-INLINE st_oop
-new_context (STExecutionState *es,
-	     st_oop  sender,
-	     st_oop  receiver,
-	     st_oop  method,
-	     guint   argcount)
+void
+st_interpreter_execute_method (STExecutionState *es, st_oop method)
 {
-    st_oop context;
+    guint primitive_index;
+    STMethodFlags flags;
 
-    context = st_method_context_new (method);
+    flags = st_method_flags (method);
+    if (flags == ST_METHOD_PRIMITIVE) {
+	primitive_index = st_method_primitive_index (method);
+	es->success = true;
+	st_primitives[primitive_index].func (es);
+	if (G_LIKELY (es->success))
+	    return;
+    }
 
-    /* transfer arguments to context */
-    st_oop *arguments = st_method_context_temporary_frame (context);
-    for (guint i = 0; i < argcount; i++)
-	arguments[i] =  es->stack[es->sp - argcount + i];
-
-    st_context_part_sender (context) = sender;
-    st_context_part_ip (context) = st_smi_new (0);
-    st_context_part_sp (context) = st_smi_new (0);
-    st_method_context_receiver (context) = receiver;
-    st_method_context_method (context) = method;
-
-    es->sp -= argcount + 1;
-
-    return context;
+    activate_method (es, method);
 }
 
 void
@@ -159,108 +136,85 @@ st_interpreter_set_active_context (STExecutionState *es,
     es->bytecode = st_method_bytecode_bytes (es->method);
 }
 
-INLINE guchar *
-set_active_context (STExecutionState *es, guchar *ip, st_oop context)
+void
+st_interpreter_send_selector (STExecutionState *es,
+			      st_oop            selector,
+			      guint             argcount)
 {
-    es->ip = ip - es->bytecode;
-
-    st_interpreter_set_active_context (es, context);
-    
-    return es->bytecode + es->ip;
-} 
-
-INLINE st_oop
-send_does_not_understand (STExecutionState *es,
-			  st_oop            receiver,
-			  st_oop            selector,
-			  guint             argcount)
-{
-    st_oop message;
     st_oop method;
-    st_oop method_selector;
-    
-    method_selector = st_symbol_new ("doesNotUnderstand:");
-    
-    method = lookup_method (st_object_class (receiver), method_selector);
-    g_assert (method != st_nil);
-    
-    message = st_message_new (method_selector,
-			      es->stack + es->sp - argcount,
-			      argcount);    
+    guint primitive_index;
+    STMethodFlags flags;
 
-    /* pop arguments off stack and replace them with a Message object */
-    es->sp -= argcount;
-    ST_STACK_PUSH (es, message);
+    es->message_argcount = argcount;
+    es->message_receiver = es->stack[es->sp - argcount - 1];
+    es->message_selector = selector;
     
-    return new_context (es, es->context,
-			receiver, method, 1);
+    method = st_interpreter_lookup_method (es, st_object_class (es->message_receiver));
+    
+    flags = st_method_flags (method);
+    if (flags == ST_METHOD_PRIMITIVE) {
+	primitive_index = st_method_primitive_index (method);
+	es->success = true;
+	st_primitives[primitive_index].func (es);
+	if (G_LIKELY (es->success))
+	    return;
+    }
+
+    activate_method (es, method);
 }
 
-INLINE void
-execute_primitive (STExecutionState *es,
-		   guint    pindex,
-		   guchar  *ip,
-                   guchar **ip_ret)
-{
-    es->success = true;
+#define SEND_SELECTOR(es, selector, argcount)				\
+    es->ip = ip - es->bytecode;						\
+    st_interpreter_send_selector (es, selector, argcount);		\
+    ip = es->bytecode + es->ip;
 
-    es->ip = ip - es->bytecode;
+#define ACTIVATE_CONTEXT(es, context_oop)				\
+    es->ip = ip - es->bytecode;						\
+    st_interpreter_set_active_context (es, context_oop);		\
+    ip = es->bytecode + es->ip;
 
-    st_primitives[pindex].func (es);
+#define ACTIVATE_METHOD(es, method_oop)			\
+    es->ip = ip - es->bytecode;				\
+    activate_method (es, method_oop);			\
+    ip = es->bytecode + es->ip;
 
-    *ip_ret = es->bytecode + es->ip;
-}
-
+#define EXECUTE_PRIMITIVE(es, index)		\
+    es->success = true;				\
+    es->ip = ip - es->bytecode;			\
+    st_primitives[index].func (es);		\
+    ip = es->bytecode + es->ip;
 
 #define SEND_TEMPLATE(es)						\
     st_oop method;							\
-    st_oop context;							\
     guint  prim;							\
-    guchar *ip_ret = NULL;						\
     STMethodFlags flags;						\
     									\
     ip += 1;								\
     									\
-    method = lookup_method (st_object_class (es->msg_receiver), es->msg_selector);	\
-									\
-    if (method == st_nil) {						\
-	context = send_does_not_understand (es, es->msg_receiver, es->msg_selector, es->msg_argcount); \
-	g_debug ("selector: %s", st_byte_array_bytes (es->msg_selector)); \
-	ip = set_active_context (es, ip, context);			\
-	break;								\
-    }									\
+    method = st_interpreter_lookup_method (es, st_object_class (es->message_receiver));\
     									\
     flags = st_method_flags (method);					\
     if (flags == ST_METHOD_PRIMITIVE) {					\
-    									\
 	prim = st_method_primitive_index (method);			\
 									\
-	execute_primitive (es, prim, ip, &ip_ret);			\
-									\
-        if (es->success) {						\
-	    ip = ip_ret;						\
+	EXECUTE_PRIMITIVE (es, prim);					\
+	if (G_LIKELY (es->success))					\
             break;							\
-        }								\
     }									\
     									\
-    context = new_context (es, es->context,				\
-			   es->msg_receiver, method,		       	\
-			   es->msg_argcount);			       	\
-    									\
-    ip = set_active_context (es, ip, context)
+    ACTIVATE_METHOD (es, method);
 
-
-static st_oop
-interpreter_loop (STExecutionState *es)
+void
+st_interpreter_main (STExecutionState *es)
 {
-    register guchar *ip = st_method_bytecode_bytes (es->method);
+    register guchar *ip = es->bytecode + es->ip;
     
     for (;;) {
 	
 	switch (*ip) {
 	    
 	case STORE_POP_TEMP:
-	    
+
 	    es->temps[ip[1]] = ST_STACK_POP (es);
 	    
 	    ip += 2;
@@ -356,36 +310,51 @@ interpreter_loop (STExecutionState *es)
 	}
 	    
 	case JUMP_TRUE:
-	    
-	    if (ST_STACK_POP (es) == st_true)
+	{
+	    if (ST_STACK_PEEK (es) == st_true) {
+		(void) ST_STACK_POP (es);
 		ip += 3 + ((ip[1] << 8) | ip[2]);
-	    else
+	    } else if (ST_STACK_PEEK (es) == st_false) {
+		(void) ST_STACK_POP (es);
 		ip += 3;
+	    } else {
+		ip += 3;
+		SEND_SELECTOR (es, st_selector_mustBeBoolean, 0);
+	    }
 	    
 	    break;
-	     
+	}
+
 	case JUMP_FALSE:
-	    
-	    if (ST_STACK_POP (es) == st_false)
+	{
+	    if (ST_STACK_PEEK (es) == st_false) {
+		(void) ST_STACK_POP (es);
 		ip += 3 + ((ip[1] << 8) | ip[2]);
-	    else
+	    } else if (ST_STACK_PEEK (es) == st_true) {
+		(void) ST_STACK_POP (es);
 		ip += 3;
+	    } else {
+		ip += 3;
+		SEND_SELECTOR (es, st_selector_mustBeBoolean, 0);
+	    }
 	    
 	    break;
-	    
+	}
+
 	case JUMP:
 	{
-	    short offset = (ip[1] << 8) | ip[2];
-	    
+	    short offset =  ((ip[1] << 8) | ip[2]);    
+
 	    ip += ((offset >= 0) ? 3 : 0) + offset;
+
 	    break;
 	}
 	
 	case SEND_PLUS:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_PLUS];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_PLUS];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -396,9 +365,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_MINUS:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_MINUS];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_MINUS];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -407,9 +376,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_MUL:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_MUL];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_MUL];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -418,9 +387,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_MOD:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_MOD];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_MOD];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -429,9 +398,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_DIV:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_DIV];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_DIV];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -440,9 +409,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_BITSHIFT:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_BITSHIFT];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_BITSHIFT];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -451,9 +420,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_BITAND:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_BITAND];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_BITAND];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -462,9 +431,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_BITOR:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_BITOR];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_BITOR];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -473,9 +442,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_BITXOR:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_BITOR];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_BITOR];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -484,9 +453,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_LT:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_LT];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_LT];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -495,9 +464,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_GT:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_GT];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_GT];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 
@@ -506,9 +475,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_LE:
 	{   
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_LE];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_LE];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 
@@ -517,9 +486,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_GE:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_GE];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_GE];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 
 	    SEND_TEMPLATE (es);
 	    
@@ -528,9 +497,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_CLASS:
 	{
-	    es->msg_argcount = 0;
-	    es->msg_selector = st_specials[ST_SPECIAL_CLASS];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 0;
+	    es->message_selector = st_specials[ST_SPECIAL_CLASS];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -539,9 +508,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_SIZE:
 	{
-	    es->msg_argcount = 0;
-	    es->msg_selector = st_specials[ST_SPECIAL_SIZE];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 0;
+	    es->message_selector = st_specials[ST_SPECIAL_SIZE];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -550,9 +519,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_AT:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_AT];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_AT];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -561,9 +530,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_AT_PUT:
 	{
-	    es->msg_argcount = 2;
-	    es->msg_selector = st_specials[ST_SPECIAL_ATPUT];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 2;
+	    es->message_selector = st_specials[ST_SPECIAL_ATPUT];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -572,9 +541,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_EQ:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_EQ];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_EQ];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -583,9 +552,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_NE:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_NE];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_NE];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -594,9 +563,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_IDENTITY_EQ:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_IDEQ];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_IDEQ];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -605,9 +574,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_VALUE:
 	{
-	    es->msg_argcount = 0;
-	    es->msg_selector = st_specials[ST_SPECIAL_VALUE];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 0;
+	    es->message_selector = st_specials[ST_SPECIAL_VALUE];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -616,9 +585,9 @@ interpreter_loop (STExecutionState *es)
 	
 	case SEND_VALUE_ARG:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_VALUE_ARG];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -627,9 +596,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_NEW:
 	{
-	    es->msg_argcount = 0;
-	    es->msg_selector = st_specials[ST_SPECIAL_NEW];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 0;
+	    es->message_selector = st_specials[ST_SPECIAL_NEW];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -638,9 +607,9 @@ interpreter_loop (STExecutionState *es)
 
 	case SEND_NEW_ARG:
 	{
-	    es->msg_argcount = 1;
-	    es->msg_selector = st_specials[ST_SPECIAL_NEW_ARG];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = 1;
+	    es->message_selector = st_specials[ST_SPECIAL_NEW_ARG];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (es);
 	    
@@ -650,94 +619,57 @@ interpreter_loop (STExecutionState *es)
 	case SEND:
 	{
 	    st_oop method;
-	    st_oop context;
-	    guint  pindex;
-	    guchar *ip_ret = NULL;
+	    guint  primitive_index;
 	    STMethodFlags flags;
 	    
-	    es->msg_argcount = ip[1];
-	    es->msg_selector = es->literals[ip[2]];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = ip[1];
+	    es->message_selector = es->literals[ip[2]];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    ip += 3;
 	    
-	    method = lookup_method (st_object_class (es->msg_receiver), es->msg_selector);
-   
-	    if (G_UNLIKELY (method == st_nil)) {
-		context = send_does_not_understand (es,
-						    es->msg_receiver,
-						    es->msg_selector,
-						    es->msg_argcount);
-		ip = set_active_context (es, ip, context);
-		break;
-	    }
+	    method = st_interpreter_lookup_method (es, st_object_class (es->message_receiver));
 	    
-	    /* call primitive function if there is one */
 	    flags = st_method_flags (method);
-
 	    if (flags == ST_METHOD_PRIMITIVE) {
-		pindex = st_method_primitive_index (method);
-		
-		execute_primitive (es, pindex, ip, &ip_ret);
-		if (G_LIKELY (es->success)) {
-		    ip = ip_ret;
+		primitive_index = st_method_primitive_index (method);
+
+		EXECUTE_PRIMITIVE (es, primitive_index);
+		if (G_LIKELY (es->success))
 		    break;
-		}
 	    }
 	    
-	    context = new_context (es, es->context,
-				   es->msg_receiver, method,
-				   es->msg_argcount);
-	    
-	    ip = set_active_context (es, ip, context);
-	    
+	    ACTIVATE_METHOD (es, method);
 	    break;
 	}
 
 	case SEND_SUPER:
 	{
 	    st_oop method;
-	    st_oop context;
-	    guint  pindex;
-	    guchar *ip_ret = NULL;
+	    st_oop literal_index;
+	    guint  primitive_index;
 	    STMethodFlags flags;
 	    
-	    es->msg_argcount = ip[1];
-	    es->msg_selector = es->literals[ip[2]];
-	    es->msg_receiver = es->stack[es->sp - es->msg_argcount - 1];
+	    es->message_argcount = ip[1];
+	    es->message_selector = es->literals[ip[2]];
+	    es->message_receiver = es->stack[es->sp - es->message_argcount - 1];
 	    
 	    ip += 3;
-	    
-	    method = lookup_method (st_behavior_superclass (st_object_class (es->msg_receiver)), es->msg_selector);
-   
-	    if (G_UNLIKELY (method == st_nil)) {
-		context = send_does_not_understand (es,
-						    es->msg_receiver,
-						    es->msg_selector,
-						    es->msg_argcount);
-		ip = set_active_context (es, ip, context);
-		break;
-	    }
-	    
-	    /* call primitive function if there is one */
-	    flags = st_method_flags (method);
 
+	    literal_index = st_smi_value (st_array_size (st_method_literals (es->method))) - 1;
+
+	    method = st_interpreter_lookup_method (es, st_behavior_superclass (es->literals[literal_index]));
+	    
+	    flags = st_method_flags (method);
 	    if (flags == ST_METHOD_PRIMITIVE) {
-		pindex = st_method_primitive_index (method);
-		
-		execute_primitive (es, pindex, ip, &ip_ret);
-		if (G_LIKELY (es->success)) {
-		    ip = ip_ret;
+		primitive_index = st_method_primitive_index (method);
+
+		EXECUTE_PRIMITIVE (es, primitive_index);
+		if (G_LIKELY (es->success))
 		    break;
-		}
 	    }
 	    
-	    context = new_context (es, es->context,
-				   es->msg_receiver, method,
-				   es->msg_argcount);
-	    
-	    ip = set_active_context (es, ip, context);
-	    
+	    ACTIVATE_METHOD (es, method);
 	    break;
 	}
 	 
@@ -776,18 +708,13 @@ interpreter_loop (STExecutionState *es)
 	    st_oop sender;
 	    st_oop value;
 	    
-	    sender = st_context_part_sender (es->context);
-	    value = ST_STACK_PEEK (es);
-	    
-	    /* exit loop if sender is nil */
+	    sender = st_context_part_sender (es->context);	    
 	    if (sender == st_nil)
-		return value;
+		return;
 	    
-	    ip = set_active_context (es, ip, sender);
-	    
-	    /* push returned value onto stack */
+	    value = ST_STACK_PEEK (es);
+	    ACTIVATE_CONTEXT (es, sender);
 	    ST_STACK_PUSH (es, value);
-	    
 	    break;
 	}
 	
@@ -798,62 +725,44 @@ interpreter_loop (STExecutionState *es)
 	    
 	    caller = st_block_context_caller (es->context);
 	    value = ST_STACK_PEEK (es);
-
-	    ip = set_active_context (es, ip, caller);
+	    ACTIVATE_CONTEXT (es, caller);
 
 	    /* push returned value onto caller's stack */
 	    ST_STACK_PUSH (es, value);
-
 	    g_assert (es->context == caller);
 	    
 	    break;
 	}
 	
 	default:
-	    g_debug ("%i\n", *ip);
 	    g_assert_not_reached ();
 	}
 	
     }
     
-    return st_nil;
+    return;
 }
 
-
 void
-st_interpreter_initialize_state (STExecutionState *es)
+st_interpreter_initialize (STExecutionState *es)
 {
+    st_oop context;
+    st_oop method;
+
+    /* clear contents */
     memset (es, 0, sizeof (STExecutionState));
-    
     es->context = st_nil;
     es->receiver = st_nil;
     es->method = st_nil;
+
+    es->message_argcount = 0;
+    es->message_receiver = st_nil;
+    es->message_selector = st_selector_startupSystem;
+    
+    method = st_interpreter_lookup_method (es, st_object_class (es->message_receiver));
+    g_assert (st_method_flags (method) == ST_METHOD_NORMAL);
+
+    context = st_method_context_new (es->context, es->message_receiver,  method);
+    st_interpreter_set_active_context (es, context);
 }
 
-void
-st_interpreter_enter (STExecutionState *es)
-{
-    interpreter_loop (es);
-}
-
-
-void
-st_interpreter_main (void)
-{
-    st_oop context;
-    st_oop result;
-    STExecutionState es;
-
-    create_doIt_method ();
-
-    context = st_send_unary_message (st_nil,
-				  st_nil,
-				  st_symbol_new ("doIt"));
-    es.context = st_nil;
-    st_interpreter_set_active_context (&es, context);
-
-    result = interpreter_loop (&es);
-    g_assert (st_object_is_smi (result));
-
-    printf ("result: %i\n", st_smi_value (result));
-}

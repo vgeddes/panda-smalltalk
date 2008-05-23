@@ -57,7 +57,7 @@ typedef struct
 } STBlockContext;
 
 
-st_oop  st_method_context_new             (st_oop method);
+st_oop  st_method_context_new (st_oop sender, st_oop receiver, st_oop method);
 
 st_oop *st_method_context_temporary_frame (st_oop context);
 
@@ -67,9 +67,7 @@ st_oop  st_block_context_new              (st_oop home,
 					   guint initial_ip,
 					   guint argcount);
 
-st_oop  st_message_new                    (st_oop selector,
-			                   st_oop *args,
-			                   guint args_size);
+st_oop  st_message_new (st_oop selector, st_oop arguments);
 
 
 

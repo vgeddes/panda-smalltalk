@@ -53,6 +53,8 @@ typedef struct
     STError **error;
 
     guint    max_stack_depth;
+
+    bool     references_super;
  
     /* names of temporaries, in order of appearance */
     GList   *temporaries;
@@ -198,6 +200,7 @@ generator_new (void)
     gt->temporaries = NULL;
 
     gt->max_stack_depth = 0;
+    gt->references_super = false;
 
     gt->code  = g_malloc (DEFAULT_CODE_SIZE);
     gt->alloc = DEFAULT_CODE_SIZE;
@@ -222,6 +225,9 @@ create_literals_array (Generator *gt)
 {
     int    count;
     st_oop literals = st_nil;
+
+    if (gt->references_super)
+	gt->literals = g_list_append (gt->literals, (gpointer) gt->klass);
 
     count = g_list_length (gt->literals);
 
@@ -500,8 +506,8 @@ size_block (Generator *gt, STNode *node)
 static void
 generate_block (Generator *gt, STNode *node)
 {
-    bool   in_block;
-    int    size;
+    bool  in_block;
+    int   size = 0;
 
     in_block = gt->in_block;
     gt->in_block = true;
@@ -510,8 +516,8 @@ generate_block (Generator *gt, STNode *node)
     emit (gt, st_node_list_length (node->arguments));
 
     // get size of block code and then jump around that code
-    size = size_statements (gt, node->statements, false);
-    size += 2 * st_node_list_length (node->arguments);
+    size = 2 * st_node_list_length (node->arguments);
+    size += size_statements (gt, node->statements, false);
     jump_offset (gt, size);
 
     /* store all block arguments into the temporary frame */
@@ -612,7 +618,7 @@ size_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	size += size_statements (gt, msg->receiver->statements, true);
 	size += sizes[JUMP_TRUE];
 	size += size_statements (gt, msg->arguments->statements, true);
-	size += sizes[JUMP];
+	size += sizes[POP_STACK_TOP] + sizes[JUMP];
 	
 	if (is_expr)
 	    size += sizes[PUSH_NIL];
@@ -654,9 +660,9 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	size = size_statements (gt, block->statements, true);
 	
 	if (is_expr)
-	    size += 3;
+	    size += sizes[JUMP];
 	else
-	    size += 1;
+	    size += sizes[POP_STACK_TOP];
 
 	if (streq (csel, "ifTrue:"))
 	    emit (gt, JUMP_FALSE);
@@ -693,12 +699,13 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 
 	// add 3 for size of jump instr at end of true block
 	size = size_statements (gt, true_block->statements, true);
-	size += 3; 
+	size += sizes[JUMP]; 
 	
 	if (streq (csel, "ifTrue:ifFalse:"))
 	    emit (gt, JUMP_FALSE);
 	else
 	    emit (gt, JUMP_TRUE);
+
 	emit (gt, (size >> 8) & 0xFF);
 	emit (gt, size & 0xFF);
 
@@ -739,8 +746,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 	emit (gt, 3);
 
 	size = size_statements (gt, block->statements, true);
-	// size of JUMP_FALSE instr
-	size += 3;
+	size += sizes[JUMP_FALSE];
 	// we jump backwards
 	size = - size;
 	
@@ -782,7 +788,7 @@ generate_optimized_message (Generator *gt, STNode *msg, bool is_expr)
 
 	size = size_statements (gt, msg->arguments->statements, true);
 	// include size of POP and JUMP statement
-	size += 1 + 3;
+	size += sizes[POP_STACK_TOP] + sizes[JUMP];
 
 	emit (gt, (size >> 8) & 0xFF);
 	emit (gt, size & 0xFF);
@@ -1005,8 +1011,12 @@ generate_expression (Generator *gt, STNode *node)
     case ST_VARIABLE_NODE:
     {
 	const char *name = CSTR (node->name);
-
-	if (streq (name, "self") || streq (name, "super")) {
+	
+	if (streq (name, "self")) {
+	    push_special (gt, PUSH_SELF);
+	    break;
+	} else if (streq (name, "super")) {
+	    gt->references_super = true;
 	    push_special (gt, PUSH_SELF);
 	    break;
 	} else if (streq (name, "true")) {
@@ -1073,9 +1083,8 @@ size_statements (Generator *gt, STNode *statements, bool optimized_block)
 {
     int size = 0;
 
-    if (statements == NULL) {
+    if (statements == NULL)
 	size += sizes[PUSH_NIL];
-    }   
 
     for (STNode *node = statements; node; node = node->next) {
 
@@ -1134,7 +1143,7 @@ size_statements (Generator *gt, STNode *statements, bool optimized_block)
 	}
     }
 
-    if (!optimized_block)
+    if (optimized_block == false)
 	size += sizes[BLOCK_RETURN];
 
     return size;
@@ -1145,7 +1154,6 @@ generate_statements (Generator *gt, STNode *statements, bool optimized_block)
 {
     if (statements == NULL) {
 	emit (gt, PUSH_NIL);
-	return;
     }
 
     for (STNode *node = statements; node; node = node->next) {
@@ -1208,7 +1216,7 @@ generate_statements (Generator *gt, STNode *statements, bool optimized_block)
 	}
     }
 
-    if (!optimized_block)
+    if (optimized_block == false)
 	emit (gt, BLOCK_RETURN);
 }
 

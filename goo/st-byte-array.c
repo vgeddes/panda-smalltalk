@@ -90,7 +90,7 @@ round_size (st_smi size)
 static st_oop
 allocate_arrayed (st_oop klass, st_smi size)
 {
-    g_assert (size > 0);
+    g_assert (size >= 0);
 
     st_smi size_rounded = round_size (size);
     st_oop array = st_allocate_object (ST_TYPE_SIZE (STByteArray) + (size_rounded / sizeof (st_oop)));

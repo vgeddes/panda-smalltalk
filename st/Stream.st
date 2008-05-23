@@ -24,6 +24,13 @@ next: anInteger put: anObject
 	^ anObject!
 
 
+"printing"
+
+Stream method!
+print: anObject
+	anObject printOn: self!
+
+
 "enumerating"
 Stream method!
 do: aBlock

@@ -22,6 +22,10 @@ basicNew: anInteger
 
 "accessing"
 
+Class method!
+name
+	^ name!
+
 Behavior method!
 format
 	^ format!

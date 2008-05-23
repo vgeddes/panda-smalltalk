@@ -1,7 +1,6 @@
 "
+opyright (c) 2008 Vincent Geddes
 Copyright (c) 2007 Luca Bruno
-
-This file is part of Smalltalk YX.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the 'Software'), to deal
@@ -22,101 +21,95 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
-!Float methodsFor: 'coercing'!
+"coercing"
 
+Float method!
+asFraction
+    ^ self notYetImplemented!
+
+Float method!
 asFloat
-    ^self
-!
+    ^ self!
 
+Float method!
 unity
-    ^1.0
-!
+    ^ 1.0!
 
+Float method!
 generality
-    ^50
-!
+    ^ 50!
 
+Float method!
 zero
-    ^0.0
-!
+    ^ 0.0!
 
+Float method!
 coerce: aNumber
-    ^aNumber asFloat
-! !
+    ^ aNumber asFloat!
 
-!Float methodsFor: 'printing'!
 
-print
-    <primitive: 'Float_print'>
-	self primitiveFailed
-! !
+"testing"
 
-!Float methodsFor: 'testing'!
-
-isInteger
-    ^false
-
+Float method!
 isFloat
-    ^true
-! !
+    ^ true!
 
-!Float methodsFor: 'arithmetic'!
 
-+ aNumber
-     <primitive: 'Float_plus'>
-	 ^super + aNumber
-!
+"comparing"
 
-- aNumber
-     <primitive: 'Float_minus'>
-	 ^super - aNumber
-!
-
+Float method!
 < aNumber
      <primitive: 'Float_lt'>
-	 ^super < aNumber
-!
+	 ^ super < aNumber!
 
+Float method!
 > aNumber
      <primitive: 'Float_gt'>
-	 ^super > aNumber
-!
+	 ^ super > aNumber!
 
+Float method!
 <= aNumber
      <primitive: 'Float_le'>
-	 ^super <= aNumber
-!
+	 ^ super <= aNumber!
 
+Float method!
 >= aNumber
      <primitive: 'Float_ge'>
-	 ^super >= aNumber
-!
+	 ^ super >= aNumber!
 
+Float method!
 = aNumber
      <primitive: 'Float_eq'>
-	 ^super = aNumber
-!
+	 ^ super = aNumber!
 
-== aNumber
-     <primitive: 'Float_eq'>
-	 ^super == aNumber
-!
-
+Float method!
 ~= aNumber
      <primitive: 'Float_ne'>
-	 ^super ~= aNumber
-!
+	 ^ super ~= aNumber!
 
-~~ aNumber
-     <primitive: 'Float_ne'>
-	 ^super ~~ aNumber
-!
 
+"arithmetic"
+
+Float method!
++ aNumber
+     <primitive: 'Float_add'>
+	 ^ super + aNumber!
+
+Float method!
+- aNumber
+     <primitive: 'Float_minus'>
+	 ^ super - aNumber!
+
+Float method!
+* aNumber
+     <primitive: 'Float_mul'>
+	 ^ super * aNumber!
+
+Float method!
+/ aNumber
+     <primitive: 'Float_div'>
+	^super / aNumber!
+
+Float method!
 \\ aNumber
-     self notYetImplemented
-!
-
-truncated
-    <primitive: 'Float_trunc'>
-	self primitiveFailed
-! !
+     self notYetImplemented!

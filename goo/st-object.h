@@ -45,6 +45,8 @@ bool          st_object_equal             (st_oop object, st_oop other);
 guint         st_object_hash              (st_oop object);
 
 
+char       *st_object_printString         (st_oop object);
+
 /* inline definitions */
 
 INLINE int
@@ -87,6 +89,12 @@ INLINE bool
 st_object_is_symbol (st_oop object)
 {
     return st_object_class (object) == st_symbol_class;
+}
+
+INLINE bool
+st_object_is_string (st_oop object)
+{
+    return st_object_class (object) == st_string_class;
 }
 
 INLINE bool

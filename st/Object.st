@@ -8,35 +8,6 @@ initialize
 "accessing"
 
 Object method!
-at: anIndex
-	<primitive: 'Object_at'>
-	self primitiveFailed!
-
-Object method!
-at: anIndex put: anObject
-	<primitive: 'Object_at_put'>
-	self primitiveFailed!
-
-Object method!
-basicAt: anIndex
-	<primitive: 'Object_at'>
-	self primitiveFailed!
-
-Object method!
-basicAt: anIndex put: anObject
-	<primitive: 'Object_at_put'>
-	self primitiveFailed!
-
-Object method!
-basicSize
-	<primitive: 'Object_size'>
-	self primitiveFailed!
-
-Object method!
-doesNotUnderstand: aMessage
-	self error: 'Object does not understand message'!
-
-Object method!
 class
 	<primitive: 'Object_class'>
 	self primitiveFailed!
@@ -69,6 +40,30 @@ Object method!
 	<primitive: 'Object_equivalent'>!
 
 
+"associating"
+Object method!
+-> anObject
+    "Create a new association between myself and anObject"
+	^ Association key: self value: anObject!
+
+
+"printing"
+Object method!
+printOn: aStream
+    "Append to aStream a String representation of the receiver"
+    aStream nextPutAll: 'an'.
+	aStream nextPut: Character space.
+    aStream nextPutAll: self class name!
+
+Object method!
+printString
+    "Answer a String representation of the receiver"
+    | stream |
+    stream := StringStream new.
+    self printOn: stream.
+    ^ stream contents!
+
+
 "testing"
 
 Object method!
@@ -79,17 +74,79 @@ Object method!
 isNotNil
 	^ true!
 
+
 "controlling"
 
 Object method!
 ifNil: alternativeBlock
 	^ nil!
-Annotation key: 'category' value: 'controlling'!
 
 Object method!
 ifNotNil: alternativeBlock
 	^ alternativeBlock value!
-Annotation key: 'category' value: 'controlling'!
+
+
+"message handling"
+
+Object method!
+perform: aSymbol
+	<primitive: 'Object_perform'>
+	self primitiveFailed!
+
+Object method!
+perform: aSymbol with: anObject
+	<primitive: 'Object_perform'>
+	self primitiveFailed!
+
+Object method!
+perform: aSymbol with: firstObject with: secondObject
+	<primitive: 'Object_perform'>
+	self primitiveFailed!
+
+Object method!
+perform: aSymbol with: firstObject with: secondObject with: thirdObject
+	<primitive: 'Object_perform'>
+	self primitiveFailed!
+
+Object method!
+perform: aSymbol withArguments: anArray
+	<primitive: 'Object_perform_withArguments'>
+	self primitiveFailed!
+
+
+"testing"
+
+Object method!
+isString
+	^ false!
+
+Object method!
+isSymbol
+	^ false!
+
+Object method!
+isCharacter
+	^ false!
+
+Object method!
+isCollection
+	^ false!
+
+Object method!
+isArray
+	^ false!
+
+Object method!
+isNumber
+	^ false!
+
+Object method!
+isInteger
+	^ false!
+
+Object method!
+isFraction
+	^ false!
 
 
 "error handling"
@@ -97,12 +154,18 @@ Annotation key: 'category' value: 'controlling'!
 Object method!
 error: aString 
 	<primitive: 'Object_error'>!
-Annotation key: 'category' value: 'error handling'!
+
+Object method!
+doesNotUnderstand: aMessage
+	^ self error: aMessage selector!
+
+Object method!
+mustBeBoolean
+	^ self error: 'must be boolean'!
 
 Object method!
 primitiveFailed 
 	self error: 'primitive failed'!
-Annotation key: 'category' value: 'error handling'!
 
 Object method!
 shouldNotImplement
@@ -110,7 +173,6 @@ shouldNotImplement
 	 not implement it."
 
 	self error: 'This message is not appropriate for this object'!
-Annotation key: 'category' value: 'error handling'!
 
 Object method!
 subclassResponsibility
@@ -118,10 +180,7 @@ subclassResponsibility
 	 Announce that the subclass should have implemented this message."
 
 	self error: 'My subclass should have overridden '!
-Annotation key: 'category' value: 'error handling'!
-
 
 Object method!
 notYetImplemented
 	self error: 'This method is not yet implemented'!
-Annotation key: 'category' value: 'error handling'!

@@ -31,9 +31,34 @@ pastEndPut: anObject
 	^ anObject!
 
 WriteStream method!
+nextPutAll: aCollection
+	| newEnd |
+
+	collection class == aCollection class ifFalse:
+		[^ super nextPutAll: aCollection ].
+
+	newEnd := position + aCollection size.
+	newEnd > writeLimit
+		ifTrue: [self growTo: newEnd + 10].
+
+	collection replaceFrom: position + 1 to: newEnd  with: aCollection startingAt: 1.
+	position := newEnd!
+
+
+WriteStream method!
+cr
+	self nextPut: Character cr!
+
+WriteStream method!
+tab
+	self nextPut: Character tab!
+
+
+WriteStream method!
 contents
 	readLimit := readLimit max: position.
 	^ collection copyFrom: 1 to: position!
+
 
 "private"
 

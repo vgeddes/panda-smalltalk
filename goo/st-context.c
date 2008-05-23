@@ -8,28 +8,25 @@
 #include "st-universe.h"
 
 st_oop
-st_method_context_new (st_oop method)
+st_method_context_new (st_oop sender, st_oop receiver, st_oop method)
 {
-    st_oop context;
-    int stack_size;
+    st_oop  context;
+    int     stack_size;
+    int     temps_size;
     st_oop *temps;
-    st_smi temps_size;
 
-    stack_size = st_method_stack_depth (method);
-    stack_size += st_method_temp_count (method);
-    stack_size += st_method_arg_count (method);
+    temps_size = st_method_temp_count (method) + st_method_arg_count (method);
+    stack_size = st_method_stack_depth (method) + temps_size;
 
     context = st_allocate_object (ST_TYPE_SIZE (STMethodContext) + stack_size);
     st_heap_object_initialize_header (context, st_method_context_class);
 
-    st_context_part_sender (context)     = st_nil;
+    st_context_part_sender (context)     = sender;
     st_context_part_ip (context)         = st_smi_new (0);
     st_context_part_sp (context)         = st_smi_new (0);
-    st_method_context_receiver (context) = st_nil;
+    st_method_context_receiver (context) = receiver;
     st_method_context_method (context)   = method;
-    
-    /* nil temporary frame */
-    temps_size = st_method_temp_count (method) + st_method_arg_count (method);
+
     temps = st_method_context_temporary_frame (context);
     for (guint i=0; i < temps_size; i++)
 	temps[i] = st_nil;
@@ -84,18 +81,14 @@ st_block_context_new (st_oop home, guint initial_ip, guint argcount)
 }
 
 st_oop
-st_message_new (st_oop selector, st_oop *args, guint args_size)
+st_message_new (st_oop selector, st_oop arguments)
 {
-    st_oop msg;
-    st_oop array;
+    st_oop object;
 
-    msg = st_object_new (st_global_get ("Message"));
+    object = st_object_new (st_global_get ("Message"));
 
-    array = st_object_new_arrayed (st_array_class, args_size);
+    st_heap_object_body (object)[0] = selector;
+    st_heap_object_body (object)[1] = arguments;
 
-    for (guint i = 1; i <= args_size; i++)
-	* st_array_element (array, i) = args[i - 1];
-
-    st_heap_object_body (msg)[0] = selector;
-    st_heap_object_body (msg)[1] = array;
+    return object;
 }

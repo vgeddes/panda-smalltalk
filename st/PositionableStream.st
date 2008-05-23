@@ -2,6 +2,7 @@
 
 "instance creation"
 
+
 PositionableStream classMethod!
 on: aCollection
 	^ self basicNew on: aCollection!
@@ -51,6 +52,7 @@ reset
 PositionableStream method!
 setToEnd
 	position := readLimit!
+
 
 
 "private"

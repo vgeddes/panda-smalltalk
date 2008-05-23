@@ -10,6 +10,7 @@ UndefinedObject method!
 isNotNil
 	^ false!
 
+
 "controlling"
 
 UndefinedObject method!
@@ -19,3 +20,10 @@ ifNil: alternativeBlock
 UndefinedObject method!
 ifNotNil: alternativeBlock
 	^ nil!
+
+
+"system"
+
+UndefinedObject method!
+startupSystem
+	^ self doIt!

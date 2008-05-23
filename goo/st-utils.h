@@ -34,7 +34,7 @@
 #define ST_NTH_BIT(n)       (1 << (n))
 #define ST_NTH_MASK(n)      (ST_NTH_BIT(n) - 1)
 
-/* an assertion that is checked at compile time */
+/* A comile-time assertion */
 #define assert_static(e)                \
    do {                                 \
       enum { assert_static__ = 1/(e) }; \
@@ -55,14 +55,8 @@ st_oop st_allocate_object (gsize size);
 INLINE void
 st_oops_copy (st_oop *to, st_oop *from, guint count)
 {
-    memcpy (to, from, sizeof (st_oop) * count);
+    memmove (to, from, sizeof (st_oop) * count);
 }
-
-
-
-bool   st_util_equal (st_oop object, st_oop another);
-
-guint  st_util_hash (st_oop object);
 
 
 /* generic error object */
