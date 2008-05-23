@@ -30,6 +30,7 @@
 #include "st-method.h"
 #include "st-array.h"
 #include "st-byte-array.h"
+#include "st-word-array.h"
 #include "st-small-integer.h"
 #include "st-hashed-collection.h"
 #include "st-symbol.h"
@@ -67,6 +68,7 @@ st_oop
     st_association_class     = 0,
     st_string_class          = 0,
     st_symbol_class          = 0,
+    st_wide_string_class          = 0,
     st_compiled_method_class = 0,
     st_method_context_class  = 0,
     st_block_context_class   = 0,
@@ -377,7 +379,6 @@ file_in_classes (void)
 	    "Stream.st",
 	    "PositionableStream.st",
 	    "WriteStream.st",
-	    "StringStream.st",
 	    "Collection.st",
 	    "SequenceableCollection.st",
 	    "ArrayedCollection.st",
@@ -395,6 +396,7 @@ file_in_classes (void)
 	    "String.st",
 	    "Symbol.st",
 	    "ByteString.st",
+	    "WideString.st",
 	    "Character.st",
 	    "Behavior.st",
 	    "Boolean.st",
@@ -472,9 +474,8 @@ allocate_virtual_space (void)
 {
     st_virtual_space = st_virtual_space_new ();
 
-    if (!st_virtual_space_reserve (st_virtual_space, HEAP_SIZE)) {
+    if (!st_virtual_space_reserve (st_virtual_space, HEAP_SIZE))
 	abort ();
-    }
 }
 
 void
@@ -488,6 +489,7 @@ st_bootstrap_universe (void)
     st_descriptors[ST_FORMAT_OBJECT]     = st_heap_object_descriptor ();
     st_descriptors[ST_FORMAT_ARRAY]      = st_array_descriptor       ();
     st_descriptors[ST_FORMAT_BYTE_ARRAY] = st_byte_array_descriptor  ();
+    st_descriptors[ST_FORMAT_WORD_ARRAY] = st_word_array_descriptor  ();
     st_descriptors[ST_FORMAT_FLOAT]      = st_float_descriptor       ();
 
     st_nil = create_nil_object ();
@@ -509,6 +511,7 @@ st_bootstrap_universe (void)
     st_byte_array_class       = class_new (ST_FORMAT_BYTE_ARRAY, 0);
     st_string_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
     st_symbol_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
+    st_wide_string_class      = class_new (ST_FORMAT_WORD_ARRAY, 0);
     st_association_class      = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_ASSOCIATION);
     st_compiled_method_class  = class_new (ST_FORMAT_OBJECT, 0);
 
@@ -536,6 +539,7 @@ st_bootstrap_universe (void)
     declare_class ("ByteArray", st_byte_array_class);
     declare_class ("ByteString", st_string_class);
     declare_class ("ByteSymbol", st_symbol_class);
+    declare_class ("WideString", st_wide_string_class);
     declare_class ("Set", st_set_class);
     declare_class ("Dictionary", st_dictionary_class);
     declare_class ("Association", st_association_class);

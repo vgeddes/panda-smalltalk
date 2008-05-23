@@ -122,7 +122,7 @@ radix: base
     self isZero
 		ifTrue: [ ^ '0' ].
 
-    stream := StringStream new.
+    stream := WriteStream on: (WideString new: 20).
     num := self abs.
 
     [ num ~= 0 ]
@@ -143,7 +143,7 @@ radix: base
 Integer method!
 printStringRadix: base
     | stream |
-    stream := StringStream new.
+    stream := WriteStream on: (WideString new: 20).
     self printOn: stream base: base.
     ^ stream contents!
 

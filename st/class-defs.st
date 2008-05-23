@@ -118,15 +118,6 @@ Class named: 'WriteStream'
 	  instanceVariableNames: 'writeLimit'
 	  classVariableNames: ''!
 
-Class named: 'StringStream'
-	  superclass: 'WriteStream'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
-
-Class named: 'TranscriptionStream'
-	  superclass: 'StringStream'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
 
 "Execution"
 
@@ -163,17 +154,22 @@ Class named: 'String'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
-Class named: 'ByteString'
-	  superclass: 'String'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
-
 Class named: 'Symbol'
 	  superclass: 'String'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
+Class named: 'ByteString'
+	  superclass: 'String'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
 Class named: 'ByteSymbol'
+	  superclass: 'String'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
+Class named: 'WideString'
 	  superclass: 'String'
 	  instanceVariableNames: ''
       classVariableNames: ''!

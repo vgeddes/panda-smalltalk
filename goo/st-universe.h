@@ -50,6 +50,7 @@ extern st_oop
     st_association_class,
     st_string_class,
     st_symbol_class,
+    st_wide_string_class,
     st_compiled_method_class,
     st_method_context_class,
     st_block_context_class,

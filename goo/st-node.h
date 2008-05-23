@@ -49,7 +49,7 @@ typedef enum
 } STMessagePrecedence;
 
 typedef struct STNode STNode;
- 
+
 struct STNode
 {
     STNodeType type;
@@ -60,7 +60,7 @@ struct STNode
     /* next node in list */
     STNode *next;
 
-    /* Common fields */
+    /* Common fields (to one or more node types) */
     struct {
 	STMessagePrecedence precedence;
 	st_oop  selector;
@@ -74,6 +74,7 @@ struct STNode
 	/*  receiver for MessageNode */
 	struct {
 	    STNode *receiver;
+	    bool    is_statement;
 	};
 	/* primitive for MethodNode */
 	struct {

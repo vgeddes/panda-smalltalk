@@ -59,7 +59,7 @@ Object method!
 printString
     "Answer a String representation of the receiver"
     | stream |
-    stream := StringStream new.
+    stream := WriteStream on: (WideString new: 20).
     self printOn: stream.
     ^ stream contents!
 
@@ -184,3 +184,10 @@ subclassResponsibility
 Object method!
 notYetImplemented
 	self error: 'This method is not yet implemented'!
+
+
+"private"
+
+Object method!
+species
+	^ self class!

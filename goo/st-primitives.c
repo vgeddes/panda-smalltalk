@@ -25,6 +25,7 @@
 #include "st-primitives.h"
 #include "st-interpreter.h"
 #include "st-array.h"
+#include "st-word-array.h"
 #include "st-byte-array.h"
 #include "st-large-integer.h"
 #include "st-float.h"
@@ -1344,6 +1345,64 @@ ByteString_hash (STExecutionState *es)
     }
 }
 
+static void
+WideString_at (STExecutionState *es)
+{
+    st_smi index    = pop_integer (es);
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop character;
+	
+    if (!es->success) {
+	ST_STACK_UNPOP (es, 2);
+	return;
+    }
+
+    if (!st_word_array_range_check (receiver, index)) {
+	set_success (es, false);
+	ST_STACK_UNPOP (es, 2);
+	return;
+    }
+    
+    character = st_character_new ((gunichar) st_word_array_at (receiver, index));
+
+    ST_STACK_PUSH (es, character);
+}
+
+static void
+WideString_at_put (STExecutionState *es)
+{
+    st_oop character = ST_STACK_POP (es);
+    st_smi index    = pop_integer (es);
+    st_oop receiver = ST_STACK_POP (es);
+	
+    if (!es->success) {
+	ST_STACK_UNPOP (es, 3);
+	return;
+    }
+  
+    set_success (es, st_object_class (character) == st_character_class);
+
+    if (!st_word_array_range_check (receiver, index)) {
+	set_success (es, false);
+	ST_STACK_UNPOP (es, 3);
+	return;
+    }
+
+    st_word_array_at_put (receiver, index, (guint) st_character_value (character));
+
+    ST_STACK_PUSH (es, character);
+}
+
+static void
+WordArray_size (STExecutionState *es)
+{
+    st_oop receiver;
+
+    receiver = ST_STACK_POP (es);
+
+    ST_STACK_PUSH (es, st_word_array_size (receiver));
+}
+
 INLINE void
 activate_block_context (STExecutionState *es)
 {
@@ -1505,6 +1564,12 @@ const STPrimitive st_primitives[] = {
     { "ByteString_compareOrdinal",     ByteString_compareOrdinal    },
     { "ByteString_reversed",           ByteString_reversed          },
     { "ByteString_hash",               ByteString_hash              },
+
+    { "WideString_at",                 WideString_at                },
+    { "WideString_at_put",             WideString_at_put            },
+
+    { "WordArray_size",                WordArray_size               },
+
 
     { "BlockContext_value",               BlockContext_value               },
     { "BlockContext_valueColon",          BlockContext_valueColon          },

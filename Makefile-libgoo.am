@@ -13,6 +13,8 @@ libgoo_la_SOURCES = \
 	goo/st-array.c \
 	goo/st-byte-array.h \
 	goo/st-byte-array.c \
+	goo/st-word-array.h \
+	goo/st-word-array.c \
 	goo/st-small-integer.h \
 	goo/st-small-integer.c \
 	goo/st-large-integer.h \

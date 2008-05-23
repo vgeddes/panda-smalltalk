@@ -27,10 +27,11 @@ create_actual_message (STExecutionState *es)
 	(* st_array_element (array, i + 1)) =  es->stack[es->sp - es->message_argcount + i];
 
     es->sp -= es->message_argcount;
-    es->message_argcount = 1;
-    es->message_selector = st_selector_doesNotUnderstand;
 
     ST_STACK_PUSH (es, st_message_new (es->message_selector, array));
+
+    es->message_selector = st_selector_doesNotUnderstand;
+    es->message_argcount = 1;
 }
 
 st_oop
@@ -208,7 +209,7 @@ void
 st_interpreter_main (STExecutionState *es)
 {
     register guchar *ip = es->bytecode + es->ip;
-    
+
     for (;;) {
 	
 	switch (*ip) {
