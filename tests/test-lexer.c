@@ -91,7 +91,7 @@ main (int argc, char *argv[])
 	buffer[i++] = c;
     buffer[i] = '\0';
 
-    lexer = st_lexer_new (buffer);
+    lexer = st_lexer_new (buffer, NULL);
 
     STTokenType type;
 

@@ -27,7 +27,7 @@ main (int argc, char *argv[])
     /* the big bang */
     st_bootstrap_universe ();
 
-    STLexer *lexer = st_lexer_new (buffer);
+    STLexer *lexer = st_lexer_new (buffer, NULL);
 
     STError *error = NULL;
 

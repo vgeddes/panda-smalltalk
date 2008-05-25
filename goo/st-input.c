@@ -28,6 +28,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <glib.h>
 
 typedef struct Marker
 {
@@ -39,7 +41,7 @@ typedef struct Marker
 
 struct STInput
 {
-    gunichar *text;
+    const wchar_t *text;
 
     guint p;	    /* current index into text */
 
@@ -50,31 +52,46 @@ struct STInput
     Marker marker;
 };
 
-static char *
-undouble_bangs (const char *chunk)
+static wchar_t *
+st_wcstrdup (const wchar_t *string)
 {
-    int count = 0;
-    char *p = (char *) chunk;
-    char *buf;
-    int size;
+    wchar_t *buf;
+    guint    len;
 
-    size = strlen (chunk);
+    g_assert (string != NULL);
+
+    len = wcslen (string);
+
+    buf = g_malloc (sizeof (wchar_t) * (len + 1));
+    wmemcpy (buf, string, len);
+    buf[len] = 0;
+
+    return buf;
+}
+
+static wchar_t *
+filter_double_bangs (const wchar_t *chunk)
+{
+    guint size, i = 0, count = 0;
+    const wchar_t *p = chunk;
+    wchar_t *buf;
+
+    size = wcslen (chunk);
 
     if (size < 2)
-	return g_strdup (chunk);
+	return st_wcstrdup (chunk);
 
-    // count number of redundant bangs
+    /* count number of redundant bangs */
     while (p[0] && p[1]) {
-	if (p[0] == '!' && p[1] == '!')
+	if (G_UNLIKELY (p[0] == '!' && p[1] == '!'))
 	    count++;
 	p++;
     }
     
-    buf = g_malloc (strlen (chunk) - count + 1);
+    buf = g_malloc (sizeof (wchar_t) * (size - count + 1));
 
     /* copy over text skipping over redundant bangs */
-    p = (char *) chunk;
-    int i = 0;
+    p = chunk;
     while (*p) {
 	if (*p == '!')
 	    p++;
@@ -86,11 +103,13 @@ undouble_bangs (const char *chunk)
     return buf;
 }
 
-char *
+wchar_t *
 st_input_next_chunk (STInput *input)
 {
-    char *chunk = NULL, *undoubled;
-    guint start = st_input_index (input);
+    wchar_t *chunk_filtered, *chunk = NULL;
+    guint start;
+
+    start = st_input_index (input);
 
     while (st_input_look_ahead (input, 1) != ST_INPUT_EOF) {
 
@@ -107,30 +126,23 @@ st_input_next_chunk (STInput *input)
 	    continue;
 	}
 
-	/* now we have a chunk */
-
-	chunk = st_input_range (input, start, st_input_index (input));
-	
-	/* consume bang */
+	chunk = st_input_range_ucs4 (input, start, st_input_index (input));	
+	chunk_filtered = filter_double_bangs (chunk);
 	st_input_consume (input);
+	g_free (chunk);	
 
-	undoubled = undouble_bangs (chunk);
-	g_free (chunk);
-	
-	return undoubled;
+	return chunk_filtered;
     }
-
 
     return NULL;
 }
-
 
 void
 st_input_destroy (STInput *input)
 {
     g_assert (input != NULL);
 
-    g_free (input->text);
+    g_slice_free (STInput, input);
 }
 
 guint
@@ -149,21 +161,19 @@ st_input_get_column (STInput *input)
     return input->column;
 }
 
-gunichar
+wchar_t
 st_input_look_ahead (STInput *input, int i)
 {
     g_assert (input != NULL);
 
-    if (i == 0) {
-	return 0x0000; /* undefined */
+    if (G_UNLIKELY (i == 0)) {
+	return 0x0000;
     }
 
-    if (i < 0) {
+    if (G_UNLIKELY (i < 0)) {
 	i++;
-	if ((input->p + i - 1) < 0) {
-	    // invalid
+	if ((input->p + i - 1) < 0)
 	    return ST_INPUT_EOF;
-	}
     }
 
     if ((input->p + i - 1) >= input->n) {
@@ -234,17 +244,34 @@ st_input_size (STInput *input)
     return input->n;
 }
 
+
 char *
 st_input_range (STInput *input, guint start, guint end)
 {
     char *buf;
     GError *error = NULL;
-
-    buf = g_ucs4_to_utf8 (input->text + start, end - start, NULL, NULL, &error);
+    
+    buf = g_ucs4_to_utf8 ((const gunichar *) input->text + start, end - start, NULL, NULL, &error);
     
     if (!buf) {
 	g_critical (error->message);
     }
+
+    return buf;
+}
+
+wchar_t *
+st_input_range_ucs4 (STInput *input, guint start, guint end)
+{
+    wchar_t *buf;
+    guint    len;
+
+    g_assert ((end - start) >= 0);
+
+    len = end - start;
+    buf = g_malloc (sizeof (wchar_t) * (len + 1));
+    wmemcpy (buf, input->text + start, len);
+    buf[len] = 0;
 
     return buf;
 }
@@ -258,37 +285,47 @@ st_input_index (STInput *input)
 }
 
 static void
-set_data (STInput *input, const char *string)
+initialize_state (STInput *input, const wchar_t *string)
 {
-    long len;
-    gunichar *buffer;
-    GError *error = NULL;
+    input->text    = string;
+    input->n       = wcslen (string);
+    input->line    = 1;
+    input->column  = 1;
 
-    buffer = g_utf8_to_ucs4 (string, -1, NULL, &len, &error);
-    if (error) {
-	g_warning (error->message);
-	exit (1);
-    }
-
-    input->text = buffer;
-    input->n = (guint) len;
-
-    input->line = 1;
-    input->column = 1;
+    input->marker.p      = 0;
+    input->marker.line   = 0;
+    input->marker.column = 0;
 }
 
 STInput *
-st_input_new (const char *string)
+st_input_new (const char *string, GError **error)
 {
+    wchar_t *string_ucs4;
+    STInput *input;
+
     g_assert (string != NULL);
 
-    STInput *input = g_slice_new0 (STInput);
+    string_ucs4 = (wchar_t *) g_utf8_to_ucs4 (string, -1, NULL, NULL, error);
+    if (string_ucs4 == NULL)
+	return NULL;
 
-    set_data (input, string);
+    input = g_slice_new0 (STInput);
 
-    input->marker.p = 0;
-    input->marker.line = 0;
-    input->marker.column = 0;
+    initialize_state (input, string_ucs4);
+
+    return input;
+}
+
+STInput *
+st_input_new_ucs4 (const wchar_t *string)
+{
+    STInput *input;
+
+    g_assert (string != NULL);
+
+    input = g_slice_new0 (STInput);
+
+    initialize_state (input, string);    
 
     return input;
 }

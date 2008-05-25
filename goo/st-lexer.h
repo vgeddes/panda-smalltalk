@@ -58,7 +58,9 @@ typedef enum
 } STTokenType;
 
  
-STLexer       *st_lexer_new           (const char *text);
+STLexer       *st_lexer_new           (const char *string, GError **error);
+
+STLexer       *st_lexer_new_ucs4      (const wchar_t *string);
 
 STToken       *st_lexer_next_token    (STLexer *lexer);
 

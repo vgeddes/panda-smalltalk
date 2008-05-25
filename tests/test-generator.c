@@ -31,7 +31,7 @@ main (int argc, char *argv[])
     st_bootstrap_universe ();
     
     /* compile */
-    STLexer *lexer = st_lexer_new (buffer);
+    STLexer *lexer = st_lexer_new (buffer, NULL);
     STError *error = NULL;
     STNode  *node;
     st_oop   method;

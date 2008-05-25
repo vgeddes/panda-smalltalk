@@ -36,6 +36,7 @@ typedef enum
     ST_ASSIGN_NODE,
     ST_RETURN_NODE,
     ST_MESSAGE_NODE,
+    ST_CASCADE_NODE,
     ST_LITERAL_NODE,
     
 } STNodeType;
@@ -53,46 +54,77 @@ typedef struct STNode STNode;
 struct STNode
 {
     STNodeType type;
-        
-    /* line number where the node construct starts */
-    int line;
-
-    /* next node in list */
-    STNode *next;
-
-    /* Common fields (to one or more node types) */
-    struct {
-	STMessagePrecedence precedence;
-	st_oop  selector;
-	STNode *temporaries;
-	STNode *arguments;
-	STNode *statements;
-	STNode *expression;
-    };
+    int        line;
+    STNode    *next;
 
     union {
-	/*  receiver for MessageNode */
+
 	struct {
-	    STNode *receiver;
+	    STMessagePrecedence precedence;
+	    int     primitive;
+	    st_oop  selector;
+	    STNode *statements;
+	    STNode *temporaries;
+	    STNode *arguments;
+	} method;
+
+	struct {
+
+	    STMessagePrecedence precedence;
 	    bool    is_statement;
-	};
-	/* primitive for MethodNode */
+	    st_oop  selector;
+	    STNode *receiver;
+	    STNode *arguments;
+
+	    bool super_send;
+
+
+
+	} message;
+
 	struct {
-	    int primitive;
-	};
-	/* assignee for AssignNode */
+
+	    char *name;
+
+	} variable;
+
 	struct {
+
+	    st_oop value;
+
+	} literal;
+
+	struct {
+
 	    STNode *assignee;
-	};
-	/* value for LiteralNode */
+	    STNode *expression;
+
+	} assign;
+
 	struct {
-	    st_oop literal;
-	};
-	/* name for a VariableNode */
+
+	    STNode *expression;
+
+	} retrn;
+
 	struct {
-	    st_oop name;
-	};
+
+	    STNode *statements;
+	    STNode *temporaries;
+	    STNode *arguments;
+
+	} block;
+
+	struct {
+
+	    STNode *receiver;
+	    GList  *messages;
+	    bool is_statement;
+	    
+	} cascade;
+
     };
+
 };
 
 STNode *st_node_new          (STNodeType type);

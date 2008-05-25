@@ -20,6 +20,23 @@ replaceFrom: start to: stop with: replacement startingAt: repStart
 		whileTrue: [self at: index put: (replacement at: repOff + index)]!
 
 
+SequenceableCollection method!
+first
+	^ self at: 1!
+
+SequenceableCollection method!
+second
+	^ self at: 2!
+
+SequenceableCollection method!
+third
+	^ self at: 3!
+
+SequenceableCollection method!
+last
+	^ self at: self size!
+
+
 "removing "
 
 SequenceableCollection method!

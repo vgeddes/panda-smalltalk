@@ -40,16 +40,18 @@ typedef struct {
 bool
 st_compile_string (st_oop klass, const char *string, STError **error)
 {
-    STNode *node;    
-    st_oop method;
+    STNode  *node;    
+    st_oop   method;
     STLexer *lexer;
+    GError *tmp_error = NULL;
     
     g_assert (klass != st_nil);
     
-    lexer = st_lexer_new (string);
+    lexer = st_lexer_new (string, &tmp_error);
+    if (!lexer)
+	return false;
     
     node = st_parser_parse (lexer, error);
-
     st_lexer_destroy (lexer);
 
     if (!node)
@@ -62,7 +64,7 @@ st_compile_string (st_oop klass, const char *string, STError **error)
     }
 
     st_dictionary_at_put (st_behavior_method_dictionary (klass),
-			  node->selector,
+			  node->method.selector,
 			  method);
 
     st_node_destroy (node);
@@ -89,7 +91,7 @@ next_token (FileInParser *parser, STLexer *lexer)
 	return next_token (parser, lexer);
     else if (st_token_type (token) == ST_TOKEN_INVALID)
 	filein_error (parser, token, st_lexer_error_message (lexer));
-    
+
     return token;
 }
 
@@ -97,7 +99,7 @@ next_token (FileInParser *parser, STLexer *lexer)
 static STLexer *
 next_chunk (FileInParser *parser)
 {
-    char *chunk;
+    wchar_t *chunk;
 
     parser->line = st_input_get_line (parser->input);
 
@@ -105,7 +107,7 @@ next_chunk (FileInParser *parser)
     if (!chunk)
 	return NULL;
     
-    return st_lexer_new (chunk);
+    return st_lexer_new_ucs4 (chunk);
 }
 
 static void
@@ -139,13 +141,15 @@ parse_method (FileInParser *parser,
     node = st_parser_parse (lexer, &error);
     if (node == NULL)
 	goto error;
+    if (node->type != ST_METHOD_NODE)
+	printf ("%i\n", node->type);
     
     method = st_generate_method (klass, node, &error);
-    if (method == st_nil)
+    if (error)
 	goto error;
 	
     st_dictionary_at_put (st_behavior_method_dictionary (klass),
-			  node->selector,
+			  node->method.selector,
 			  method);
 
     st_node_destroy (node);
@@ -248,14 +252,19 @@ st_file_in (const char *filename)
 			 NULL,
 			 &error);
     if (error) {
-	g_warning ("could not file in '%s'", filename);
+	g_warning ("could not file in '%s': %s", filename, error->message);
 	g_error_free (error);
 	return;
     }
     
     parser = g_slice_new0 (FileInParser);
 
-    parser->input    = st_input_new (contents);
+    parser->input = st_input_new (contents, &error);
+    if (error) {
+	g_warning ("could not validate input file '%s': %s", filename, error->message);
+	g_error_free (error);
+	return;
+    }
     parser->filename = g_path_get_basename (filename);
     parser->line     = 1;
 

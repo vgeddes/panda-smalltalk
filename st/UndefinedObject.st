@@ -26,4 +26,13 @@ ifNotNil: alternativeBlock
 
 UndefinedObject method!
 startupSystem
-	^ self doIt!
+	self exitWithResult: self doIt!
+
+UndefinedObject method!
+exitWithResult: anObject
+	<primitive: 'UndefinedObject_exitWithResult'>
+	self primitiveFailed!
+
+UndefinedObject method!
+exit
+	self exitWithResult: nil!

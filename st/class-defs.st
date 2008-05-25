@@ -57,7 +57,7 @@ Class named: 'Collection'
 
 Class named: 'HashedCollection'
 	  superclass: 'Collection'
-	  instanceVariableNames: 'tally array'
+	  instanceVariableNames: 'tally deleted array'
       classVariableNames: ''!
 
 Class named: 'Set'
@@ -99,7 +99,6 @@ Class named: 'Association'
 	  superclass: 'Object'
 	  instanceVariableNames: 'key value'
       classVariableNames: ''!
-
 
 "Streams"
 

@@ -5,6 +5,7 @@
 
 #include <st-types.h>
 #include <st-context.h>
+#include <setjmp.h>
 
 typedef struct {
 
@@ -21,13 +22,13 @@ typedef struct {
     guint   sp;
     guint   ip;
 
-    /* information on last message send */
     st_oop  message_receiver;
     st_oop  message_selector;
     guint   message_argcount;
     
-    /* primitives error control */
     bool    success;
+
+    jmp_buf main_loop;
 
 } STExecutionState;
 

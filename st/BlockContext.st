@@ -49,3 +49,14 @@ whileTrue: aBlock
 BlockContext method!
 whileFalse: aBlock
 	^ [self value] whileFalse: [aBlock value]!
+
+BlockContext method!
+repeat
+	^ [self value. true] whileTrue!
+
+
+"error handling"
+
+BlockContext method!
+cannotReturn: anObject
+	self error: 'cannot return object to a context that no longer exists'!

@@ -74,7 +74,8 @@ st_oop
     st_block_context_class   = 0,
     st_selector_doesNotUnderstand   = 0,
     st_selector_mustBeBoolean     = 0,
-    st_selector_startupSystem     = 0;
+    st_selector_startupSystem     = 0,
+    st_selector_cannotReturn     = 0;
 
 
 
@@ -242,7 +243,7 @@ parse_variable_names (STLexer *lexer, GList **varnames)
 	return false;
 
     names = st_token_text (token);
-    ivarlexer = st_lexer_new (names);
+    ivarlexer = st_lexer_new (names, NULL); /* input valid at this stage */
     token = st_lexer_next_token (ivarlexer);
 
     while (st_token_type (token) != ST_TOKEN_EOF) {
@@ -354,7 +355,8 @@ parse_classes (const char *filename)
 	exit (1);
     }
 
-    lexer = st_lexer_new (contents);
+    lexer = st_lexer_new (contents, NULL);
+    g_assert (lexer != NULL);
     token = st_lexer_next_token (lexer);
 
     while (st_token_type (token) != ST_TOKEN_EOF) {
@@ -382,6 +384,8 @@ file_in_classes (void)
 	    "Collection.st",
 	    "SequenceableCollection.st",
 	    "ArrayedCollection.st",
+	    "HashedCollection.st",
+	    "Set.st",
 	    "Array.st",
 	    "ByteArray.st",
 	    "Association.st",
@@ -463,11 +467,12 @@ init_specials (void)
     st_selector_doesNotUnderstand   = st_symbol_new ("doesNotUnderstand:");
     st_selector_mustBeBoolean       = st_symbol_new ("mustBeBoolean");
     st_selector_startupSystem       = st_symbol_new ("startupSystem");
+    st_selector_cannotReturn        = st_symbol_new ("cannotReturn");
 
 }
 
-// RESERVE 100 MB worth of virtual address space
-#define HEAP_SIZE (100 * 1024  * 1024)
+// RESERVE 500 MB worth of virtual address space
+#define HEAP_SIZE (500 * 1024  * 1024)
 
 static void
 allocate_virtual_space (void)

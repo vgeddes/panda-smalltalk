@@ -33,6 +33,10 @@ Character method!
 		ifFalse: [ ^ false].
 	^ self value = aCharacter value!
 
+Character method!
+hash
+	^ self value!
+
 
 "testing"
 Character method!

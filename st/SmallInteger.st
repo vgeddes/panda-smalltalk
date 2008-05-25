@@ -1,7 +1,6 @@
 "
+Copyright (c) 2008 Vincent Geddes
 Copyright (c) 2007 Luca Bruno
-
-This file is part of Smalltalk YX.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the 'Software'), to deal
@@ -28,17 +27,17 @@ DEALINGS IN THE SOFTWARE.
 SmallInteger method!
 + aNumber
 	<primitive: 'SmallInteger_add'>
-	self primitiveFailed!
+	^ super + aNumber! 
 
 SmallInteger method!
 - aNumber
 	<primitive: 'SmallInteger_minus'>
-	self primitiveFailed!
+	^ super - aNumber!
 	
 SmallInteger method!
 * aNumber
 	<primitive: 'SmallInteger_mul'>
-	self primitiveFailed!
+	^ super * aNumber!
 
 SmallInteger method!
 / aNumber
@@ -52,12 +51,12 @@ SmallInteger method!
 SmallInteger method!
 // aNumber
 	<primitive: 'SmallInteger_intDiv'>
-	self primitiveFailed!
+	^ super // aNumber!
 
 SmallInteger method!
 \\ aNumber
 	<primitive: 'SmallInteger_mod'>
-	self primitiveFailed!
+	^ super \\ aNumber!
 
 
 
@@ -66,42 +65,32 @@ SmallInteger method!
 SmallInteger method!
 < aNumber
 	<primitive: 'SmallInteger_lt'>
-	self primitiveFailed!
+	^ super < aNumber!
 
 SmallInteger method!
 > aNumber
 	<primitive: 'SmallInteger_gt'>
-	self primitiveFailed!
+	^ super > aNumber!
 
 SmallInteger method!
 <= aNumber
 	<primitive: 'SmallInteger_le'>
-	self primitiveFailed!
+	^ super <= aNumber!
 
 SmallInteger method!
 >= aNumber
 	<primitive: 'SmallInteger_ge'>
-	self primitiveFailed!
+	^ super >= aNumber!
 
 SmallInteger method!
 = aNumber
 	<primitive: 'SmallInteger_eq'>
-	self primitiveFailed!
+	^ super = aNumber!
 
 SmallInteger method!
 ~= aNumber
 	<primitive: 'SmallInteger_ne'>
-	self primitiveFailed!
-
-SmallInteger method!
-= aNumber
-	<primitive: 'SmallInteger_eq'>
-	self primitiveFailed!
-
-SmallInteger method!
-~= aNumber
-	<primitive: 'SmallInteger_ne'>
-	self primitiveFailed!
+	^ super ~= aNumber!
 
 SmallInteger method!
 hash
@@ -113,22 +102,22 @@ hash
 SmallInteger method!
 bitAnd: aNumber
 	<primitive: 'SmallInteger_bitAnd'>
-	self primitiveFailed!
+	^ super bitAnd: aNumber!
 
 SmallInteger method!
 bitOr: aNumber
 	<primitive: 'SmallInteger_bitOr'>
-	self primitiveFailed!
+	^ super bitOr: aNumber!
 
 SmallInteger method!
 bitXor: aNumber
 	<primitive: 'SmallInteger_bitXor'>
-	self primitiveFailed!
+	^ super bitXor: aNumber!
 
 SmallInteger method!
 bitShift: aNumber
 	<primitive: 'SmallInteger_bitShift'>
-	self primitiveFailed!
+	^ super bitShift: aNumber!
 
 
 "mathematics"
@@ -150,10 +139,6 @@ min: aNumber
 	(self >= aNumber)
 		ifTrue: [ ^ aNumber ]
 		ifFalse: [ ^ self ]!
-
-SmallInteger method!
-abs
-	^ super abs!
 
 
 "testing"

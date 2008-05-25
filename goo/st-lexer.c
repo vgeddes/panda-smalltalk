@@ -55,7 +55,7 @@
 #define obstack_chunk_alloc g_malloc
 #define obstack_chunk_free  g_free
 
-#define lookahead(self, k)   (st_input_look_ahead (self->input, k))
+#define lookahead(self, k)   ((gunichar) st_input_look_ahead (self->input, k))
 #define consume(self)        (st_input_consume (self->input))
 #define mark(self)           (st_input_mark (self->input))
 #define rewind(self)         (st_input_rewind (self->input))
@@ -128,8 +128,10 @@ make_token (STLexer      *lexer,
 {
     STToken *token;
 
-    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
-    
+//    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
+ 
+    token = g_malloc (sizeof (STToken));
+   
     token->type   = type;
     token->text   = text ? text : g_strdup ("");
     token->type   = type;
@@ -145,8 +147,10 @@ make_number_token (STLexer *lexer, int radix, int exponent, char *number, bool n
 {
     STToken *token;
 
-    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
-    
+//    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
+  
+    token = g_malloc (sizeof (STToken));
+  
     token->type   = ST_TOKEN_NUMBER_CONST;
     token->line   = lexer->line;
     token->column = lexer->column;
@@ -323,7 +327,7 @@ out1:
     }
     
 out2:
-
+    
     make_number_token (lexer, radix, exponent,
 		       st_input_range (lexer->input, k, j),
 		       negative);
@@ -798,29 +802,48 @@ st_lexer_next_token (STLexer *lexer)
     }
 }
 
-STLexer *
-st_lexer_new (const char *text)
+static void
+lexer_initialize (STLexer *lexer, STInput *input)
 {
-    STLexer *lexer;
-
-    g_assert (text != NULL);
-
-    lexer = g_slice_new0 (STLexer);
-
-    lexer->input = st_input_new (text);
-
+    lexer->input = input;
     lexer->token = NULL;
     lexer->line = 1;
     lexer->column = 1;
     lexer->start = -1;
-    
     lexer->error_code = 0;
-
     lexer->failed = FALSE;
-
     lexer->filter_comments = true;
 
-    obstack_init (&lexer->allocator);
+    //   obstack_init (&lexer->allocator);
+}
+
+STLexer *
+st_lexer_new (const char *string, GError **error)
+{
+    STLexer *lexer;
+    STInput *input;
+
+    g_assert (string != NULL);
+
+    lexer = g_slice_new0 (STLexer);
+    input = st_input_new (string, error);
+    if (!input)
+	return NULL;
+
+    lexer_initialize (lexer, input);
+
+    return lexer;
+}
+
+STLexer *
+st_lexer_new_ucs4 (const wchar_t *string)
+{
+    STLexer *lexer;
+
+    g_assert (string != NULL);
+
+    lexer = g_slice_new0 (STLexer);
+    lexer_initialize (lexer, st_input_new_ucs4 (string)); 
 
     return lexer;
 }
@@ -831,10 +854,7 @@ st_lexer_destroy (STLexer *lexer)
     g_assert (lexer != NULL);
 
     st_input_destroy (lexer->input);
-
-    // destroy all allocated tokens;
-    obstack_free (&lexer->allocator, NULL);
-
+//    obstack_free (&lexer->allocator, NULL);
     g_slice_free (STLexer, lexer);
 }
 

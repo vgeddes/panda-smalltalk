@@ -54,6 +54,7 @@ typedef enum
     BLOCK_RETURN,
 
     POP_STACK_TOP,
+    DUPLICATE_STACK_TOP,
 
     PUSH_ACTIVE_CONTEXT,
 

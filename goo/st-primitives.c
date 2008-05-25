@@ -37,7 +37,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <setjmp.h>
 
 INLINE void
 set_success (STExecutionState *es, bool success)
@@ -1488,9 +1488,12 @@ BlockContext_valueWithArguments (STExecutionState *es)
 }
 
 static void
-SystemDictionary_quit (STExecutionState *es)
+UndefinedObject_exitWithResult (STExecutionState *es)
 {
+    longjmp (es->main_loop, 0);
 }
+
+
 
 const STPrimitive st_primitives[] = {
     { "SmallInteger_add",      SmallInteger_add      },
@@ -1568,7 +1571,9 @@ const STPrimitive st_primitives[] = {
     { "WideString_at",                 WideString_at                },
     { "WideString_at_put",             WideString_at_put            },
 
-    { "WordArray_size",                WordArray_size               },
+    { "WordArray_size",                 WordArray_size               },
+
+    { "UndefinedObject_exitWithResult", UndefinedObject_exitWithResult },
 
 
     { "BlockContext_value",               BlockContext_value               },
@@ -1577,7 +1582,7 @@ const STPrimitive st_primitives[] = {
     { "BlockContext_value_value_value",   BlockContext_value_value_value   },
     { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
 
-    { "SystemDictionary_quit",        SystemDictionary_quit       },
+
 };
 
 /* returns 0 if there no primitive function corresponding

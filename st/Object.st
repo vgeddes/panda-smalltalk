@@ -20,6 +20,10 @@ Object method!
 identityHash
 	<primitive: 'Object_identityHash'>!
 
+Object method!
+yourself
+	^ self!
+
 
 "comparing"
 

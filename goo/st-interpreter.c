@@ -14,6 +14,7 @@
 #include "st-association.h"
 
 #include <stdlib.h>
+#include <setjmp.h>
 #include <glib.h>
 
 
@@ -208,7 +209,12 @@ st_interpreter_send_selector (STExecutionState *es,
 void
 st_interpreter_main (STExecutionState *es)
 {
-    register guchar *ip = es->bytecode + es->ip;
+    register guchar *ip;
+
+    if (setjmp (es->main_loop))
+	return;
+
+    ip = es->bytecode + es->ip;
 
     for (;;) {
 	
@@ -669,14 +675,21 @@ st_interpreter_main (STExecutionState *es)
 		if (G_LIKELY (es->success))
 		    break;
 	    }
-	    
+	    	    
 	    ACTIVATE_METHOD (es, method);
 	    break;
 	}
-	 
+	
 	case POP_STACK_TOP:
 	    
 	    (void) ST_STACK_POP (es);
+	    
+	    ip += 1;
+	    break;
+
+	case DUPLICATE_STACK_TOP:
+	    
+	    ST_STACK_PUSH (es, ST_STACK_PEEK (es));
 	    
 	    ip += 1;
 	    break;
@@ -709,11 +722,19 @@ st_interpreter_main (STExecutionState *es)
 	    st_oop sender;
 	    st_oop value;
 	    
-	    sender = st_context_part_sender (es->context);	    
-	    if (sender == st_nil)
-		return;
-	    
 	    value = ST_STACK_PEEK (es);
+
+	    if (st_object_class (es->context) == st_block_context_class)
+		sender = st_context_part_sender (st_block_context_home (es->context));
+	    else
+		sender = st_context_part_sender (es->context);
+
+	    if (sender == st_nil) {
+		ST_STACK_PUSH (es, es->context);
+		ST_STACK_PUSH (es, value);
+		SEND_SELECTOR (es, st_selector_cannotReturn, 1);
+	    }
+	    
 	    ACTIVATE_CONTEXT (es, sender);
 	    ST_STACK_PUSH (es, value);
 	    break;
