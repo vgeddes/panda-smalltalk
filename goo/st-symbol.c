@@ -78,34 +78,3 @@ st_symbol_new (const char *bytes)
 
     return element;
 }
-
-st_oop
-st_character_new (gunichar unichar)
-{
-    st_oop ch = st_object_new (st_character_class);
-    
-    st_heap_object_body (ch)[0] = st_smi_new (unichar);
-
-    return ch;    
-}
-
-gunichar
-st_character_value (st_oop character)
-{ 
-    return st_smi_value (st_heap_object_body (character)[0]);
-}
-
-bool
-st_character_equal (st_oop object, st_oop other)
-{ 
-    if (st_object_class (other) != st_character_class)
-	return false;
-
-    return st_character_value (object) == st_character_value (other);
-}
-
-guint
-st_character_hash (st_oop character)
-{ 
-    return (guint) st_character_value (character);
-}

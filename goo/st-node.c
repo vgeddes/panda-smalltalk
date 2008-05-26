@@ -29,6 +29,7 @@
 #include <st-object.h>
 #include <st-float.h>
 #include <st-symbol.h>
+#include <st-character.h>
 #include <string.h>
 
 
@@ -39,9 +40,7 @@ print_variable (STNode *node)
 {
     g_assert (node->type == ST_VARIABLE_NODE);
 
-    char *name = (char *) st_byte_array_bytes (node->variable.name);
-
-    printf (name);
+    printf (node->variable.name);
 }
 
 static void print_tuple (st_oop tuple);

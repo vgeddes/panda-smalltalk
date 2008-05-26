@@ -34,6 +34,7 @@
 #include "st-universe.h"
 #include "st-object.h"
 #include "st-array.h"
+#include "st-character.h"
 
 #include <tommath.h>
 #include <glib.h>

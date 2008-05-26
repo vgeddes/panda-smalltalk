@@ -33,6 +33,7 @@
 #include "st-context.h"
 #include "st-method.h"
 #include "st-symbol.h"
+#include "st-character.h"
 
 #include <math.h>
 #include <string.h>
@@ -1493,6 +1494,26 @@ UndefinedObject_exitWithResult (STExecutionState *es)
     longjmp (es->main_loop, 0);
 }
 
+static void
+Character_value (STExecutionState *es)
+{
+    ST_STACK_PUSH (es, st_smi_new (st_character_value (ST_STACK_POP (es))));
+}
+
+static void
+Character_characterFor (STExecutionState *es)
+{
+    st_oop receiver;
+    st_smi value;
+
+    value = pop_integer (es);
+    receiver = ST_STACK_POP (es);
+
+    if (es->success)
+	ST_STACK_PUSH (es, st_character_new (value));
+    else
+	ST_STACK_UNPOP (es, 2);
+}
 
 
 const STPrimitive st_primitives[] = {
@@ -1575,6 +1596,8 @@ const STPrimitive st_primitives[] = {
 
     { "UndefinedObject_exitWithResult", UndefinedObject_exitWithResult },
 
+    { "Character_value",                Character_value },
+    { "Character_characterFor",         Character_characterFor },
 
     { "BlockContext_value",               BlockContext_value               },
     { "BlockContext_valueColon",          BlockContext_valueColon          },

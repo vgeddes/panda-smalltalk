@@ -33,6 +33,7 @@
 #include "st-byte-array.h"
 #include "st-universe.h"
 #include "st-class.h"
+#include "st-character.h"
 
 #include <glib.h>
 #include <string.h>

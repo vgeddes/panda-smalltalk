@@ -39,7 +39,7 @@ st_behavior_all_instance_variables (st_oop klass)
     GList *a = NULL, *b = NULL;
     st_oop names;
     st_smi size;
-
+    
     /* superclass of Object is nil */
     if (klass == st_nil)
 	return NULL;

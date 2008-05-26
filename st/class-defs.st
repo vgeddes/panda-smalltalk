@@ -216,7 +216,7 @@ Class named: 'Float'
 
 Class named: 'Character'
 	  superclass: 'Magnitude'
-	  instanceVariableNames: 'value'
+	  instanceVariableNames: ''
       classVariableNames: ''!
 
 Class named: 'Boolean'

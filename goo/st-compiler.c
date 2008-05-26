@@ -75,7 +75,7 @@ st_compile_string (st_oop klass, const char *string, STError **error)
 static void
 filein_error (FileInParser *parser, STToken *token, const char *message)
 {
-    fprintf (stderr, "%s: %i: %s\n", parser->filename, parser->line + st_token_line (token), message);
+    fprintf (stderr, "%s: %i: %s\n", parser->filename, parser->line + ((token) ? st_token_line (token) : -90), message);
     exit (1);
 }
 
@@ -116,7 +116,7 @@ parse_method (FileInParser *parser,
 	      char *class_name,
 	      bool class_method)
 {
-    STToken *token;
+    STToken *token = NULL;
     st_oop   klass;
     STError *error = NULL;
 

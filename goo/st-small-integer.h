@@ -35,8 +35,6 @@ INLINE st_oop st_smi_decrement (st_oop smi);
 INLINE bool st_smi_equal (st_oop m, st_oop n);
 INLINE st_smi st_smi_hash (st_oop smi);
 
-const STDescriptor *st_smi_descriptor (void) G_GNUC_CONST;
-
 /* inline definitions */
 
 INLINE st_oop

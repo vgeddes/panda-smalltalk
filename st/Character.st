@@ -3,8 +3,20 @@
 "instance creation"
 
 Character classMethod!
-new: unicodeValue
-	^ self basicNew value: unicodeValue!
+characterFor: unicodeValue
+	<primitive: 'Character_characterFor'>
+	self primitiveFailed!
+
+Character classMethod!
+new
+	^ self basicNew!
+
+Character classMethod!
+basicNew
+	self error: 'Characters can only be created with #characterFor:'!
+
+
+"common integers"
 
 Character classMethod!
 cr
@@ -23,15 +35,34 @@ space
 
 Character method!
 value
-	^ value!
+	<primitive: 'Character_value'>
+	self primitiveFailed!
 
 "comparing"
 
 Character method!
 = aCharacter
-	aCharacter isCharacter
-		ifFalse: [ ^ false].
-	^ self value = aCharacter value!
+	^ aCharacter isCharacter and: [(self compare: aCharacter) = 0]!
+
+Character method!
+< aCharacter
+	^ (self compare: aCharacter) < 0!
+
+Character method!
+> aCharacter
+	^ (self compare: aCharacter) > 0!
+
+Character method!
+<= aCharacter
+	^ (self compare: aCharacter) <= 0!
+
+Character method!
+>= aCharacter
+	^ (self compare: aCharacter) >= 0!
+
+Character method!
+compare: aCharacter
+	^ self value - aCharacter value!
 
 Character method!
 hash
@@ -39,12 +70,8 @@ hash
 
 
 "testing"
+
 Character method!
 isCharacter
 	^ true!
 
-"private"
-
-Character method!
-value: unicodeValue
-	value := unicodeValue!

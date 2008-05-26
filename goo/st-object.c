@@ -32,6 +32,7 @@
 #include "st-byte-array.h"
 #include "st-symbol.h"
 #include "st-heap-object.h"
+#include "st-character.h"
 
 st_oop
 st_object_new (st_oop klass)

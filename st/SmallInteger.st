@@ -22,6 +22,17 @@ DEALINGS IN THE SOFTWARE.
 "
 
 
+"instance creation"
+
+SmallInteger classMethod!
+new
+	self basicNew!
+
+SmallInteger classMethod!
+basicNew
+	self error: 'SmallIntegers can only be created by performing arithmetic'!
+
+
 "arithmetic"
 
 SmallInteger method!

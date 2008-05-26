@@ -67,11 +67,20 @@ st_object_is_smi (st_oop object)
     return st_object_tag (object) == ST_SMI_TAG;
 }
 
+INLINE bool
+st_object_is_character (st_oop object)
+{
+    return st_object_tag (object) == ST_CHARACTER_TAG;
+}
+
 INLINE st_oop
 st_object_class (st_oop object)
 {
     if (G_UNLIKELY (st_object_is_smi (object)))
 	return st_smi_class;
+
+    if (G_UNLIKELY (st_object_is_character (object)))
+	return st_character_class;
 
     return st_heap_object_class (object);
 }
@@ -80,7 +89,10 @@ INLINE const STDescriptor *
 st_object_descriptor (st_oop object)
 {
     if (G_UNLIKELY (st_object_is_smi (object)))
-	return st_smi_descriptor ();
+	g_assert_not_reached ();
+
+    if (G_UNLIKELY (st_object_is_smi (object)))
+	g_assert_not_reached ();
     
     return st_descriptors[st_heap_object_format (object)];
 }

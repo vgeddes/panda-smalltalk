@@ -15,8 +15,8 @@ libgoo_la_SOURCES = \
 	goo/st-byte-array.c \
 	goo/st-word-array.h \
 	goo/st-word-array.c \
+	goo/st-character.h \
 	goo/st-small-integer.h \
-	goo/st-small-integer.c \
 	goo/st-large-integer.h \
 	goo/st-large-integer.c \
 	goo/st-method.h \

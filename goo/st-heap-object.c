@@ -75,12 +75,6 @@ st_heap_object_set_nonpointer (st_oop object, bool nonpointer)
     HEADER (object) = (HEADER (object) & ~st_nonpointer_mask_in_place) | ((nonpointer ? 1 : 0) << st_nonpointer_shift);
 }
 
-st_oop *
-st_heap_object_instvars (st_oop object)
-{
-    return ST_POINTER (object)->fields;
-}
-
 void
 st_heap_object_initialize_header (st_oop object, st_oop klass)
 {
