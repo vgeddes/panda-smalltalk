@@ -41,6 +41,8 @@
 
 #define DEFAULT_CODE_SIZE 50
 
+#define CSTRING(string) ((char *) st_byte_array_bytes (string))
+
 typedef struct 
 {
     bool     in_block;
@@ -940,7 +942,7 @@ size_cascade (Generator *gt, STNode *node)
     guint i, j;
     guint size = 0;
 
-    selector = CSTR (node->message.selector);
+    selector = CSTRING (node->message.selector);
 
     for (i = 0; i < G_N_ELEMENTS (generators); i++) {
 	for (j = 0; j < G_N_ELEMENTS (generators[i].pattern); j++) {
@@ -973,7 +975,7 @@ generate_cascade (Generator *gt, STNode *node)
     const char *selector;
     guint i, j;
 
-    selector = CSTR (node->message.selector);
+    selector = CSTRING (node->message.selector);
 
     for (i = 0; i < G_N_ELEMENTS (generators); i++) {
 	for (j = 0; j < G_N_ELEMENTS (generators[i].pattern); j++) {
@@ -1005,7 +1007,7 @@ size_message (Generator *gt, STNode *node)
     guint i, j;
     guint size = 0;
 
-    selector = CSTR (node->message.selector);
+    selector = CSTRING (node->message.selector);
 
     for (i = 0; i < G_N_ELEMENTS (generators); i++) {
 	for (j = 0; j < G_N_ELEMENTS (generators[i].pattern); j++) {
@@ -1027,7 +1029,7 @@ generate_message (Generator *gt, STNode *node)
     const char *selector;
     guint i, j;
 
-    selector = CSTR (node->message.selector);
+    selector = CSTRING (node->message.selector);
 
     for (i = 0; i < G_N_ELEMENTS (generators); i++) {
 	for (j = 0; j < G_N_ELEMENTS (generators[i].pattern); j++) {

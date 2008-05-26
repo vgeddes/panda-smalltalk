@@ -908,13 +908,11 @@ st_parser_parse (STLexer *lexer,
 
     if (!setjmp (parser->jmploc)) {
 	method = parse_method (parser); 
-	g_assert (method->type == ST_METHOD_NODE);
     } else {
 	method = NULL;
     }
+
     g_slice_free (STParser, parser);
-
-
 
     return method;
 }

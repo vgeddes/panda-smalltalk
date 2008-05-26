@@ -44,16 +44,10 @@
 #include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
-#include <obstack.h>
 
 #include <stdlib.h>
 #include <limits.h>
-
-
 #include <ctype.h>
-
-#define obstack_chunk_alloc g_malloc
-#define obstack_chunk_free  g_free
 
 #define lookahead(self, k)   ((gunichar) st_input_look_ahead (self->input, k))
 #define consume(self)        (st_input_consume (self->input))
@@ -97,8 +91,8 @@ struct STLexer
     guint        error_column;
     gunichar     error_char;
 
-    /* token allocator */
-    struct obstack allocator;
+    /* delayed deallocation */
+    GList *allocated_tokens;
 };
 
 struct STToken
@@ -127,11 +121,9 @@ make_token (STLexer      *lexer,
 	    char        *text)
 {
     STToken *token;
-
-//    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
  
-    token = g_malloc (sizeof (STToken));
-   
+    token = g_slice_new0 (STToken);
+
     token->type   = type;
     token->text   = text ? text : g_strdup ("");
     token->type   = type;
@@ -140,6 +132,9 @@ make_token (STLexer      *lexer,
 
     lexer->token = token;
     lexer->token_matched = true;
+
+
+    lexer->allocated_tokens = g_list_prepend (lexer->allocated_tokens, token);
 }
 
 static void
@@ -147,10 +142,8 @@ make_number_token (STLexer *lexer, int radix, int exponent, char *number, bool n
 {
     STToken *token;
 
-//    token = obstack_alloc (&lexer->allocator, sizeof (STToken));
-  
-    token = g_malloc (sizeof (STToken));
-  
+    token = g_slice_new0 (STToken);
+
     token->type   = ST_TOKEN_NUMBER_CONST;
     token->line   = lexer->line;
     token->column = lexer->column;
@@ -162,6 +155,8 @@ make_number_token (STLexer *lexer, int radix, int exponent, char *number, bool n
 
     lexer->token = token;
     lexer->token_matched = true;
+
+    lexer->allocated_tokens = g_list_prepend (lexer->allocated_tokens, token);
 }
 
 static void
@@ -664,14 +659,14 @@ static void
 match_period (STLexer *lexer)
 {
     match (lexer, '.');
-    make_token (lexer, ST_TOKEN_PERIOD, ".");
+    make_token (lexer, ST_TOKEN_PERIOD, NULL);
 }
 
 static void
 match_return (STLexer *lexer)
 {
     match (lexer, '^');
-    make_token (lexer, ST_TOKEN_RETURN, "^");
+    make_token (lexer, ST_TOKEN_RETURN, NULL);
 }
 
 /* st_lexer_next_token:
@@ -814,7 +809,7 @@ lexer_initialize (STLexer *lexer, STInput *input)
     lexer->failed = FALSE;
     lexer->filter_comments = true;
 
-    //   obstack_init (&lexer->allocator);
+    lexer->allocated_tokens = NULL;
 }
 
 STLexer *
@@ -849,12 +844,26 @@ st_lexer_new_ucs4 (const wchar_t *string)
 }
 
 void
+destroy_token (STToken *token)
+{
+    if (token->type != ST_TOKEN_NUMBER_CONST) {
+	g_free (token->text);
+
+    }
+
+    g_slice_free (STToken, token);
+}
+
+void
 st_lexer_destroy (STLexer *lexer)
 {
     g_assert (lexer != NULL);
 
     st_input_destroy (lexer->input);
-//    obstack_free (&lexer->allocator, NULL);
+
+    g_list_foreach (lexer->allocated_tokens, (GFunc) destroy_token, NULL);
+    g_list_free (lexer->allocated_tokens);
+
     g_slice_free (STLexer, lexer);
 }
 

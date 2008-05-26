@@ -242,7 +242,7 @@ parse_variable_names (STLexer *lexer, GList **varnames)
     if (st_token_type (token) != ST_TOKEN_STRING_CONST)
 	return false;
 
-    names = st_token_text (token);
+    names = g_strdup (st_token_text (token));
     ivarlexer = st_lexer_new (names, NULL); /* input valid at this stage */
     token = st_lexer_next_token (ivarlexer);
 

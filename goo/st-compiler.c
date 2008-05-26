@@ -152,6 +152,7 @@ parse_method (FileInParser *parser,
 			  node->method.selector,
 			  method);
 
+ 
     st_node_destroy (node);
     st_lexer_destroy (lexer);
     g_free (class_name);
