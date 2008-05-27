@@ -40,6 +40,8 @@ typedef struct
 
 st_oop st_large_integer_new (mp_int * value);
 
+st_oop st_large_integer_new_from_smi (st_smi integer);
+
 st_oop st_large_integer_new_from_string (const char *string, guint radix);
 
 char *st_large_integer_to_string (st_oop integer, guint radix);

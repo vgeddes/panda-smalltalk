@@ -78,8 +78,6 @@ struct STNode
 
 	    bool super_send;
 
-
-
 	} message;
 
 	struct {

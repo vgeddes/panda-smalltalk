@@ -16,7 +16,7 @@ bool    st_compile_string   (st_oop      klass,
 			     const char *string,
 			     STError   **error);
 
-void    st_file_in          (const char *filename);
+void    st_compile_file_in  (const char *filename);
 
 STNode *st_parser_parse     (STLexer *lexer,
 			     STError **error);

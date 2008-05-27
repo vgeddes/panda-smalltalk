@@ -41,7 +41,7 @@ typedef struct Marker
 
 struct STInput
 {
-    const wchar_t *text;
+    wchar_t *text;
 
     guint p;	    /* current index into text */
 
@@ -142,6 +142,7 @@ st_input_destroy (STInput *input)
 {
     g_assert (input != NULL);
 
+    g_free (input->text);
     g_slice_free (STInput, input);
 }
 
@@ -325,7 +326,7 @@ st_input_new_ucs4 (const wchar_t *string)
 
     input = g_slice_new0 (STInput);
 
-    initialize_state (input, string);    
+    initialize_state (input, st_wcstrdup (string));    
 
     return input;
 }

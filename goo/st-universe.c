@@ -389,6 +389,7 @@ file_in_classes (void)
 	    "Array.st",
 	    "ByteArray.st",
 	    "Association.st",
+	    "Magnitude.st",
 	    "Number.st",
 	    "Integer.st",
 	    "SmallInteger.st",
@@ -414,7 +415,7 @@ file_in_classes (void)
 
     for (guint i = 0; i < G_N_ELEMENTS (files); i++) {
 	filename = g_build_filename ("..", "st", files[i], NULL);
-	st_file_in (filename);
+	st_compile_file_in (filename);
 	g_free (filename);
     }
 }

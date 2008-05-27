@@ -27,27 +27,19 @@ String method!
 
 String method!
 < aString
-	aString isString
-		ifFalse: [^ false].
 	^ (self compare: aString) < 0!
 
 String method!
 > aString
-	aString isString
-		ifFalse: [^ false].
 	^ (self compare: aString) > 0!
 
 String method!
 <= aString
-	aString isString
-		ifFalse: [^ false].
-	^ (self compare: aString) <= 0!
+	^ (self > aString) not!
 
 String method!
 >= aString
-	aString isString
-		ifFalse: [^ false].
-	^ (self compare: aString) >= 0!
+	^ (self < aString) not!
 
 String method!
 compare: aString

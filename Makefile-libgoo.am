@@ -68,13 +68,13 @@ libgoo_la_CFLAGS =      \
 	$(GLIB_CFLAGS)  \
 	$(WARN_CFLAGS)
 
-libgoo_la_LIBADD = $(GLIB_LIBS) libtommath.la
+libgoo_la_LIBADD = $(GLIB_LIBS) libtommath.la -lm
 
 
 noinst_PROGRAMS += goo/bootstrap
 
 goo_bootstrap_SOURCES = goo/st-bootstrap.c
-goo_bootstrap_LDADD =    libgoo.la 
+goo_bootstrap_LDADD =    libgoo.la -lm
 goo_bootstrap_CFLAGS =   $(WARN_CFLAGS)
 goo_bootstrap_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)/goo
 

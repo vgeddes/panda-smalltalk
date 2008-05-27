@@ -51,11 +51,25 @@ Object method!
 	^ Association key: self value: anObject!
 
 
+
+
 "printing"
+
+Object method!
+isVowel: aCharacter
+	#($a $e $u $i $o)
+		do: [ :c | c = aCharacter ifTrue: [^ true]].
+	^ false!
+
+
 Object method!
 printOn: aStream
+	| name |
     "Append to aStream a String representation of the receiver"
-    aStream nextPutAll: 'an'.
+
+	name := self class name.
+
+    aStream nextPutAll: ((self isVowel: name first) ifTrue: [ 'an' ] ifFalse: [ 'a' ])
 	aStream nextPut: Character space.
     aStream nextPutAll: self class name!
 

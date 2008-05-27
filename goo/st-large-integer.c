@@ -25,6 +25,7 @@
 #include "st-large-integer.h"
 #include "st-universe.h"
 #include "st-types.h"
+#include "math.h"
 
 #define VALUE(oop)             (&(ST_LARGE_INTEGER(oop)->value))
 
@@ -252,6 +253,29 @@ st_large_integer_new_from_string (const char *string, guint radix)
     if (result != MP_OKAY)
 	goto out;
 
+    return st_large_integer_new (&value);
+
+  out:
+    mp_clear (&value);
+    g_warning (mp_error_to_string (result));
+    return st_nil;
+}
+
+st_oop
+st_large_integer_new_from_smi (st_smi integer)
+{
+    mp_int value;
+    int    result;
+    bool   negative = integer < 0;
+    st_smi integer_abs = abs(integer);
+
+    result = mp_init_set_int (&value, integer_abs);
+    if (result != MP_OKAY)
+	goto out;
+    
+    if (negative)
+	mp_neg (&value, &value);
+    
     return st_large_integer_new (&value);
 
   out:

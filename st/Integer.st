@@ -131,7 +131,7 @@ radix: base
 			cp := $0 value + (num \\ base).
 			cp > $9 value
 				ifTrue: [ cp := cp + $A value - $9 value - 1 ].
-			stream nextPut: (Character new: cp).
+			stream nextPut: (Character characterFor: cp).
 			num := num // base ].
 
     self isNegative
@@ -162,6 +162,7 @@ printOn: aStream base: base
 Integer method!
 storeOn: aStream base: base
     aStream nextPutAll: (self radix: base)!
+
 
 "rounding"
 

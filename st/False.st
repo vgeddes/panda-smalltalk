@@ -40,3 +40,9 @@ and: aBlock
 False method!
 or: aBlock
 	^ aBlock value!
+
+
+"printing"
+False method!
+printOn: aStream
+	aStream nextPutAll: 'false'!

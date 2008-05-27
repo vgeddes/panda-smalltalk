@@ -12,6 +12,10 @@ new
 	^ self basicNew!
 
 Character classMethod!
+new: anInteger
+	^ self basicNew!
+
+Character classMethod!
 basicNew
 	self error: 'Characters can only be created with #characterFor:'!
 

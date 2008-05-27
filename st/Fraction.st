@@ -129,7 +129,7 @@ Fraction method!
 compare: aNumber
     | a b |
     aNumber generality > self generality
-	ifTrue: [ ^(aNumber coerce: self) compare: aNumber ].
+		ifTrue: [ ^ (aNumber coerce: self) compare: aNumber ].
 
     ^ aNumber isFraction
 		ifTrue: [ | d |

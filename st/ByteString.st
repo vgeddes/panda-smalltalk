@@ -14,6 +14,28 @@ at: anInteger
 	anInteger isNumber
 		ifTrue: [ ^ self at: anInteger asInteger ]
 		ifFalse: [ self error: 'index is not an integer']!
+"
+ByteString method!!
+, aString
+	| bytes otherBytes array i j |
+
+	bytes := self bytes.
+	otherBytes := aString bytes.
+	array := ByteArray new: bytes size + otherBytes size.
+
+	i := 1.
+	j := 1.
+	
+	[i <= bytes size]
+		whileTrue: [ array at: i put: (bytes at: i).
+					 i := i + 1].
+
+	[j <= otherBytes size]
+		whileTrue: [ array at: i + j - 1 put: (otherBytes at: j).
+					 j := j + 1].
+
+	^ ByteString newFromBytes: array!!
+"
 
 ByteString method!
 size

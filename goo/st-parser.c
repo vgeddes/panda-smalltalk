@@ -556,7 +556,41 @@ parse_assign (STParser *parser, STNode *assignee)
 
     return node;
 }
+
+static STNode *
+parse_cascade (STParser *parser, STNode *first_message)
+{
+    STToken *token;
+    STNode *message, *node;
+    bool super_send = first_message->message.super_send;
+
+    token = current (parser->lexer);
+
+    node = st_node_new (ST_CASCADE_NODE);
+    node->line = st_token_line (token);
+
+    node->cascade.receiver = first_message->message.receiver;
+    node->cascade.messages = g_list_append (node->cascade.messages, first_message);
+
+    first_message->message.receiver = NULL;
+
+    while (st_token_type (token) == ST_TOKEN_SEMICOLON) {
     
+	next (parser, parser->lexer);
+
+	message = parse_message (parser, NULL);
+
+	if (message == NULL)
+	    parse_error (parser,"expected cascade", token);
+	    
+	message->message.super_send = super_send;	    
+
+	node->cascade.messages = g_list_append (node->cascade.messages, message);
+	token = current (parser->lexer);
+    }
+
+    return node;
+}   
  
 static STNode *
 parse_expression (STParser *parser)
@@ -606,35 +640,10 @@ parse_expression (STParser *parser)
     message->message.super_send = super_send;
 
     token = current (parser->lexer);
-    if (st_token_type (token) == ST_TOKEN_SEMICOLON) {
-
-	cascade = st_node_new (ST_CASCADE_NODE);
-
-	cascade->cascade.receiver = message->message.receiver;
-	message->message.receiver = NULL;
-	cascade->cascade.messages = g_list_append (cascade->cascade.messages, message);
-
-	while (st_token_type (token) == ST_TOKEN_SEMICOLON) {
-    
-	    next (parser, parser->lexer);
-
-	    message = parse_message (parser, NULL);
-
-	    if (message == NULL)
-		parse_error (parser,"expected cascade", token);
-	    
-	    message->message.super_send = super_send;	    
-
-	    cascade->cascade.messages = g_list_append (cascade->cascade.messages, message);
-	    token = current (parser->lexer);
-	}
-
-	return cascade;
-	
-    } else {
-
+    if (st_token_type (token) == ST_TOKEN_SEMICOLON)
+	return parse_cascade (parser, message);
+    else
 	return message;
-    }
 }
 
 static STNode *

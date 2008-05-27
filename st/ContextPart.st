@@ -22,3 +22,15 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 "
 
+ContextPart method!
+sender
+	^ sender!
+
+ContextPart method!
+ip
+	^ ip!
+
+ContextPart method!
+sp
+	^ sp!
+

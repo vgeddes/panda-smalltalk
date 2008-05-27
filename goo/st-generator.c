@@ -883,11 +883,9 @@ size_message_send (Generator *gt, STNode *node)
 	if (!node->message.super_send && node->message.selector == st_specials[i]) {
 	    size += 1;
 	    goto out;
-	    return size;
 	}
     }
 
-    g_assert (sizes[SEND] == sizes[SEND_SUPER]);
     size += sizes[SEND];
 
 out:
@@ -958,7 +956,7 @@ size_cascade (Generator *gt, STNode *node)
 
     for (GList *l = node->cascade.messages; l; l = l->next) {
 
-	size += size_message_send (gt, node); 
+	size += size_message_send (gt, (STNode *) l->data); 
 
 	if (l->next || node->cascade.is_statement)
 	    size += sizes[POP_STACK_TOP];
@@ -1014,6 +1012,7 @@ size_message (Generator *gt, STNode *node)
 	for (j = 0; j < G_N_ELEMENTS (generators[i].pattern); j++) {
 	    if (generators[i].pattern[j] && strcmp (generators[i].pattern[j], selector) == 0) {
 		size += generators[i].size_func (gt, node, j);
+		return size;
 	    }
 	}
     }

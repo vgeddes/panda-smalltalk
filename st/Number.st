@@ -103,7 +103,7 @@ to: stop by: step do: aBlock
     "Do aBlock increasing self to stop stepping by step. Pass the counter to aBlock"
     | i |
     i := self.
-    step positive
+    step isPositive
 	ifTrue: [
 	    [ i <= stop ]
 		whileTrue: [ aBlock value: i.
@@ -118,7 +118,7 @@ to: stop by: step reverseDo: aBlock
     "Do aBlock decreasing self to stop stepping by step. Pass the counter to aBlock"
     | i |
     i := self.
-    step positive
+    step isPositive
 	ifTrue: [
 	    [ i >= stop ]
 		whileTrue: [ aBlock value: i.
@@ -134,6 +134,18 @@ to: stop by: step reverseDo: aBlock
 Number method!
 asFraction
     ^ Fraction numerator: self denominator: 1!
+
+Number method!
+asNumber
+    ^ self!
+
+Number method!
+asInteger
+    self subclassResponsibility!
+
+Number method!
+asFloat
+    self subclassResponsibility!
 
 Number method!
 zero
@@ -157,7 +169,7 @@ coerce: aNumber
 Number method!
 negated
     self ~= self zero
-		ifTrue: [ ^self zero - self ]!
+		ifTrue: [ ^ self zero - self ]!
 
 Number method!
 abs
@@ -263,8 +275,6 @@ Number method!
 
 Number method!
 = aNumber
-	[ ^ false ] value.
-
     "Coerce aNumber and compare equality"
     aNumber isNumber
 		ifFalse: [ ^ false ].
@@ -285,22 +295,22 @@ Number method!
 
 Number method!
 zeroDivide
-    self notYetImplemented!
+    self error: 'division by zero'!
 
 
 "mathematics"
 
 Number method!
 exp
-    self notYetImplemented!
+    ^ self asFloat exp!
 
 Number method!
 ln
-    self notYetImplemented!
+    ^ self asFloat ln!
 
 Number method!
 log: aNumber
-    self notYetImplemented!
+	^ self ln / aNumber ln!
 
 Number method!
 floorLog: radix
@@ -316,14 +326,40 @@ raisedToInteger: anInteger
 
 Number method!
 sqrt
-    self notYetImplemented!
+    ^ self asFloat sqrt!
+
+Number method!
+sin
+    ^ self asFloat sin!
+
+Number method!
+cos
+    ^ self asFloat cos!
+
+Number method!
+tan
+    ^ self asFloat tan!
+
+Number method!
+arcSin
+    ^ self asFloat arcSin!
+
+Number method!
+arcCos
+    ^ self asFloat arcCos!
+
+Number method!
+arcTan
+    ^ self asFloat arcTan!
 
 Number method!
 squared
     "Answer the square of the receiver"
     ^ self * self!
 
+
 "printing"
+
 Number method!
 printString
 	^ self printStringRadix: 10!

@@ -40,3 +40,10 @@ and: aBlock
 True method!
 or: aBlock
 	^ true!
+
+
+"printing"
+
+True method!
+printOn: aStream
+	aStream nextPutAll: 'true'!

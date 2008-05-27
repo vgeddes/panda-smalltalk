@@ -24,10 +24,6 @@ DEALINGS IN THE SOFTWARE.
 "coercing"
 
 Float method!
-asFraction
-    ^ self notYetImplemented!
-
-Float method!
 asFloat
     ^ self!
 
@@ -107,9 +103,80 @@ Float method!
 
 Float method!
 / aNumber
-     <primitive: 'Float_div'>
-	^super / aNumber!
+	<primitive: 'Float_div'>
+	^ super / aNumber!
 
 Float method!
 \\ aNumber
      self notYetImplemented!
+
+
+"rounding & truncation"
+
+Float method!
+truncated
+	<primitive: 'Float_truncated'>
+	self primitiveFailed!
+
+Float method!
+fractionPart
+	<primitive: 'Float_fractionPart'>
+	self primitiveFailed!
+
+Float method!
+integerPart
+	<primitive: 'Float_integerPart'>
+	self primitiveFailed!
+
+
+"mathematics"
+
+Float method!
+sin
+	<primitive: 'Float_sin'>
+	self primitiveFailed!
+
+Float method!
+cos
+	<primitive: 'Float_cos'>
+	self primitiveFailed!
+
+Float method!
+tan
+	<primitive: 'Float_tan'>
+	self primitiveFailed!
+
+Float method!
+arcSin
+	<primitive: 'Float_arcSin'>
+	self primitiveFailed!
+
+Float method!
+arcCos
+	<primitive: 'Float_arcSin'>
+	self primitiveFailed!
+
+Float method!
+arcTan
+	<primitive: 'Float_arcTan'>
+	self primitiveFailed!
+
+Float method!
+exp
+	<primitive: 'Float_exp'>
+	self primitiveFailed!
+
+Float method!
+ln
+	<primitive: 'Float_ln'>
+	self primitiveFailed!
+
+Float method!
+log
+	<primitive: 'Float_log'>
+	self primitiveFailed!
+
+Float method!
+sqrt
+	<primitive: 'Float_sqrt'>
+	self primitiveFailed!

@@ -88,7 +88,8 @@ bitXor: aNumber
 
 LargeInteger method!
 asFloat
-	self notYetImplemented!
+	<primitive: 'LargeInteger_asFloat'>
+	self primitiveFailed!
 
 LargeInteger method!
 asLargeInteger

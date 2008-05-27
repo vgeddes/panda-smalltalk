@@ -343,6 +343,21 @@ SmallInteger_asFloat (STExecutionState *es)
 	ST_STACK_UNPOP (es, 2);
 }
 
+static void
+SmallInteger_asLargeInteger (STExecutionState *es)
+{
+    st_smi x = pop_integer (es);
+    st_oop result = st_nil;
+
+    if (es->success)
+	result = st_large_integer_new_from_smi (x);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
 INLINE st_oop
 pop_large_integer (STExecutionState *es)
 {
@@ -676,6 +691,21 @@ LargeInteger_bitXor (STExecutionState *es)
 }
 
 static void
+LargeInteger_asFloat (STExecutionState *es)
+{
+    st_oop receiver = pop_large_integer (es);
+    char  *string;
+    double dblval;
+
+    string = st_large_integer_to_string (receiver, 10);
+
+    dblval = g_ascii_strtod (string, NULL);
+    g_free (string);
+
+    ST_STACK_PUSH (es, st_float_new (dblval));
+}
+
+static void
 LargeInteger_printString (STExecutionState *es)
 {
     st_smi radix = pop_integer (es);
@@ -871,19 +901,214 @@ Float_div (STExecutionState *es)
 }
 
 static void
-Float_truncated (STExecutionState *es)
+Float_sin (STExecutionState *es)
 {
-    st_oop x = pop_float (es);
-    st_oop result = st_nil;
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
 
-    if (es->success)
-	result = (int) st_float_value (x);
+    value = st_float_value (receiver);
+
+    result = st_float_new (sin (value));
 
     if (es->success)
 	ST_STACK_PUSH (es, result);
     else
 	ST_STACK_UNPOP (es, 1);
 }
+
+static void
+Float_cos (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (cos (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_tan (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (tan (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_arcSin (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (asin (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_arcCos (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (acos (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_arcTan (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (atan (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_sqrt (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (sqrt (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_log (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (log10 (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_ln (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (log (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_exp (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_oop result;
+    double value;
+
+    value = st_float_value (receiver);
+
+    result = st_float_new (exp (value));
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 1);
+}
+
+static void
+Float_truncated (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    st_smi result;
+
+    result = (st_smi) trunc (st_float_value (receiver));
+
+    ST_STACK_PUSH (es, st_smi_new (result));
+}
+
+static void
+Float_fractionPart (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    double frac_part, int_part;
+    st_oop result;
+
+    frac_part = modf (st_float_value (receiver), &int_part);
+
+    result = st_float_new (frac_part);
+
+    ST_STACK_PUSH (es, result);
+}
+
+static void
+Float_integerPart (STExecutionState *es)
+{
+    st_oop receiver = ST_STACK_POP (es);
+    double int_part;
+    st_oop result;
+
+    modf (st_float_value (receiver), &int_part);
+
+    result = st_smi_new ((st_smi) int_part);
+
+    ST_STACK_PUSH (es, result);
+}
+
 
 static void
 print_backtrace (STExecutionState *es)
@@ -978,7 +1203,6 @@ Object_equivalent (STExecutionState *es)
     
     ST_STACK_PUSH (es, ((x == y) ? st_true : st_false));
 }
-
 
 static void
 Object_perform (STExecutionState *es)
@@ -1497,7 +1721,9 @@ UndefinedObject_exitWithResult (STExecutionState *es)
 static void
 Character_value (STExecutionState *es)
 {
-    ST_STACK_PUSH (es, st_smi_new (st_character_value (ST_STACK_POP (es))));
+    st_oop receiver = ST_STACK_POP (es);
+
+    ST_STACK_PUSH (es, st_smi_new (st_character_value (receiver)));
 }
 
 static void
@@ -1513,7 +1739,7 @@ Character_characterFor (STExecutionState *es)
 	ST_STACK_PUSH (es, st_character_new (value));
     else
 	ST_STACK_UNPOP (es, 2);
-}
+} 
 
 
 const STPrimitive st_primitives[] = {
@@ -1533,7 +1759,8 @@ const STPrimitive st_primitives[] = {
     { "SmallInteger_bitXor",   SmallInteger_bitXor   },
     { "SmallInteger_bitAnd",   SmallInteger_bitAnd   },
     { "SmallInteger_bitShift", SmallInteger_bitShift },
-    { "SmallInteger_asFloat",  SmallInteger_asFloat  },
+    { "SmallInteger_asFloat",         SmallInteger_asFloat  },
+    { "SmallInteger_asLargeInteger",  SmallInteger_asLargeInteger  },
 
     { "LargeInteger_add",      LargeInteger_add      },
     { "LargeInteger_sub",      LargeInteger_sub      },
@@ -1551,6 +1778,7 @@ const STPrimitive st_primitives[] = {
     { "LargeInteger_bitXor",   LargeInteger_bitXor   },
     { "LargeInteger_bitAnd",   LargeInteger_bitAnd   },
     { "LargeInteger_printString", LargeInteger_printString   },
+    { "LargeInteger_asFloat",     LargeInteger_asFloat   },
 
     { "Float_add",             Float_add           },
     { "Float_minus",           Float_minus         },
@@ -1562,7 +1790,19 @@ const STPrimitive st_primitives[] = {
     { "Float_ne",              Float_ne            },
     { "Float_mul",             Float_mul           },
     { "Float_div",             Float_div           },
+    { "Float_exp",             Float_exp           },
+    { "Float_sin",             Float_sin           },
+    { "Float_cos",             Float_cos           },
+    { "Float_tan",             Float_tan           },
+    { "Float_arcSin",          Float_arcSin        },
+    { "Float_arcCos",          Float_arcCos        },
+    { "Float_arcTan",          Float_arcTan        },
+    { "Float_ln",              Float_ln            },
+    { "Float_log",             Float_log           },
+    { "Float_sqrt",            Float_sqrt          },
     { "Float_truncated",       Float_truncated     },
+    { "Float_fractionPart",    Float_fractionPart  },
+    { "Float_integerPart",     Float_integerPart   },
 
     { "Object_error",                  Object_error                },
     { "Object_class",                  Object_class                },
@@ -1604,8 +1844,6 @@ const STPrimitive st_primitives[] = {
     { "BlockContext_value_value",         BlockContext_value_value         },
     { "BlockContext_value_value_value",   BlockContext_value_value_value   },
     { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
-
-
 };
 
 /* returns 0 if there no primitive function corresponding

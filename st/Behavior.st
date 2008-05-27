@@ -26,6 +26,12 @@ Class method!
 name
 	^ name!
 
+Metaclass method!
+name
+	instanceClass = nil
+		ifTrue: [^ 'a Metaclass']
+		ifFalse: [^ instanceClass name , ' class']!
+
 Behavior method!
 format
 	^ format!

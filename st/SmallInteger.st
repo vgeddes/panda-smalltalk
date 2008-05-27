@@ -139,17 +139,6 @@ fibonacci
 		ifTrue: [ ^ 1 ]
 		ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
 
-SmallInteger method!
-max: aNumber
-	(self >= aNumber)
-		ifTrue: [ ^ self ]
-		ifFalse: [ ^ aNumber ]!
-
-SmallInteger method!
-min: aNumber
-	(self >= aNumber)
-		ifTrue: [ ^ aNumber ]
-		ifFalse: [ ^ self ]!
 
 
 "testing"
@@ -161,6 +150,7 @@ isSmallInteger
 SmallInteger method!
 isLargeInteger
 	^ false!
+
 
 "coercing"
 
@@ -174,10 +164,19 @@ asFloat
 	self primitiveFailed!
 
 SmallInteger method!
+asLargeInteger    
+	<primitive: 'SmallInteger_asLargeInteger'>
+	self primitiveFailed!
+
+SmallInteger method!
 generality    
 	^ 10!
 
 SmallInteger method!
 zero    
 	^ 0!
+
+SmallInteger method!
+unity    
+	^ 1!
 

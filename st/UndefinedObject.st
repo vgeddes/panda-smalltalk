@@ -22,6 +22,12 @@ ifNotNil: alternativeBlock
 	^ nil!
 
 
+"printing"
+
+UndefinedObject method!
+printOn: aStream
+	aStream nextPutAll: 'nil'!
+
 "system"
 
 UndefinedObject method!

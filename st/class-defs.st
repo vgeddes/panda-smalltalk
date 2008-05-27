@@ -164,7 +164,7 @@ Class named: 'ByteString'
       classVariableNames: ''!
 
 Class named: 'ByteSymbol'
-	  superclass: 'String'
+	  superclass: 'ByteString'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 

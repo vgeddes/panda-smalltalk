@@ -228,14 +228,14 @@ st_interpreter_main (STExecutionState *es)
 	    break;
 	    
 	case STORE_TEMP:
-	    
+
 	    es->temps[ip[1]] = ST_STACK_PEEK (es);
 	    
 	    ip += 2;
 	    break;
 	    
 	case PUSH_TEMP:
-	    
+
 	    ST_STACK_PUSH (es, es->temps[ip[1]]);
 	    
 	    ip += 2;
@@ -298,7 +298,7 @@ st_interpreter_main (STExecutionState *es)
 	    break;
 	     
 	case PUSH_LITERAL_CONST:
-	    
+
 	    ST_STACK_PUSH (es, es->literals[ip[1]]);
 	    
 	    ip += 2;
@@ -307,7 +307,7 @@ st_interpreter_main (STExecutionState *es)
 	case PUSH_LITERAL_VAR:
 	{
 	    st_oop var;
-	    
+
 	    var = st_association_value (es->literals[ip[1]]);
 	    
 	    ST_STACK_PUSH (es, var);
@@ -681,14 +681,14 @@ st_interpreter_main (STExecutionState *es)
 	}
 	
 	case POP_STACK_TOP:
-	    
+
 	    (void) ST_STACK_POP (es);
 	    
 	    ip += 1;
 	    break;
 
 	case DUPLICATE_STACK_TOP:
-	    
+ 
 	    ST_STACK_PUSH (es, ST_STACK_PEEK (es));
 	    
 	    ip += 1;
@@ -696,6 +696,7 @@ st_interpreter_main (STExecutionState *es)
 	    
 	case BLOCK_COPY:
 	{
+
 	    st_oop block;
 	    st_oop home;
 	    guint argcount = ip[1];
@@ -733,10 +734,12 @@ st_interpreter_main (STExecutionState *es)
 		ST_STACK_PUSH (es, es->context);
 		ST_STACK_PUSH (es, value);
 		SEND_SELECTOR (es, st_selector_cannotReturn, 1);
+		break;
 	    }
 	    
 	    ACTIVATE_CONTEXT (es, sender);
 	    ST_STACK_PUSH (es, value);
+
 	    break;
 	}
 	

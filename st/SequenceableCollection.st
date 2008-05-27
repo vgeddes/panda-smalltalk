@@ -1,5 +1,26 @@
 
 
+"copying"
+
+SequenceableCollection method!
+, aCollection
+	| collection |
+
+	collection := self species new: (self size + aCollection size).
+
+	collection replaceFrom: 1
+			   to: self size
+			   with: self
+			   startingAt: 1.
+
+	collection replaceFrom: self size + 1
+			   to: collection size
+			   with: aCollection
+			   startingAt: 1.
+
+	^ collection!
+
+
 "accessing"
 
 SequenceableCollection method!

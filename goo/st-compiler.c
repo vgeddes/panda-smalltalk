@@ -20,9 +20,6 @@ typedef struct {
     const char *filename;
     STInput    *input;
 
-    /* major, minor */
-    int version[2];
-
     int line;
 
 } FileInParser;
@@ -36,7 +33,6 @@ typedef struct {
  * This function will compile a source string into a new CompiledMethod,
  * and place the method in the methodDictionary of the given class.
  */
-
 bool
 st_compile_string (st_oop klass, const char *string, STError **error)
 {
@@ -228,7 +224,6 @@ parse_chunks (FileInParser *parser)
 {
     STLexer *lexer;
     
-    /* parse all chunks */
     while (st_input_look_ahead (parser->input, 1) != ST_INPUT_EOF) {
 	
 	lexer = next_chunk (parser);
@@ -240,16 +235,16 @@ parse_chunks (FileInParser *parser)
 }
 
 void
-st_file_in (const char *filename)
+st_compile_file_in (const char *filename)
 {
-    char *contents;
+    char *buffer;
     GError *error = NULL;
     FileInParser *parser;
 
     g_assert (filename != NULL);
 
     g_file_get_contents (filename,
-			 &contents,
+			 &buffer,
 			 NULL,
 			 &error);
     if (error) {
@@ -260,18 +255,18 @@ st_file_in (const char *filename)
     
     parser = g_slice_new0 (FileInParser);
 
-    parser->input = st_input_new (contents, &error);
+    parser->input = st_input_new (buffer, &error);
     if (error) {
 	g_warning ("could not validate input file '%s': %s", filename, error->message);
 	g_error_free (error);
 	return;
     }
+
     parser->filename = g_path_get_basename (filename);
     parser->line     = 1;
 
     parse_chunks (parser);
 
     g_slice_free (FileInParser, parser);
-
 }
 
