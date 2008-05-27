@@ -170,6 +170,14 @@ isFraction
 "error handling"
 
 Object method!
+assert: aBlock
+	aBlock value or: [ self error: 'assertion failed' ]!
+
+Object method!
+assert: aBlock description: aString
+	aBlock value or: [ self error: aString ]! 
+
+Object method!
 error: aString 
 	<primitive: 'Object_error'>!
 
@@ -202,6 +210,18 @@ subclassResponsibility
 Object method!
 notYetImplemented
 	self error: 'This method is not yet implemented'!
+
+
+"copying"
+
+Object method!
+copy
+	^ self basicCopy!
+
+Object method!
+basicCopy
+	<primitive: 'Object_copy'>
+	self primitiveFailed!
 
 
 "private"

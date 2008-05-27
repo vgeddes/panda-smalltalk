@@ -35,7 +35,7 @@ allocate_arrayed (st_oop klass, st_smi size)
     st_oop array = st_allocate_object (ST_TYPE_SIZE (STArray) + size);
 
     st_heap_object_initialize_header (array, klass);
-    ST_ARRAY (array)->size = st_smi_new (size);    
+    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
 
     st_oop *elements = st_array_element (array, 1);
     for (st_smi i = 0; i < size; i++)
@@ -50,13 +50,32 @@ allocate (st_oop klass)
     return allocate_arrayed (klass, 0);
 }
 
+static st_oop
+array_copy (st_oop object)
+{
+    st_oop copy;
+    st_smi size;
+
+    size = st_smi_value (st_arrayed_object_size (object));
+
+    copy = st_object_new_arrayed (st_object_class (object), size);
+
+    st_oops_copy (st_array_element (copy, 1),
+		  st_array_element (object, 1),
+		  size);
+
+    return copy;
+}
+
 const STDescriptor *
 st_array_descriptor (void)
 {
     static const STDescriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = allocate_arrayed,
+	  .copy             = array_copy,
 	};
 
     return & __descriptor;
 }
+

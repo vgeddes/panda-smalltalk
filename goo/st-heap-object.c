@@ -113,13 +113,33 @@ allocate (st_oop klass)
     return object;
 }
 
+static st_oop
+object_copy (st_oop object)
+{
+    st_oop klass;
+    st_oop copy;
+    st_smi instance_size;
+
+    klass = st_heap_object_class (object);
+    instance_size = st_smi_value (st_behavior_instance_size (klass));
+    copy = st_object_new (klass);
+
+    st_oops_copy (st_heap_object_body (copy),
+		  st_heap_object_body (object),
+		  instance_size);
+
+    return copy;
+}
+
 const STDescriptor *
 st_heap_object_descriptor (void)
 {
     static const STDescriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
+	  .copy             = object_copy,
 	};
 
     return & __descriptor;
 }
+

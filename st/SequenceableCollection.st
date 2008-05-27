@@ -21,6 +21,33 @@ SequenceableCollection method!
 	^ collection!
 
 
+"comparing"
+
+SequenceableCollection method!
+= aCollection
+	| i |
+	
+	self size = aCollection size
+		ifFalse: [ ^ false ].
+
+	i := 1.
+	self do: [ :element |
+		element = (aCollection at: i) ifFalse: [ ^ false ].
+		i := i + 1 ].
+
+	^ true!
+
+SequenceableCollection method!
+hash
+	| hash |
+
+	hash := 11111111111111111.
+
+	self do: [ :element |
+		hash := hash bitXor: ((hash bitShift: 5) + element hash + (hash bitShift: -2))].
+
+	^ hash!
+
 "accessing"
 
 SequenceableCollection method!

@@ -25,10 +25,27 @@
 #include "st-symbol.h"
 #include "st-hashed-collection.h"
 #include "st-byte-array.h"
+#include "st-word-array.h"
 #include "st-object.h"
 
 #include <string.h>
 
+
+char *
+st_string_bytes (st_oop string)
+{
+    if (st_object_class (string) == st_string_class) {
+	return g_strdup ((const char *) st_byte_array_bytes (string));
+
+    } else if (st_object_class (string) == st_wide_string_class) {
+	return g_ucs4_to_utf8 (st_word_array_element (string, 1),
+			       st_smi_value (st_arrayed_object_size (string)),
+			       NULL, NULL, NULL);
+    } else {
+	g_assert_not_reached ();
+	return NULL;
+    }
+}
 
 bool
 st_symbol_equal (st_oop object, st_oop other)
@@ -45,11 +62,13 @@ st_symbol_equal (st_oop object, st_oop other)
 static st_oop
 string_new (st_oop klass, const char *bytes)
 {
-    int len = strlen (bytes);
-
-    st_oop string = st_object_new_arrayed (klass, len);
-
-    guchar *data = st_byte_array_bytes (string);
+    st_oop  string;
+    guchar *data;
+    int len;
+    
+    len = strlen (bytes);
+    string = st_object_new_arrayed (klass, len);
+    data = st_byte_array_bytes (string);
 
     memcpy (data, bytes, len);
 
@@ -66,10 +85,11 @@ st_oop
 st_symbol_new (const char *bytes)
 {
     st_oop element = st_set_like (st_symbol_table, st_string_new (bytes));
+    st_oop symbol;
 
     if (element == st_nil) {
 
-	st_oop symbol = string_new (st_symbol_class, bytes);
+	symbol = string_new (st_symbol_class, bytes);
 
 	st_set_add (st_symbol_table, symbol);
 

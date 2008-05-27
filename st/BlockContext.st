@@ -8,22 +8,17 @@ value
 
 BlockContext method!
 value: argument
-	<primitive: 'BlockContext_valueColon'>
+	<primitive: 'BlockContext_value'>
 	self primitiveFailed!
 
 BlockContext method!
 value: firstArgument value: secondArgument
-	<primitive: 'BlockContext_value_value'>
+	<primitive: 'BlockContext_value'>
 	self primitiveFailed!
 
 BlockContext method!
 value: firstArgument value: secondArgument value: thirdArgument
-	<primitive: 'BlockContext_value_value_value'>
-	self primitiveFailed!
-
-BlockContext method!
-valueWithArguments: anArray
-	<primitive: 'BlockContext_valueWithArguments'>
+	<primitive: 'BlockContext_value'>
 	self primitiveFailed!
 
 BlockContext method!

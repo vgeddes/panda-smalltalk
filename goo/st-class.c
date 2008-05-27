@@ -48,7 +48,7 @@ st_behavior_all_instance_variables (st_oop klass)
 
     names = st_behavior_instance_variables (klass);
     if (names != st_nil) {
-	size = st_smi_value (st_array_size (names));
+	size = st_smi_value (st_arrayed_object_size (names));
 	for (st_smi i = 1; i <= size; i++)
 	    b = g_list_prepend (b, (gpointer) g_strdup (st_byte_array_bytes (st_array_at (names, i))));
     }

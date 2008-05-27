@@ -47,6 +47,11 @@ value: aValue
 	value := aValue!
 
 
+"comparing"
+
+	
+
+
 "printing"
 
 Association method!

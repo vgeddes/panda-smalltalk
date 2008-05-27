@@ -77,7 +77,7 @@ print_tuple (st_oop tuple)
 {
     int size;
 
-    size = st_smi_value (st_array_size (tuple));
+    size = st_smi_value (st_arrayed_object_size (tuple));
 
     printf ("#(");
     for (int i = 1; i <= size; i++) {

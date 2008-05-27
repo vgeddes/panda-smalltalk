@@ -33,7 +33,6 @@ typedef struct
 {
     STHeader header;
 
-    st_oop size;
     double elements[];
 
 } STFloatArray;

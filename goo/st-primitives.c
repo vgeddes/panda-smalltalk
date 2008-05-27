@@ -50,10 +50,28 @@ INLINE st_smi
 pop_integer (STExecutionState *es)
 {
     st_oop object = ST_STACK_POP (es);
-    
-    set_success (es, st_object_is_smi (object));    
+  
+    if (G_LIKELY (st_object_is_smi (object)))
+	return st_smi_value (object);	
 
-    return st_smi_value (object);
+    set_success (es, false);    
+
+    return 0;
+}
+
+INLINE st_smi
+pop_integer32 (STExecutionState *es)
+{
+    st_oop object = ST_STACK_POP (es);
+ 
+    if (G_LIKELY (st_object_is_smi (object)))
+	return st_smi_value (object);
+    else if (st_object_class (object) == st_large_integer_class)
+	return (st_smi) mp_get_int (st_large_integer_value (object));
+   
+    set_success (es, false);    
+
+    return 0;
 }
 
 static void
@@ -73,7 +91,7 @@ SmallInteger_add (STExecutionState *es)
 }
 
 static void
-SmallInteger_minus (STExecutionState *es)
+SmallInteger_sub (STExecutionState *es)
 {
     st_smi y = pop_integer (es);
     st_smi x = pop_integer (es);
@@ -691,6 +709,25 @@ LargeInteger_bitXor (STExecutionState *es)
 }
 
 static void
+LargeInteger_bitShift (STExecutionState *es)
+{
+    st_oop receiver = pop_large_integer (es);
+    st_smi displacement = pop_integer32 (es);
+    st_oop result;
+    bool error;
+    
+    if (es->success)
+	result = st_large_integer_bitshift (receiver, displacement, &error);
+
+    set_success (es, error == false);
+
+    if (es->success)
+	ST_STACK_PUSH (es, result);
+    else
+	ST_STACK_UNPOP (es, 2);
+}
+
+static void
 LargeInteger_asFloat (STExecutionState *es)
 {
     st_oop receiver = pop_large_integer (es);
@@ -755,7 +792,7 @@ Float_add (STExecutionState *es)
 }
 
 static void
-Float_minus (STExecutionState *es)
+Float_sub (STExecutionState *es)
 {
     st_oop y = pop_float (es);
     st_oop x = pop_float (es);
@@ -1132,7 +1169,11 @@ print_backtrace (STExecutionState *es)
 	receiver = st_method_context_receiver (home);
 
 	selector = (char*) st_byte_array_bytes (st_method_selector (st_method_context_method (home)));
-	klass    = (char*) st_byte_array_bytes (st_class_name (st_object_class (receiver)));
+  
+	if (st_object_class (st_object_class (receiver)) == st_metaclass_class)
+	    klass = g_strdup_printf ("%s class", (char *) st_byte_array_bytes (st_class_name (receiver)));
+	else
+	    klass = (char*) st_byte_array_bytes (st_class_name (st_object_class (receiver)));    
 
 	printf ("%s>>#%s", klass, selector);
 	if (st_object_class (context) == st_block_context_class)
@@ -1181,10 +1222,12 @@ Object_identityHash (STExecutionState *es)
     
     object = ST_STACK_POP (es);
     
-    if (st_object_is_smi (object))
+    if (st_object_is_heap (object))
+	result = st_smi_new (st_heap_object_hash (object));
+    else if (st_object_is_smi (object))
 	result = st_smi_new (st_smi_hash (object));
     else
-	result = st_smi_new (st_heap_object_hash (object));
+	result = st_smi_new (st_character_hash (object));
     
     ST_STACK_PUSH (es, result);
 }
@@ -1192,7 +1235,17 @@ Object_identityHash (STExecutionState *es)
 static void
 Object_copy (STExecutionState *es)
 {
-    g_assert_not_reached ();
+    st_oop receiver;
+    st_oop copy;
+
+    receiver = ST_STACK_POP (es);
+
+    if (st_object_is_heap (receiver))
+	copy = st_heap_object_descriptor_for_object (receiver)->copy (receiver);
+    else
+	copy = receiver;
+
+    ST_STACK_PUSH (es, copy);
 }
 
 static void
@@ -1255,7 +1308,7 @@ Object_perform_withArguments (STExecutionState *es)
     else
 	method = st_method_context_method (es->context);
 
-    array_size = st_smi_value (st_array_size (array));
+    array_size = st_smi_value (st_arrayed_object_size (array));
     set_success (es, (es->sp + array_size - 1) < st_method_stack_depth (method));
 
     if (es->success) {
@@ -1311,7 +1364,7 @@ Behavior_newSize (STExecutionState *es)
     st_smi size;
     st_oop instance;
 
-    size = pop_integer (es);
+    size = pop_integer32 (es);
     klass = ST_STACK_POP (es);
 
     instance = st_object_new_arrayed (klass, size);
@@ -1326,7 +1379,7 @@ Array_at (STExecutionState *es)
     st_oop receiver = ST_STACK_POP (es);
     st_oop result;
 	
-    if (!st_array_range_check (receiver, index)) {
+    if (!st_arrayed_object_range_check (receiver, index)) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 2);
 	return;
@@ -1341,10 +1394,10 @@ static void
 Array_at_put (STExecutionState *es)
 {
     st_oop object   = ST_STACK_POP (es);
-    st_smi index    = pop_integer (es);
+    st_smi index    = pop_integer32 (es);
     st_oop receiver = ST_STACK_POP (es);
 
-    if (!st_array_range_check (receiver, index)) {
+    if (!st_arrayed_object_range_check (receiver, index)) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 3);
 	return;
@@ -1355,7 +1408,6 @@ Array_at_put (STExecutionState *es)
     ST_STACK_PUSH (es, object);
 }
 
-
 static void
 Array_size (STExecutionState *es)
 {
@@ -1363,14 +1415,14 @@ Array_size (STExecutionState *es)
 
     object = ST_STACK_POP (es);
 
-    ST_STACK_PUSH (es, st_array_size (object));
+    ST_STACK_PUSH (es, st_arrayed_object_size (object));
 }
 
 
 static void
 ByteArray_at (STExecutionState *es)
 {
-    st_smi index    = pop_integer (es);
+    st_smi index    = pop_integer32 (es);
     st_oop receiver = ST_STACK_POP (es);
     st_oop result;
 	
@@ -1379,7 +1431,7 @@ ByteArray_at (STExecutionState *es)
 	return;
     }
 
-    if (!st_byte_array_range_check (receiver, index)) {
+    if (!st_arrayed_object_range_check (receiver, index)) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 2);
 	return;
@@ -1394,7 +1446,7 @@ static void
 ByteArray_at_put (STExecutionState *es)
 {
     st_smi byte     = pop_integer (es);
-    st_smi index    = pop_integer (es);
+    st_smi index    = pop_integer32 (es);
     st_oop receiver = ST_STACK_POP (es);
 
     if (!es->success) {
@@ -1402,7 +1454,7 @@ ByteArray_at_put (STExecutionState *es)
 	return;
     }
 
-    if (!st_byte_array_range_check (receiver, index)) {
+    if (!st_arrayed_object_range_check (receiver, index)) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 3);
 	return;
@@ -1420,13 +1472,13 @@ ByteArray_size (STExecutionState *es)
 
     object = ST_STACK_POP (es);
 
-    ST_STACK_PUSH (es, st_byte_array_size (object));
+    ST_STACK_PUSH (es, st_arrayed_object_size (object));
 }
 
 static void
 ByteString_at (STExecutionState *es)
 {
-    st_smi  index = pop_integer (es);
+    st_smi  index = pop_integer32 (es);
     st_oop  receiver = ST_STACK_POP (es);
     st_oop  character;
     char   *charptr;
@@ -1436,7 +1488,7 @@ ByteString_at (STExecutionState *es)
 	return;
     }
 
-    if (G_UNLIKELY (!st_byte_array_range_check (receiver, index))) {
+    if (G_UNLIKELY (!st_arrayed_object_range_check (receiver, index))) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 2);
 	return;	
@@ -1573,7 +1625,7 @@ ByteString_hash (STExecutionState *es)
 static void
 WideString_at (STExecutionState *es)
 {
-    st_smi index    = pop_integer (es);
+    st_smi index    = pop_integer32 (es);
     st_oop receiver = ST_STACK_POP (es);
     st_oop character;
 	
@@ -1582,7 +1634,7 @@ WideString_at (STExecutionState *es)
 	return;
     }
 
-    if (!st_word_array_range_check (receiver, index)) {
+    if (!st_arrayed_object_range_check (receiver, index)) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 2);
 	return;
@@ -1597,7 +1649,7 @@ static void
 WideString_at_put (STExecutionState *es)
 {
     st_oop character = ST_STACK_POP (es);
-    st_smi index    = pop_integer (es);
+    st_smi index    = pop_integer32 (es);
     st_oop receiver = ST_STACK_POP (es);
 	
     if (!es->success) {
@@ -1607,7 +1659,7 @@ WideString_at_put (STExecutionState *es)
   
     set_success (es, st_object_class (character) == st_character_class);
 
-    if (!st_word_array_range_check (receiver, index)) {
+    if (!st_arrayed_object_range_check (receiver, index)) {
 	set_success (es, false);
 	ST_STACK_UNPOP (es, 3);
 	return;
@@ -1625,7 +1677,7 @@ WordArray_size (STExecutionState *es)
 
     receiver = ST_STACK_POP (es);
 
-    ST_STACK_PUSH (es, st_word_array_size (receiver));
+    ST_STACK_PUSH (es, st_arrayed_object_size (receiver));
 }
 
 INLINE void
@@ -1661,24 +1713,6 @@ BlockContext_value (STExecutionState *es)
 }
 
 static void
-BlockContext_valueColon (STExecutionState *es)
-{
-    activate_block_context (es);
-}
-
-static void
-BlockContext_value_value (STExecutionState *es)
-{
-    activate_block_context (es);
-}
-
-static void
-BlockContext_value_value_value (STExecutionState *es)
-{
-    activate_block_context (es);
-}
-
-static void
 BlockContext_valueWithArguments (STExecutionState *es)
 {
     st_oop block;
@@ -1694,7 +1728,7 @@ BlockContext_valueWithArguments (STExecutionState *es)
     }
 
     argcount = st_smi_value (st_block_context_argcount (block));
-    if (argcount != st_smi_value (st_array_size (values))) {
+    if (argcount != st_smi_value (st_arrayed_object_size (values))) {
 	st_interpreter_set_success (es, false);
 	return;
     }
@@ -1744,7 +1778,7 @@ Character_characterFor (STExecutionState *es)
 
 const STPrimitive st_primitives[] = {
     { "SmallInteger_add",      SmallInteger_add      },
-    { "SmallInteger_minus",    SmallInteger_minus    },
+    { "SmallInteger_sub",      SmallInteger_sub      },
     { "SmallInteger_lt",       SmallInteger_lt       },
     { "SmallInteger_gt",       SmallInteger_gt       },
     { "SmallInteger_le",       SmallInteger_le       },
@@ -1777,11 +1811,12 @@ const STPrimitive st_primitives[] = {
     { "LargeInteger_bitOr",    LargeInteger_bitOr    },
     { "LargeInteger_bitXor",   LargeInteger_bitXor   },
     { "LargeInteger_bitAnd",   LargeInteger_bitAnd   },
+    { "LargeInteger_bitShift", LargeInteger_bitShift },
     { "LargeInteger_printString", LargeInteger_printString   },
     { "LargeInteger_asFloat",     LargeInteger_asFloat   },
 
     { "Float_add",             Float_add           },
-    { "Float_minus",           Float_minus         },
+    { "Float_sub",             Float_sub           },
     { "Float_lt",              Float_lt            },
     { "Float_gt",              Float_gt            },
     { "Float_le",              Float_le            },
@@ -1840,9 +1875,6 @@ const STPrimitive st_primitives[] = {
     { "Character_characterFor",         Character_characterFor },
 
     { "BlockContext_value",               BlockContext_value               },
-    { "BlockContext_valueColon",          BlockContext_valueColon          },
-    { "BlockContext_value_value",         BlockContext_value_value         },
-    { "BlockContext_value_value_value",   BlockContext_value_value_value   },
     { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
 };
 

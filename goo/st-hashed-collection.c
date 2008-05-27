@@ -35,7 +35,7 @@
 #define DEFAULT_CAPACITY      5
 #define TALLY(collection)    (ST_HASHED_COLLECTION (collection)->tally)
 #define ARRAY(collection)    (ST_HASHED_COLLECTION (collection)->array)
-#define ARRAY_SIZE(array)    (st_smi_value (st_array_size (array)))
+#define ARRAY_SIZE(array)    (st_smi_value (st_arrayed_object_size (array)))
 
 #define ST_HASHED_COLLECTION(oop) ((STHashedCollection *) ST_POINTER (oop))
 

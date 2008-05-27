@@ -83,6 +83,11 @@ bitXor: aNumber
      <primitive: 'LargeInteger_bitAnd'>
 	 ^ super bitXor: aNumber!
 
+LargeInteger method!
+bitShift: aNumber
+     <primitive: 'LargeInteger_bitShift'>
+	 ^ super bitShift: aNumber!
+
 
 "coercion"
 

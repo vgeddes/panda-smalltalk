@@ -31,41 +31,22 @@
 
 typedef struct
 {
-    STHeader header;
-
-    st_oop size;
+    STArrayedObject header;
 
     st_oop elements[];
 
 } STArray;
 
+INLINE st_oop *st_array_element     (st_oop object, st_smi i);
 
-INLINE st_oop st_array_size (st_oop object);
+INLINE st_oop  st_array_at          (st_oop object, st_smi i);
 
-INLINE bool st_array_range_check (st_oop object, st_smi i);
-
-INLINE st_oop *st_array_element (st_oop object, st_smi i);
-
-INLINE st_oop st_array_at (st_oop object, st_smi i);
-
-INLINE void st_array_at_put (st_oop object, st_smi i, st_oop value);
+INLINE void    st_array_at_put      (st_oop object, st_smi i, st_oop value);
 
 const STDescriptor *st_array_descriptor (void);
 
 /* inline definitions */
 #define ST_ARRAY(oop) ((STArray *) ST_POINTER (oop))
-
-INLINE st_oop
-st_array_size (st_oop object)
-{
-    return ST_ARRAY (object)->size;
-}
-
-INLINE bool
-st_array_range_check (st_oop object, st_smi i)
-{
-    return 1 <= i && i <= st_smi_value (st_array_size (object));
-}
 
 /* 
  * returns address of element at index i > 0
@@ -76,23 +57,23 @@ st_array_element (st_oop object, st_smi i)
     /* by obtaining the element address as an offset from `&array->size',
      * we avoid the slight overhead of subtraction if we had used `&array->elements[i - 1]' instead.
      */
-    return (&ST_ARRAY (object)->size) + i;
+    return ST_ARRAY (object)->elements + i - 1;
 }
 
 INLINE st_oop
 st_array_at (st_oop object, st_smi i)
 {
-    g_assert (1 <= i && i <= st_array_size (object));
+    g_assert (1 <= i && i <= st_arrayed_object_size (object));
 
-    return * st_array_element (object, i);
+    return ST_ARRAY (object)->elements[i - 1];
 }
 
 INLINE void
 st_array_at_put (st_oop object, st_smi i, st_oop value)
 {
-    g_assert (1 <= i && i <= st_array_size (object));
+    g_assert (1 <= i && i <= st_arrayed_object_size (object));
 
-    *st_array_element (object, i) = value;
+    ST_ARRAY (object)->elements[i - 1] = value;
 }
 
 #endif /* __ST_ARRAY_H__ */

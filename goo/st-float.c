@@ -47,6 +47,12 @@ st_float_new (double value)
     return f;
 }
 
+static st_oop
+float_copy (st_oop object)
+{
+    return st_float_new (st_float_value (object));
+}
+
 const STDescriptor *
 st_float_descriptor (void)
 {
@@ -55,6 +61,7 @@ st_float_descriptor (void)
     static const STDescriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
+	  .copy             = float_copy
 	};
     
     return & __descriptor;

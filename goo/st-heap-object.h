@@ -28,6 +28,7 @@
 #include <st-types.h>
 #include <st-utils.h>
 #include <st-descriptor.h>
+#include <st-small-integer.h>
 
 /* Every heap-allocated object starts with this layout */
 /* format of mark oop
@@ -48,6 +49,13 @@ typedef struct
     
     st_oop fields[];
 } STHeader;
+
+typedef struct
+{
+    STHeader header;
+    st_smi   size;
+
+} STArrayedObject;
 
 
 extern int st_current_hash;
@@ -78,6 +86,8 @@ enum
 #define  st_heap_object_class(oop)  (ST_POINTER (oop)->klass)
 #define  st_heap_object_body(oop)   (ST_POINTER (oop)->fields)
 
+#define  ST_ARRAYED_OBJECT(oop)           ((STArrayedObject *) ST_POINTER (oop))
+
 void     st_heap_object_initialize_header (st_oop object, st_oop klass);
 
 void     st_heap_object_initialize_body   (st_oop object, st_smi instance_size);
@@ -96,6 +106,31 @@ bool     st_heap_object_nonpointer        (st_oop object);
 
 void     st_heap_object_set_nonpointer    (st_oop object, bool nonpointer);
 
+
+INLINE st_oop st_arrayed_object_size        (st_oop object);
+
+INLINE bool   st_arrayed_object_range_check (st_oop object, st_smi i);
+
+
 const STDescriptor *st_heap_object_descriptor (void) G_GNUC_CONST;
+
+
+INLINE const STDescriptor *
+st_heap_object_descriptor_for_object (st_oop object)
+{  
+    return st_descriptors[st_heap_object_format (object)];
+}
+
+INLINE st_oop
+st_arrayed_object_size (st_oop object)
+{
+    return ST_ARRAYED_OBJECT (object)->size;
+}
+
+INLINE bool
+st_arrayed_object_range_check (st_oop object, st_smi i)
+{
+    return 1 <= i && i <= st_smi_value (st_arrayed_object_size (object));
+}
 
 #endif /* __ST_HEAP_OBJECT_H__ */

@@ -1709,7 +1709,7 @@ print_literals (st_oop literals)
 
     printf ("literals: ");
 
-    for (int i = 1; i <= st_smi_value (st_array_size (literals)); i++) {
+    for (int i = 1; i <= st_smi_value (st_arrayed_object_size (literals)); i++) {
 	
 	st_oop lit = st_array_at (literals, i);
 
@@ -1738,7 +1738,7 @@ st_print_method (st_oop method)
 
     literals = st_method_literals (method);
     bytecodes = (guchar *) st_byte_array_bytes (st_method_bytecode (method));
-    size = st_byte_array_size (st_method_bytecode (method));
+    size = st_arrayed_object_size (st_method_bytecode (method));
 
     print_bytecodes (literals, bytecodes, size);
     

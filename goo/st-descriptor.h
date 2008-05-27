@@ -45,12 +45,11 @@ typedef enum
 
 typedef struct
 {
-    STFormat format;
+    st_oop (* allocate) (st_oop klass);
 
-    /* allocation */
-    st_oop (*allocate) (st_oop klass);
+    st_oop (* allocate_arrayed) (st_oop klass, st_smi size);
 
-    st_oop (*allocate_arrayed) (st_oop klass, st_smi size);
+    st_oop (* copy) (st_oop object);
     
 } STDescriptor;
 

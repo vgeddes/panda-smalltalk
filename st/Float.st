@@ -93,7 +93,7 @@ Float method!
 
 Float method!
 - aNumber
-     <primitive: 'Float_minus'>
+     <primitive: 'Float_sub'>
 	 ^ super - aNumber!
 
 Float method!

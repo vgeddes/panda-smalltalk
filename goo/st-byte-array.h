@@ -32,24 +32,17 @@
 
 typedef struct
 {
-    STHeader header;
-
-    st_oop size;
+    STArrayedObject header;
 
     guchar bytes[];
 
 } STByteArray;
-
-
-st_oop  st_byte_array_size (st_oop object);
 
 guchar *st_byte_array_bytes (st_oop object);
 
 guchar  st_byte_array_at (st_oop object, st_smi i);
 
 void    st_byte_array_at_put (st_oop object, st_smi i, guchar value);
-
-bool    st_byte_array_range_check (st_oop object, st_smi i);
 
 bool    st_byte_array_equal (st_oop object, st_oop other);
 

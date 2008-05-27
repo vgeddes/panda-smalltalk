@@ -335,12 +335,27 @@ allocate (st_oop klass)
     return allocate_with_value (klass, NULL);
 }
 
+
+static st_oop
+large_integer_copy (st_oop object)
+{
+    mp_int value;
+    int result;
+
+    result = mp_init_copy (&value, VALUE (object));
+    if (result != MP_OKAY)
+	g_assert_not_reached ();
+
+    return st_large_integer_new (&value);
+}
+
 const STDescriptor *
 st_large_integer_descriptor (void)
 {
     static const STDescriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
+	  .copy             = large_integer_copy,
 	};
 
     return & __descriptor;

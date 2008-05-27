@@ -33,6 +33,7 @@
 #include "st-word-array.h"
 #include "st-small-integer.h"
 #include "st-hashed-collection.h"
+#include "st-large-integer.h"
 #include "st-symbol.h"
 #include "st-universe.h"
 #include "st-heap-object.h"
@@ -68,14 +69,14 @@ st_oop
     st_association_class     = 0,
     st_string_class          = 0,
     st_symbol_class          = 0,
-    st_wide_string_class          = 0,
+    st_wide_string_class     = 0,
     st_compiled_method_class = 0,
     st_method_context_class  = 0,
     st_block_context_class   = 0,
     st_selector_doesNotUnderstand   = 0,
-    st_selector_mustBeBoolean     = 0,
-    st_selector_startupSystem     = 0,
-    st_selector_cannotReturn     = 0;
+    st_selector_mustBeBoolean       = 0,
+    st_selector_startupSystem       = 0,
+    st_selector_cannotReturn        = 0;
 
 
 
@@ -173,15 +174,10 @@ initialize_class  (const char *name,
 	st_behavior_superclass (metaclass) = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
 
     } else {
-
-
 	
 	superclass = st_global_get (super_name);
-	if (superclass == st_nil) {
-	    g_debug (name);
+	if (superclass == st_nil)
 	    g_assert (superclass != st_nil);
-	}
-
 
 	klass = st_global_get (name);
 	if (klass == st_nil)
@@ -469,7 +465,6 @@ init_specials (void)
     st_selector_mustBeBoolean       = st_symbol_new ("mustBeBoolean");
     st_selector_startupSystem       = st_symbol_new ("startupSystem");
     st_selector_cannotReturn        = st_symbol_new ("cannotReturn");
-
 }
 
 // RESERVE 500 MB worth of virtual address space
@@ -497,14 +492,15 @@ st_bootstrap_universe (void)
     st_descriptors[ST_FORMAT_BYTE_ARRAY] = st_byte_array_descriptor  ();
     st_descriptors[ST_FORMAT_WORD_ARRAY] = st_word_array_descriptor  ();
     st_descriptors[ST_FORMAT_FLOAT]      = st_float_descriptor       ();
+    st_descriptors[ST_FORMAT_LARGE_INTEGER] = st_large_integer_descriptor ();
 
     st_nil = create_nil_object ();
 
     st_object_class_          = class_new (ST_FORMAT_OBJECT, 0); 
     st_undefined_object_class = class_new (ST_FORMAT_OBJECT, 0);
-    st_metaclass_class        = class_new (ST_FORMAT_OBJECT, 0);
+    st_metaclass_class        = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_METACLASS);
     st_behavior_class         = class_new (ST_FORMAT_OBJECT, 0);
-    st_class_class_           = class_new (ST_FORMAT_OBJECT, 0);
+    st_class_class_           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_CLASS);
     st_smi_class              = class_new (ST_FORMAT_OBJECT, 0);
     st_large_integer_class    = class_new (ST_FORMAT_LARGE_INTEGER, 0);
     st_character_class        = class_new (ST_FORMAT_OBJECT, 0);
@@ -515,8 +511,8 @@ st_bootstrap_universe (void)
     st_dictionary_class       = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_DICTIONARY);
     st_set_class              = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SET);
     st_byte_array_class       = class_new (ST_FORMAT_BYTE_ARRAY, 0);
-    st_string_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
     st_symbol_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
+    st_string_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
     st_wide_string_class      = class_new (ST_FORMAT_WORD_ARRAY, 0);
     st_association_class      = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_ASSOCIATION);
     st_compiled_method_class  = class_new (ST_FORMAT_OBJECT, 0);

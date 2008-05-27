@@ -44,8 +44,7 @@ INLINE st_oop st_object_class             (st_oop object);
 bool          st_object_equal             (st_oop object, st_oop other);
 guint         st_object_hash              (st_oop object);
 
-
-char       *st_object_printString         (st_oop object);
+char         *st_object_printString       (st_oop object);
 
 /* inline definitions */
 
@@ -83,18 +82,6 @@ st_object_class (st_oop object)
 	return st_character_class;
 
     return st_heap_object_class (object);
-}
-
-INLINE const STDescriptor *
-st_object_descriptor (st_oop object)
-{
-    if (G_UNLIKELY (st_object_is_smi (object)))
-	g_assert_not_reached ();
-
-    if (G_UNLIKELY (st_object_is_smi (object)))
-	g_assert_not_reached ();
-    
-    return st_descriptors[st_heap_object_format (object)];
 }
 
 INLINE bool

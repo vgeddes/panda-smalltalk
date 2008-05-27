@@ -42,7 +42,7 @@ SmallInteger method!
 
 SmallInteger method!
 - aNumber
-	<primitive: 'SmallInteger_minus'>
+	<primitive: 'SmallInteger_sub'>
 	^ super - aNumber!
 	
 SmallInteger method!

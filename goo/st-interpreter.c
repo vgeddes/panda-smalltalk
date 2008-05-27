@@ -663,7 +663,7 @@ st_interpreter_main (STExecutionState *es)
 	    
 	    ip += 3;
 
-	    literal_index = st_smi_value (st_array_size (st_method_literals (es->method))) - 1;
+	    literal_index = st_smi_value (st_arrayed_object_size (st_method_literals (es->method))) - 1;
 
 	    method = st_interpreter_lookup_method (es, st_behavior_superclass (es->literals[literal_index]));
 	    
