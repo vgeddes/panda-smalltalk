@@ -20,6 +20,6 @@ at: anInteger put: anObject
 		ifFalse: [self error: 'non-integer index']!
 
 ByteArray method!
-size
-	<primitive: 'ByteArray_size'>
+hash
+	<primitive: 'ByteArray_hash'>
 	self primitiveFailed!

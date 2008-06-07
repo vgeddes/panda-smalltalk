@@ -357,6 +357,40 @@ squared
     "Answer the square of the receiver"
     ^ self * self!
 
+Number method!
+raisedToInteger: anInteger
+	| count result |
+
+	self = 0
+		ifTrue: [ ^ self zero ].
+	(self = 1) | (anInteger = 0)
+		ifTrue: [ ^ self unity ].
+
+	anInteger isNegative
+		ifTrue: [ ^ (self raisedToInteger: anInteger abs) reciprocal ].
+
+	result := 1.
+	count := 0.
+	[ (count := count + 1) <= anInteger ]
+		whileTrue: [ result := result * self ].
+
+	^ result!
+
+Number method!
+raisedTo: aNumber
+
+	self = 0
+		ifTrue: [ ^ self zero ].
+	(self = 1) | (aNumber = 0)
+		ifTrue: [ ^ self unity ].
+
+	(aNumber isFloat) & (self isNegative)
+		ifTrue: [ self error: 'raising a negative number to non-integral exponent'].
+
+	aNumber isFloat
+		ifTrue: [ ^ (aNumber * self ln) exp ].
+
+	^ self raisedToInteger: aNumber!
 
 "printing"
 

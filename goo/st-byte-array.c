@@ -29,29 +29,9 @@
 
 #include <string.h>
 
-#define ST_BYTE_ARRAY(oop) ((STByteArray *) ST_POINTER (oop))
 
-guchar *
-st_byte_array_bytes (st_oop object)
-{
-    return ST_BYTE_ARRAY (object)->bytes;
-}
 
-guchar
-st_byte_array_at (st_oop object, st_smi i)
-{
-    g_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
 
-    return st_byte_array_bytes (object)[i - 1];
-}
-
-void
-st_byte_array_at_put (st_oop object, st_smi i, guchar value)
-{
-    g_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-
-    st_byte_array_bytes (object)[i - 1] = value;
-}
 
 INLINE st_smi
 round_size (st_smi size)
@@ -78,10 +58,10 @@ round_size (st_smi size)
 static st_oop
 allocate_arrayed (st_oop klass, st_smi size)
 {
-    g_assert (size >= 0);
+    st_assert (size >= 0);
 
     st_smi size_rounded = round_size (size);
-    st_oop array = st_allocate_object (ST_TYPE_SIZE (STByteArray) + (size_rounded / sizeof (st_oop)));
+    st_oop array = st_allocate_object (ST_TYPE_SIZE (struct st_byte_array) + (size_rounded / sizeof (st_oop)));
 
     st_heap_object_initialize_header (array, klass);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
@@ -89,12 +69,6 @@ allocate_arrayed (st_oop klass, st_smi size)
     memset (st_byte_array_bytes (array), 0, size_rounded);
 
     return array;
-}
-
-static st_oop
-allocate (st_oop klass)
-{
-    return allocate_arrayed (klass, 0);
 }
 
 bool
@@ -107,8 +81,8 @@ st_byte_array_equal (st_oop object, st_oop other)
 	st_object_class (other) != st_symbol_class) 
 	return false;
 
-    size = st_smi_value (st_arrayed_object_size (object));
-    size_other = st_smi_value (st_arrayed_object_size (other));
+    size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
+    size_other = st_smi_value (ST_ARRAYED_OBJECT (other)->size);
 
     if (size != size_other)
 	return false;
@@ -116,13 +90,13 @@ st_byte_array_equal (st_oop object, st_oop other)
     return memcmp (st_byte_array_bytes (object), st_byte_array_bytes (other), size) == 0;
 }
 
-guint
+st_uint
 st_byte_array_hash (st_oop object)
 {
     const signed char *p = (signed char *) st_byte_array_bytes (object);
-    guint32 h = *p;
+    st_uint h = *p;
 
-    long size = st_smi_value (st_arrayed_object_size (object));
+    long size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
 
     if (size == 0 || !h)
 	return h;
@@ -140,7 +114,7 @@ byte_array_copy (st_oop object)
     st_oop copy;
     st_smi size;
 
-    size = st_smi_value (st_arrayed_object_size (object));
+    size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
 
     copy = allocate_arrayed (st_object_class (object), size);
     
@@ -152,11 +126,11 @@ byte_array_copy (st_oop object)
 }
 
 
-const STDescriptor *
+st_descriptor *
 st_byte_array_descriptor (void)
 {
-    static const STDescriptor __descriptor =
-	{ .allocate         = allocate,
+    static st_descriptor __descriptor =
+	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
 	  .copy             = byte_array_copy
 	};

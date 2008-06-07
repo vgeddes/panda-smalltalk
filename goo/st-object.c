@@ -37,13 +37,13 @@
 st_oop
 st_object_new (st_oop klass)
 {  
-    return st_descriptors[st_smi_value (st_behavior_format (klass))]->allocate (klass);
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (klass)->format)]->allocate (klass);
 }
 
 st_oop
 st_object_new_arrayed (st_oop klass, st_smi size)
 {
-    return st_descriptors[st_smi_value (st_behavior_format (klass))]->allocate_arrayed (klass, size);
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (klass)->format)]->allocate_arrayed (klass, size);
 }
 
 
@@ -72,7 +72,7 @@ st_object_equal (st_oop object, st_oop other)
     return object == other;    
 }
 
-guint
+st_uint
 st_object_hash (st_oop object)
 {
     if (st_object_class (object) == st_smi_class)
@@ -101,38 +101,38 @@ st_object_printString (st_oop object)
     char *class_name;
     char *string;
 
-    class_name = (char *) st_byte_array_bytes (st_class_name (st_object_class (object)));
+    class_name = (char *) st_byte_array_bytes (ST_CLASS (st_object_class (object))->name);
     
     // SmallInteger
     if (st_object_is_smi (object))
-	string = g_strdup_printf ("%li", st_smi_value (object));
+	string = st_strdup_printf ("%li", st_smi_value (object));
 
     // Float
     else if (st_object_class (object) == st_float_class)
-	string = g_strdup_printf ("%f", st_float_value (object));
+	string = st_strdup_printf ("%g", st_float_value (object));
 
     // Fraction
     else if (st_object_class (object) == st_global_get ("Fraction"))
-	string = g_strdup_printf ("%li/%li", st_smi_value (st_heap_object_body (object)[0]),
+	string = st_strdup_printf ("%li/%li", st_smi_value (st_heap_object_body (object)[0]),
 		st_smi_value (st_heap_object_body (object)[1]));
 
     // ByteString
     else if (st_object_is_string (object))
-	string = g_strdup_printf ("'%s'", (char *) st_byte_array_bytes (object));
+	string = st_strdup_printf ("'%s'", (char *) st_byte_array_bytes (object));
 
     // ByteSymbol
     else if (st_object_is_symbol (object))
-	string = g_strdup_printf ("#%s", (char *) st_byte_array_bytes (object));
+	string = st_strdup_printf ("#%s", (char *) st_byte_array_bytes (object));
 
     // Character
     else if (st_object_class (object) == st_character_class) {
 	char outbuf[6] = { 0 };
 	g_unichar_to_utf8 (st_character_value (object), outbuf);
-	string = g_strdup_printf ("$%s", outbuf);
+	string = st_strdup_printf ("$%s", outbuf);
 
     // Other
     } else
-	string = g_strdup_printf ("%s", class_name);
+	string = st_strdup_printf ("%s", class_name);
 
     return string;
 }

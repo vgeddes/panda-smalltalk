@@ -16,7 +16,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-X * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
@@ -58,17 +58,25 @@ enum {
 
 /* basic oop pointer:
  * integral type wide enough to hold a C pointer.
- * Can either point to a heap object or contain a smi or mark immediate.
+ * Can either point to a heap object or contain a smi or Character immediate.
  */
 typedef uintptr_t st_oop;
 
-/* signed integral type which can hold the value of a smi immediate
+/* smallest signed integral type large enough to hold the value of a smi
  */
 #if ST_HOST32 == 1
 typedef int st_smi;
 #else
 typedef int64_t st_smi;
 #endif
+
+typedef unsigned char    st_uchar;
+typedef unsigned short   st_ushort;
+typedef unsigned long    st_ulong;
+typedef unsigned int     st_uint;
+
+typedef void *   st_pointer;
+
 
 /* glib already defines `inline' in a portable manner
  */
@@ -77,7 +85,7 @@ typedef int64_t st_smi;
 #endif
 #define INLINE static inline
 
-#define ST_POINTER(oop)          ((STHeader *) ((oop) - ST_POINTER_TAG))
+#define ST_POINTER(oop)          ((struct st_header *) ((oop) - ST_POINTER_TAG))
 #define ST_OOP(ptr)              (((st_oop) (ptr)) + ST_POINTER_TAG)
 
 #endif /* __ST_TYPES_H__ */

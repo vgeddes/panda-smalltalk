@@ -52,7 +52,9 @@ hash
 
 SequenceableCollection method!
 size
-	self subclassResponsibility!
+	<primitive: 'SequenceableCollection_size'>
+	self primitiveFailed!
+
 
 SequenceableCollection method!
 replaceFrom: start to: stop with: replacement startingAt: repStart 
@@ -66,6 +68,17 @@ replaceFrom: start to: stop with: replacement startingAt: repStart
 	index := start - 1.
 	[(index := index + 1) <= stop]
 		whileTrue: [self at: index put: (replacement at: repOff + index)]!
+
+
+SequenceableCollection method!
+atAllPut: anObject
+	| index size |
+
+	index := 0.
+	size := self size.
+
+	[ (index := index + 1) <= size ]
+		whileTrue: [ self at: index put: anObject ]!
 
 
 SequenceableCollection method!

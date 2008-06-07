@@ -20,17 +20,34 @@ LargeInteger method!
 LargeInteger method!
 / aNumber
 	<primitive: 'LargeInteger_div'>
-	^ super / aNumber!
+	aNumber = 0
+		ifTrue: [ self error: 'cannot divide by 0' ].
+	aNumber isInteger
+		ifTrue: [ ^ Fraction numerator: self denominator: aNumber ]
+		ifFalse: [ ^ super / aNumber ]!
 
 LargeInteger method!
 // aNumber
-     <primitive: 'LargeInteger_div'>
+     <primitive: 'LargeInteger_intDiv'>
 	^ super // aNumber!
 
 LargeInteger method!
 \\ aNumber
 	<primitive: 'LargeInteger_mod'>
 	^ super / aNumber!
+
+
+"mathematics"
+
+LargeInteger method!
+gcd: anInteger
+	<primitive: 'LargeInteger_gcd'>
+	^ super gcd: anInteger!
+
+LargeInteger method!
+lcm: anInteger
+	<primitive: 'LargeInteger_lcm'>
+	^ super lcm: anInteger!
 
 
 "comparing"
@@ -64,6 +81,11 @@ LargeInteger method!
 ~= aNumber
      <primitive: 'LargeInteger_ne'>
 	 ^ super ~= aNumber!
+
+LargeInteger method!
+hash
+     <primitive: 'LargeInteger_hash'>
+	 self primitiveFailed!
 
 
 "bit-wise operations"

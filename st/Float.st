@@ -110,6 +110,11 @@ Float method!
 \\ aNumber
      self notYetImplemented!
 
+Float method!
+hash
+	<primitive: 'Float_hash'>
+	self primitiveFailed!
+
 
 "rounding & truncation"
 

@@ -24,6 +24,7 @@
 
 
 #include "st-input.h"
+#include "st-utils.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -43,11 +44,11 @@ struct STInput
 {
     wchar_t *text;
 
-    guint p;	    /* current index into text */
+    st_uint p;	    /* current index into text */
 
-    guint n;	    /* total number of chars in text */
-    guint line;     /* current line number, starting from 1 */
-    guint column;   /* current column number, starting from 1 */
+    st_uint n;	    /* total number of chars in text */
+    st_uint line;     /* current line number, starting from 1 */
+    st_uint column;   /* current column number, starting from 1 */
 
     Marker marker;
 };
@@ -56,13 +57,13 @@ static wchar_t *
 st_wcstrdup (const wchar_t *string)
 {
     wchar_t *buf;
-    guint    len;
+    st_uint    len;
 
-    g_assert (string != NULL);
+    st_assert (string != NULL);
 
     len = wcslen (string);
 
-    buf = g_malloc (sizeof (wchar_t) * (len + 1));
+    buf = st_malloc (sizeof (wchar_t) * (len + 1));
     wmemcpy (buf, string, len);
     buf[len] = 0;
 
@@ -72,7 +73,7 @@ st_wcstrdup (const wchar_t *string)
 static wchar_t *
 filter_double_bangs (const wchar_t *chunk)
 {
-    guint size, i = 0, count = 0;
+    st_uint size, i = 0, count = 0;
     const wchar_t *p = chunk;
     wchar_t *buf;
 
@@ -83,12 +84,12 @@ filter_double_bangs (const wchar_t *chunk)
 
     /* count number of redundant bangs */
     while (p[0] && p[1]) {
-	if (G_UNLIKELY (p[0] == '!' && p[1] == '!'))
+	if (ST_UNLIKELY (p[0] == '!' && p[1] == '!'))
 	    count++;
 	p++;
     }
     
-    buf = g_malloc (sizeof (wchar_t) * (size - count + 1));
+    buf = st_malloc (sizeof (wchar_t) * (size - count + 1));
 
     /* copy over text skipping over redundant bangs */
     p = chunk;
@@ -107,7 +108,7 @@ wchar_t *
 st_input_next_chunk (STInput *input)
 {
     wchar_t *chunk_filtered, *chunk = NULL;
-    guint start;
+    st_uint start;
 
     start = st_input_index (input);
 
@@ -129,7 +130,7 @@ st_input_next_chunk (STInput *input)
 	chunk = st_input_range_ucs4 (input, start, st_input_index (input));	
 	chunk_filtered = filter_double_bangs (chunk);
 	st_input_consume (input);
-	g_free (chunk);	
+	st_free (chunk);	
 
 	return chunk_filtered;
     }
@@ -140,24 +141,24 @@ st_input_next_chunk (STInput *input)
 void
 st_input_destroy (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
-    g_free (input->text);
+    st_free (input->text);
     g_slice_free (STInput, input);
 }
 
-guint
+st_uint
 st_input_get_line (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
     return input->line;
 }
 
-guint
+st_uint
 st_input_get_column (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
     return input->column;
 }
@@ -165,13 +166,13 @@ st_input_get_column (STInput *input)
 wchar_t
 st_input_look_ahead (STInput *input, int i)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
-    if (G_UNLIKELY (i == 0)) {
+    if (ST_UNLIKELY (i == 0)) {
 	return 0x0000;
     }
 
-    if (G_UNLIKELY (i < 0)) {
+    if (ST_UNLIKELY (i < 0)) {
 	i++;
 	if ((input->p + i - 1) < 0)
 	    return ST_INPUT_EOF;
@@ -187,7 +188,7 @@ st_input_look_ahead (STInput *input, int i)
 void
 st_input_mark (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
     
     input->marker.p      = input->p;
     input->marker.line   = input->line;
@@ -197,7 +198,7 @@ st_input_mark (STInput *input)
 void
 st_input_rewind (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
     
     st_input_seek (input, input->marker.p);
 
@@ -206,9 +207,9 @@ st_input_rewind (STInput *input)
 }
 
 void
-st_input_seek (STInput *input, guint index)
+st_input_seek (STInput *input, st_uint index)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
     if (index <= input->p) {
 	input->p = index;
@@ -221,7 +222,7 @@ st_input_seek (STInput *input, guint index)
 void
 st_input_consume (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
     if (input->p < input->n) {
 
@@ -237,17 +238,17 @@ st_input_consume (STInput *input)
     }
 }
 
-guint
+st_uint
 st_input_size (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
     return input->n;
 }
 
 
 char *
-st_input_range (STInput *input, guint start, guint end)
+st_input_range (STInput *input, st_uint start, st_uint end)
 {
     char *buf;
     GError *error = NULL;
@@ -262,25 +263,25 @@ st_input_range (STInput *input, guint start, guint end)
 }
 
 wchar_t *
-st_input_range_ucs4 (STInput *input, guint start, guint end)
+st_input_range_ucs4 (STInput *input, st_uint start, st_uint end)
 {
     wchar_t *buf;
-    guint    len;
+    st_uint    len;
 
-    g_assert ((end - start) >= 0);
+    st_assert ((end - start) >= 0);
 
     len = end - start;
-    buf = g_malloc (sizeof (wchar_t) * (len + 1));
+    buf = st_malloc (sizeof (wchar_t) * (len + 1));
     wmemcpy (buf, input->text + start, len);
     buf[len] = 0;
 
     return buf;
 }
 
-guint
+st_uint
 st_input_index (STInput *input)
 {
-    g_assert (input != NULL);
+    st_assert (input != NULL);
 
     return input->p;
 }
@@ -299,18 +300,18 @@ initialize_state (STInput *input, const wchar_t *string)
 }
 
 STInput *
-st_input_new (const char *string, GError **error)
+st_input_new (const char *string)
 {
     wchar_t *string_ucs4;
     STInput *input;
 
-    g_assert (string != NULL);
+    st_assert (string != NULL);
 
-    string_ucs4 = (wchar_t *) g_utf8_to_ucs4 (string, -1, NULL, NULL, error);
+    string_ucs4 = (wchar_t *) g_utf8_to_ucs4 (string, -1, NULL, NULL, NULL);
     if (string_ucs4 == NULL)
 	return NULL;
 
-    input = g_slice_new0 (STInput);
+    input = st_new0 (STInput);
 
     initialize_state (input, string_ucs4);
 
@@ -322,9 +323,9 @@ st_input_new_ucs4 (const wchar_t *string)
 {
     STInput *input;
 
-    g_assert (string != NULL);
+    st_assert (string != NULL);
 
-    input = g_slice_new0 (STInput);
+    input = st_new0 (STInput);
 
     initialize_state (input, st_wcstrdup (string));    
 

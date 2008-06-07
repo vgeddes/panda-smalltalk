@@ -29,10 +29,15 @@
 #include <st-types.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /* bit utilities */
-#define ST_NTH_BIT(n)       (1 << (n))
-#define ST_NTH_MASK(n)      (ST_NTH_BIT(n) - 1)
+#define ST_NTH_BIT(n)         (1 << (n))
+#define ST_NTH_MASK(n)        (ST_NTH_BIT(n) - 1)
+
+#define ST_N_ELEMENTS(static_array)  (sizeof(static_array) / sizeof ((static_array) [0]))
+
 
 /* A comile-time assertion */
 #define assert_static(e)                \
@@ -53,32 +58,88 @@ enum
 st_oop st_allocate_object (gsize size);
 
 INLINE void
-st_oops_copy (st_oop *to, st_oop *from, guint count)
+st_oops_copy (st_oop *to, st_oop *from, st_uint count)
 {
     memmove (to, from, sizeof (st_oop) * count);
 }
 
+st_pointer  st_malloc  (size_t size) __attribute__ ((malloc));
+st_pointer  st_malloc0 (size_t size) __attribute__ ((malloc));
+void        st_free    (st_pointer mem);
 
-/* generic error object */
-typedef struct {
-    guint   code;
-    char   *message;
-    GData  *datalist;
-} STError;
+#define st_new(struct_type)  ((struct_type *) st_malloc  (sizeof (struct_type)))
+#define st_new0(struct_type) ((struct_type *) st_malloc0 (sizeof (struct_type)))
 
-void     st_error_set        (STError   **error,
-                              guint       code,
-                              const char *message);
+bool    st_file_get_contents (const char *filename,
+			      char      **buffer);
 
-void     st_error_destroy    (STError *error);
+char  *st_strdup         (const char *string);
+char  *st_strdup_printf  (const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+char  *st_strdup_vprintf (const char *format, va_list args);
+char  *st_strconcat      (const char *first, ...);
 
-gpointer st_error_get_data   (STError    *error,
-			      const char *key);
+int         st_utf8_strlen      (const char * string);
+wchar_t     st_utf8_get_unichar (const char *p);
+bool        st_utf8_validate    (const char *string, ssize_t max_len);
+int         st_unichar_to_utf8  (wchar_t unichar, char *outbuf);
+const char *st_utf8_char_at_pos (const char *string, int pos);
 
-void     st_error_set_data   (STError    *error,
-			      const char *key,
-			      gpointer    data);
+typedef struct st_list st_list;
 
-#define ST_ERROR_LINE(error) (GPOINTER_TO_INT (st_error_get_data (error, "line")))
+struct st_list
+{
+    st_pointer data;
+    st_list   *next;
+};
+
+typedef void (* st_list_foreach_func) (st_pointer data); 
+
+st_list  *st_list_append  (st_list *list,  st_pointer data);
+st_list  *st_list_prepend (st_list *list,  st_pointer data);
+st_list  *st_list_concat  (st_list *list1, st_list *list2);
+void      st_list_foreach (st_list *list, st_list_foreach_func func); 
+st_list  *st_list_reverse (st_list *list);
+st_uint   st_list_length  (st_list *list);
+void      st_list_destroy (st_list *list);
+
+#if  defined(__GNUC__) && defined(__OPTIMIZE__)
+#define ST_LIKELY(condition)     __builtin_expect (!(condition), 0)
+#define ST_UNLIKELY(condition)   __builtin_expect (!(condition), 1)
+#else
+#define ST_LIKELY(condition)     condition
+#define ST_UNLIKELY(condition)   condition
+#endif
+
+#ifdef __GNUC__
+#define ST_STMT_START  ({
+#define ST_STMT_END    })
+#else
+#define ST_STMT_START  do {
+#define ST_STMT_END    } while (0)
+#endif
+
+#ifndef ST_DEBUG
+#define st_assert(condition) 
+#else
+#define st_assert(condition)						\
+ST_STMT_START						         	\
+if (!(condition)) {						       	\
+    fprintf (stderr, "%s:%i: %s: assertion `" #condition "' failed\n",	\
+	     __FILE__, __LINE__, __FUNCTION__);				\
+    abort ();								\
+}									\
+ST_STMT_END
+#endif
+
+#ifndef ST_DEBUG
+#define st_assert_not_reached() 
+#else
+#define st_assert_not_reached()						\
+ST_STMT_START						        	\
+fprintf (stderr, "%s:%i: %s: should not reach here\n",			\
+	 __FILE__, __LINE__, __FUNCTION__);				\
+abort ();								\
+ST_STMT_END
+#endif
 
 #endif /* __ST_UTILS_H__ */

@@ -41,22 +41,20 @@
  * 
  */
 
-typedef struct
+struct st_header
 {
     st_smi header;
     st_smi hash;
     st_oop klass;
     
     st_oop fields[];
-} STHeader;
+};
 
-typedef struct
+struct st_arrayed_object
 {
-    STHeader header;
-    st_smi   size;
-
-} STArrayedObject;
-
+    struct st_header header;
+    st_oop   size;
+};
 
 extern int st_current_hash;
 
@@ -86,17 +84,17 @@ enum
 #define  st_heap_object_class(oop)  (ST_POINTER (oop)->klass)
 #define  st_heap_object_body(oop)   (ST_POINTER (oop)->fields)
 
-#define  ST_ARRAYED_OBJECT(oop)           ((STArrayedObject *) ST_POINTER (oop))
+#define  ST_ARRAYED_OBJECT(oop)           ((struct st_arrayed_object *) ST_POINTER (oop))
 
 void     st_heap_object_initialize_header (st_oop object, st_oop klass);
 
 void     st_heap_object_initialize_body   (st_oop object, st_smi instance_size);
 
-guint    st_heap_object_hash              (st_oop object);
+st_uint    st_heap_object_hash              (st_oop object);
 
 void     st_heap_object_set_hash          (st_oop object, int hash);
 
-void     st_heap_object_set_format        (st_oop object, guint format);
+void     st_heap_object_set_format        (st_oop object, st_uint format);
 
 bool     st_heap_object_readonly          (st_oop object);
 
@@ -106,20 +104,8 @@ bool     st_heap_object_nonpointer        (st_oop object);
 
 void     st_heap_object_set_nonpointer    (st_oop object, bool nonpointer);
 
+st_descriptor *st_heap_object_descriptor (void) G_GNUC_CONST;
 
-INLINE st_oop st_arrayed_object_size        (st_oop object);
-
-INLINE bool   st_arrayed_object_range_check (st_oop object, st_smi i);
-
-
-const STDescriptor *st_heap_object_descriptor (void) G_GNUC_CONST;
-
-
-INLINE const STDescriptor *
-st_heap_object_descriptor_for_object (st_oop object)
-{  
-    return st_descriptors[st_heap_object_format (object)];
-}
 
 INLINE st_oop
 st_arrayed_object_size (st_oop object)
@@ -127,10 +113,10 @@ st_arrayed_object_size (st_oop object)
     return ST_ARRAYED_OBJECT (object)->size;
 }
 
-INLINE bool
-st_arrayed_object_range_check (st_oop object, st_smi i)
-{
-    return 1 <= i && i <= st_smi_value (st_arrayed_object_size (object));
+INLINE st_descriptor *
+st_heap_object_descriptor_for_object (st_oop object)
+{  
+    return st_descriptors[st_heap_object_format (object)];
 }
 
 #endif /* __ST_HEAP_OBJECT_H__ */

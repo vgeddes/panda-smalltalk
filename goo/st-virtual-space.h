@@ -37,13 +37,9 @@ typedef struct
 } STVirtualSpace;
 
 STVirtualSpace  *st_virtual_space_new      (void);
-
-bool             st_virtual_space_reserve (STVirtualSpace *space, guint size);
-
+bool             st_virtual_space_reserve  (STVirtualSpace *space, st_uint size);
 void            *st_virtual_space_start    (STVirtualSpace *space);
-
 void            *st_virtual_space_end      (STVirtualSpace *space);
-
 void             st_virtual_space_destroy  (STVirtualSpace *space);
 
 

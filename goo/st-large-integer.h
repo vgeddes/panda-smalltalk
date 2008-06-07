@@ -29,73 +29,26 @@
 #include <st-heap-object.h>
 #include <st-types.h>
 
-typedef struct
+#define ST_LARGE_INTEGER(oop) ((struct st_large_integer *) ST_POINTER (oop))
+
+struct st_large_integer
 {
-    STHeader header;
+    struct st_header header;
 
     mp_int value;
+};
 
-} STLargeInteger;
+st_oop  st_large_integer_new             (mp_int * value);
 
+st_oop  st_large_integer_new_from_smi    (st_smi integer);
 
-st_oop st_large_integer_new (mp_int * value);
+st_oop  st_large_integer_new_from_string (const char *string, st_uint radix);
 
-st_oop st_large_integer_new_from_smi (st_smi integer);
+char   *st_large_integer_to_string       (st_oop integer, st_uint radix);
 
-st_oop st_large_integer_new_from_string (const char *string, guint radix);
-
-char *st_large_integer_to_string (st_oop integer, guint radix);
-
-
-st_oop st_large_integer_add (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_sub (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_mul (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_div (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_mod (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_gcd (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_lcm (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_bitor    (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_bitand   (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_bitxor   (st_oop a, st_oop b, bool *error);
-
-st_oop st_large_integer_bitshift (st_oop a, int shift, bool *error);
-
-st_oop st_large_integer_sqr (st_oop a, bool *error);
-
-st_oop st_large_integer_neg (st_oop a, bool *error);
-
-st_oop st_large_integer_abs (st_oop a, bool *error);
-
-bool   st_large_integer_eq (st_oop a, st_oop b, bool *error);
-
-bool   st_large_integer_lt (st_oop a, st_oop b, bool *error);
-
-bool   st_large_integer_gt (st_oop a, st_oop b, bool *error);
-
-bool   st_large_integer_le (st_oop a, st_oop b, bool *error);
-
-bool   st_large_integer_ge (st_oop a, st_oop b, bool *error);
-
-bool   st_large_integer_is_positive (st_oop a, bool *error);
-
-bool   st_large_integer_is_prime    (st_oop a, bool *error);
-
-
-INLINE mp_int *st_large_integer_value (st_oop integer);
-
-const STDescriptor *st_large_integer_descriptor (void);
+st_descriptor *st_large_integer_descriptor (void);
 
 /* inline definitions */
-#define ST_LARGE_INTEGER(oop) ((STLargeInteger *) ST_POINTER (oop))
 
 INLINE mp_int *
 st_large_integer_value (st_oop integer)

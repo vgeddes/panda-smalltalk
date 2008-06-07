@@ -34,16 +34,15 @@ typedef struct {
  * and place the method in the methodDictionary of the given class.
  */
 bool
-st_compile_string (st_oop klass, const char *string, STError **error)
+st_compile_string (st_oop klass, const char *string, st_compiler_error *error)
 {
     STNode  *node;    
     st_oop   method;
     STLexer *lexer;
-    GError *tmp_error = NULL;
     
-    g_assert (klass != st_nil);
+    st_assert (klass != st_nil);
     
-    lexer = st_lexer_new (string, &tmp_error);
+    lexer = st_lexer_new (string);
     if (!lexer)
 	return false;
     
@@ -59,7 +58,7 @@ st_compile_string (st_oop klass, const char *string, STError **error)
 	return false;
     }
 
-    st_dictionary_at_put (st_behavior_method_dictionary (klass),
+    st_dictionary_at_put (ST_BEHAVIOR (klass)->method_dictionary,
 			  node->method.selector,
 			  method);
 
@@ -108,13 +107,13 @@ next_chunk (FileInParser *parser)
 
 static void
 parse_method (FileInParser *parser,
-	      STLexer *lexer,
-	      char *class_name,
-	      bool class_method)
+	      STLexer      *lexer,
+	      char         *class_name,
+	      bool          class_method)
 {
     STToken *token = NULL;
     st_oop   klass;
-    STError *error = NULL;
+    st_compiler_error error;
 
     st_lexer_destroy (lexer);
 
@@ -141,25 +140,25 @@ parse_method (FileInParser *parser,
 	printf ("%i\n", node->type);
     
     method = st_generate_method (klass, node, &error);
-    if (error)
+    if (method == st_nil)
 	goto error;
 	
-    st_dictionary_at_put (st_behavior_method_dictionary (klass),
+    st_dictionary_at_put (ST_BEHAVIOR (klass)->method_dictionary,
 			  node->method.selector,
 			  method);
 
  
     st_node_destroy (node);
     st_lexer_destroy (lexer);
-    g_free (class_name);
+    st_free (class_name);
 
     return;
     
 error:
     st_node_destroy (node);
     fprintf (stderr, "%s:%i: %s\n", parser->filename,
-	     parser->line + ST_ERROR_LINE (error) - 1 ,
-	     error->message);
+	     parser->line + error.line - 1 ,
+	     error.message);
     exit (1);   
 }
 
@@ -180,7 +179,7 @@ parse_chunk (FileInParser *parser, STLexer *lexer)
 
     if (st_token_type (token) == ST_TOKEN_IDENTIFIER) {
 
-	name = g_strdup (st_token_text (token));
+	name = st_strdup (st_token_text (token));
 
 	token = next_token (parser, lexer);
 
@@ -238,27 +237,19 @@ void
 st_compile_file_in (const char *filename)
 {
     char *buffer;
-    GError *error = NULL;
     FileInParser *parser;
 
-    g_assert (filename != NULL);
+    st_assert (filename != NULL);
 
-    g_file_get_contents (filename,
-			 &buffer,
-			 NULL,
-			 &error);
-    if (error) {
-	g_warning ("could not file in '%s': %s", filename, error->message);
-	g_error_free (error);
+    if (!st_file_get_contents (filename, &buffer)) {
 	return;
     }
     
-    parser = g_slice_new0 (FileInParser);
+    parser = st_new0 (FileInParser);
 
-    parser->input = st_input_new (buffer, &error);
-    if (error) {
-	g_warning ("could not validate input file '%s': %s", filename, error->message);
-	g_error_free (error);
+    parser->input = st_input_new (buffer);
+    if (!parser->input) {
+	g_warning ("could not validate input file '%s'", filename);
 	return;
     }
 
@@ -267,6 +258,5 @@ st_compile_file_in (const char *filename)
 
     parse_chunks (parser);
 
-    g_slice_free (FileInParser, parser);
+    st_free (parser);
 }
-

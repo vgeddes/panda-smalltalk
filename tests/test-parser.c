@@ -27,20 +27,19 @@ main (int argc, char *argv[])
     /* the big bang */
     st_bootstrap_universe ();
 
-    STLexer *lexer = st_lexer_new (buffer, NULL);
+    STLexer *lexer = st_lexer_new (buffer);
 
-    STError *error = NULL;
+    st_compiler_error error;
 
     STNode *node = st_parser_parse (lexer, &error);
-    if (error) {
-	fprintf (stderr, "test-parser:%i: %s\n", (int) st_error_get_data (error, "line"), error->message);
+    if (!node) {
+	fprintf (stderr, "test-parser:%i: %s\n", error.line, error.message);
 	exit (1);
     }
 
     printf ("-------------------\n");	    
 
     st_print_method_node (node);
-
     st_node_destroy (node);
 
     return 0;

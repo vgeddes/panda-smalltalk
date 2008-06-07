@@ -20,11 +20,11 @@
 int
 main (int argc, char *argv[])
 {
-    STError *error = NULL;
+    st_compiler_error error;
     char buffer[BUF_SIZE];
     char *string;
     st_oop value;
-    STExecutionState es;
+    st_processor processor;
     char c;
     int i = 0;
 
@@ -37,20 +37,33 @@ main (int argc, char *argv[])
 
     string = g_strconcat ("doIt ^ [", buffer, "] value", NULL);
 
-    st_compile_string (st_undefined_object_class, string, &error);
-    if (error) {
+    bool result = st_compile_string (st_undefined_object_class, string, &error);
+    if (!result) {
 	fprintf (stderr, "test-interpreter:%i: %s\n",
-		 ST_ERROR_LINE (error), error->message);
+		 error.line, error.message);
 	return 1;
     }
 
-    st_interpreter_initialize (&es);
-    st_interpreter_main (&es);
+    st_processor_initialize (&processor);
 
+    struct timeval before, after;
+    double elapsed;
+
+    gettimeofday (&before, NULL);
+
+    st_processor_main (&processor);
+
+    gettimeofday (&after, NULL);
+
+    elapsed = after.tv_sec - before.tv_sec +
+	(after.tv_usec - before.tv_usec) / 1.e6;
+    
     /* inspect the returned value on top of the stack */
-    value = ST_STACK_PEEK ((&es));
+    value = ST_STACK_PEEK ((&processor));
 
     printf ("result: %s\n", st_object_printString (value));
+    printf ("time %.9f seconds\n", elapsed);
+
 
     return 0;
 }

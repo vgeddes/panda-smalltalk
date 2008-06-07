@@ -1,6 +1,4 @@
 
-SUBDIRS = po
-
 ACLOCAL_AMFLAGS = -I .
 
 lib_LTLIBRARIES =

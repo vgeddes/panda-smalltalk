@@ -33,10 +33,10 @@
 #include "st-descriptor.h"
 
 
-GList *
+st_list *
 st_behavior_all_instance_variables (st_oop klass)
 {
-    GList *a = NULL, *b = NULL;
+    st_list *a = NULL, *b = NULL;
     st_oop names;
     st_smi size;
     
@@ -44,14 +44,14 @@ st_behavior_all_instance_variables (st_oop klass)
     if (klass == st_nil)
 	return NULL;
     
-    a = st_behavior_all_instance_variables (st_behavior_superclass (klass));
+    a = st_behavior_all_instance_variables (ST_BEHAVIOR (klass)->superclass);
 
-    names = st_behavior_instance_variables (klass);
+    names = ST_BEHAVIOR (klass)->instance_variables;
     if (names != st_nil) {
 	size = st_smi_value (st_arrayed_object_size (names));
 	for (st_smi i = 1; i <= size; i++)
-	    b = g_list_prepend (b, (gpointer) g_strdup (st_byte_array_bytes (st_array_at (names, i))));
+	    b = st_list_prepend (b, (st_pointer) st_strdup (st_byte_array_bytes (st_array_at (names, i))));
     }
 
-    return g_list_concat (a, g_list_reverse (b));
+    return st_list_concat (a, st_list_reverse (b));
 }

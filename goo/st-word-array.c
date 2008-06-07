@@ -21,56 +21,81 @@
  * THE SOFTWARE.
 */
 
-#include "st-array.h"
+#include "st-word-array.h"
 #include "st-universe.h"
 #include "st-utils.h"
 #include "st-descriptor.h"
+
+static st_smi
+round_size (st_smi size)
+{    
+#if ST_HOST64 == 1
+
+    st_assert (sizeof (st_oop) == (2 * sizeof (st_uint)));
+
+    int r = size % 2;
+
+    if (r == 0)
+	return size;
+    else
+	return size - r + 2;
+
+#else
+
+    st_assert (sizeof (st_oop) == sizeof (st_uint));
+
+    return size;
+
+#endif
+}
 
 
 static st_oop
 allocate_arrayed (st_oop klass, st_smi size)
 {
     st_oop  array;
-    st_oop *elements;
+    st_smi  size_rounded;
+    st_uint  *elements;
 
     st_assert (size >= 0);
 
-    array = st_allocate_object (ST_TYPE_SIZE (struct st_array) + size);
+    size_rounded = round_size (size);
+    array = st_allocate_object (ST_TYPE_SIZE (struct st_word_array) + size_rounded);
 
     st_heap_object_initialize_header (array, klass);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
 
-    elements = ST_ARRAY (array)->elements;
-    for (st_smi i = 0; i < size; i++)
-	elements[i] = st_nil;
+    elements = st_word_array_elements (array);
+    for (st_smi i = 0; i < size_rounded; i++)
+	elements[i] = 0;
 
     return array;
 }
 
 static st_oop
-array_copy (st_oop object)
+word_array_copy (st_oop object)
 {
     st_oop copy;
     st_smi size;
+    
+    size = st_smi_value (st_arrayed_object_size (object));
 
-    size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
+    copy = allocate_arrayed (st_object_class (object), size);
 
-    copy = st_object_new_arrayed (st_object_class (object), size);
-
-    st_oops_copy (ST_ARRAY (copy)->elements,
-		  ST_ARRAY (object)->elements,
-		  size);
+    memcpy (st_word_array_elements (copy),
+	    st_word_array_elements (object),
+	    sizeof (st_uint) * size);
 
     return copy;
 }
 
 st_descriptor *
-st_array_descriptor (void)
+st_word_array_descriptor (void)
 {
     static st_descriptor __descriptor =
 	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
-	  .copy             = array_copy,
+	  .copy             = word_array_copy,
 	};
 
     return & __descriptor;

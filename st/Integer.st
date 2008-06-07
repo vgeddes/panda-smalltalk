@@ -85,8 +85,8 @@ bitXor: aNumber
 
 Integer method!
 bitShift: aNumber
-    aNumber isSmallInteger
-		ifFalse: [ self error: 'A small integer is required' ].
+    aNumber isInteger
+		ifFalse: [ self error: 'An integer is required' ].
    
     ^ self asLargeInteger bitShift: aNumber!
 

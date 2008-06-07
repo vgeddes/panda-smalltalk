@@ -35,14 +35,14 @@ char *
 st_string_bytes (st_oop string)
 {
     if (st_object_class (string) == st_string_class) {
-	return g_strdup ((const char *) st_byte_array_bytes (string));
+	return st_strdup ((const char *) st_byte_array_bytes (string));
 
     } else if (st_object_class (string) == st_wide_string_class) {
-	return g_ucs4_to_utf8 (st_word_array_element (string, 1),
+	return g_ucs4_to_utf8 (st_word_array_elements (string),
 			       st_smi_value (st_arrayed_object_size (string)),
 			       NULL, NULL, NULL);
     } else {
-	g_assert_not_reached ();
+	st_assert_not_reached ();
 	return NULL;
     }
 }
@@ -63,7 +63,7 @@ static st_oop
 string_new (st_oop klass, const char *bytes)
 {
     st_oop  string;
-    guchar *data;
+    st_uchar *data;
     int len;
     
     len = strlen (bytes);

@@ -33,7 +33,7 @@
 
 typedef struct
 {
-    STHeader _header;
+    struct st_header _header;
 
     st_oop header;
     st_oop bytecode;
@@ -272,7 +272,7 @@ st_method_set_literal_type (st_oop method, STMethodLiteralType literal_type)
 }
 
 
-INLINE guchar *
+INLINE st_uchar *
 st_method_bytecode_bytes (st_oop method)
 {
     return st_byte_array_bytes (st_method_bytecode (method));    

@@ -175,7 +175,11 @@ assert: aBlock
 
 Object method!
 assert: aBlock description: aString
-	aBlock value or: [ self error: aString ]! 
+	aBlock value or: [ self error: aString ]!
+
+Object method!
+assertNotReached
+	self error: 'assert not reached' !
 
 Object method!
 error: aString 

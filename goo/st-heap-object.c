@@ -33,10 +33,10 @@
 
 int st_current_hash = 0;
 
-guint
+st_uint
 st_heap_object_hash (st_oop object)
 {
-    return (guint) ST_POINTER (object)->hash;   
+    return (st_uint) ST_POINTER (object)->hash;   
 }
 
 void
@@ -46,7 +46,7 @@ st_heap_object_set_hash (st_oop object, int value)
 }
 
 void
-st_heap_object_set_format (st_oop object, guint format)
+st_heap_object_set_format (st_oop object, st_uint format)
 {
     HEADER (object) = (HEADER (object) & ~st_format_mask_in_place) | (format << st_format_shift);   
 }
@@ -79,7 +79,7 @@ void
 st_heap_object_initialize_header (st_oop object, st_oop klass)
 {
     /* header */
-    st_heap_object_set_format (object, st_smi_value (st_behavior_format (klass)));
+    st_heap_object_set_format (object, st_smi_value (ST_BEHAVIOR (klass)->format));
     st_heap_object_set_readonly (object, false);
     st_heap_object_set_nonpointer (object, false);
 
@@ -103,9 +103,9 @@ st_heap_object_initialize_body (st_oop object, st_smi instance_size)
 static st_oop
 allocate (st_oop klass)
 {
-    st_smi instance_size = st_smi_value (st_behavior_instance_size (klass));
+    st_smi instance_size = st_smi_value (ST_BEHAVIOR (klass)->instance_size);
 
-    st_oop object = st_allocate_object (ST_TYPE_SIZE (STHeader) + instance_size);
+    st_oop object = st_allocate_object (ST_TYPE_SIZE (struct st_header) + instance_size);
 
     st_heap_object_initialize_header (object, klass);
     st_heap_object_initialize_body (object, instance_size);
@@ -121,7 +121,7 @@ object_copy (st_oop object)
     st_smi instance_size;
 
     klass = st_heap_object_class (object);
-    instance_size = st_smi_value (st_behavior_instance_size (klass));
+    instance_size = st_smi_value (ST_BEHAVIOR (klass)->instance_size);
     copy = st_object_new (klass);
 
     st_oops_copy (st_heap_object_body (copy),
@@ -131,10 +131,10 @@ object_copy (st_oop object)
     return copy;
 }
 
-const STDescriptor *
+st_descriptor *
 st_heap_object_descriptor (void)
 {
-    static const STDescriptor __descriptor =
+    static st_descriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
 	  .copy             = object_copy,

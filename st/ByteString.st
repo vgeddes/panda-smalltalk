@@ -54,8 +54,7 @@ byteAt: anInteger put: anObject
 
 ByteString method!
 byteSize
-	<primitive: 'ByteArray_size'>
-	self primitiveFailed!
+	^ super size!
 
 ByteString method!
 bytes
@@ -86,7 +85,7 @@ compareOrdinal: aString
 
 ByteString method!
 hash
-	<primitive: 'ByteString_hash'>
+	<primitive: 'ByteArray_hash'>
 	self primitiveFailed!
 
 "reversing"

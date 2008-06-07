@@ -1,5 +1,5 @@
 /*
- * st-ast.c
+ * st-node.h
  *
  * Copyright (c) 2008 Vincent Geddes
  *
@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #include <st-types.h>
+#include <st-utils.h>
 
 typedef enum
 {
@@ -66,6 +67,7 @@ struct STNode
 	    STNode *statements;
 	    STNode *temporaries;
 	    STNode *arguments;
+
 	} method;
 
 	struct {
@@ -116,7 +118,7 @@ struct STNode
 	struct {
 
 	    STNode *receiver;
-	    GList  *messages;
+	    st_list  *messages;
 	    bool is_statement;
 	    
 	} cascade;
@@ -129,7 +131,7 @@ STNode *st_node_new          (STNodeType type);
 
 STNode *st_node_list_append  (STNode *list, STNode *node);
 
-guint   st_node_list_length  (STNode *list);
+st_uint   st_node_list_length  (STNode *list);
 
 void    st_print_method_node (STNode *method);
 

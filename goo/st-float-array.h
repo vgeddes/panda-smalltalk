@@ -29,36 +29,21 @@
 #include <st-types.h>
 #include <st-descriptor.h>
 
-typedef struct
+#define ST_FLOAT_ARRAY(oop) ((struct st_float_array *) ST_POINTER (oop))
+
+struct st_float_array
 {
-    STHeader header;
+    struct st_arrayed_object header;
 
     double elements[];
+};
 
-} STFloatArray;
+st_descriptor *st_float_array_descriptor (void);
 
-INLINE st_smi st_float_array_size (st_oop array);
-
-INLINE bool st_float_array_range_check (st_oop array, st_smi i);
-
-INLINE double st_float_array_at (st_oop array, st_smi i);
-
-INLINE void st_float_array_at_put (st_oop array, st_smi i, double value);
-
-
-/* inline definitions */
-#define ST_FLOAT_ARRAY(oop) ((STFloatArray *) ST_POINTER (oop))
-
-INLINE st_oop
-st_float_array_size (st_oop array)
+INLINE double *
+st_float_array_elements (st_oop array)
 {
-    return ST_FLOAT_ARRAY (array)->size;
-}
-
-INLINE bool
-st_float_array_range_check (st_oop array, st_smi i)
-{
-    return 1 <= i && <=st_smi_value (st_float_array_size (array));
+    return ST_FLOAT_ARRAY (array)->elements;
 }
 
 INLINE double
@@ -70,8 +55,10 @@ st_float_array_at (st_oop array, st_smi i)
 INLINE void
 st_float_array_at_put (st_oop array, st_smi i, double value)
 {
-    return ST_FLOAT_ARRAY (array)->elements[i - 1] = value;
+    ST_FLOAT_ARRAY (array)->elements[i - 1] = value;
 }
+
+
 
 
 #endif /* __ST_FLOAT_ARRAY_H__ */

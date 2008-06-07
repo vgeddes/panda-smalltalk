@@ -6,8 +6,8 @@ new
 	^ self basicNew initialize!
 
 Behavior method!
-new: sizeRequested
-	^ (self basicNew: sizeRequested) initialize!
+new: size
+	^ (self basicNew: size) initialize!
 
 Behavior method!
 basicNew
@@ -28,7 +28,7 @@ name
 
 Metaclass method!
 name
-	^ instanceClass name , ' class'!
+	^ instanceClass name, ' class'!
 
 Behavior method!
 format

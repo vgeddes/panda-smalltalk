@@ -30,25 +30,44 @@
 #include <st-heap-object.h>
 #include <glib.h>
 
-typedef struct
+#define ST_BYTE_ARRAY(oop) ((struct st_byte_array *) ST_POINTER (oop))
+
+struct st_byte_array
 {
-    STArrayedObject header;
+    struct st_arrayed_object header;
 
-    guchar bytes[];
+    st_uchar bytes[];
+};
 
-} STByteArray;
+bool           st_byte_array_equal      (st_oop object, st_oop other);
 
-guchar *st_byte_array_bytes (st_oop object);
+st_uint          st_byte_array_hash       (st_oop object);
 
-guchar  st_byte_array_at (st_oop object, st_smi i);
+st_descriptor *st_byte_array_descriptor (void);
 
-void    st_byte_array_at_put (st_oop object, st_smi i, guchar value);
 
-bool    st_byte_array_equal (st_oop object, st_oop other);
+INLINE st_uchar *
+st_byte_array_bytes (st_oop object)
+{
+    return ST_BYTE_ARRAY (object)->bytes;
+}
 
-guint   st_byte_array_hash (st_oop object);
+INLINE st_uchar
+st_byte_array_at (st_oop object, st_smi i)
+{
+    st_assert (1 <= i && i <= st_arrayed_object_size (object));
 
-const STDescriptor *st_byte_array_descriptor (void);
+    return st_byte_array_bytes (object)[i - 1];
+}
+
+INLINE void
+st_byte_array_at_put (st_oop object, st_smi i, st_uchar value)
+{
+    st_assert (1 <= i && i <= st_arrayed_object_size (object));
+
+    st_byte_array_bytes (object)[i - 1] = value;
+}
+
 
 
 #endif /* __ST_BYTE_ARRAY__ */

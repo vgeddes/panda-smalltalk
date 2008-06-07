@@ -27,6 +27,7 @@
 
 #include <glib.h>
 #include <stdbool.h>
+#include <st-types.h>
 
 typedef struct STLexer    STLexer;
 typedef struct STToken    STToken;
@@ -58,7 +59,7 @@ typedef enum
 } STTokenType;
 
  
-STLexer       *st_lexer_new           (const char *string, GError **error);
+STLexer       *st_lexer_new           (const char *string);
 
 STLexer       *st_lexer_new_ucs4      (const wchar_t *string);
 
@@ -70,9 +71,9 @@ void           st_lexer_destroy       (STLexer *lexer);
 
 gunichar       st_lexer_error_char    (STLexer *lexer);
 
-guint          st_lexer_error_line    (STLexer *lexer);
+st_uint        st_lexer_error_line    (STLexer *lexer);
 
-guint          st_lexer_error_column  (STLexer *lexer);
+st_uint         st_lexer_error_column  (STLexer *lexer);
 
 char          *st_lexer_error_message (STLexer *lexer);
 
@@ -83,16 +84,15 @@ STTokenType    st_token_type   (STToken *token);
 
 char          *st_token_text   (STToken *token);
 
-guint          st_token_line   (STToken *token);
+st_uint          st_token_line   (STToken *token);
 
-guint          st_token_column (STToken *token);
-
+st_uint          st_token_column (STToken *token);
 
 bool           st_number_token_negative (STToken *token);
 
 char          *st_number_token_number   (STToken *token);
 
-guint          st_number_token_radix    (STToken *token);
+st_uint          st_number_token_radix    (STToken *token);
 
 int            st_number_token_exponent (STToken *token);
 

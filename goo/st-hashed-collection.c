@@ -35,18 +35,18 @@
 #define DEFAULT_CAPACITY      5
 #define TALLY(collection)    (ST_HASHED_COLLECTION (collection)->tally)
 #define ARRAY(collection)    (ST_HASHED_COLLECTION (collection)->array)
-#define ARRAY_SIZE(array)    (st_smi_value (st_arrayed_object_size (array)))
+#define ARRAY_SIZE(array)    (st_smi_value (ST_ARRAYED_OBJECT (array)->size))
 
-#define ST_HASHED_COLLECTION(oop) ((STHashedCollection *) ST_POINTER (oop))
+#define ST_HASHED_COLLECTION(oop) ((struct st_hashed_collection *) ST_POINTER (oop))
 
-typedef struct
+struct st_hashed_collection
 {
-    STHeader header;
+    struct st_header header;
 
     st_oop tally;
     st_oop array;
 
-} STHashedCollection;
+};
 
 static st_smi  dict_scan_for_object (st_oop dict, st_oop object);
 
@@ -69,12 +69,12 @@ collection_find_element_or_nil (st_oop collection, st_oop object)
     else if (st_object_class (collection) == st_set_class)
 	index = set_scan_for_object (collection, object);
     else
-	g_assert_not_reached ();
+	st_assert_not_reached ();
 
     if (index > 0)
 	return index;
 
-    g_assert_not_reached ();
+    st_assert_not_reached ();
 }
 
 static st_smi
@@ -102,7 +102,7 @@ collection_grow (st_oop collection)
 	    } else if (st_object_class (collection) == st_set_class) {
 		set_no_check_add (collection, st_array_at (old_array, i));
 	    } else {
-		g_assert_not_reached ();
+		st_assert_not_reached ();
 	    }
 	}
 }
@@ -130,7 +130,7 @@ collection_at_new_index_put (st_oop collection, st_smi index, st_oop object)
 static void
 collection_initialize (st_oop collection, st_smi capacity)
 {
-    g_assert (capacity > 0);
+    st_assert (capacity > 0);
 
     TALLY (collection) = st_smi_new (0);
     ARRAY (collection) = st_object_new_arrayed (st_array_class, capacity);
@@ -148,7 +148,7 @@ dict_scan_for_object (st_oop dict, st_oop object)
 
 	if (element == st_nil)
 	    return i;
-	if (st_object_equal (object, st_association_key (element)))
+	if (st_object_equal (object, ST_ASSOCIATION (element)->key))
 	    return i;
     }
 
@@ -158,7 +158,7 @@ dict_scan_for_object (st_oop dict, st_oop object)
 
 	if (element == st_nil)
 	    return i;
-	if (st_object_equal (object, st_association_key (element)))
+	if (st_object_equal (object, ST_ASSOCIATION (element)->key))
 	    return i;
 
     }
@@ -170,7 +170,7 @@ static void
 dict_no_check_add (st_oop dict, st_oop object)
 {
     st_array_at_put (ARRAY (dict),
-		     collection_find_element_or_nil (dict, st_association_key (object)), object);
+		     collection_find_element_or_nil (dict, ST_ASSOCIATION (object)->key), object);
 }
 
 void
@@ -186,7 +186,7 @@ st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
 	collection_at_new_index_put (dict, index, assoc);
 
     } else {
-	st_association_value (assoc) = value;
+	ST_ASSOCIATION (assoc)->value = value;
     }
 }
 
@@ -198,7 +198,7 @@ st_dictionary_at (st_oop dict, st_oop key)
     st_oop assoc = st_array_at (ARRAY (dict), index);
 
     if (assoc != st_nil)
-	return st_association_value (assoc);
+	return ST_ASSOCIATION (assoc)->value;
 
     return st_nil;
 }
@@ -272,11 +272,8 @@ st_set_add (st_oop set, st_oop object)
 
     st_oop element = st_array_at (ARRAY (set), index);
 
-    if (element == st_nil) {
-
+    if (element == st_nil)
 	collection_at_new_index_put (set, index, object);
-
-    }
 }
 
 bool

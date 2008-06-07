@@ -31,6 +31,7 @@
 #include "st-array.h"
 #include "st-byte-array.h"
 #include "st-word-array.h"
+#include "st-float-array.h"
 #include "st-small-integer.h"
 #include "st-hashed-collection.h"
 #include "st-large-integer.h"
@@ -64,6 +65,8 @@ st_oop
     st_false_class           = 0,
     st_array_class           = 0,
     st_byte_array_class      = 0,
+    st_word_array_class      = 0,
+    st_float_array_class      = 0,
     st_set_class	     = 0,
     st_dictionary_class      = 0,
     st_association_class     = 0,
@@ -101,7 +104,7 @@ enum
 };
 
 static st_oop
-class_new (STFormat format, guint instance_size)
+class_new (st_format format, st_uint instance_size)
 {
     st_oop klass;
 
@@ -115,14 +118,14 @@ class_new (STFormat format, guint instance_size)
     st_heap_object_set_hash (klass, st_current_hash++);			       
     st_heap_object_class (klass) = st_nil;
 
-    st_behavior_format (klass)             = st_smi_new (format);
-    st_behavior_instance_size (klass)      = st_smi_new (instance_size);
-    st_behavior_superclass (klass)         = st_nil;
-    st_behavior_method_dictionary (klass)  = st_nil;
-    st_behavior_instance_variables (klass) = st_nil;
+    ST_BEHAVIOR (klass)->format             = st_smi_new (format);
+    ST_BEHAVIOR (klass)->instance_size      = st_smi_new (instance_size);
+    ST_BEHAVIOR (klass)->superclass         = st_nil;
+    ST_BEHAVIOR (klass)->method_dictionary  = st_nil;
+    ST_BEHAVIOR (klass)->instance_variables = st_nil;
 
-    st_class_name (klass) = st_nil;
-    st_class_pool (klass) = st_nil;
+    ST_CLASS (klass)->name       = st_nil;
+    ST_CLASS (klass)->class_pool = st_nil;
 
     return klass;
 }
@@ -133,13 +136,13 @@ declare_class (const char *name, st_oop klass)
     st_oop symbol;
 
     // sanity check for symbol interning
-    g_assert (st_symbol_new (name) == st_symbol_new (name));
+    st_assert (st_symbol_new (name) == st_symbol_new (name));
 
     symbol = st_symbol_new (name);
     st_dictionary_at_put (st_smalltalk, symbol, klass);
 
     // sanity check for dictionary
-    g_assert (st_dictionary_at (st_smalltalk, symbol) == klass);
+    st_assert (st_dictionary_at (st_smalltalk, symbol) == klass);
 }
 
 static void
@@ -153,15 +156,15 @@ parse_error (char *message, STToken *token)
 static void
 initialize_class  (const char *name,
 		   const char *super_name,
-		   GList      *ivarnames,
-		   GList      *cvarnames)
+		   st_list      *ivarnames,
+		   st_list      *cvarnames)
 {
     st_oop metaclass, klass, superclass;
 
     if (streq (name, "Object") && streq (super_name, "nil")) {
 
 	klass = st_dictionary_at (st_smalltalk, st_symbol_new ("Object"));
-	g_assert (klass != st_nil);
+	st_assert (klass != st_nil);
 
 	metaclass = st_object_class (klass);
 	if (metaclass == st_nil) {
@@ -169,19 +172,19 @@ initialize_class  (const char *name,
 	    st_heap_object_class (klass) =  metaclass;
 	}
 
-	st_behavior_superclass (klass)     = st_nil;
-	st_behavior_instance_size (klass)  = st_smi_new (0);
-	st_behavior_superclass (metaclass) = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
+	ST_BEHAVIOR (klass)->superclass     = st_nil;
+	ST_BEHAVIOR (klass)->instance_size  = st_smi_new (0);
+	ST_BEHAVIOR (metaclass)->superclass = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
 
     } else {
 	
 	superclass = st_global_get (super_name);
 	if (superclass == st_nil)
-	    g_assert (superclass != st_nil);
+	    st_assert (superclass != st_nil);
 
 	klass = st_global_get (name);
 	if (klass == st_nil)
-	    klass = class_new (st_smi_value (st_behavior_format (superclass)), 0);
+	    klass = class_new (st_smi_value (ST_BEHAVIOR (superclass)->format), 0);
 
 	metaclass = st_object_class (klass);
 	if (metaclass == st_nil) {
@@ -189,45 +192,45 @@ initialize_class  (const char *name,
 	    st_heap_object_class (klass) = metaclass;
 	}
 
-	st_behavior_superclass (klass)     = superclass;
-	st_behavior_superclass (metaclass) = st_object_class (superclass);
+	ST_BEHAVIOR (klass)->superclass     = superclass;
+	ST_BEHAVIOR (metaclass)->superclass = st_object_class (superclass);
 
-	st_behavior_instance_size (klass) = st_smi_new (g_list_length (ivarnames) + st_smi_value (st_behavior_instance_size (superclass)));
+	ST_BEHAVIOR (klass)->instance_size = st_smi_new (st_list_length (ivarnames) +
+							 st_smi_value (ST_BEHAVIOR (superclass)->instance_size));
     }
 
-    st_behavior_format (metaclass)             = st_smi_new (ST_FORMAT_OBJECT);
-    st_behavior_method_dictionary (metaclass)  = st_dictionary_new ();
-    st_behavior_instance_variables (metaclass) = st_nil;
-    st_behavior_instance_size (metaclass)      = st_smi_new (INSTANCE_SIZE_CLASS);
-    st_metaclass_instance_class (metaclass)    = klass;
+    ST_BEHAVIOR (metaclass)->format             = st_smi_new (ST_FORMAT_OBJECT);
+    ST_BEHAVIOR (metaclass)->method_dictionary  = st_dictionary_new ();
+    ST_BEHAVIOR (metaclass)->instance_variables = st_nil;
+    ST_BEHAVIOR (metaclass)->instance_size      = st_smi_new (INSTANCE_SIZE_CLASS);
+    ST_METACLASS (metaclass)->instance_class    = klass;
 
-    if (g_list_length (ivarnames) != 0) {
+    if (st_list_length (ivarnames) != 0) {
 	st_oop names;
-	guint i = 1;
-	names = st_object_new_arrayed (st_array_class, g_list_length (ivarnames));
-	for (GList *l = ivarnames; l; l = l->next)
+	st_uint i = 1;
+	names = st_object_new_arrayed (st_array_class, st_list_length (ivarnames));
+	for (st_list *l = ivarnames; l; l = l->next)
 	    st_array_at_put (names, i++, st_symbol_new (l->data));
-	st_behavior_instance_variables (klass) = names;
-	
+	ST_BEHAVIOR (klass)->instance_variables = names;
+
     } else {
-	st_behavior_instance_variables (klass) = st_nil;
+	ST_BEHAVIOR (klass)->instance_variables = st_nil;
     }
 
     st_oop pool = st_dictionary_new ();
-    for (GList * l = cvarnames; l; l = l->next) {
+    for (st_list * l = cvarnames; l; l = l->next)
 	st_dictionary_at_put (pool, st_symbol_new (l->data), st_nil);
-    }
 
-    st_class_name (klass) = st_symbol_new (name);
-    st_class_pool (klass) = pool;
-    st_behavior_method_dictionary (klass) = st_dictionary_new ();
+    ST_CLASS (klass)->name        = st_symbol_new (name);
+    ST_CLASS (klass)->class_pool  = pool;
+    ST_BEHAVIOR (klass)->method_dictionary = st_dictionary_new ();
 
     st_dictionary_at_put (st_smalltalk, st_symbol_new (name), klass);
 }
 
 
 static bool
-parse_variable_names (STLexer *lexer, GList **varnames)
+parse_variable_names (STLexer *lexer, st_list **varnames)
 {
     STLexer *ivarlexer;
     STToken *token;
@@ -238,8 +241,8 @@ parse_variable_names (STLexer *lexer, GList **varnames)
     if (st_token_type (token) != ST_TOKEN_STRING_CONST)
 	return false;
 
-    names = g_strdup (st_token_text (token));
-    ivarlexer = st_lexer_new (names, NULL); /* input valid at this stage */
+    names = st_strdup (st_token_text (token));
+    ivarlexer = st_lexer_new (names); /* input valid at this stage */
     token = st_lexer_next_token (ivarlexer);
 
     while (st_token_type (token) != ST_TOKEN_EOF) {
@@ -247,7 +250,7 @@ parse_variable_names (STLexer *lexer, GList **varnames)
 	if (st_token_type (token) != ST_TOKEN_IDENTIFIER)
 	    parse_error (NULL, token);
 
-	*varnames = g_list_append (*varnames, g_strdup (st_token_text (token)));
+	*varnames = st_list_append (*varnames, st_strdup (st_token_text (token)));
 	token = st_lexer_next_token (ivarlexer);
     }
 
@@ -277,7 +280,7 @@ parse_class (STLexer *lexer, STToken *token)
     // class name
     token = st_lexer_next_token (lexer);
     if (st_token_type (token) == ST_TOKEN_STRING_CONST) {
-	class_name = g_strdup (st_token_text (token));
+	class_name = st_strdup (st_token_text (token));
     } else {
 	parse_error ("expected string literal", token);
     }
@@ -292,13 +295,13 @@ parse_class (STLexer *lexer, STToken *token)
     token = st_lexer_next_token (lexer);
     if (st_token_type (token) == ST_TOKEN_STRING_CONST) {
         
-	superclass_name = g_strdup (st_token_text (token));
+	superclass_name = st_strdup (st_token_text (token));
 
     } else {
 	parse_error ("expected string literal", token);
     }
 
-    GList *ivarnames = NULL, *cvarnames = NULL;;
+    st_list *ivarnames = NULL, *cvarnames = NULL;;
 
     // 'instanceVariableNames:' keyword selector        
     token = st_lexer_next_token (lexer);
@@ -325,8 +328,8 @@ parse_class (STLexer *lexer, STToken *token)
 
     initialize_class (class_name, superclass_name, ivarnames, cvarnames);
 
-    g_list_free (ivarnames);
-    g_list_free (cvarnames);
+    st_list_destroy (ivarnames);
+    st_list_destroy (cvarnames);
 
     token = st_lexer_next_token (lexer);
     
@@ -337,22 +340,15 @@ static void
 parse_classes (const char *filename)
 {
     char *contents;
-    gsize len;
     STLexer *lexer;
     STToken *token;
-    GError *error = NULL;
 
-    bool success = g_file_get_contents (filename,
-					&contents,
-					&len,
-					&error);
-    if (!success) {
-	g_critical (error->message);
+    if (!st_file_get_contents (filename, &contents)) {
 	exit (1);
     }
 
-    lexer = st_lexer_new (contents, NULL);
-    g_assert (lexer != NULL);
+    lexer = st_lexer_new (contents);
+    st_assert (lexer != NULL);
     token = st_lexer_next_token (lexer);
 
     while (st_token_type (token) != ST_TOKEN_EOF) {
@@ -384,6 +380,8 @@ file_in_classes (void)
 	    "Set.st",
 	    "Array.st",
 	    "ByteArray.st",
+	    "WordArray.st",
+	    "FloatArray.st",
 	    "Association.st",
 	    "Magnitude.st",
 	    "Number.st",
@@ -409,10 +407,10 @@ file_in_classes (void)
 	    "Message.st"
 	};
 
-    for (guint i = 0; i < G_N_ELEMENTS (files); i++) {
+    for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {
 	filename = g_build_filename ("..", "st", files[i], NULL);
 	st_compile_file_in (filename);
-	g_free (filename);
+	st_free (filename);
     }
 }
 
@@ -421,7 +419,7 @@ create_nil_object (void)
 {
     st_oop nil;
 
-    nil = st_allocate_object (sizeof (STHeader) / sizeof (st_oop));
+    nil = st_allocate_object (sizeof (struct st_header) / sizeof (st_oop));
 
     st_heap_object_set_readonly   (nil, false);
     st_heap_object_set_nonpointer (nil, false);
@@ -487,11 +485,12 @@ st_bootstrap_universe (void)
     allocate_virtual_space ();
 
     /* setup format descriptors */
-    st_descriptors[ST_FORMAT_OBJECT]     = st_heap_object_descriptor ();
-    st_descriptors[ST_FORMAT_ARRAY]      = st_array_descriptor       ();
-    st_descriptors[ST_FORMAT_BYTE_ARRAY] = st_byte_array_descriptor  ();
-    st_descriptors[ST_FORMAT_WORD_ARRAY] = st_word_array_descriptor  ();
-    st_descriptors[ST_FORMAT_FLOAT]      = st_float_descriptor       ();
+    st_descriptors[ST_FORMAT_OBJECT]        = st_heap_object_descriptor ();
+    st_descriptors[ST_FORMAT_ARRAY]         = st_array_descriptor       ();
+    st_descriptors[ST_FORMAT_BYTE_ARRAY]    = st_byte_array_descriptor  ();
+    st_descriptors[ST_FORMAT_WORD_ARRAY]    = st_word_array_descriptor  ();
+    st_descriptors[ST_FORMAT_FLOAT_ARRAY]   = st_float_array_descriptor  ();
+    st_descriptors[ST_FORMAT_FLOAT]         = st_float_descriptor       ();
     st_descriptors[ST_FORMAT_LARGE_INTEGER] = st_large_integer_descriptor ();
 
     st_nil = create_nil_object ();
@@ -508,6 +507,8 @@ st_bootstrap_universe (void)
     st_false_class            = class_new (ST_FORMAT_OBJECT, 0);
     st_float_class            = class_new (ST_FORMAT_FLOAT, 0);
     st_array_class            = class_new (ST_FORMAT_ARRAY, 0);
+    st_word_array_class       = class_new (ST_FORMAT_WORD_ARRAY, 0);
+    st_float_array_class      = class_new (ST_FORMAT_FLOAT_ARRAY, 0);
     st_dictionary_class       = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_DICTIONARY);
     st_set_class              = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SET);
     st_byte_array_class       = class_new (ST_FORMAT_BYTE_ARRAY, 0);
@@ -539,6 +540,8 @@ st_bootstrap_universe (void)
     declare_class ("Float", st_float_class);
     declare_class ("Array", st_array_class);
     declare_class ("ByteArray", st_byte_array_class);
+    declare_class ("WordArray", st_word_array_class);
+    declare_class ("FloatArray", st_word_array_class);
     declare_class ("ByteString", st_string_class);
     declare_class ("ByteSymbol", st_symbol_class);
     declare_class ("WideString", st_wide_string_class);
@@ -553,6 +556,6 @@ st_bootstrap_universe (void)
     
     st_method_context_class = st_global_get ("MethodContext");
     st_block_context_class = st_global_get ("BlockContext");
-    g_assert (st_method_context_class != st_nil);
-    g_assert (st_block_context_class != st_nil);
+    st_assert (st_method_context_class != st_nil);
+    st_assert (st_block_context_class != st_nil);
 }

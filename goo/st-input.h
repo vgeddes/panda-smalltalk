@@ -25,6 +25,7 @@
 #ifndef __ST_INPUT_H__
 #define __ST_INPUT_H__
 
+#include <st-types.h>
 #include <glib.h>
 
 typedef struct STInput STInput;
@@ -35,31 +36,31 @@ enum
 };
 
 
-STInput   *st_input_new          (const char *string, GError **error);
+STInput   *st_input_new          (const char *string);
 
 STInput   *st_input_new_ucs4     (const wchar_t *string);
 
 wchar_t    st_input_look_ahead   (STInput *input, int i);
 
-guint      st_input_get_line     (STInput *input);
+st_uint      st_input_get_line     (STInput *input);
 
-guint      st_input_get_column   (STInput *input);
+st_uint      st_input_get_column   (STInput *input);
 
 void       st_input_mark         (STInput *input);
 
 void       st_input_rewind       (STInput *input);
 
-void       st_input_seek         (STInput *input, guint index);
+void       st_input_seek         (STInput *input, st_uint index);
 
 void       st_input_consume      (STInput *input);
 
-guint      st_input_size         (STInput *input);
+st_uint      st_input_size         (STInput *input);
 
-guint      st_input_index        (STInput *input);
+st_uint      st_input_index        (STInput *input);
 
-char      *st_input_range        (STInput *input, guint start, guint end);
+char      *st_input_range        (STInput *input, st_uint start, st_uint end);
 
-wchar_t   *st_input_range_ucs4   (STInput *input, guint start, guint end);
+wchar_t   *st_input_range_ucs4   (STInput *input, st_uint start, st_uint end);
 
 wchar_t   *st_input_next_chunk   (STInput *input);
 

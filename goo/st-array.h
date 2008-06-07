@@ -29,41 +29,27 @@
 #include <st-object.h>
 #include <glib.h>
 
-typedef struct
+#define ST_ARRAY(oop) ((struct st_array *) ST_POINTER (oop))
+
+struct st_array
 {
-    STArrayedObject header;
+    struct st_arrayed_object header;
 
     st_oop elements[];
+};
 
-} STArray;
+st_descriptor *st_array_descriptor (void);
 
-INLINE st_oop *st_array_element     (st_oop object, st_smi i);
-
-INLINE st_oop  st_array_at          (st_oop object, st_smi i);
-
-INLINE void    st_array_at_put      (st_oop object, st_smi i, st_oop value);
-
-const STDescriptor *st_array_descriptor (void);
-
-/* inline definitions */
-#define ST_ARRAY(oop) ((STArray *) ST_POINTER (oop))
-
-/* 
- * returns address of element at index i > 0
- */
 INLINE st_oop *
-st_array_element (st_oop object, st_smi i)
+st_array_elements (st_oop object)
 {
-    /* by obtaining the element address as an offset from `&array->size',
-     * we avoid the slight overhead of subtraction if we had used `&array->elements[i - 1]' instead.
-     */
-    return ST_ARRAY (object)->elements + i - 1;
+    return ST_ARRAY (object)->elements;
 }
 
 INLINE st_oop
 st_array_at (st_oop object, st_smi i)
 {
-    g_assert (1 <= i && i <= st_arrayed_object_size (object));
+    st_assert (1 <= i && i <= st_arrayed_object_size (object));
 
     return ST_ARRAY (object)->elements[i - 1];
 }
@@ -71,7 +57,7 @@ st_array_at (st_oop object, st_smi i)
 INLINE void
 st_array_at_put (st_oop object, st_smi i, st_oop value)
 {
-    g_assert (1 <= i && i <= st_arrayed_object_size (object));
+    st_assert (1 <= i && i <= st_arrayed_object_size (object));
 
     ST_ARRAY (object)->elements[i - 1] = value;
 }

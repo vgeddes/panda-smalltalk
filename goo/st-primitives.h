@@ -28,15 +28,15 @@
 #include <glib.h>
 #include <st-interpreter.h>
 
-typedef void (*STPrimitiveFunc) (STExecutionState *es);
+typedef void (*st_primitive_func) (st_processor *processor);
 
-typedef struct
+struct st_primitive
 {
-    const char *     name;
-    STPrimitiveFunc  func;
-} STPrimitive;
+    const char *       name;
+    st_primitive_func  func;
+};
 
-extern const STPrimitive st_primitives[];
+extern const struct st_primitive st_primitives[];
 
 int st_primitive_index_for_name (const char *name);
 

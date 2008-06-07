@@ -1,4 +1,34 @@
 
+"instance creation"
+
+Collection classMethod!
+with: anObject
+	^ (self new)
+	add: anObject;
+	yourself!
+
+Collection classMethod!
+with: firstObject with: secondObject
+	^ (self new)
+	add: firstObject;
+	add: secondObject;
+	yourself!
+
+Collection classMethod!
+with: firstObject with: secondObject with: thirdObject
+	^ (self new) add: firstObject;
+	add: secondObject;
+	add: thirdObject;
+	yourself!
+
+Collection classMethod!
+with: firstObject with: secondObject with: thirdObject with: fourthObject
+	^ (self new)
+	add: firstObject;
+	add: secondObject;
+	add: thirdObject;
+	add: fourthObject;
+	yourself!
 
 "adding"
 

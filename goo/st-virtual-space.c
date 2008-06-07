@@ -24,14 +24,17 @@
 
 #include "st-virtual-space.h"
 #include "st-types.h"
+#include "st-utils.h"
 
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/mman.h>
 #include <string.h>
 
 // adjust reserved size to be a integral multiple of the page size
-static guint
+static st_uint
 adjust_size (int reserved_size)
 {
     int page_size = getpagesize ();
@@ -44,16 +47,16 @@ adjust_size (int reserved_size)
 }
 
 static bool
-map_size (STVirtualSpace *space, guint size)
+map_size (STVirtualSpace *space, st_uint size)
 {
     void *start;
 
-    guint adjusted_size = adjust_size (size);
+    st_uint adjusted_size = adjust_size (size);
 
     start = mmap (NULL, adjusted_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 
     if (((long) start) == -1) {
-	g_debug (strerror (errno));
+	fprintf (stderr, strerror (errno));
 	return false;
     }
     
@@ -66,11 +69,11 @@ map_size (STVirtualSpace *space, guint size)
 STVirtualSpace *
 st_virtual_space_new (void)
 {
-    return g_new (STVirtualSpace, 1);
+    return st_malloc (sizeof (STVirtualSpace));
 }
 
 bool
-st_virtual_space_reserve (STVirtualSpace *space, guint size)
+st_virtual_space_reserve (STVirtualSpace *space, st_uint size)
 {
     return map_size (space, size);
 }
@@ -90,5 +93,5 @@ st_virtual_space_end (STVirtualSpace *space)
 void
 st_virtual_space_destroy (STVirtualSpace *space)
 {
-    g_free (space);
+    st_free (space);
 }

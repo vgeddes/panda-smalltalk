@@ -1,7 +1,7 @@
-/*
- * st-float.c
+/* 
+ * st-array.h
  *
- * Copyright (C) 2008 Vincent Geddes
+ * Copyright (c) 2008 Vincent Geddes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,47 +22,44 @@
  * THE SOFTWARE.
 */
 
-#include "st-float.h"
-#include "st-object.h"
+#ifndef __ST_WORD_ARRAY_H__
+#define __ST_WORD_ARRAY_H__
 
-static st_oop
-allocate (st_oop klass)
+#include <st-types.h>
+#include <st-object.h>
+#include <glib.h>
+
+#define ST_WORD_ARRAY(oop) ((struct st_word_array *) ST_POINTER (oop))
+
+struct st_word_array
 {
-    st_oop f = st_allocate_object (ST_TYPE_SIZE (struct st_float));
+    struct st_arrayed_object header;
 
-    st_heap_object_initialize_header (f, st_float_class);
+    st_uint elements[];
+};
 
-    st_float_set_value (f, 0.0);
+st_descriptor *st_word_array_descriptor (void);
 
-    return f;
+INLINE st_uint *
+st_word_array_elements (st_oop object)
+{
+    return ST_WORD_ARRAY (object)->elements;
 }
 
-st_oop
-st_float_new (double value)
+INLINE st_uint
+st_word_array_at (st_oop object, st_smi i)
 {
-    st_oop f = st_object_new (st_float_class);
+    st_assert (1 <= i && i <= st_arrayed_object_size (object));
 
-    st_float_set_value (f, value);
-    
-    return f;
+    return ST_WORD_ARRAY (object)->elements[i - 1];
 }
 
-static st_oop
-float_copy (st_oop object)
+INLINE void
+st_word_array_at_put (st_oop object, st_smi i, st_uint value)
 {
-    return st_float_new (st_float_value (object));
+    st_assert (1 <= i && i <= st_arrayed_object_size (object));
+
+    ST_WORD_ARRAY (object)->elements[i - 1] = value;
 }
 
-st_descriptor *
-st_float_descriptor (void)
-{
-    assert_static (sizeof (struct st_float) == (sizeof (struct st_header) + sizeof (double)));
-    
-    static st_descriptor __descriptor =
-	{ .allocate         = allocate,
-	  .allocate_arrayed = NULL,
-	  .copy             = float_copy
-	};
-    
-    return & __descriptor;
-}
+#endif /* __ST_WORD_ARRAY_H__ */

@@ -30,13 +30,15 @@
 #include <st-heap-object.h>
 #include <st-object.h>
 
-typedef struct
+#define ST_FLOAT(oop) ((struct st_float *) ST_POINTER (oop))
+
+struct st_float
 {
-    STHeader header;
+    struct st_header header;
 
     double value;
 
-} STFloat;
+};
 
 st_oop        st_float_new       (double value);
 
@@ -46,12 +48,9 @@ INLINE void   st_float_set_value (st_oop f, double value);
 
 INLINE bool   st_float_equal     (st_oop object, st_oop other);
 
-INLINE guint  st_float_hash      (st_oop object);
+INLINE st_uint  st_float_hash      (st_oop object);
 
-const STDescriptor *st_float_descriptor (void);
-
-/* inline definitions */
-#define ST_FLOAT(oop) ((STFloat *) ST_POINTER (oop))
+st_descriptor *st_float_descriptor (void);
 
 INLINE double
 st_float_value (st_oop f)
@@ -74,10 +73,10 @@ st_float_equal (st_oop object, st_oop other)
     return st_float_value (object) == st_float_value (other);
 }
 
-INLINE guint
+INLINE st_uint
 st_float_hash (st_oop object)
 {
-    return (guint) st_float_value (object);
+    return (st_uint) st_float_value (object);
 }
 
 

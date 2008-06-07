@@ -48,27 +48,21 @@ typedef struct
     STLexer  *lexer;
     bool      in_block;
 
-    STError  **error;  
+    st_compiler_error *error;  
     jmp_buf   jmploc;
 } STParser;
-    
 
 static void
 parse_error (STParser   *parser,
 	     const char *message,
 	     STToken    *token)
 {
-    
     if (parser->error) {
-	
-	st_error_set (parser->error,
-		      ST_COMPILER_ERROR,
-		      message);
-	 
-	st_error_set_data (*parser->error, "line", GINT_TO_POINTER (st_token_line (token)));
+	strncpy (parser->error->message, message, 255);
+	parser->error->line   = st_token_line (token);
+	parser->error->column = st_token_column (token);
     }
     
-    /* go back to start */
     longjmp (parser->jmploc, 0);
 }
 
@@ -119,7 +113,7 @@ parse_block_arguments (STParser *parser)
 
 	node = st_node_new (ST_VARIABLE_NODE);
 	node->line = st_token_line (token);
-	node->variable.name = g_strdup (st_token_text (token));
+	node->variable.name = st_strdup (st_token_text (token));
 	arguments = st_node_list_append (arguments, node);
 
 	token = next (parser, parser->lexer);
@@ -205,11 +199,11 @@ parse_number (STParser *parser)
 	if (radix != 10)
 	    parse_error (parser,"only base-10 floats are supported at the moment", token);
 
-	format = g_strdup_printf ("%se%i", number, exponent);
+	format = st_strdup_printf ("%se%i", number, exponent);
 	
 	node->literal.value = st_float_new (sign * strtod (format, NULL));
 	
-	g_free (format);
+	st_free (format);
 
     } else {
 
@@ -257,7 +251,7 @@ parse_tuple (STParser *parser)
 {
     STToken *token;
     STNode *node;
-    GList *items = NULL;
+    st_list *items = NULL;
 
     token = next (parser, parser->lexer);
     while (true) {
@@ -268,13 +262,13 @@ parse_tuple (STParser *parser)
 	case ST_TOKEN_SYMBOL_CONST:
 	case ST_TOKEN_CHARACTER_CONST:
 	    node = parse_primary (parser);
-	    items = g_list_prepend (items, (gpointer) node->literal.value);
+	    items = st_list_prepend (items, (st_pointer) node->literal.value);
 	    st_node_destroy (node);
 	    break;
 	    
 	case ST_TOKEN_LPAREN:
 	    node = parse_tuple (parser);
-	    items = g_list_prepend (items, (gpointer) node->literal.value);
+	    items = st_list_prepend (items, (st_pointer) node->literal.value);
 	    st_node_destroy (node);
 	    break;
 	
@@ -292,12 +286,12 @@ parse_tuple (STParser *parser)
     token = next (parser, parser->lexer);
     st_oop tuple;
 
-    items = g_list_reverse (items);
+    items = st_list_reverse (items);
 
-    tuple = st_object_new_arrayed (st_array_class, g_list_length (items));
+    tuple = st_object_new_arrayed (st_array_class, st_list_length (items));
 
     int i = 1;
-    for (GList *l = items; l; l = l->next)
+    for (st_list *l = items; l; l = l->next)
 	st_array_at_put (tuple, i++, (st_oop) l->data);
     
     node = st_node_new (ST_LITERAL_NODE);
@@ -323,7 +317,7 @@ parse_primary (STParser *parser)
 	
 	node = st_node_new (ST_VARIABLE_NODE);
 	node->line = st_token_line (token);
-	node->variable.name = g_strdup (st_token_text (token));
+	node->variable.name = st_strdup (st_token_text (token));
 
 	next (parser, parser->lexer);
 	break;
@@ -570,7 +564,7 @@ parse_cascade (STParser *parser, STNode *first_message)
     node->line = st_token_line (token);
 
     node->cascade.receiver = first_message->message.receiver;
-    node->cascade.messages = g_list_append (node->cascade.messages, first_message);
+    node->cascade.messages = st_list_append (node->cascade.messages, first_message);
 
     first_message->message.receiver = NULL;
 
@@ -585,7 +579,7 @@ parse_cascade (STParser *parser, STNode *first_message)
 	    
 	message->message.super_send = super_send;	    
 
-	node->cascade.messages = g_list_append (node->cascade.messages, message);
+	node->cascade.messages = st_list_append (node->cascade.messages, message);
 	token = current (parser->lexer);
     }
 
@@ -800,7 +794,7 @@ parse_temporaries (STParser *parser)
 
 	temp = st_node_new (ST_VARIABLE_NODE);
 	temp->line = st_token_line (token);
-	temp->variable.name = g_strdup (st_token_text (token));
+	temp->variable.name = st_strdup (st_token_text (token));
 	
 	temporaries = st_node_list_append (temporaries, temp);
    
@@ -843,7 +837,7 @@ parse_message_pattern (STParser *parser, STNode *method)
 
 	arguments = st_node_new (ST_VARIABLE_NODE);
 	arguments->line = st_token_line (token);
-	arguments->variable.name = g_strdup (st_token_text (token));
+	arguments->variable.name = st_strdup (st_token_text (token));
 
 	method->method.precedence = ST_BINARY_PRECEDENCE;
 
@@ -863,7 +857,7 @@ parse_message_pattern (STParser *parser, STNode *method)
 	
 	    arg = st_node_new (ST_VARIABLE_NODE);
 	    arg->line = st_token_line (token);
-	    arg->variable.name = g_strdup (st_token_text (token));
+	    arg->variable.name = st_strdup (st_token_text (token));
 	    arguments = st_node_list_append (arguments, arg);
 
 	    token = next (parser, parser->lexer);
@@ -896,21 +890,21 @@ parse_method (STParser *parser)
     node->method.primitive   = parse_primitive (parser);
     node->method.statements  = parse_statements (parser);
 
-    g_assert (node->type == ST_METHOD_NODE);
+    st_assert (node->type == ST_METHOD_NODE);
 
     return node;
-} 
+}
 
 STNode *
 st_parser_parse (STLexer *lexer,
-		 STError **error)
+		 st_compiler_error *error)
 {
     STParser *parser;
     STNode   *method;
 
-    g_assert (lexer != NULL);
+    st_assert (lexer != NULL);
 
-    parser = g_slice_new0 (STParser);
+    parser = st_new0 (STParser);
     
     parser->lexer = lexer;
     parser->error = error;
@@ -922,7 +916,7 @@ st_parser_parse (STLexer *lexer,
 	method = NULL;
     }
 
-    g_slice_free (STParser, parser);
+    st_free (parser);
 
     return method;
 }

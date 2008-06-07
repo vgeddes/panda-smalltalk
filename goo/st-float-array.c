@@ -23,46 +23,52 @@
 */
 
 #include "st-float-array.h"
-
-ST_DEFINE_VTABLE (st_float, st_heap_object_vtable ());
-
-static bool
-is_arrayed (void)
-{
-    return true;
-}
+#include "st-object.h"
 
 static st_oop
 allocate_arrayed (st_oop klass, st_smi size)
 {
-    g_assert (size > 0);
+    st_oop  object;
+    double *elements;
 
-    st_oop object = st_allocate_object (ST_TYPE_SIZE (st_float_array) + size);
-    
+    st_assert (size >= 0);
+
+    object = st_allocate_object (ST_TYPE_SIZE (struct st_float_array) + size);
     st_heap_object_initialize_header (object, klass);
+    ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
-    ST_FLOAT_ARRAY (object)->size = size;
-
-    double *elements = ST_FLOAT_ARRAY (object)->elements;
-
+    elements = ST_FLOAT_ARRAY (object)->elements;
     for (st_smi i = 0; i < size; i++)
 	elements[i] = (double) 0;
 
+    return object;
 }
 
 static st_oop
-allocate (st_oop klass)
+float_array_copy (st_oop object)
 {
-    return allocate_arrayed (klass, 0);
+    st_oop copy;
+    st_smi size;
+    
+    size = st_smi_value (st_arrayed_object_size (object));
+
+    copy = allocate_arrayed (st_object_class (object), size);
+
+    memcpy (st_float_array_elements (copy),
+	    st_float_array_elements (object),
+	    sizeof (double) * size);
+
+    return copy;
 }
 
-static void
-st_float_descriptor_init (STDescriptor * table)
+st_descriptor *
+st_float_array_descriptor (void)
 {
-    assert_static (sizeof (st_float_array) == (sizeof (STHeader) + sizeof (st_oop)));
+    static st_descriptor __descriptor =
+	{ .allocate         = NULL,
+	  .allocate_arrayed = allocate_arrayed,
+	  .copy             = float_array_copy,
+	};
 
-    table->allocate_arrayed = allocate_arrayed;
-    table->allocate = allocate;
-
-    table->is_arrayed = is_arrayed;
+    return & __descriptor;
 }

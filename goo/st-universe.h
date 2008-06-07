@@ -45,6 +45,8 @@ extern st_oop
     st_false_class,
     st_array_class,
     st_byte_array_class,
+    st_word_array_class,
+    st_float_array_class,
     st_set_class,
     st_dictionary_class,
     st_association_class,

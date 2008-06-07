@@ -42,7 +42,7 @@ INLINE bool   st_object_is_smi            (st_oop object);
 
 INLINE st_oop st_object_class             (st_oop object);
 bool          st_object_equal             (st_oop object, st_oop other);
-guint         st_object_hash              (st_oop object);
+st_uint         st_object_hash              (st_oop object);
 
 char         *st_object_printString       (st_oop object);
 

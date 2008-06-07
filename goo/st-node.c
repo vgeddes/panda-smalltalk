@@ -1,5 +1,5 @@
 /*
- * st-bootstrap.c
+ * st-node.c
  *
  * Copyright (c) 2008 Vincent Geddes
  *
@@ -38,7 +38,7 @@ static void print_expression (STNode *expression);
 static void
 print_variable (STNode *node)
 {
-    g_assert (node->type == ST_VARIABLE_NODE);
+    st_assert (node->type == ST_VARIABLE_NODE);
 
     printf (node->variable.name);
 }
@@ -91,7 +91,7 @@ print_tuple (st_oop tuple)
 static void
 print_literal (STNode *node)
 {
-    g_assert (node->type == ST_LITERAL_NODE); 
+    st_assert (node->type == ST_LITERAL_NODE); 
    
     print_object (node->literal.value);
 }
@@ -99,7 +99,7 @@ print_literal (STNode *node)
 static void
 print_return (STNode *node)
 {
-   g_assert (node->type == ST_RETURN_NODE);
+   st_assert (node->type == ST_RETURN_NODE);
 
     printf ("^ ");
     print_expression (node->retrn.expression);
@@ -109,7 +109,7 @@ print_return (STNode *node)
 static void
 print_assign (STNode *node)
 {
-    g_assert (node->type == ST_ASSIGN_NODE);
+    st_assert (node->type == ST_ASSIGN_NODE);
    
     print_variable (node->assign.assignee);
     printf (" := ");
@@ -132,7 +132,7 @@ extract_keywords (char *selector)
 static void
 print_method (STNode *node)
 {
-    g_assert (node->type == ST_METHOD_NODE);
+    st_assert (node->type == ST_METHOD_NODE);
 
     if (node->method.precedence == ST_KEYWORD_PRECEDENCE) {
 
@@ -196,7 +196,7 @@ print_method (STNode *node)
 static void
 print_block (STNode *node)
 {   
-    g_assert (node->type == ST_BLOCK_NODE);
+    st_assert (node->type == ST_BLOCK_NODE);
 
     printf ("[ ");
 
@@ -363,7 +363,7 @@ print_expression (STNode *node)
 void
 st_print_method_node (STNode *node)
 {
-    g_assert (node && node->type == ST_METHOD_NODE);
+    st_assert (node && node->type == ST_METHOD_NODE);
     
     print_method (node);
 }
@@ -371,7 +371,7 @@ st_print_method_node (STNode *node)
 STNode *
 st_node_new (STNodeType type)
 {
-    STNode *node = g_slice_new0 (STNode);
+    STNode *node = st_new0 (STNode);
     node->type = type;
 
     if (node->type == ST_MESSAGE_NODE)
@@ -397,7 +397,7 @@ st_node_list_append (STNode *list, STNode *node)
 }
 
 
-guint
+st_uint
 st_node_list_length (STNode *list)
 {
     STNode *l   = list;
@@ -443,13 +443,13 @@ st_node_destroy (STNode *node)
     case ST_CASCADE_NODE:
 	st_node_destroy (node->cascade.receiver);
 
-	g_list_foreach (node->cascade.messages, (GFunc) st_node_destroy, NULL);
-	g_list_free (node->cascade.messages);
+	st_list_foreach (node->cascade.messages, (st_list_foreach_func) st_node_destroy);
+	st_list_destroy (node->cascade.messages);
 	break;
 
     case ST_VARIABLE_NODE:
 	
-	g_free (node->variable.name);
+	st_free (node->variable.name);
 	break;
 
     default:
@@ -457,7 +457,7 @@ st_node_destroy (STNode *node)
     }
 	
     st_node_destroy (node->next);
-    g_slice_free (STNode, node);
+    st_free (node);
 }
 
 

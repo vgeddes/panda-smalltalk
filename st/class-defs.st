@@ -90,6 +90,11 @@ Class named: 'ByteArray'
 	  instanceVariableNames: ''
       classVariableNames: ''!
 
+Class named: 'WordArray'
+	  superclass: 'ArrayedCollection'
+	  instanceVariableNames: ''
+      classVariableNames: ''!
+
 Class named: 'Interval'
 	  superclass: 'SequenceableCollection'
 	  instanceVariableNames: 'start stop step'
@@ -128,7 +133,7 @@ Class named: 'ContextPart'
 
 Class named: 'MethodContext'
 	  superclass: 'ContextPart'
-	  instanceVariableNames: 'method receiver'
+	  instanceVariableNames: 'method receiver reason'
       classVariableNames: ''!
 
 Class named: 'BlockContext'

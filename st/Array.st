@@ -16,10 +16,5 @@ at: anInteger put: anObject
 	anInteger isInteger
 		ifTrue: [self error: 'out of bounds array access'].
 	anInteger isNumber
-		ifTrue: [ self at: anInteger asInteger ]
+		ifTrue: [ self at: anInteger asInteger put: anObject]
 		ifFalse: [self error: 'non-integer index']!
-
-Array method!
-size
-	<primitive: 'Array_size'>
-	self primitiveFailed!

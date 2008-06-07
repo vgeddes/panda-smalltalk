@@ -1,5 +1,5 @@
 /*
- * st-float.c
+ * st-small-integer.h
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -22,47 +22,41 @@
  * THE SOFTWARE.
 */
 
-#include "st-float.h"
-#include "st-object.h"
+#ifndef __ST_CHARACTER_H__
+#define __ST_CHARACTER_H__
 
-static st_oop
-allocate (st_oop klass)
+#include <st-types.h>
+#include <st-descriptor.h>
+
+INLINE st_oop  st_character_new   (wchar_t wc);
+INLINE wchar_t st_character_value (st_oop character);
+INLINE bool    st_character_equal (st_oop m, st_oop n);
+INLINE st_smi  st_character_hash  (st_oop character);
+
+/* inline definitions */
+
+INLINE st_oop
+st_character_new (wchar_t wc)
 {
-    st_oop f = st_allocate_object (ST_TYPE_SIZE (struct st_float));
-
-    st_heap_object_initialize_header (f, st_float_class);
-
-    st_float_set_value (f, 0.0);
-
-    return f;
+    return (st_oop) ((wc << ST_TAG_SIZE) + ST_CHARACTER_TAG);
 }
 
-st_oop
-st_float_new (double value)
+INLINE wchar_t
+st_character_value (st_oop character)
 {
-    st_oop f = st_object_new (st_float_class);
-
-    st_float_set_value (f, value);
-    
-    return f;
+    return ((wchar_t) character) >> ST_TAG_SIZE;
 }
 
-static st_oop
-float_copy (st_oop object)
+INLINE bool
+st_character_equal (st_oop m, st_oop n)
 {
-    return st_float_new (st_float_value (object));
+    return m == n;
 }
 
-st_descriptor *
-st_float_descriptor (void)
+INLINE st_smi
+st_character_hash (st_oop character)
 {
-    assert_static (sizeof (struct st_float) == (sizeof (struct st_header) + sizeof (double)));
-    
-    static st_descriptor __descriptor =
-	{ .allocate         = allocate,
-	  .allocate_arrayed = NULL,
-	  .copy             = float_copy
-	};
-    
-    return & __descriptor;
+    return (st_smi) st_character_value (character);
 }
+
+#endif /* __ST_CHARACTER_H__ */

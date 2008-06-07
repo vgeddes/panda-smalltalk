@@ -31,31 +31,29 @@ main (int argc, char *argv[])
     st_bootstrap_universe ();
     
     /* compile */
-    STLexer *lexer = st_lexer_new (buffer, NULL);
-    STError *error = NULL;
+    STLexer *lexer = st_lexer_new (buffer);
+    st_compiler_error error;
     STNode  *node;
     st_oop   method;
 
     node = st_parser_parse (lexer, &error);
-    if (error) {
+    if (!node) {
 	fprintf (stderr, "%s:%i: %s\n", "test-generator",
-		 ST_ERROR_LINE (error),
-		 error->message);
+		 error.line,
+		 error.message);
 	exit (1);
     }
 
     method = st_generate_method (st_object_class (st_association_class), node, &error);
-    if (error) {
+    if (method == st_nil) {
 	fprintf (stderr, "%s:%i: %s\n", "test-generator",
-		 ST_ERROR_LINE (error),
-		 error->message);
+		 error.line,
+		 error.message);
 	exit (1);
     }
 
     printf ("\nGenerated Method:\n\n"); 
-
     st_print_method (method);
-
     st_node_destroy (node);    
 
     return 0;

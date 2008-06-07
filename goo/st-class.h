@@ -33,7 +33,7 @@
 
 typedef struct
 {
-    STHeader header;
+    struct st_header header;
     
     st_oop format;
     st_oop superclass;
@@ -47,7 +47,7 @@ typedef struct
 {
     STBehavior parent;
 
-    st_oop class_name;
+    st_oop name;
     st_oop class_pool;
 
 } STClass;
@@ -61,23 +61,10 @@ typedef struct
 } STMetaclass;
 
 
-GList *st_behavior_all_instance_variables (st_oop klass);
-
-/* inline definitions */
+st_list *st_behavior_all_instance_variables (st_oop klass);
 
 #define ST_BEHAVIOR(oop)  ((STBehavior *)  ST_POINTER (oop))
 #define ST_CLASS(oop)     ((STClass *)     ST_POINTER (oop))
 #define ST_METACLASS(oop) ((STMetaclass *) ST_POINTER (oop))
-
-#define st_behavior_format(oop)              (ST_BEHAVIOR (oop)->format)
-#define st_behavior_instance_size(oop)       (ST_BEHAVIOR (oop)->instance_size)
-#define st_behavior_superclass(oop)          (ST_BEHAVIOR (oop)->superclass)
-#define st_behavior_method_dictionary(oop)   (ST_BEHAVIOR (oop)->method_dictionary)
-#define st_behavior_instance_variables(oop)  (ST_BEHAVIOR (oop)->instance_variables)
-
-#define st_class_name(oop)                   (ST_CLASS (oop)->class_name)
-#define st_class_pool(oop)                   (ST_CLASS (oop)->class_pool)
-
-#define st_metaclass_instance_class(oop)     (ST_METACLASS (oop)->instance_class)
 
 #endif /* __ST_CLASS_H__ */

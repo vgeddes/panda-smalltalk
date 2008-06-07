@@ -34,3 +34,6 @@ ContextPart method!
 sp
 	^ sp!
 
+MethodContext method!
+primitiveFailureReason
+	^ reason!

@@ -1,5 +1,4 @@
 "
-Copyright (c) 2007 Luca Bruno
 Copyright (c) 2008 Vincent Geddes
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -49,15 +48,28 @@ value: aValue
 
 "comparing"
 
-	
+Association method!
+= anAssociation
+
+	anAssociation isAssociation
+		ifFalse: [ ^ false ].
+
+	^ (key = anAssociation key) & (value = anAssociation value)!
+
+Association method!
+hash
+
+	^ key hash bitXor: value hash! 
 
 
 "printing"
 
 Association method!
-printString
-	^ self key printString, '->', self value printString!
+printOn: aStream
 
+	aStream nextPutAll: key printString.
+	aStream nextPutAll: '->'.
+	aStream nextPutAll: value printString!
 
 "private"
 
@@ -66,3 +78,10 @@ key: aKey value: aValue
 	"Set the key and the value of the association"
 	key := aKey.
 	value := aValue!
+
+
+"testing"
+
+Association method!
+isAssociation
+	^ true!

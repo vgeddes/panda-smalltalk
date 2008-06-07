@@ -28,7 +28,7 @@
 #include <st-types.h>
 #include <glib.h>
 
-typedef enum
+typedef enum st_format
 {
     ST_FORMAT_OBJECT,
     ST_FORMAT_FLOAT,
@@ -41,9 +41,9 @@ typedef enum
     ST_FORMAT_CONTEXT,
 
     ST_NUM_FORMATS
-} STFormat;
+} st_format;
 
-typedef struct
+struct st_descriptor
 {
     st_oop (* allocate) (st_oop klass);
 
@@ -51,8 +51,10 @@ typedef struct
 
     st_oop (* copy) (st_oop object);
     
-} STDescriptor;
+};
 
-extern const STDescriptor *st_descriptors[ST_NUM_FORMATS];
+typedef const struct st_descriptor st_descriptor;
 
-#endif /* __ST_VTABLE_H__ */
+extern st_descriptor *st_descriptors[ST_NUM_FORMATS];
+
+#endif /* __ST_DESCRIPTOR_H__ */

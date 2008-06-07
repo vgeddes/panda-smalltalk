@@ -28,25 +28,21 @@
 #include <st-heap-object.h>
 #include <st-types.h>
 
-typedef struct
+struct st_association
 {
-    STHeader header;
+    struct st_header header;
 
     st_oop key;
     st_oop value;
-
-} STAssociation;
+};
 
 st_oop st_association_new   (st_oop key, st_oop value);
 
-guint  st_association_hash  (st_oop object);
+st_uint  st_association_hash  (st_oop object);
 
 bool   st_association_equal (st_oop object, st_oop other);
 
-#define ST_ASSOCIATION(oop)         ((STAssociation *) ST_POINTER (oop))
-#define st_association_key(assoc)   (ST_ASSOCIATION (assoc)->key)
-#define st_association_value(assoc) (ST_ASSOCIATION (assoc)->value)
-
+#define ST_ASSOCIATION(oop)         ((struct st_association *) ST_POINTER (oop))
 
 
 #endif /* __ST_ASSOCIATION_H__ */
