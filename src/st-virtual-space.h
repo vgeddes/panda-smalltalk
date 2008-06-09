@@ -27,21 +27,18 @@
 
 #include <st-types.h>
 
-#include <glib.h>
-#include <stdbool.h>
-
-typedef struct 
+typedef struct st_virtual_space
 {
     st_oop *start;
     st_oop *end;
 
-} STVirtualSpace;
+} st_virtual_space;
 
-STVirtualSpace  *st_virtual_space_new      (void);
-bool             st_virtual_space_reserve  (STVirtualSpace *space, st_uint size);
-void            *st_virtual_space_start    (STVirtualSpace *space);
-void            *st_virtual_space_end      (STVirtualSpace *space);
-void             st_virtual_space_destroy  (STVirtualSpace *space);
+st_virtual_space  *st_virtual_space_new      (void);
+bool               st_virtual_space_reserve  (st_virtual_space *space, st_uint size);
+void              *st_virtual_space_start    (st_virtual_space *space);
+void              *st_virtual_space_end      (st_virtual_space *space);
+void               st_virtual_space_destroy  (st_virtual_space *space);
 
 
 #endif /* __ST_VIRTUAL_SPACE__ */

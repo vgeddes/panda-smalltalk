@@ -32,15 +32,15 @@
 #include <wchar.h>
 #include <glib.h>
 
-typedef struct Marker
+typedef struct marker
 {
     int p;
     int line;
     int column;
 
-} Marker;
+} marker;
 
-struct STInput
+struct st_input
 {
     wchar_t *text;
 
@@ -50,7 +50,7 @@ struct STInput
     st_uint line;     /* current line number, starting from 1 */
     st_uint column;   /* current column number, starting from 1 */
 
-    Marker marker;
+    marker marker;
 };
 
 static wchar_t *
@@ -105,7 +105,7 @@ filter_double_bangs (const wchar_t *chunk)
 }
 
 wchar_t *
-st_input_next_chunk (STInput *input)
+st_input_next_chunk (st_input *input)
 {
     wchar_t *chunk_filtered, *chunk = NULL;
     st_uint start;
@@ -139,16 +139,16 @@ st_input_next_chunk (STInput *input)
 }
 
 void
-st_input_destroy (STInput *input)
+st_input_destroy (st_input *input)
 {
     st_assert (input != NULL);
 
     st_free (input->text);
-    g_slice_free (STInput, input);
+    g_slice_free (st_input, input);
 }
 
 st_uint
-st_input_get_line (STInput *input)
+st_input_get_line (st_input *input)
 {
     st_assert (input != NULL);
 
@@ -156,7 +156,7 @@ st_input_get_line (STInput *input)
 }
 
 st_uint
-st_input_get_column (STInput *input)
+st_input_get_column (st_input *input)
 {
     st_assert (input != NULL);
 
@@ -164,7 +164,7 @@ st_input_get_column (STInput *input)
 }
 
 wchar_t
-st_input_look_ahead (STInput *input, int i)
+st_input_look_ahead (st_input *input, int i)
 {
     st_assert (input != NULL);
 
@@ -186,7 +186,7 @@ st_input_look_ahead (STInput *input, int i)
 }
 
 void
-st_input_mark (STInput *input)
+st_input_mark (st_input *input)
 {
     st_assert (input != NULL);
     
@@ -196,7 +196,7 @@ st_input_mark (STInput *input)
 }
 
 void
-st_input_rewind (STInput *input)
+st_input_rewind (st_input *input)
 {
     st_assert (input != NULL);
     
@@ -207,7 +207,7 @@ st_input_rewind (STInput *input)
 }
 
 void
-st_input_seek (STInput *input, st_uint index)
+st_input_seek (st_input *input, st_uint index)
 {
     st_assert (input != NULL);
 
@@ -220,7 +220,7 @@ st_input_seek (STInput *input, st_uint index)
 }
 
 void
-st_input_consume (STInput *input)
+st_input_consume (st_input *input)
 {
     st_assert (input != NULL);
 
@@ -239,7 +239,7 @@ st_input_consume (STInput *input)
 }
 
 st_uint
-st_input_size (STInput *input)
+st_input_size (st_input *input)
 {
     st_assert (input != NULL);
 
@@ -248,7 +248,7 @@ st_input_size (STInput *input)
 
 
 char *
-st_input_range (STInput *input, st_uint start, st_uint end)
+st_input_range (st_input *input, st_uint start, st_uint end)
 {
     char *buf;
     GError *error = NULL;
@@ -263,7 +263,7 @@ st_input_range (STInput *input, st_uint start, st_uint end)
 }
 
 wchar_t *
-st_input_range_ucs4 (STInput *input, st_uint start, st_uint end)
+st_input_range_ucs4 (st_input *input, st_uint start, st_uint end)
 {
     wchar_t *buf;
     st_uint    len;
@@ -279,7 +279,7 @@ st_input_range_ucs4 (STInput *input, st_uint start, st_uint end)
 }
 
 st_uint
-st_input_index (STInput *input)
+st_input_index (st_input *input)
 {
     st_assert (input != NULL);
 
@@ -287,7 +287,7 @@ st_input_index (STInput *input)
 }
 
 static void
-initialize_state (STInput *input, const wchar_t *string)
+initialize_state (st_input *input, const wchar_t *string)
 {
     input->text    = (wchar_t *) string;
     input->n       = wcslen (string);
@@ -299,11 +299,11 @@ initialize_state (STInput *input, const wchar_t *string)
     input->marker.column = 0;
 }
 
-STInput *
+st_input *
 st_input_new (const char *string)
 {
     wchar_t *string_ucs4;
-    STInput *input;
+    st_input *input;
 
     st_assert (string != NULL);
 
@@ -311,21 +311,21 @@ st_input_new (const char *string)
     if (string_ucs4 == NULL)
 	return NULL;
 
-    input = st_new0 (STInput);
+    input = st_new0 (st_input);
 
     initialize_state (input, string_ucs4);
 
     return input;
 }
 
-STInput *
+st_input *
 st_input_new_ucs4 (const wchar_t *string)
 {
-    STInput *input;
+    st_input *input;
 
     st_assert (string != NULL);
 
-    input = st_new0 (STInput);
+    input = st_new0 (st_input);
 
     initialize_state (input, st_wcstrdup (string));    
 

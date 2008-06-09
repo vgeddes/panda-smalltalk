@@ -79,4 +79,4 @@ src_panda_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)/src
 
 smalltalk_files = st/*.st
 
-EXTRA_DIST += $(smalltalk_files)
+EXTRA_DIST += $(smalltalk_files) src/Makefile

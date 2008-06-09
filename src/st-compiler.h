@@ -25,11 +25,11 @@ bool    st_compile_string   (st_oop      class,
 
 void    st_compile_file_in  (const char *filename);
 
-STNode *st_parser_parse     (STLexer *lexer,
+st_node *st_parser_parse     (st_lexer *lexer,
 			     st_compiler_error *error);
 
 st_oop  st_generate_method  (st_oop    class,
-			     STNode   *node,
+			     st_node   *node,
 			     st_compiler_error *error);
 
 void    st_print_method     (st_oop method);

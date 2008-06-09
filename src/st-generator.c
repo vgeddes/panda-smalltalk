@@ -137,16 +137,16 @@ check_init (void)
     sizes[SEND_NEW_ARG]     = 1;
 }
 
-static int size_message    (Generator *gt, STNode *node);
-static int size_expression (Generator *gt, STNode *node);
-static int size_statements (Generator *gt, STNode *node);
+static int size_message    (Generator *gt, st_node *node);
+static int size_expression (Generator *gt, st_node *node);
+static int size_statements (Generator *gt, st_node *node);
 
 
-static void generate_expression (Generator *gt, STNode *node);
-static void generate_statements (Generator *gt, STNode *statements);
+static void generate_expression (Generator *gt, st_node *node);
+static void generate_statements (Generator *gt, st_node *statements);
 
 static void
-generation_error (Generator *gt, const char *message, STNode *node)
+generation_error (Generator *gt, const char *message, st_node *node)
 {
     if (gt->error) {
 	strncpy (gt->error->message, message, 255);
@@ -160,12 +160,12 @@ generation_error (Generator *gt, const char *message, STNode *node)
 static st_list *
 get_temporaries (Generator *gt,
 		 st_list  *instvars,
-		 STNode *arguments,
-		 STNode *temporaries)
+		 st_node *arguments,
+		 st_node *temporaries)
 {
     st_list *temps = NULL; 
         
-    for (STNode *n = arguments; n; n = n->next) {
+    for (st_node *n = arguments; n; n = n->next) {
 	
 	for (st_list *l = instvars; l; l = l->next) {
 	    if (streq (n->variable.name, (char *) l->data))
@@ -174,7 +174,7 @@ get_temporaries (Generator *gt,
 	temps = st_list_prepend (temps, (st_pointer) n->variable.name);
     }
 
-    for (STNode *n = temporaries; n; n = n->next) {
+    for (st_node *n = temporaries; n; n = n->next) {
 	
 	for (st_list *l = instvars; l; l = l->next) {
 	    if (streq (n->variable.name, (char *) l->data))
@@ -399,13 +399,13 @@ push_special (Generator *gt, st_uchar code)
 }
 
 static int
-size_assign (Generator *gt, STNode *node)
+size_assign (Generator *gt, st_node *node)
 {
     return size_expression (gt, node->assign.expression) + 2;
 }
 
 static void
-generate_assign (Generator *gt, STNode *node, bool pop)
+generate_assign (Generator *gt, st_node *node, bool pop)
 {
     int index;
     
@@ -433,7 +433,7 @@ generate_assign (Generator *gt, STNode *node, bool pop)
 }
 
 static int
-size_return (Generator *gt, STNode *node)
+size_return (Generator *gt, st_node *node)
 {
     int size = 0;
 
@@ -445,7 +445,7 @@ size_return (Generator *gt, STNode *node)
 }
 
 static void
-generate_return (Generator *gt, STNode *node)
+generate_return (Generator *gt, st_node *node)
 {
     generate_expression (gt, node->retrn.expression);
 
@@ -453,11 +453,11 @@ generate_return (Generator *gt, STNode *node)
 }
 
 static st_list *
-get_block_temporaries (Generator *gt, STNode *temporaries)
+get_block_temporaries (Generator *gt, st_node *temporaries)
 {
     st_list *temps = NULL;
     
-    for (STNode *node = temporaries; node; node = node->next) {
+    for (st_node *node = temporaries; node; node = node->next) {
       
 	for (st_list *l = gt->instvars; l; l = l->next) {
 	  if (streq (node->variable.name, (char *) l->data))
@@ -478,7 +478,7 @@ get_block_temporaries (Generator *gt, STNode *temporaries)
 
 
 static int
-size_block (Generator *gt, STNode *node)
+size_block (Generator *gt, st_node *node)
 {
     int size = 0;
     
@@ -492,7 +492,7 @@ size_block (Generator *gt, STNode *node)
 }
 
 static void
-generate_block (Generator *gt, STNode *node)
+generate_block (Generator *gt, st_node *node)
 {
     bool  in_block;
     int   index, size = 0;
@@ -510,7 +510,7 @@ generate_block (Generator *gt, STNode *node)
     jump_offset (gt, size);
 
     /* store all block arguments into the temporary frame */
-    for (STNode *l = node->block.arguments; l; l = l->next) {
+    for (st_node *l = node->block.arguments; l; l = l->next) {
 	index = find_temporary (gt, l->variable.name);
 	st_assert (index >= 0);
 	assign_temp (gt, index, true); 	
@@ -525,9 +525,9 @@ generate_block (Generator *gt, STNode *node)
 } 
 
 static void
-generation_func_1 (Generator *gt, STNode *node, st_uint subpattern_index)
+generation_func_1 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int     size;
 
     block = node->message.arguments;
@@ -564,9 +564,9 @@ generation_func_1 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static int
-size_func_1 (Generator *gt, STNode *node, st_uint subpattern_index)
+size_func_1 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int size = 0;
 
     block = node->message.arguments;
@@ -590,11 +590,11 @@ size_func_1 (Generator *gt, STNode *node, st_uint subpattern_index)
 
 
 static void
-generation_func_2 (Generator *gt, STNode *node, st_uint subpattern_index)
+generation_func_2 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
     int     size;
 
-    STNode *true_block, *false_block;
+    st_node *true_block, *false_block;
 	
     true_block = node->message.arguments;
     if (true_block->type != ST_BLOCK_NODE || true_block->block.arguments != NULL)
@@ -631,11 +631,11 @@ generation_func_2 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static int
-size_func_2 (Generator *gt, STNode *node, st_uint subpattern_index)
+size_func_2 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
     int size= 0;
 
-    STNode *true_block, *false_block;
+    st_node *true_block, *false_block;
 	
     true_block = node->message.arguments;
     if (true_block->type != ST_BLOCK_NODE || true_block->block.arguments != NULL)
@@ -659,9 +659,9 @@ size_func_2 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static void
-generation_func_3 (Generator *gt, STNode *node, st_uint subpattern_index)
+generation_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int size;
 
     block = node->message.receiver;
@@ -693,9 +693,9 @@ generation_func_3 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static int
-size_func_3 (Generator *gt, STNode *node, st_uint subpattern_index)
+size_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int size = 0;
 
     block = node->message.receiver;
@@ -714,9 +714,9 @@ size_func_3 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static void
-generation_func_4 (Generator *gt, STNode *node, st_uint subpattern_index)
+generation_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int size;
 
     block = node->message.receiver;
@@ -760,9 +760,9 @@ generation_func_4 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static int
-size_func_4 (Generator *gt, STNode *node, st_uint subpattern_index)
+size_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int size = 0;
 
     block = node->message.receiver;
@@ -787,9 +787,9 @@ size_func_4 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static void
-generation_func_5 (Generator *gt, STNode *node, st_uint subpattern_index)
+generation_func_5 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
-    STNode *block;
+    st_node *block;
     int size;
 
     block = node->message.arguments;
@@ -827,7 +827,7 @@ generation_func_5 (Generator *gt, STNode *node, st_uint subpattern_index)
 }
 
 static int
-size_func_5 (Generator *gt, STNode *node, st_uint subpattern_index)
+size_func_5 (Generator *gt, st_node *node, st_uint subpattern_index)
 {
     int size = 0;
 
@@ -843,8 +843,8 @@ size_func_5 (Generator *gt, STNode *node, st_uint subpattern_index)
     return size;
 }
 
-typedef void (* CodeGenerationFunc) (Generator *gt, STNode *message, st_uint subpattern_index);
-typedef int  (* CodeSizeFunc)       (Generator *gt, STNode *message, st_uint subpattern_index);
+typedef void (* CodeGenerationFunc) (Generator *gt, st_node *message, st_uint subpattern_index);
+typedef int  (* CodeSizeFunc)       (Generator *gt, st_node *message, st_uint subpattern_index);
 
 static const struct generators {
     
@@ -867,9 +867,9 @@ static const struct generators {
 };
 
 static int
-size_message_send (Generator *gt, STNode *node)
+size_message_send (Generator *gt, st_node *node)
 {
-    STNode *args;
+    st_node *args;
     int size = 0;
 
     args = node->message.arguments;
@@ -895,9 +895,9 @@ out:
 }
 
 static void
-generate_message_send (Generator *gt, STNode *node)
+generate_message_send (Generator *gt, st_node *node)
 {
-    STNode *args;
+    st_node *args;
     st_uint   argcount = 0;
 
     /* generate arguments */
@@ -933,7 +933,7 @@ out:
 }
 
 static int
-size_cascade (Generator *gt, STNode *node)
+size_cascade (Generator *gt, st_node *node)
 {
     st_uint i, j;
     st_uint size = 0;
@@ -943,7 +943,7 @@ size_cascade (Generator *gt, STNode *node)
 
     for (st_list *l = node->cascade.messages; l; l = l->next) {
 
-	size += size_message_send (gt, (STNode *) l->data); 
+	size += size_message_send (gt, (st_node *) l->data); 
 
 	if (l->next || node->cascade.is_statement)
 	    size += sizes[POP_STACK_TOP];
@@ -956,7 +956,7 @@ size_cascade (Generator *gt, STNode *node)
 }
 
 static void
-generate_cascade (Generator *gt, STNode *node)
+generate_cascade (Generator *gt, st_node *node)
 {
     st_uint i, j;
 
@@ -965,7 +965,7 @@ generate_cascade (Generator *gt, STNode *node)
 
     for (st_list *l = node->cascade.messages; l; l = l->next) {
 
-	generate_message_send (gt, (STNode*) l->data); 
+	generate_message_send (gt, (st_node*) l->data); 
 
 	if (l->next || node->cascade.is_statement)
 	    emit (gt, POP_STACK_TOP);
@@ -976,7 +976,7 @@ generate_cascade (Generator *gt, STNode *node)
 }
 
 static int
-size_message (Generator *gt, STNode *node)
+size_message (Generator *gt, st_node *node)
 {
     const char *selector;
     st_uint i, j;
@@ -1000,7 +1000,7 @@ size_message (Generator *gt, STNode *node)
 }
 
 static void
-generate_message (Generator *gt, STNode *node)
+generate_message (Generator *gt, st_node *node)
 {
     const char *selector;
     st_uint i, j;
@@ -1021,7 +1021,7 @@ generate_message (Generator *gt, STNode *node)
 }
 
 static int
-size_expression (Generator *gt, STNode *node)
+size_expression (Generator *gt, st_node *node)
 {
     int index;
     int size = 0;
@@ -1095,7 +1095,7 @@ size_expression (Generator *gt, STNode *node)
 }
 
 static void
-generate_expression (Generator *gt, STNode *node)
+generate_expression (Generator *gt, st_node *node)
 {   
     int index;
 
@@ -1170,14 +1170,14 @@ generate_expression (Generator *gt, STNode *node)
 }
 
 static int
-size_statements (Generator *gt, STNode *statements)
+size_statements (Generator *gt, st_node *statements)
 {
     int size = 0;
 
     if (statements == NULL)
 	size += sizes[PUSH_NIL];
 
-    for (STNode *node = statements; node; node = node->next) {
+    for (st_node *node = statements; node; node = node->next) {
 
 	switch (node->type) {
 
@@ -1227,13 +1227,13 @@ size_statements (Generator *gt, STNode *statements)
 }
 
 static void
-generate_statements (Generator *gt, STNode *statements)
+generate_statements (Generator *gt, st_node *statements)
 {
     if (statements == NULL) {
 	emit (gt, PUSH_NIL);
     }
 
-    for (STNode *node = statements; node; node = node->next) {
+    for (st_node *node = statements; node; node = node->next) {
 
 	switch (node->type) {
 
@@ -1284,9 +1284,9 @@ generate_statements (Generator *gt, STNode *statements)
 
 
 static void
-generate_method_statements (Generator *gt, STNode *statements)
+generate_method_statements (Generator *gt, st_node *statements)
 {
-   for (STNode *node = statements; node; node = node->next) {
+   for (st_node *node = statements; node; node = node->next) {
 
        switch (node->type) {
 	   
@@ -1326,7 +1326,7 @@ generate_method_statements (Generator *gt, STNode *statements)
 }
 
 static st_list *
-collect_temporaries (Generator *gt, STNode *node)
+collect_temporaries (Generator *gt, st_node *node)
 {
     st_list *temps = NULL;
 
@@ -1355,7 +1355,7 @@ collect_temporaries (Generator *gt, STNode *node)
     case ST_CASCADE_NODE:
 	temps = st_list_concat (temps, collect_temporaries (gt, node->cascade.receiver));
 	for (st_list *l = node->cascade.messages; l; l = l->next)
-	    temps = st_list_concat (temps, collect_temporaries (gt, (STNode *) l->data));
+	    temps = st_list_concat (temps, collect_temporaries (gt, (st_node *) l->data));
 
 	break;
 
@@ -1371,7 +1371,7 @@ collect_temporaries (Generator *gt, STNode *node)
 }
 
 st_oop
-st_generate_method (st_oop class, STNode *node, st_compiler_error *error)
+st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 {
     Generator *gt;
     st_oop     method;

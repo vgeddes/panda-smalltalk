@@ -47,7 +47,7 @@ adjust_size (int reserved_size)
 }
 
 static bool
-map_size (STVirtualSpace *space, st_uint size)
+map_size (st_virtual_space *space, st_uint size)
 {
     void *start;
 
@@ -66,32 +66,32 @@ map_size (STVirtualSpace *space, st_uint size)
     return true;
 }
 
-STVirtualSpace *
+st_virtual_space *
 st_virtual_space_new (void)
 {
-    return st_new0 (STVirtualSpace);
+    return st_new0 (st_virtual_space);
 }
 
 bool
-st_virtual_space_reserve (STVirtualSpace *space, st_uint size)
+st_virtual_space_reserve (st_virtual_space *space, st_uint size)
 {
     return map_size (space, size);
 }
 
 void *
-st_virtual_space_start (STVirtualSpace *space)
+st_virtual_space_start (st_virtual_space *space)
 {
     return space->start;
 }
 
 void *
-st_virtual_space_end (STVirtualSpace *space)
+st_virtual_space_end (st_virtual_space *space)
 {
     return space->end;
 }
 
 void
-st_virtual_space_destroy (STVirtualSpace *space)
+st_virtual_space_destroy (st_virtual_space *space)
 {
     st_free (space);
 }

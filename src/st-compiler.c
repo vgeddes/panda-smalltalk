@@ -18,7 +18,7 @@
 typedef struct {
     
     const char *filename;
-    STInput    *input;
+    st_input    *input;
 
     int line;
 
@@ -36,9 +36,9 @@ typedef struct {
 bool
 st_compile_string (st_oop class, const char *string, st_compiler_error *error)
 {
-    STNode  *node;    
+    st_node  *node;    
     st_oop   method;
-    STLexer *lexer;
+    st_lexer *lexer;
     
     st_assert (class != st_nil);
     
@@ -68,30 +68,30 @@ st_compile_string (st_oop class, const char *string, st_compiler_error *error)
 }
 
 static void
-filein_error (FileInParser *parser, STToken *token, const char *message)
+filein_error (FileInParser *parser, st_token *token, const char *message)
 {
-    fprintf (stderr, "%s: %i: %s\n", parser->filename, parser->line + ((token) ? st_token_line (token) : -90), message);
+    fprintf (stderr, "%s: %i: %s\n", parser->filename, parser->line + ((token) ? st_token_get_line (token) : -90), message);
     exit (1);
 }
 
 
-static STToken *
-next_token (FileInParser *parser, STLexer *lexer)
+static st_token *
+next_token (FileInParser *parser, st_lexer *lexer)
 {
-    STToken *token;
+    st_token *token;
 
     token = st_lexer_next_token (lexer);
      
-    if (st_token_type (token) == ST_TOKEN_COMMENT)
+    if (st_token_get_type (token) == ST_TOKEN_COMMENT)
 	return next_token (parser, lexer);
-    else if (st_token_type (token) == ST_TOKEN_INVALID)
+    else if (st_token_get_type (token) == ST_TOKEN_INVALID)
 	filein_error (parser, token, st_lexer_error_message (lexer));
 
     return token;
 }
 
 
-static STLexer *
+static st_lexer *
 next_chunk (FileInParser *parser)
 {
     wchar_t *chunk;
@@ -107,11 +107,11 @@ next_chunk (FileInParser *parser)
 
 static void
 parse_method (FileInParser *parser,
-	      STLexer      *lexer,
+	      st_lexer      *lexer,
 	      char         *class_name,
 	      bool          class_method)
 {
-    STToken *token = NULL;
+    st_token *token = NULL;
     st_oop   class;
     st_compiler_error error;
 
@@ -130,7 +130,7 @@ parse_method (FileInParser *parser,
     if (!lexer)
 	filein_error (parser, token, "expected method definition");	
     
-    STNode *node;
+    st_node *node;
     st_oop method;
     
     node = st_parser_parse (lexer, &error);
@@ -163,44 +163,44 @@ error:
 }
 
 static void
-parse_class (FileInParser *parser, STLexer *lexer, char *name)
+parse_class (FileInParser *parser, st_lexer *lexer, char *name)
 {
 
 
 }
 
 static void
-parse_chunk (FileInParser *parser, STLexer *lexer)
+parse_chunk (FileInParser *parser, st_lexer *lexer)
 {
-    STToken *token;
+    st_token *token;
     char *name;
 
     token = next_token (parser, lexer);
 
-    if (st_token_type (token) == ST_TOKEN_IDENTIFIER) {
+    if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER) {
 
-	name = st_strdup (st_token_text (token));
+	name = st_strdup (st_token_get_text (token));
 
 	token = next_token (parser, lexer);
 
-	if (st_token_type (token) == ST_TOKEN_IDENTIFIER
-	    && (streq (st_token_text (token), "method")))
+	if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER
+	    && (streq (st_token_get_text (token), "method")))
 	
 	    parse_method (parser, lexer, name, false);
 	
-	else if (st_token_type (token) == ST_TOKEN_IDENTIFIER
-		 || streq (st_token_text (token), "classMethod"))
+	else if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER
+		 || streq (st_token_get_text (token), "classMethod"))
 
 	    parse_method (parser, lexer, name, true);
 	    
-	else if (st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR
-		 && streq (st_token_text (token), "subclass:"))
+	else if (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR
+		 && streq (st_token_get_text (token), "subclass:"))
 
 	    parse_class (parser, lexer, name);
 
 	else if (streq (name, "Annotation") &&
-		 st_token_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
-		 streq (st_token_text (token), "key:")) {
+		 st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
+		 streq (st_token_get_text (token), "key:")) {
 
 	    return;
 		 
@@ -221,7 +221,7 @@ error:
 static void
 parse_chunks (FileInParser *parser)
 {
-    STLexer *lexer;
+    st_lexer *lexer;
     
     while (st_input_look_ahead (parser->input, 1) != ST_INPUT_EOF) {
 	

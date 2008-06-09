@@ -31,13 +31,13 @@ static const char *const token_names[] = {
 };
 
 static void
-print_token (STLexer *lexer, STToken *token)
+print_token (st_lexer *lexer, st_token *token)
 {
-    STTokenType type;
+    st_token_type type;
 
     char *string;
 
-    type = st_token_type (token);
+    type = st_token_get_type (token);
 
     switch (type) {
 
@@ -52,10 +52,10 @@ print_token (STLexer *lexer, STToken *token)
     case ST_TOKEN_BINARY_SELECTOR:
     case ST_TOKEN_CHARACTER_CONST:
 
-	string = st_token_text (token);
+	string = st_token_get_text (token);
 
 	printf ("%s (%i:%i: \"%s\")\n", token_names[type],
-		st_token_line (token), st_token_column (token), string);
+		st_token_get_line (token), st_token_get_column (token), string);
 	break;
 
 	// Invalid Token;
@@ -67,7 +67,7 @@ print_token (STLexer *lexer, STToken *token)
 
     default:
 	printf ("%s (%i:%i)\n", token_names[type],
-		st_token_line (token), st_token_column (token));
+		st_token_get_line (token), st_token_get_column (token));
 	break;
     }
 }
@@ -78,8 +78,8 @@ print_token (STLexer *lexer, STToken *token)
 int
 main (int argc, char *argv[])
 {
-    STLexer *lexer;
-    STToken *token;
+    st_lexer *lexer;
+    st_token *token;
     
     printf ("Enter or pipe some Smalltalk code on stdin:\n\n");
 
@@ -93,12 +93,12 @@ main (int argc, char *argv[])
 
     lexer = st_lexer_new (buffer);
 
-    STTokenType type;
+    st_token_type type;
 
     do {
 
 	token = st_lexer_next_token (lexer);
-	type = st_token_type (token);
+	type = st_token_get_type (token);
 
 	print_token (lexer, token);
 

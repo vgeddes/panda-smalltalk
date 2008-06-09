@@ -40,7 +40,7 @@ typedef enum
     ST_CASCADE_NODE,
     ST_LITERAL_NODE,
     
-} STNodeType;
+} st_node_type;
 
 typedef enum
 {
@@ -50,13 +50,13 @@ typedef enum
 
 } STMessagePrecedence;
 
-typedef struct STNode STNode;
+typedef struct st_node st_node;
 
-struct STNode
+struct st_node
 {
-    STNodeType type;
+    st_node_type type;
     int        line;
-    STNode    *next;
+    st_node    *next;
 
     union {
 
@@ -64,9 +64,9 @@ struct STNode
 	    STMessagePrecedence precedence;
 	    int     primitive;
 	    st_oop  selector;
-	    STNode *statements;
-	    STNode *temporaries;
-	    STNode *arguments;
+	    st_node *statements;
+	    st_node *temporaries;
+	    st_node *arguments;
 
 	} method;
 
@@ -75,8 +75,8 @@ struct STNode
 	    STMessagePrecedence precedence;
 	    bool    is_statement;
 	    st_oop  selector;
-	    STNode *receiver;
-	    STNode *arguments;
+	    st_node *receiver;
+	    st_node *arguments;
 
 	    bool super_send;
 
@@ -96,29 +96,29 @@ struct STNode
 
 	struct {
 
-	    STNode *assignee;
-	    STNode *expression;
+	    st_node *assignee;
+	    st_node *expression;
 
 	} assign;
 
 	struct {
 
-	    STNode *expression;
+	    st_node *expression;
 
 	} retrn;
 
 	struct {
 
-	    STNode *statements;
-	    STNode *temporaries;
-	    STNode *arguments;
+	    st_node *statements;
+	    st_node *temporaries;
+	    st_node *arguments;
 
 	} block;
 
 	struct {
 
-	    STNode *receiver;
-	    st_list  *messages;
+	    st_node *receiver;
+	    st_list *messages;
 	    bool is_statement;
 	    
 	} cascade;
@@ -127,15 +127,15 @@ struct STNode
 
 };
 
-STNode *st_node_new          (STNodeType type);
+st_node *st_node_new          (st_node_type type);
 
-STNode *st_node_list_append  (STNode *list, STNode *node);
+st_node *st_node_list_append  (st_node *list, st_node *node);
 
-st_uint   st_node_list_length  (STNode *list);
+st_uint  st_node_list_length  (st_node *list);
 
-void    st_print_method_node (STNode *method);
+void     st_print_method_node (st_node *method);
 
-void    st_node_destroy      (STNode *node);
+void     st_node_destroy      (st_node *node);
 
 #endif /* __ST_NODE_H__ */
 

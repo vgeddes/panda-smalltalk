@@ -33,10 +33,10 @@
 #include <string.h>
 
 
-static void print_expression (STNode *expression);
+static void print_expression (st_node *expression);
 
 static void
-print_variable (STNode *node)
+print_variable (st_node *node)
 {
     st_assert (node->type == ST_VARIABLE_NODE);
 
@@ -89,7 +89,7 @@ print_tuple (st_oop tuple)
 }
 
 static void
-print_literal (STNode *node)
+print_literal (st_node *node)
 {
     st_assert (node->type == ST_LITERAL_NODE); 
    
@@ -97,7 +97,7 @@ print_literal (STNode *node)
 }
 
 static void
-print_return (STNode *node)
+print_return (st_node *node)
 {
    st_assert (node->type == ST_RETURN_NODE);
 
@@ -107,7 +107,7 @@ print_return (STNode *node)
 }
 
 static void
-print_assign (STNode *node)
+print_assign (st_node *node)
 {
     st_assert (node->type == ST_ASSIGN_NODE);
    
@@ -130,7 +130,7 @@ extract_keywords (char *selector)
 }
 
 static void
-print_method (STNode *node)
+print_method (st_node *node)
 {
     st_assert (node->type == ST_METHOD_NODE);
 
@@ -139,7 +139,7 @@ print_method (STNode *node)
 	char *selector = (char *) st_byte_array_bytes (node->method.selector);
 	
 	char **keywords = extract_keywords (selector);
-	STNode *arguments = node->method.arguments;
+	st_node *arguments = node->method.arguments;
 
 	for (char **keyword = keywords; *keyword; keyword++) {
 	    
@@ -166,7 +166,7 @@ print_method (STNode *node)
     if (node->method.temporaries != NULL) {
 
 	printf ("| ");
-	STNode *temp = node->method.temporaries;
+	st_node *temp = node->method.temporaries;
 	for (; temp; temp = temp->next) {
 	    print_variable (temp);
 	    printf (" ");
@@ -181,7 +181,7 @@ print_method (STNode *node)
     }
     
 
-    STNode *stm = node->method.statements;
+    st_node *stm = node->method.statements;
     for (; stm; stm = stm->next) {
 
 	if (stm->type == ST_RETURN_NODE)
@@ -194,7 +194,7 @@ print_method (STNode *node)
 }
 
 static void
-print_block (STNode *node)
+print_block (st_node *node)
 {   
     st_assert (node->type == ST_BLOCK_NODE);
 
@@ -202,7 +202,7 @@ print_block (STNode *node)
 
     if (node->block.arguments != NULL) {
 
-	STNode *arg = node->block.arguments;
+	st_node *arg = node->block.arguments;
 	for (; arg; arg = arg->next) {
 	    printf (":");
 	    print_variable (arg);
@@ -215,7 +215,7 @@ print_block (STNode *node)
     if (node->block.temporaries != NULL) {
 
 	printf ("| ");
-	STNode *temp = node->block.temporaries;
+	st_node *temp = node->block.temporaries;
 	for (; temp; temp = temp->next) {
 	    print_variable (temp);
 	    printf (" ");
@@ -224,7 +224,7 @@ print_block (STNode *node)
 	printf (" ");
     }
 
-    STNode *stm = node->block.statements;
+    st_node *stm = node->block.statements;
     for (; stm; stm = stm->next) {
 	if (stm->type == ST_RETURN_NODE)
 	    print_return (stm);
@@ -240,7 +240,7 @@ print_block (STNode *node)
 
 
 static void
-print_message (STNode *node)
+print_message (st_node *node)
 {
 
     if (node->message.precedence == ST_UNARY_PRECEDENCE) {
@@ -294,7 +294,7 @@ print_message (STNode *node)
 	char   *selector = (char *) st_byte_array_bytes (node->message.selector);
 
 	char  **keywords = extract_keywords (selector);
-	STNode *arguments = node->message.arguments;
+	st_node *arguments = node->message.arguments;
 
 	if (node->message.receiver->type == ST_MESSAGE_NODE &&
 	    node->message.receiver->message.precedence == ST_KEYWORD_PRECEDENCE)
@@ -333,7 +333,7 @@ print_message (STNode *node)
 }
 
 static void
-print_expression (STNode *node)
+print_expression (st_node *node)
 {
     switch (node->type) {
 	
@@ -361,17 +361,17 @@ print_expression (STNode *node)
 }
 
 void
-st_print_method_node (STNode *node)
+st_print_method_node (st_node *node)
 {
     st_assert (node && node->type == ST_METHOD_NODE);
     
     print_method (node);
 }
 
-STNode *
-st_node_new (STNodeType type)
+st_node *
+st_node_new (st_node_type type)
 {
-    STNode *node = st_new0 (STNode);
+    st_node *node = st_new0 (st_node);
     node->type = type;
 
     if (node->type == ST_MESSAGE_NODE)
@@ -384,10 +384,10 @@ st_node_new (STNodeType type)
     return node;
 }
 
-STNode *
-st_node_list_append (STNode *list, STNode *node)
+st_node *
+st_node_list_append (st_node *list, st_node *node)
 {
-    STNode *l = list;
+    st_node *l = list;
     if (list == NULL)
 	return node;
     while (l->next)
@@ -398,9 +398,9 @@ st_node_list_append (STNode *list, STNode *node)
 
 
 st_uint
-st_node_list_length (STNode *list)
+st_node_list_length (st_node *list)
 {
-    STNode *l   = list;
+    st_node *l   = list;
     int     len = 0;
     for (; l; l = l->next)
 	++len;
@@ -408,7 +408,7 @@ st_node_list_length (STNode *list)
 }
 
 void
-st_node_destroy (STNode *node)
+st_node_destroy (st_node *node)
 {
     if (node == NULL)
 	return;

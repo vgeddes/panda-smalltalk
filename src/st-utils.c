@@ -41,7 +41,7 @@
 
 int vasprintf(char **strp, const char *fmt, va_list ap);
 
-extern STVirtualSpace *allocator;
+extern st_virtual_space *allocator;
 extern char *program_invocation_short_name;
 
 

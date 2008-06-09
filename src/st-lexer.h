@@ -29,8 +29,8 @@
 #include <stdbool.h>
 #include <st-types.h>
 
-typedef struct STLexer    STLexer;
-typedef struct STToken    STToken;
+typedef struct st_lexer  st_lexer;
+typedef struct st_token  st_token;
 
 typedef enum
 {
@@ -56,44 +56,29 @@ typedef enum
     ST_TOKEN_KEYWORD_SELECTOR,
     ST_TOKEN_EOF
     
-} STTokenType;
+} st_token_type;
 
  
-STLexer       *st_lexer_new           (const char *string);
-
-STLexer       *st_lexer_new_ucs4      (const wchar_t *string);
-
-STToken       *st_lexer_next_token    (STLexer *lexer);
-
-STToken       *st_lexer_current_token (STLexer *lexer);
-
-void           st_lexer_destroy       (STLexer *lexer);
-
-gunichar       st_lexer_error_char    (STLexer *lexer);
-
-st_uint        st_lexer_error_line    (STLexer *lexer);
-
-st_uint         st_lexer_error_column  (STLexer *lexer);
-
-char          *st_lexer_error_message (STLexer *lexer);
-
-void           st_lexer_filter_comments (STLexer *lexer, bool filter);
+st_lexer     *st_lexer_new           (const char *string);
+st_lexer     *st_lexer_new_ucs4      (const wchar_t *string);
+st_token    *st_lexer_next_token    (st_lexer *lexer);
+st_token    *st_lexer_current_token (st_lexer *lexer);
+void         st_lexer_destroy       (st_lexer *lexer);
+gunichar     st_lexer_error_char    (st_lexer *lexer);
+st_uint      st_lexer_error_line    (st_lexer *lexer);
+st_uint      st_lexer_error_column  (st_lexer *lexer);
+char        *st_lexer_error_message (st_lexer *lexer);
+void         st_lexer_filter_comments (st_lexer *lexer, bool filter);
 
 
-STTokenType    st_token_type   (STToken *token);
+st_token_type    st_token_get_type   (st_token *token);
+char            *st_token_get_text   (st_token *token);
+st_uint          st_token_get_line   (st_token *token);
+st_uint          st_token_get_column (st_token *token);
 
-char          *st_token_text   (STToken *token);
-
-st_uint          st_token_line   (STToken *token);
-
-st_uint          st_token_column (STToken *token);
-
-bool           st_number_token_negative (STToken *token);
-
-char          *st_number_token_number   (STToken *token);
-
-st_uint          st_number_token_radix    (STToken *token);
-
-int            st_number_token_exponent (STToken *token);
+bool             st_number_token_negative (st_token *token);
+char            *st_number_token_number   (st_token *token);
+st_uint          st_number_token_radix    (st_token *token);
+int              st_number_token_exponent (st_token *token);
 
 #endif /* __ST_LEXER_H__ */
