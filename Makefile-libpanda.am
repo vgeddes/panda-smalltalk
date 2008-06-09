@@ -1,0 +1,82 @@
+
+noinst_LTLIBRARIES += libpanda.la
+
+libpanda_la_SOURCES = \
+	src/st-heap-object.c \
+	src/st-heap-object.h \
+	src/st-utils.h \
+	src/st-utils.c \
+	src/st-hashed-collection.h \
+	src/st-hashed-collection.c \
+	src/st-array.h \
+	src/st-array.c \
+	src/st-byte-array.h \
+	src/st-byte-array.c \
+	src/st-word-array.h \
+	src/st-word-array.c \
+	src/st-float-array.h \
+	src/st-float-array.c \
+	src/st-character.h \
+	src/st-small-integer.h \
+	src/st-large-integer.h \
+	src/st-large-integer.c \
+	src/st-method.h \
+	src/st-universe.h \
+	src/st-universe.c \
+	src/st-association.h \
+	src/st-association.c \
+	src/st-float.h \
+	src/st-float.c \
+	src/st-symbol.h \
+	src/st-symbol.c \
+	src/st-behavior.h \
+	src/st-behavior.c \
+	src/st-context.h \
+	src/st-context.c \
+	src/st-object.h \
+	src/st-object.c \
+	src/st-descriptor.c \
+	src/st-descriptor.h \
+	src/st-primitives.c \
+	src/st-primitives.h \
+	src/st-node.c \
+	src/st-node.h \
+	src/st-compiler.h \
+	src/st-compiler.c \
+	src/st-generator.c \
+	src/st-parser.c \
+	src/st-lexer.c \
+	src/st-lexer.h \
+	src/st-input.h \
+	src/st-input.c \
+	src/st-interpreter.h \
+	src/st-interpreter.c \
+	src/st-virtual-space.h \
+	src/st-virtual-space.c
+	src/st-types.h
+
+libpanda_la_CPPFLAGS =          \
+	-I$(top_srcdir)       \
+	-I$(top_srcdir)/src   \
+	-I$(top_builddir)   \
+        -I$(top_srcdir)/libs/libtommath \
+        -Isrc \
+        $(AM_CPPFLAGS)
+
+libpanda_la_CFLAGS =      \
+	$(GLIB_CFLAGS)  \
+	$(WARN_CFLAGS)
+
+libpanda_la_LIBADD = $(GLIB_LIBS) libtommath.la -lm
+
+
+noinst_PROGRAMS += src/panda
+
+src_panda_SOURCES = src/main.c
+src_panda_LDADD =    libpanda.la -lm
+src_panda_CFLAGS =   $(WARN_CFLAGS)
+src_panda_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)/src
+
+smalltalk_files = st/*.st
+
+EXTRA_DIST += $(smalltalk_files)

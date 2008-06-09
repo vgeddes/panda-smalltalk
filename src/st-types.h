@@ -25,7 +25,6 @@
 #ifndef __ST_TYPES_H__
 #define __ST_TYPES_H__
 
-#include <glib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <config.h>

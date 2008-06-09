@@ -41,27 +41,26 @@
 
 int vasprintf(char **strp, const char *fmt, va_list ap);
 
-extern STVirtualSpace *st_virtual_space;
+extern STVirtualSpace *allocator;
 extern char *program_invocation_short_name;
 
 
 st_oop
-st_allocate_object (gsize size)
+st_allocate_object (st_uint size)
 {
-    static st_oop *mark = NULL;
+    static st_oop *top = NULL;
     st_oop *object;
-
+  
     st_assert (size >= 2);
-    
-    if (ST_UNLIKELY (mark == NULL)) {
-	mark = st_virtual_space->start;
+    if (ST_UNLIKELY (top == NULL)) {
+        top = allocator->start;
     }
 
-    if (ST_UNLIKELY ((mark + size) >= st_virtual_space->end))
+    if (ST_UNLIKELY ((top + size) >= allocator->end))
 	abort ();
 
-    object = mark;    
-    mark = mark + size;
+    object = top;
+    top += size;
 
     return ST_OOP (object);
 }
@@ -215,7 +214,7 @@ st_strconcat (const char *first, ...)
 	}
 	va_end (args);
 	
-	ret = g_malloc (total + 1);
+	ret = st_malloc (total + 1);
 	if (ret == NULL)
 		return NULL;
 
@@ -334,52 +333,26 @@ st_list_destroy (st_list *list)
     }
 }
 
-static int
-utf8_char_length (const char *p)
-{
-    st_uint lead = *p;
-    if (lead < 0x80) 
-	return 1;
-    else if ((lead >> 5) == 0x6)
-	return 2;
-    else if ((lead >> 4) == 0xe)
-	return 3;
-    else if ((lead >> 3) == 0x1e)
-	return 4;
-    else 
-	return 0;
-}
-
-wchar_t
+st_unichar
 st_utf8_get_unichar (const char *p)
 {
-    wchar_t cp = *p;
-    int length = utf8_char_length (p);
+    st_unichar ch;
 
-    switch (length) {
-    case 1:
-	break;
-    case 2:
-	p++;
-	cp = ((cp << 6) & 0x7ff) + ((*p) & 0x3f);
-	break;
-    case 3:
-	++p; 
-	cp = ((cp << 12) & 0xffff) + ((*p << 6) & 0xfff);
-	++p;
-	cp += (*p) & 0x3f;
-	break;
-    case 4:
-	++p;
-	cp = ((cp << 18) & 0x1fffff) + ((*p << 12) & 0x3ffff);                
-	++p;
-	cp += ((*p) << 6) & 0xfff;
-	++p;
-	cp += (*p) & 0x3f; 
-	break;
-    }
+    if (p == NULL)
+	return 0x00;
     
-    return cp;        
+    if ((p[0] & 0x80) == 0x00) {
+	ch = p[0];
+    } else if ((p[0] & 0xe0) == 0xc0) {
+	ch = ((p[0] & 0x1f) << 6) | (p[1] & 0x3f);
+    } else if ((p[0] & 0xf0) == 0xe0) {
+	ch = ((p[0] & 0xf) << 12) | ((p[1] & 0x3f) << 6) | (p[2] & 0x3f);
+    } else if ((p[0] & 0xf8) == 0xf0) {
+	ch = ((p[0] & 0x7) << 18) | ((p[1] & 0x3f) << 12) | ((p[2] & 0x3f) << 6) | (p[3] & 0x3f);
+    } else
+	ch = 0x00; /* undefined */
+
+    return ch;
 }
 
 /*
@@ -390,54 +363,54 @@ st_utf8_get_unichar (const char *p)
 size_t
 st_utf8_strlen(const char * _s)
 {
-	const char * s;
-	size_t count = 0;
-	size_t u;
-	unsigned char b;
+    const char * s;
+    size_t count = 0;
+    size_t u;
+    unsigned char b;
 
-	/* Handle any initial misaligned bytes. */
-	for (s = _s; (uintptr_t)(s) & (sizeof(size_t) - 1); s++) {
-		b = *s;
+    /* Handle any initial misaligned bytes. */
+    for (s = _s; (uintptr_t)(s) & (sizeof(size_t) - 1); s++) {
+	b = *s;
 
-		/* Exit if we hit a zero byte. */
-		if (b == '\0')
-			goto done;
+	/* Exit if we hit a zero byte. */
+	if (b == '\0')
+	    goto done;
 
-		/* Is this byte NOT the first byte of a character? */
-		count += (b >> 7) & ((~b) >> 6);
-	}
+	/* Is this byte NOT the first byte of a character? */
+	count += (b >> 7) & ((~b) >> 6);
+    }
 
-	/* Handle complete blocks. */
-	for (; ; s += sizeof(size_t)) {
-		/* Prefetch 256 bytes ahead. */
-		__builtin_prefetch(&s[256], 0, 0);
+    /* Handle complete blocks. */
+    for (; ; s += sizeof(size_t)) {
+	/* Prefetch 256 bytes ahead. */
+	__builtin_prefetch(&s[256], 0, 0);
 
-		/* Grab 4 or 8 bytes of UTF-8 data. */
-		u = *(size_t *)(s);
+	/* Grab 4 or 8 bytes of UTF-8 data. */
+	u = *(size_t *)(s);
 
-		/* Exit the loop if there are any zero bytes. */
-		if ((u - ONEMASK) & (~u) & (ONEMASK * 0x80))
-			break;
+	/* Exit the loop if there are any zero bytes. */
+	if ((u - ONEMASK) & (~u) & (ONEMASK * 0x80))
+	    break;
 
-		/* Count bytes which are NOT the first byte of a character. */
-		u = ((u & (ONEMASK * 0x80)) >> 7) & ((~u) >> 6);
-		count += (u * ONEMASK) >> ((sizeof(size_t) - 1) * 8);
-	}
+	/* Count bytes which are NOT the first byte of a character. */
+	u = ((u & (ONEMASK * 0x80)) >> 7) & ((~u) >> 6);
+	count += (u * ONEMASK) >> ((sizeof(size_t) - 1) * 8);
+    }
 
-	/* Take care of any left-over bytes. */
-	for (; ; s++) {
-		b = *s;
+    /* Take care of any left-over bytes. */
+    for (; ; s++) {
+	b = *s;
 
-		/* Exit if we hit a zero byte. */
-		if (b == '\0')
-			break;
+	/* Exit if we hit a zero byte. */
+	if (b == '\0')
+	    break;
 
-		/* Is this byte NOT the first byte of a character? */
-		count += (b >> 7) & ((~b) >> 6);
-	}
+	/* Is this byte NOT the first byte of a character? */
+	count += (b >> 7) & ((~b) >> 6);
+    }
 
 done:
-	return ((s - _s) - count);
+    return ((s - _s) - count);
 }
 #endif
 
@@ -445,21 +418,21 @@ done:
  * Copyright (C) 2006 Keith Packard
  */
 int
-st_unichar_to_utf8 (wchar_t unichar, char *outbuf)
+st_unichar_to_utf8 (st_unichar ch, char *outbuf)
 {
     int bits;
     char *d = outbuf;
     
-    if      (unichar <       0x80) {  *d++ =  unichar;                         bits = -6; }
-    else if (unichar <      0x800) {  *d++ = ((unichar >>  6) & 0x1F) | 0xC0;  bits =  0; }
-    else if (unichar <    0x10000) {  *d++ = ((unichar >> 12) & 0x0F) | 0xE0;  bits =  6; }
-    else if (unichar <   0x200000) {  *d++ = ((unichar >> 18) & 0x07) | 0xF0;  bits = 12; }
-    else if (unichar <  0x4000000) {  *d++ = ((unichar >> 24) & 0x03) | 0xF8;  bits = 18; }
-    else if (unichar < 0x80000000) {  *d++ = ((unichar >> 30) & 0x01) | 0xFC;  bits = 24; }
+    if      (ch <       0x80) {  *d++ =  ch;                         bits = -6; }
+    else if (ch <      0x800) {  *d++ = ((ch >>  6) & 0x1f) | 0xc0;  bits =  0; }
+    else if (ch <    0x10000) {  *d++ = ((ch >> 12) & 0x0f) | 0xe0;  bits =  6; }
+    else if (ch <   0x200000) {  *d++ = ((ch >> 18) & 0x07) | 0xf0;  bits = 12; }
+    else if (ch <  0x4000000) {  *d++ = ((ch >> 24) & 0x03) | 0xf8;  bits = 18; }
+    else if (ch < 0x80000000) {  *d++ = ((ch >> 30) & 0x01) | 0xfC;  bits = 24; }
     else return 0;
 
     for (; bits >= 0; bits -= 6) {
-	*d++= ((unichar >> bits) & 0x3F) | 0x80;
+	*d++= ((ch >> bits) & 0x3F) | 0x80;
     }
     return d - outbuf;
 }
@@ -577,25 +550,59 @@ st_utf8_strlen (const char *string)
  * Copyright (C) 1998-2003 Daniel Veillard
  */
 const char *
-st_utf8_char_at_pos (const char *string, int pos)
+st_utf8_offset_to_pointer (const char *string, st_uint offset)
 {
-    char ch;
+    st_uchar ch;
 
-    if (string == NULL) return(NULL);
-    if (pos < 0)
-        return(NULL);
-    while (pos--) {
-        if ((ch=*string++) == 0) return(NULL);
-        if ( ch & 0x80 ) {
+    if (string == NULL)
+	return NULL;
+    if (offset < 0)
+        return NULL;
+    while (offset--) {
+        if ((ch = *string++) == 0)
+	    return NULL;
+        if (ch & 0x80) {
             /* if not simple ascii, verify proper format */
-            if ( (ch & 0xc0) != 0xc0 )
-                return(NULL);
+            if ((ch & 0xc0) != 0xc0)
+                return NULL;
             /* then skip over remaining bytes for this char */
-            while ( (ch <<= 1) & 0x80 )
-                if ( (*string++ & 0xc0) != 0x80 )
-                    return(NULL);
+            while ((ch <<= 1) & 0x80)
+                if ((*string++ & 0xc0) != 0x80)
+                    return NULL;
         }
     }
-    return ((char *) string);
+    return string;
 }
 
+st_unichar *
+st_utf8_to_ucs4 (const char *string)
+{
+    st_unichar *buffer;
+    st_uint     index = 0;
+    const st_uchar *p = string;
+
+    if (!string)
+	return NULL;
+
+    buffer = st_malloc (sizeof (st_unichar) * (st_utf8_strlen (string) + 1));
+
+    while (p[0]) {
+	
+	if ((p[0] & 0x80) == 0x00) {
+	    buffer[index] = p[0]; p += 1;
+	} else if ((p[0] & 0xe0) == 0xc0) {
+	    buffer[index] = ((p[0] & 0x1f) << 6) | (p[1] & 0x3f); p += 2;
+	} else if ((p[0] & 0xf0) == 0xe0) {
+	    buffer[index] = ((p[0] & 0xf) << 12) | ((p[1] & 0x3f) << 6) | (p[2] & 0x3f); p += 3;
+	} else if ((p[0] & 0xf8) == 0xf0) {
+	    buffer[index] = ((p[0] & 0x7) << 18) | ((p[1] & 0x3f) << 12) | ((p[2] & 0x3f) << 6) | (p[3] & 0x3f); p += 4;
+	} else
+	    break;
+
+	++index;
+    }
+
+    buffer[index] = 0;
+
+    return buffer;
+}

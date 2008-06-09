@@ -15,10 +15,10 @@ st_method_context_new (st_oop sender, st_oop receiver, st_oop method)
     int     temps_size;
     st_oop *temps;
 
-    temps_size = st_method_temp_count (method) + st_method_arg_count (method);
-    stack_size = st_method_stack_depth (method) + temps_size;
+    temps_size = st_method_get_temp_count (method) + st_method_get_arg_count (method);
+    stack_size = st_method_get_stack_depth (method) + temps_size;
 
-    context = st_allocate_object (ST_TYPE_SIZE (STMethodContext) + stack_size);
+    context = st_allocate_object (ST_TYPE_SIZE (struct st_method_context) + stack_size);
     st_heap_object_initialize_header (context, st_method_context_class);
 
     ST_CONTEXT_PART (context)->sender     = sender;
@@ -43,10 +43,10 @@ st_block_context_new (st_oop home, st_uint initial_ip, st_uint argcount)
 
     method =  ST_METHOD_CONTEXT (home)->method;
 
-    stack_size = st_method_stack_depth (method);
+    stack_size = st_method_get_stack_depth (method);
     stack_size += argcount;
 
-    context = st_allocate_object (ST_TYPE_SIZE (STBlockContext) + stack_size);
+    context = st_allocate_object (ST_TYPE_SIZE (struct st_block_context) + stack_size);
     st_heap_object_initialize_header (context, st_block_context_class);
 
     ST_CONTEXT_PART (context)->sender = st_nil;

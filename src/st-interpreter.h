@@ -7,7 +7,12 @@
 #include <st-context.h>
 #include <setjmp.h>
 
-#define ST_METHOD_CACHE_SIZE 1024
+/* cache size must be a power of 2 */
+#define ST_METHOD_CACHE_SIZE      1024
+#define ST_METHOD_CACHE_MASK      (ST_METHOD_CACHE_SIZE - 1)
+#define ST_METHOD_CACHE_HASH(k,s) ((k ^ s) & ST_METHOD_CACHE_MASK)
+
+#define ST_METHOD_IS_CACHED
 
 typedef struct st_method_cache
 {
@@ -16,6 +21,14 @@ typedef struct st_method_cache
     st_oop method;
 
 } st_method_cache;
+
+typedef struct st_message
+{
+    st_oop receiver;
+    st_oop selector;
+    int    argcount;
+
+} st_message;
 
 typedef struct st_processor {
 
@@ -40,7 +53,7 @@ typedef struct st_processor {
 
     jmp_buf main_loop;
 
-    st_method_cache method_cache[1024];
+    st_method_cache method_cache[ST_METHOD_CACHE_SIZE];
 
 } st_processor;
 

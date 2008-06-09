@@ -4,10 +4,10 @@
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
-PKG_NAME="goo"
+PKG_NAME="panda"
 
 (test -f $srcdir/configure.ac \
-  && test -f $srcdir/goo/st-lexer.c) || {
+  && test -f $srcdir/src/st-lexer.c) || {
     echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
     echo " top-level $PKG_NAME directory"
     exit 1

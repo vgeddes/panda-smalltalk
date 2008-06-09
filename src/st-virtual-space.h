@@ -34,6 +34,7 @@ typedef struct
 {
     st_oop *start;
     st_oop *end;
+
 } STVirtualSpace;
 
 STVirtualSpace  *st_virtual_space_new      (void);

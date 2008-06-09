@@ -22,7 +22,7 @@
  * THE SOFTWARE.
 */
 
-#include "st-class.h"
+#include "st-behavior.h"
 #include "st-heap-object.h"
 #include "st-hashed-collection.h"
 #include "st-universe.h"
@@ -40,7 +40,6 @@ st_behavior_all_instance_variables (st_oop klass)
     st_oop names;
     st_smi size;
     
-    /* superclass of Object is nil */
     if (klass == st_nil)
 	return NULL;
     

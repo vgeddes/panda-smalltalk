@@ -187,11 +187,11 @@ error: aString
 
 Object method!
 doesNotUnderstand: aMessage
-	^ self error: aMessage selector!
+	self error: aMessage selector!
 
 Object method!
 mustBeBoolean
-	^ self error: 'must be boolean'!
+	self error: 'must be boolean'!
 
 Object method!
 primitiveFailed 

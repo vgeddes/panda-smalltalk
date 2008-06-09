@@ -1270,7 +1270,7 @@ print_backtrace (st_processor *processor)
 
 	receiver = ST_METHOD_CONTEXT (home)->receiver;
 
-	selector = (char*) st_byte_array_bytes (st_method_selector (ST_METHOD_CONTEXT (home)->method));
+	selector = (char*) st_byte_array_bytes (ST_METHOD (ST_METHOD_CONTEXT (home)->method)->selector);
   
 	if (st_object_class (st_object_class (receiver)) == st_metaclass_class)
 	    klass = st_strdup_printf ("%s class", (char *) st_byte_array_bytes (ST_CLASS (receiver)->name));
@@ -1373,7 +1373,7 @@ Object_perform (st_processor *processor)
 
     set_success (processor, st_object_is_symbol (processor->message_selector));
     method = st_processor_lookup_method (processor, st_object_class (receiver));
-    set_success (processor, st_method_arg_count (method) == (processor->message_argcount - 1));
+    set_success (processor, st_method_get_arg_count (method) == (processor->message_argcount - 1));
 
     if (processor->success) {
 
@@ -1411,7 +1411,7 @@ Object_perform_withArguments (st_processor *processor)
 	method = ST_METHOD_CONTEXT (processor->context)->method;
 
     array_size = st_smi_value (st_arrayed_object_size (array));
-    set_success (processor, (processor->sp + array_size - 1) < st_method_stack_depth (method));
+    set_success (processor, (processor->sp + array_size - 1) < st_method_get_stack_depth (method));
 
     if (processor->success) {
 	
@@ -1429,7 +1429,7 @@ Object_perform_withArguments (st_processor *processor)
 	processor->sp += array_size;
 
 	method = st_processor_lookup_method (processor, st_object_class (receiver));
-	set_success (processor, st_method_arg_count (method) == array_size);
+	set_success (processor, st_method_get_arg_count (method) == array_size);
     
 	if (processor->success) {
 	    st_processor_execute_method (processor, method);
@@ -1593,7 +1593,7 @@ ByteArray_hash (st_processor *processor)
 static void
 ByteString_at (st_processor *processor)
 {
-    st_smi  index = pop_integer32 (processor);
+    st_smi  index    = pop_integer32 (processor);
     st_oop  receiver = ST_STACK_POP (processor);
     st_oop  character;
     char   *charptr;
@@ -1609,10 +1609,10 @@ ByteString_at (st_processor *processor)
 	return;
     }
     
-    charptr = g_utf8_offset_to_pointer ((const char *) st_byte_array_bytes (receiver),
+    charptr = st_utf8_offset_to_pointer ((const char *) st_byte_array_bytes (receiver),
 					index - 1);
-    
-    character = st_character_new (g_utf8_get_char (charptr));
+
+    character = st_character_new (st_utf8_get_unichar (charptr));
 
     ST_STACK_PUSH (processor, character);
 }

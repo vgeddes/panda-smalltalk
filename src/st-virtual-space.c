@@ -69,7 +69,7 @@ map_size (STVirtualSpace *space, st_uint size)
 STVirtualSpace *
 st_virtual_space_new (void)
 {
-    return st_malloc (sizeof (STVirtualSpace));
+    return st_new0 (STVirtualSpace);
 }
 
 bool

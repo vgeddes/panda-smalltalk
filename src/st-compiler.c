@@ -3,7 +3,7 @@
 #include "st-symbol.h"
 #include "st-universe.h"
 #include "st-hashed-collection.h"
-#include "st-class.h"
+#include "st-behavior.h"
 #include "st-input.h"
 #include "st-node.h"
 

@@ -1,5 +1,5 @@
 /*
- * st-class.h
+ * st-behavior.h
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -22,16 +22,18 @@
  * THE SOFTWARE.
 */
 
-#ifndef __ST_CLASS_H__
-#define __ST_CLASS_H__
+#ifndef __ST_BEHAVIOR_H__
+#define __ST_BEHAVIOR_H__
 
 #include <st-types.h>
 #include <st-heap-object.h>
 #include <st-small-integer.h>
 
-#include <glib.h>
+#define ST_BEHAVIOR(oop)  ((struct st_behavior *)  ST_POINTER (oop))
+#define ST_CLASS(oop)     ((struct st_class *)     ST_POINTER (oop))
+#define ST_METACLASS(oop) ((struct st_metaclass *) ST_POINTER (oop))
 
-typedef struct
+struct st_behavior
 {
     struct st_header header;
     
@@ -40,31 +42,25 @@ typedef struct
     st_oop instance_size;
     st_oop method_dictionary;
     st_oop instance_variables;
+};
 
-} STBehavior;
-
-typedef struct
+struct st_class
 {
-    STBehavior parent;
+    struct st_behavior parent;
 
     st_oop name;
     st_oop class_pool;
+};
 
-} STClass;
-
-typedef struct
+struct st_metaclass
 {
-    STBehavior parent;
+    struct st_behavior parent;
 
     st_oop instance_class;
-
-} STMetaclass;
-
+};
 
 st_list *st_behavior_all_instance_variables (st_oop klass);
 
-#define ST_BEHAVIOR(oop)  ((STBehavior *)  ST_POINTER (oop))
-#define ST_CLASS(oop)     ((STClass *)     ST_POINTER (oop))
-#define ST_METACLASS(oop) ((STMetaclass *) ST_POINTER (oop))
 
-#endif /* __ST_CLASS_H__ */
+
+#endif /* __ST_BEHAVIOR_H__ */

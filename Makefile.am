@@ -13,7 +13,7 @@ EXTRA_DIST = \
 	autogen.sh
 
 include Makefile-libtommath.am
-include Makefile-libgoo.am
+include Makefile-libpanda.am
 include Makefile-tests.am
 
 dist-hook:

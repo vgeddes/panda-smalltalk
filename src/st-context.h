@@ -28,7 +28,7 @@
 #include <st-types.h>
 #include <st-heap-object.h>
 
-typedef struct
+struct st_context_part
 {
     struct st_header header;
 
@@ -36,25 +36,27 @@ typedef struct
     st_oop ip;
     st_oop sp;
 
-} STContextPart;
+};
 
-typedef struct
+struct st_method_context
 {
-    STContextPart parent;
+    struct st_context_part parent;
     st_oop method;   
     st_oop receiver;
-    st_oop stack[];
-} STMethodContext;
 
-typedef struct
+    st_oop stack[];
+};
+
+struct st_block_context
 {
-    STContextPart parent;
+    struct st_context_part parent;
     st_oop initial_ip;
     st_oop argcount;
     st_oop caller;
     st_oop home;
+
     st_oop stack[];
-} STBlockContext;
+};
 
 
 st_oop  st_method_context_new (st_oop sender, st_oop receiver, st_oop method);
@@ -65,17 +67,16 @@ st_oop  st_block_context_new              (st_oop home,
 
 st_oop  st_message_new (st_oop selector, st_oop arguments);
 
-
-#define ST_CONTEXT_PART(oop)       ((STContextPart *)   ST_POINTER (oop))
-#define ST_METHOD_CONTEXT(oop)     ((STMethodContext *) ST_POINTER (oop))
-#define ST_BLOCK_CONTEXT(oop)      ((STBlockContext *)  ST_POINTER (oop))
+#define ST_CONTEXT_PART(oop)       ((struct st_context_part *)   ST_POINTER (oop))
+#define ST_METHOD_CONTEXT(oop)     ((struct st_method_context *) ST_POINTER (oop))
+#define ST_BLOCK_CONTEXT(oop)      ((struct st_block_context *)  ST_POINTER (oop))
 
 #define ST_METHOD_CONTEXT_TEMPORARY_FRAME(oop) (ST_METHOD_CONTEXT (oop)->stack)
 
-#define ST_METHOD_CONTEXT_STACK(oop)					\
-    ST_METHOD_CONTEXT (oop)->stack					\
-    + st_method_temp_count (ST_METHOD_CONTEXT (oop)->method)            \
-    + st_method_arg_count (ST_METHOD_CONTEXT (oop)->method)
+#define ST_METHOD_CONTEXT_STACK(oop)				      \
+    ST_METHOD_CONTEXT (oop)->stack				      \
+  + st_method_get_temp_count (ST_METHOD_CONTEXT (oop)->method)	      \
+  + st_method_get_arg_count (ST_METHOD_CONTEXT (oop)->method)
 
 #define ST_MESSAGE_SELECTOR(oop) (st_heap_object_body (oop)[0])
 #define ST_MESSAGE_ARGUMENTS(oop) (st_heap_object_body (oop)[1])

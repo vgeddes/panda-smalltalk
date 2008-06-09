@@ -29,10 +29,6 @@
 
 #include <string.h>
 
-
-
-
-
 INLINE st_smi
 round_size (st_smi size)
 {
@@ -125,14 +121,13 @@ byte_array_copy (st_oop object)
     return copy;
 }
 
-
 st_descriptor *
 st_byte_array_descriptor (void)
 {
     static st_descriptor __descriptor =
 	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
-	  .copy             = byte_array_copy
+	  .copy             = byte_array_copy,
 	};
 
     return & __descriptor;

@@ -32,7 +32,7 @@
 #include "st-array.h"
 #include "st-byte-array.h"
 #include "st-universe.h"
-#include "st-class.h"
+#include "st-behavior.h"
 #include "st-character.h"
 
 #include <glib.h>
@@ -935,20 +935,9 @@ out:
 static int
 size_cascade (Generator *gt, STNode *node)
 {
-    const char *selector;
     st_uint i, j;
     st_uint size = 0;
 
-    selector = CSTRING (node->message.selector);
-
-    for (i = 0; i < ST_N_ELEMENTS (generators); i++) {
-	for (j = 0; j < ST_N_ELEMENTS (generators[i].pattern); j++) {
-	    if (generators[i].pattern[j] && strcmp (generators[i].pattern[j], selector) == 0) {
-		generation_error (gt, "did not expect cascade", node);
-	    }
-	}
-    }
-    
     size += size_expression (gt, node->cascade.receiver);
     size += sizes[DUPLICATE_STACK_TOP];
 
@@ -969,18 +958,7 @@ size_cascade (Generator *gt, STNode *node)
 static void
 generate_cascade (Generator *gt, STNode *node)
 {
-    const char *selector;
     st_uint i, j;
-
-    selector = CSTRING (node->message.selector);
-
-    for (i = 0; i < ST_N_ELEMENTS (generators); i++) {
-	for (j = 0; j < ST_N_ELEMENTS (generators[i].pattern); j++) {
-	    if (generators[i].pattern[j] && strcmp (generators[i].pattern[j], selector) == 0) {
-		generation_error (gt, "did not expect cascade", node);
-	    }
-	}
-    }
 
     generate_expression (gt, node->cascade.receiver);
     emit (gt, DUPLICATE_STACK_TOP);
@@ -1433,9 +1411,9 @@ st_generate_method (st_oop klass, STNode *node, st_compiler_error *error)
 
     st_method_set_primitive_index (method, node->method.primitive);
 
-    st_method_literals (method) = create_literals_array (gt);
-    st_method_bytecode (method) = create_bytecode_array (gt); 
-    st_method_selector (method) = node->method.selector; 
+    ST_METHOD (method)->literals = create_literals_array (gt);
+    ST_METHOD (method)->bytecode = create_bytecode_array (gt); 
+    ST_METHOD (method)->selector = node->method.selector;
 
     generator_destroy (gt);
 
@@ -1726,17 +1704,17 @@ st_print_method (st_oop method)
     st_uchar *bytecodes;
     int     size;
 
-    printf ("flags: %i; ", st_method_flags (method));
-    printf ("arg-count: %i; ", st_method_arg_count (method));
-    printf ("temp-count: %i; ", st_method_temp_count (method));
-    printf ("stack-depth: %i; ", st_method_stack_depth (method));
-    printf ("primitive: %i;\n", st_method_primitive_index (method));
+    printf ("flags: %i; ", st_method_get_flags (method));
+    printf ("arg-count: %i; ", st_method_get_arg_count (method));
+    printf ("temp-count: %i; ", st_method_get_temp_count (method));
+    printf ("stack-depth: %i; ", st_method_get_stack_depth (method));
+    printf ("primitive: %i;\n", st_method_get_primitive_index (method));
     
     printf ("\n");
 
-    literals = st_method_literals (method);
-    bytecodes = (st_uchar *) st_byte_array_bytes (st_method_bytecode (method));
-    size = ST_ARRAYED_OBJECT (st_method_bytecode (method))->size;
+    literals  = ST_METHOD (method)->literals;
+    bytecodes = st_method_bytecode_bytes (method);
+    size      = ST_ARRAYED_OBJECT (ST_METHOD (method)->bytecode)->size;
 
     print_bytecodes (literals, bytecodes, size);
     

@@ -133,7 +133,7 @@ Class named: 'ContextPart'
 
 Class named: 'MethodContext'
 	  superclass: 'ContextPart'
-	  instanceVariableNames: 'method receiver reason'
+	  instanceVariableNames: 'method receiver'
       classVariableNames: ''!
 
 Class named: 'BlockContext'

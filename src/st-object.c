@@ -24,7 +24,7 @@
 
 #include "st-object.h"
 #include "st-universe.h"
-#include "st-class.h"
+#include "st-behavior.h"
 #include "st-small-integer.h"
 #include "st-association.h"
 #include "st-float.h"

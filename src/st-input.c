@@ -307,7 +307,7 @@ st_input_new (const char *string)
 
     st_assert (string != NULL);
 
-    string_ucs4 = (wchar_t *) g_utf8_to_ucs4 (string, -1, NULL, NULL, NULL);
+    string_ucs4 = (wchar_t *) st_utf8_to_ucs4 (string);
     if (string_ucs4 == NULL)
 	return NULL;
 

@@ -25,9 +25,9 @@
 #ifndef __ST_UTILS_H__
 #define __ST_UTILS_H__
 
-#include <glib.h>
 #include <st-types.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -38,6 +38,16 @@
 
 #define ST_N_ELEMENTS(static_array)  (sizeof(static_array) / sizeof ((static_array) [0]))
 
+#define ST_DIR_SEPARATOR   '/'
+#define ST_DIR_SEPARATOR_S "/"
+
+#ifdef __GNUC__
+#define ST_GNUC_MALLOC
+#define ST_GNUC_PRINTF(format_index, argument_index)
+#else
+#define ST_GNUC_MALLOC __attribute__ ((malloc))
+#define ST_GNUC_PRINTF(format_index, argument_index)  __attribute__ ((format (printf, format_index, argument_index)))
+#endif
 
 /* A comile-time assertion */
 #define assert_static(e)                \
@@ -55,7 +65,7 @@ enum
     st_tag_mask = ST_NTH_MASK (2),
 };
 
-st_oop st_allocate_object (gsize size);
+st_oop st_allocate_object (st_uint size);
 
 INLINE void
 st_oops_copy (st_oop *to, st_oop *from, st_uint count)
@@ -63,8 +73,8 @@ st_oops_copy (st_oop *to, st_oop *from, st_uint count)
     memmove (to, from, sizeof (st_oop) * count);
 }
 
-st_pointer  st_malloc  (size_t size) __attribute__ ((malloc));
-st_pointer  st_malloc0 (size_t size) __attribute__ ((malloc));
+st_pointer  st_malloc  (size_t size) ST_GNUC_MALLOC;
+st_pointer  st_malloc0 (size_t size) ST_GNUC_MALLOC;
 void        st_free    (st_pointer mem);
 
 #define st_new(struct_type)  ((struct_type *) st_malloc  (sizeof (struct_type)))
@@ -74,15 +84,18 @@ bool    st_file_get_contents (const char *filename,
 			      char      **buffer);
 
 char  *st_strdup         (const char *string);
-char  *st_strdup_printf  (const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+char  *st_strdup_printf  (const char *format, ...) ST_GNUC_PRINTF (1, 2);
 char  *st_strdup_vprintf (const char *format, va_list args);
 char  *st_strconcat      (const char *first, ...);
 
-int         st_utf8_strlen      (const char * string);
-wchar_t     st_utf8_get_unichar (const char *p);
-bool        st_utf8_validate    (const char *string, ssize_t max_len);
-int         st_unichar_to_utf8  (wchar_t unichar, char *outbuf);
-const char *st_utf8_char_at_pos (const char *string, int pos);
+typedef st_uint st_unichar;
+
+int         st_utf8_strlen            (const char *string);
+st_unichar  st_utf8_get_unichar       (const char *p);
+bool        st_utf8_validate          (const char *string, ssize_t max_len);
+int         st_unichar_to_utf8        (st_unichar ch, char *outbuf);
+const char *st_utf8_offset_to_pointer (const char *string, st_uint offset);
+st_unichar *st_utf8_to_ucs4           (const char *string);
 
 typedef struct st_list st_list;
 
@@ -97,14 +110,14 @@ typedef void (* st_list_foreach_func) (st_pointer data);
 st_list  *st_list_append  (st_list *list,  st_pointer data);
 st_list  *st_list_prepend (st_list *list,  st_pointer data);
 st_list  *st_list_concat  (st_list *list1, st_list *list2);
-void      st_list_foreach (st_list *list, st_list_foreach_func func); 
+void      st_list_foreach (st_list *list,  st_list_foreach_func func); 
 st_list  *st_list_reverse (st_list *list);
 st_uint   st_list_length  (st_list *list);
 void      st_list_destroy (st_list *list);
 
 #if  defined(__GNUC__) && defined(__OPTIMIZE__)
-#define ST_LIKELY(condition)     __builtin_expect (!(condition), 0)
-#define ST_UNLIKELY(condition)   __builtin_expect (!(condition), 1)
+#define ST_LIKELY(condition)     __builtin_expect (!!(condition), 1)
+#define ST_UNLIKELY(condition)   __builtin_expect (!!(condition), 0)
 #else
 #define ST_LIKELY(condition)     condition
 #define ST_UNLIKELY(condition)   condition
@@ -127,7 +140,7 @@ if (!(condition)) {						       	\
     fprintf (stderr, "%s:%i: %s: assertion `" #condition "' failed\n",	\
 	     __FILE__, __LINE__, __FUNCTION__);				\
     abort ();								\
-}									\
+ }									\
 ST_STMT_END
 #endif
 

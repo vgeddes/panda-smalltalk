@@ -28,7 +28,7 @@
 #include <st-types.h>
 #include <st-small-integer.h>
 #include <st-utils.h>
-#include <st-class.h>
+#include <st-behavior.h>
 #include <st-universe.h>
 #include <glib.h>
 
@@ -42,7 +42,7 @@ INLINE bool   st_object_is_smi            (st_oop object);
 
 INLINE st_oop st_object_class             (st_oop object);
 bool          st_object_equal             (st_oop object, st_oop other);
-st_uint         st_object_hash              (st_oop object);
+st_uint       st_object_hash              (st_oop object);
 
 char         *st_object_printString       (st_oop object);
 

@@ -1,9 +1,11 @@
 
 AC_PREREQ([2.52])
-AC_INIT([goo], [1.0])
+AC_INIT([Panda], [0.1],
+	[https://bugs.launchpad.net/panda-smalltalk/+filebug],
+	[panda])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([goo/st-lexer.c])
+AC_CONFIG_SRCDIR([src/st-lexer.c])
 
 AM_INIT_AUTOMAKE([1.10 foreign -Wall subdir-objects])
 
@@ -11,6 +13,7 @@ AC_CANONICAL_HOST
 
 AC_PROG_CC
 AC_PROG_CC_C99
+AM_PROG_CC_C_O
 if test "x$ac_cv_prog_cc_c99" = "xno"; then
    AC_MSG_ERROR([cannot find a C99-conforming compiler])
 fi
@@ -25,7 +28,6 @@ AC_CHECK_SIZEOF([int])
 AC_CHECK_SIZEOF([long])
 AC_CHECK_SIZEOF([long long int])
 AC_CHECK_ALIGNOF([void *])
-
 debug_default=yes
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug=@<:@no/yes@:>@],

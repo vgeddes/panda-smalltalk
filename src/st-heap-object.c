@@ -52,27 +52,15 @@ st_heap_object_set_format (st_oop object, st_uint format)
 }
 
 bool
-st_heap_object_readonly (st_oop object)
+st_heap_object_mark (st_oop object)
 {
-    return (HEADER (object) >> st_readonly_shift) & st_readonly_mask;
+    return (HEADER (object) >> st_mark_shift) & st_mark_mask;
 }
 
 void
-st_heap_object_set_readonly (st_oop object, bool readonly)
+st_heap_object_set_mark (st_oop object, bool mark)
 {
-    HEADER (object) = (HEADER (object) & ~st_readonly_mask_in_place) | ((readonly ? 1 : 0) << st_readonly_shift);
-}
-
-bool
-st_heap_object_nonpointer (st_oop object)
-{
-    return (HEADER (object) >> st_nonpointer_shift) & st_nonpointer_mask;
-}
-
-void
-st_heap_object_set_nonpointer (st_oop object, bool nonpointer)
-{
-    HEADER (object) = (HEADER (object) & ~st_nonpointer_mask_in_place) | ((nonpointer ? 1 : 0) << st_nonpointer_shift);
+    HEADER (object) = (HEADER (object) & ~st_mark_mask_in_place) | ((mark ? 1 : 0) << st_mark_shift);
 }
 
 void
@@ -80,13 +68,8 @@ st_heap_object_initialize_header (st_oop object, st_oop klass)
 {
     /* header */
     st_heap_object_set_format (object, st_smi_value (ST_BEHAVIOR (klass)->format));
-    st_heap_object_set_readonly (object, false);
-    st_heap_object_set_nonpointer (object, false);
-
-    /* hash */
+    st_heap_object_set_mark (object, false);
     st_heap_object_set_hash (object, st_current_hash++);
-
-    /* klass */
     st_heap_object_class (object) = klass;
 }
 
@@ -99,6 +82,17 @@ st_heap_object_initialize_body (st_oop object, st_smi instance_size)
 	instvars[i] = st_nil;
 }
 
+void
+st_heap_object_install_forwarding_pointer (st_oop object, st_oop pointer)
+{
+    ST_POINTER (object)->hash = pointer;
+}
+
+st_oop
+st_heap_object_forwarding_pointer (st_oop object)
+{
+    return ST_POINTER (object)->hash;
+}
 
 static st_oop
 allocate (st_oop klass)
