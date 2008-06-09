@@ -35,15 +35,15 @@
 #include "st-character.h"
 
 st_oop
-st_object_new (st_oop klass)
+st_object_new (st_oop class)
 {  
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (klass)->format)]->allocate (klass);
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (class);
 }
 
 st_oop
-st_object_new_arrayed (st_oop klass, st_smi size)
+st_object_new_arrayed (st_oop class, st_smi size)
 {
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (klass)->format)]->allocate_arrayed (klass, size);
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (class, size);
 }
 
 

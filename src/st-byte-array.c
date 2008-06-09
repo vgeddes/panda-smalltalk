@@ -52,14 +52,14 @@ round_size (st_smi size)
 }
 
 static st_oop
-allocate_arrayed (st_oop klass, st_smi size)
+allocate_arrayed (st_oop class, st_smi size)
 {
     st_assert (size >= 0);
 
     st_smi size_rounded = round_size (size);
     st_oop array = st_allocate_object (ST_TYPE_SIZE (struct st_byte_array) + (size_rounded / sizeof (st_oop)));
 
-    st_heap_object_initialize_header (array, klass);
+    st_heap_object_initialize_header (array, class);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
 
     memset (st_byte_array_bytes (array), 0, size_rounded);

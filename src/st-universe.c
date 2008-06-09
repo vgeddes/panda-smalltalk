@@ -107,26 +107,26 @@ enum
 static st_oop
 class_new (st_format format, st_uint instance_size)
 {
-    st_oop klass;
+    st_oop class;
 
-    klass = st_allocate_object (ST_TYPE_SIZE (struct st_class));
+    class = st_allocate_object (ST_TYPE_SIZE (struct st_class));
 
     /* TODO refactor this initialising */
-    st_heap_object_set_format (klass, ST_FORMAT_OBJECT);
-    st_heap_object_set_mark (klass, false);
-    st_heap_object_set_hash (klass, st_current_hash++);			       
-    st_heap_object_class (klass) = st_nil;
+    st_heap_object_set_format (class, ST_FORMAT_OBJECT);
+    st_heap_object_set_mark (class, false);
+    st_heap_object_set_hash (class, st_current_hash++);			       
+    st_heap_object_class (class) = st_nil;
 
-    ST_BEHAVIOR (klass)->format             = st_smi_new (format);
-    ST_BEHAVIOR (klass)->instance_size      = st_smi_new (instance_size);
-    ST_BEHAVIOR (klass)->superclass         = st_nil;
-    ST_BEHAVIOR (klass)->method_dictionary  = st_nil;
-    ST_BEHAVIOR (klass)->instance_variables = st_nil;
+    ST_BEHAVIOR (class)->format             = st_smi_new (format);
+    ST_BEHAVIOR (class)->instance_size      = st_smi_new (instance_size);
+    ST_BEHAVIOR (class)->superclass         = st_nil;
+    ST_BEHAVIOR (class)->method_dictionary  = st_nil;
+    ST_BEHAVIOR (class)->instance_variables = st_nil;
 
-    ST_CLASS (klass)->name       = st_nil;
-    ST_CLASS (klass)->class_pool = st_nil;
+    ST_CLASS (class)->name       = st_nil;
+    ST_CLASS (class)->class_pool = st_nil;
 
-    return klass;
+    return class;
 }
 
 static void
@@ -158,21 +158,21 @@ initialize_class  (const char *name,
 		   st_list      *ivarnames,
 		   st_list      *cvarnames)
 {
-    st_oop metaclass, klass, superclass;
+    st_oop metaclass, class, superclass;
 
     if (streq (name, "Object") && streq (super_name, "nil")) {
 
-	klass = st_dictionary_at (st_smalltalk, st_symbol_new ("Object"));
-	st_assert (klass != st_nil);
+	class = st_dictionary_at (st_smalltalk, st_symbol_new ("Object"));
+	st_assert (class != st_nil);
 
-	metaclass = st_object_class (klass);
+	metaclass = st_object_class (class);
 	if (metaclass == st_nil) {
 	    metaclass = st_object_new (st_metaclass_class);
-	    st_heap_object_class (klass) =  metaclass;
+	    st_heap_object_class (class) =  metaclass;
 	}
 
-	ST_BEHAVIOR (klass)->superclass     = st_nil;
-	ST_BEHAVIOR (klass)->instance_size  = st_smi_new (0);
+	ST_BEHAVIOR (class)->superclass     = st_nil;
+	ST_BEHAVIOR (class)->instance_size  = st_smi_new (0);
 	ST_BEHAVIOR (metaclass)->superclass = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
 
     } else {
@@ -181,20 +181,20 @@ initialize_class  (const char *name,
 	if (superclass == st_nil)
 	    st_assert (superclass != st_nil);
 
-	klass = st_global_get (name);
-	if (klass == st_nil)
-	    klass = class_new (st_smi_value (ST_BEHAVIOR (superclass)->format), 0);
+	class = st_global_get (name);
+	if (class == st_nil)
+	    class = class_new (st_smi_value (ST_BEHAVIOR (superclass)->format), 0);
 
-	metaclass = st_object_class (klass);
+	metaclass = st_object_class (class);
 	if (metaclass == st_nil) {
 	    metaclass = st_object_new (st_metaclass_class);
-	    st_heap_object_class (klass) = metaclass;
+	    st_heap_object_class (class) = metaclass;
 	}
 
-	ST_BEHAVIOR (klass)->superclass     = superclass;
+	ST_BEHAVIOR (class)->superclass     = superclass;
 	ST_BEHAVIOR (metaclass)->superclass = st_object_class (superclass);
 
-	ST_BEHAVIOR (klass)->instance_size = st_smi_new (st_list_length (ivarnames) +
+	ST_BEHAVIOR (class)->instance_size = st_smi_new (st_list_length (ivarnames) +
 							 st_smi_value (ST_BEHAVIOR (superclass)->instance_size));	
     }
 
@@ -202,7 +202,7 @@ initialize_class  (const char *name,
     ST_BEHAVIOR (metaclass)->method_dictionary  = st_dictionary_new ();
     ST_BEHAVIOR (metaclass)->instance_variables = st_nil;
     ST_BEHAVIOR (metaclass)->instance_size      = st_smi_new (INSTANCE_SIZE_CLASS);
-    ST_METACLASS (metaclass)->instance_class    = klass;
+    ST_METACLASS (metaclass)->instance_class    = class;
 
     if (st_list_length (ivarnames) != 0) {
 	st_oop names;
@@ -210,21 +210,21 @@ initialize_class  (const char *name,
 	names = st_object_new_arrayed (st_array_class, st_list_length (ivarnames));
 	for (st_list *l = ivarnames; l; l = l->next)
 	    st_array_at_put (names, i++, st_symbol_new (l->data));
-	ST_BEHAVIOR (klass)->instance_variables = names;
+	ST_BEHAVIOR (class)->instance_variables = names;
 
     } else {
-	ST_BEHAVIOR (klass)->instance_variables = st_nil;
+	ST_BEHAVIOR (class)->instance_variables = st_nil;
     }
 
     st_oop pool = st_dictionary_new ();
     for (st_list * l = cvarnames; l; l = l->next)
 	st_dictionary_at_put (pool, st_symbol_new (l->data), st_nil);
 
-    ST_CLASS (klass)->name        = st_symbol_new (name);
-    ST_CLASS (klass)->class_pool  = pool;
-    ST_BEHAVIOR (klass)->method_dictionary = st_dictionary_new ();
+    ST_CLASS (class)->name        = st_symbol_new (name);
+    ST_CLASS (class)->class_pool  = pool;
+    ST_BEHAVIOR (class)->method_dictionary = st_dictionary_new ();
 
-    st_dictionary_at_put (st_smalltalk, st_symbol_new (name), klass);
+    st_dictionary_at_put (st_smalltalk, st_symbol_new (name), class);
 }
 
 

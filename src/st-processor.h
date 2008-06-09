@@ -16,7 +16,7 @@
 
 typedef struct st_method_cache
 {
-    st_oop klass;
+    st_oop class;
     st_oop selector;
     st_oop method;
 
@@ -68,6 +68,6 @@ void   st_processor_initialize         (st_processor *processor);
 void   st_processor_set_active_context (st_processor *processor, st_oop context);
 void   st_processor_send_selector      (st_processor *processor, st_oop selector, st_uint argcount);
 void   st_processor_execute_method     (st_processor *processor, st_oop method);
-st_oop st_processor_lookup_method      (st_processor *processor, st_oop klass);
+st_oop st_processor_lookup_method      (st_processor *processor, st_oop class);
 
 #endif /* __ST_INTERPRETER_H__ */

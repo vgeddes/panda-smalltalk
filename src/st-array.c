@@ -28,7 +28,7 @@
 
 
 static st_oop
-allocate_arrayed (st_oop klass, st_smi size)
+allocate_arrayed (st_oop class, st_smi size)
 {
     st_oop  array;
     st_oop *elements;
@@ -37,7 +37,7 @@ allocate_arrayed (st_oop klass, st_smi size)
 
     array = st_allocate_object (ST_TYPE_SIZE (struct st_array) + size);
 
-    st_heap_object_initialize_header (array, klass);
+    st_heap_object_initialize_header (array, class);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
 
     elements = ST_ARRAY (array)->elements;

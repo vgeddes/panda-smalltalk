@@ -19,7 +19,7 @@ typedef struct st_compiler_error
     st_uint column;
 } st_compiler_error;
 
-bool    st_compile_string   (st_oop      klass,
+bool    st_compile_string   (st_oop      class,
 			     const char *string,
 			     st_compiler_error  *error);
 
@@ -28,7 +28,7 @@ void    st_compile_file_in  (const char *filename);
 STNode *st_parser_parse     (STLexer *lexer,
 			     st_compiler_error *error);
 
-st_oop  st_generate_method  (st_oop    klass,
+st_oop  st_generate_method  (st_oop    class,
 			     STNode   *node,
 			     st_compiler_error *error);
 

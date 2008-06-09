@@ -1259,7 +1259,7 @@ print_backtrace (st_processor *processor)
     while (context != st_nil) {
 
 	char *selector;
-	char *klass;
+	char *class;
 	st_oop home;
 	st_oop receiver;
 
@@ -1273,11 +1273,11 @@ print_backtrace (st_processor *processor)
 	selector = (char*) st_byte_array_bytes (ST_METHOD (ST_METHOD_CONTEXT (home)->method)->selector);
   
 	if (st_object_class (st_object_class (receiver)) == st_metaclass_class)
-	    klass = st_strdup_printf ("%s class", (char *) st_byte_array_bytes (ST_CLASS (receiver)->name));
+	    class = st_strdup_printf ("%s class", (char *) st_byte_array_bytes (ST_CLASS (receiver)->name));
 	else
-	    klass = (char*) st_byte_array_bytes (ST_CLASS (st_object_class (receiver))->name);    
+	    class = (char*) st_byte_array_bytes (ST_CLASS (st_object_class (receiver))->name);    
 
-	printf ("%s>>#%s", klass, selector);
+	printf ("%s>>#%s", class, selector);
 	if (st_object_class (context) == st_block_context_class)
 	    printf ("[]\n");
 	else
@@ -1449,12 +1449,12 @@ Object_perform_withArguments (st_processor *processor)
 static void
 Behavior_new (st_processor *processor)
 {
-    st_oop klass;
+    st_oop class;
     st_oop instance;
     st_smi format;
 
-    klass = ST_STACK_POP (processor);
-    format = st_smi_value (ST_BEHAVIOR (klass)->format);
+    class = ST_STACK_POP (processor);
+    format = st_smi_value (ST_BEHAVIOR (class)->format);
 
     set_success (processor, st_descriptors[format]->allocate != NULL);
 
@@ -1463,22 +1463,22 @@ Behavior_new (st_processor *processor)
 	return;
     }
 
-    instance = st_descriptors[format]->allocate (klass);
+    instance = st_descriptors[format]->allocate (class);
     ST_STACK_PUSH (processor, instance);
 }
 
 static void
 Behavior_newSize (st_processor *processor)
 {
-    st_oop klass;
+    st_oop class;
     st_smi size;
     st_smi format;
     st_oop instance;
 
     size = pop_integer32 (processor);
-    klass = ST_STACK_POP (processor);
+    class = ST_STACK_POP (processor);
 
-    format = st_smi_value (ST_BEHAVIOR (klass)->format);
+    format = st_smi_value (ST_BEHAVIOR (class)->format);
 
     set_success (processor, st_descriptors[format]->allocate_arrayed != NULL);
 
@@ -1487,7 +1487,7 @@ Behavior_newSize (st_processor *processor)
 	return;
     }
 
-    instance = st_descriptors[format]->allocate_arrayed (klass, size);
+    instance = st_descriptors[format]->allocate_arrayed (class, size);
     ST_STACK_PUSH (processor, instance);
 }
 

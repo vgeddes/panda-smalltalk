@@ -26,7 +26,7 @@
 #include "st-object.h"
 
 static st_oop
-allocate_arrayed (st_oop klass, st_smi size)
+allocate_arrayed (st_oop class, st_smi size)
 {
     st_oop  object;
     double *elements;
@@ -34,7 +34,7 @@ allocate_arrayed (st_oop klass, st_smi size)
     st_assert (size >= 0);
 
     object = st_allocate_object (ST_TYPE_SIZE (struct st_float_array) + size);
-    st_heap_object_initialize_header (object, klass);
+    st_heap_object_initialize_header (object, class);
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
     elements = ST_FLOAT_ARRAY (object)->elements;

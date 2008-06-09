@@ -26,7 +26,7 @@ typedef struct {
 
 /*
  * st_compile_string:
- * @klass: The class for which the compiled method will be bound.
+ * @class: The class for which the compiled method will be bound.
  * @string: Source code for the method
  * @error: return location for errors
  *
@@ -34,13 +34,13 @@ typedef struct {
  * and place the method in the methodDictionary of the given class.
  */
 bool
-st_compile_string (st_oop klass, const char *string, st_compiler_error *error)
+st_compile_string (st_oop class, const char *string, st_compiler_error *error)
 {
     STNode  *node;    
     st_oop   method;
     STLexer *lexer;
     
-    st_assert (klass != st_nil);
+    st_assert (class != st_nil);
     
     lexer = st_lexer_new (string);
     if (!lexer)
@@ -52,13 +52,13 @@ st_compile_string (st_oop klass, const char *string, st_compiler_error *error)
     if (!node)
 	return false;
 
-    method = st_generate_method (klass, node, error);
+    method = st_generate_method (class, node, error);
     if (method == st_nil) {
 	st_node_destroy (node);
 	return false;
     }
 
-    st_dictionary_at_put (ST_BEHAVIOR (klass)->method_dictionary,
+    st_dictionary_at_put (ST_BEHAVIOR (class)->method_dictionary,
 			  node->method.selector,
 			  method);
 
@@ -112,18 +112,18 @@ parse_method (FileInParser *parser,
 	      bool          class_method)
 {
     STToken *token = NULL;
-    st_oop   klass;
+    st_oop   class;
     st_compiler_error error;
 
     st_lexer_destroy (lexer);
 
     /* get class or metaclass */
-    klass = st_global_get (class_name);
-    if (klass == st_nil)
+    class = st_global_get (class_name);
+    if (class == st_nil)
 	filein_error (parser, token, "undefined class");
 
     if (class_method)
-	klass = st_object_class (klass);
+	class = st_object_class (class);
 
     /* parse method chunk */
     lexer = next_chunk (parser);
@@ -139,11 +139,11 @@ parse_method (FileInParser *parser,
     if (node->type != ST_METHOD_NODE)
 	printf ("%i\n", node->type);
     
-    method = st_generate_method (klass, node, &error);
+    method = st_generate_method (class, node, &error);
     if (method == st_nil)
 	goto error;
 	
-    st_dictionary_at_put (ST_BEHAVIOR (klass)->method_dictionary,
+    st_dictionary_at_put (ST_BEHAVIOR (class)->method_dictionary,
 			  node->method.selector,
 			  method);
 

@@ -77,11 +77,11 @@ st_large_integer_to_string (st_oop integer, st_uint radix)
 }
 
 static st_oop
-allocate_with_value (st_oop klass, mp_int * value)
+allocate_with_value (st_oop class, mp_int * value)
 {
     st_oop object = st_allocate_object (sizeof (struct st_large_integer) / sizeof (st_oop));
 
-    st_heap_object_initialize_header (object, klass);
+    st_heap_object_initialize_header (object, class);
 
     if (value)
 	*VALUE (object) = *value;
@@ -99,9 +99,9 @@ st_large_integer_new (mp_int * value)
 }
 
 static st_oop
-allocate (st_oop klass)
+allocate (st_oop class)
 {
-    return allocate_with_value (klass, NULL);
+    return allocate_with_value (class, NULL);
 }
 
 

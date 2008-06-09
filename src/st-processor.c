@@ -48,11 +48,11 @@ lookup_method (st_processor *processor, st_message *message)
 
     method_cache = processor->method_cache;
 
-    parent = klass = st_object_class (message->receiver);
+    parent = class = st_object_class (message->receiver);
 
     /* find method in cache */
-    index = ST_METHOD_CACHE_HASH (klass, message->selector);
-    if (method_cache[index].klass    == klass &&
+    index = ST_METHOD_CACHE_HASH (class, message->selector);
+    if (method_cache[index].class    == class &&
 	method_cache[index].selector == message->selector)
 	return method_cache[index].method;
 
@@ -62,7 +62,7 @@ lookup_method (st_processor *processor, st_message *message)
 	    
 	    /* install method in cache */
 	    index = ST_METHOD_CACHE_HASH (parent, message->selector);
-	    method_cache[index].klass = klass;
+	    method_cache[index].class = class;
 	    method_cache[index].selector = message->selector;
 	    method_cache[index].method = method;
 	    
@@ -103,15 +103,15 @@ create_actual_message (st_processor *processor)
 }
 
 INLINE st_oop
-lookup_method (st_processor *processor, st_oop klass)
+lookup_method (st_processor *processor, st_oop class)
 {
     st_oop method;
-    st_oop parent = klass;
+    st_oop parent = class;
     st_uint index;
 
-    index = ST_METHOD_CACHE_HASH (klass, processor->message_selector);
+    index = ST_METHOD_CACHE_HASH (class, processor->message_selector);
 
-    if (processor->method_cache[index].klass    == klass &&
+    if (processor->method_cache[index].class    == class &&
 	processor->method_cache[index].selector == processor->message_selector)
 	return processor->method_cache[index].method;
 
@@ -119,7 +119,7 @@ lookup_method (st_processor *processor, st_oop klass)
 	method = st_dictionary_at (ST_BEHAVIOR (parent)->method_dictionary, processor->message_selector);
 	if (method != st_nil) {
 	    index = ST_METHOD_CACHE_HASH (parent, processor->message_selector);
-	    processor->method_cache[index].klass = klass;
+	    processor->method_cache[index].class = class;
 	    processor->method_cache[index].selector = processor->message_selector;
 	    processor->method_cache[index].method = method;
 	    return method;
@@ -134,13 +134,13 @@ lookup_method (st_processor *processor, st_oop klass)
 
     create_actual_message (processor);
 
-    return lookup_method (processor, klass);
+    return lookup_method (processor, class);
 }
 
 st_oop
-st_processor_lookup_method (st_processor *processor, st_oop klass)
+st_processor_lookup_method (st_processor *processor, st_oop class)
 {
-    return lookup_method (processor, klass);
+    return lookup_method (processor, class);
 }
 
 /* 
@@ -818,12 +818,15 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_IDENTITY_EQ) {
+
+	    st_oop a, b;
+	    a = ST_STACK_POP (processor);
+	    b = ST_STACK_POP (processor);
 	    
-	    st_oop result;
+	    ST_STACK_PUSH (processor, (a == b) ? st_true : st_false);
 
-	    result = ST_STACK_POP (processor) == ST_STACK_POP (processor) ? st_true : st_false;
-	    ST_STACK_PUSH (processor, result);
-
+	    ip += 1;
+	    NEXT ();
 	}
 	
 	CASE (SEND_VALUE) {
@@ -1039,7 +1042,7 @@ static void
 flush_cache (st_processor *processor)
 {
     for (st_uint i = 0; i < ST_METHOD_CACHE_SIZE; i++) {
-	processor->method_cache[i].klass    = st_nil;
+	processor->method_cache[i].class    = st_nil;
 	processor->method_cache[i].selector = st_nil;
 	processor->method_cache[i].method   = st_nil;
     }

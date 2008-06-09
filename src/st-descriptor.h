@@ -45,9 +45,9 @@ typedef enum st_format
 
 struct st_descriptor
 {
-    st_oop (* allocate) (st_oop klass);
+    st_oop (* allocate) (st_oop class);
 
-    st_oop (* allocate_arrayed) (st_oop klass, st_smi size);
+    st_oop (* allocate_arrayed) (st_oop class, st_smi size);
 
     st_oop (* copy) (st_oop object);
     

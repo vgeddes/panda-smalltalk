@@ -59,7 +59,7 @@ struct st_metaclass
     st_oop instance_class;
 };
 
-st_list *st_behavior_all_instance_variables (st_oop klass);
+st_list *st_behavior_all_instance_variables (st_oop class);
 
 
 

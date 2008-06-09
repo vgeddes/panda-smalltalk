@@ -44,7 +44,7 @@ struct st_header
 {
     st_smi header;
     st_smi hash;
-    st_oop klass;
+    st_oop class;
     
     st_oop fields[];
 };
@@ -76,12 +76,12 @@ enum
 };
 
 #define  st_heap_object_format(oop) (ST_POINTER (oop)->header & st_format_mask)
-#define  st_heap_object_class(oop)  (ST_POINTER (oop)->klass)
+#define  st_heap_object_class(oop)  (ST_POINTER (oop)->class)
 #define  st_heap_object_body(oop)   (ST_POINTER (oop)->fields)
 
 #define  ST_ARRAYED_OBJECT(oop)           ((struct st_arrayed_object *) ST_POINTER (oop))
 
-void     st_heap_object_initialize_header (st_oop object, st_oop klass);
+void     st_heap_object_initialize_header (st_oop object, st_oop class);
 void     st_heap_object_initialize_body   (st_oop object, st_smi instance_size);
 st_uint  st_heap_object_hash              (st_oop object);
 void     st_heap_object_set_hash          (st_oop object, int hash);

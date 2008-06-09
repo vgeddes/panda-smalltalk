@@ -48,7 +48,7 @@ typedef struct
 {
     bool     in_block;
 
-    st_oop   klass;
+    st_oop   class;
 
     jmp_buf  jmploc;
 
@@ -193,7 +193,7 @@ generator_new (void)
 
     gt = st_new0 (Generator);
 
-    gt->klass       = 0;
+    gt->class       = 0;
     gt->instvars    = NULL;
     gt->literals    = NULL;
     gt->temporaries = NULL;
@@ -226,7 +226,7 @@ create_literals_array (Generator *gt)
     st_oop literals = st_nil;
 
     if (gt->references_super)
-	gt->literals = st_list_append (gt->literals, (st_pointer) gt->klass);
+	gt->literals = st_list_append (gt->literals, (st_pointer) gt->class);
 
     count = st_list_length (gt->literals);
 
@@ -1371,12 +1371,12 @@ collect_temporaries (Generator *gt, STNode *node)
 }
 
 st_oop
-st_generate_method (st_oop klass, STNode *node, st_compiler_error *error)
+st_generate_method (st_oop class, STNode *node, st_compiler_error *error)
 {
     Generator *gt;
     st_oop     method;
 
-    st_assert (klass != st_nil);
+    st_assert (class != st_nil);
     st_assert (node != NULL && node->type == ST_METHOD_NODE);
     
     check_init ();
@@ -1387,8 +1387,8 @@ st_generate_method (st_oop klass, STNode *node, st_compiler_error *error)
     if (setjmp (gt->jmploc))
 	goto error;
 
-    gt->klass = klass;
-    gt->instvars = st_behavior_all_instance_variables (klass);
+    gt->class = class;
+    gt->instvars = st_behavior_all_instance_variables (class);
     gt->temporaries = get_temporaries (gt, gt->instvars, node->method.arguments, node->method.temporaries);
 
     /* collect all block-level temporaries */

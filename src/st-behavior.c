@@ -34,18 +34,18 @@
 
 
 st_list *
-st_behavior_all_instance_variables (st_oop klass)
+st_behavior_all_instance_variables (st_oop class)
 {
     st_list *a = NULL, *b = NULL;
     st_oop names;
     st_smi size;
     
-    if (klass == st_nil)
+    if (class == st_nil)
 	return NULL;
     
-    a = st_behavior_all_instance_variables (ST_BEHAVIOR (klass)->superclass);
+    a = st_behavior_all_instance_variables (ST_BEHAVIOR (class)->superclass);
 
-    names = ST_BEHAVIOR (klass)->instance_variables;
+    names = ST_BEHAVIOR (class)->instance_variables;
     if (names != st_nil) {
 	size = st_smi_value (st_arrayed_object_size (names));
 	for (st_smi i = 1; i <= size; i++)

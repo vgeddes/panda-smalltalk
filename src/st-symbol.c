@@ -60,14 +60,14 @@ st_symbol_equal (st_oop object, st_oop other)
 }
 
 static st_oop
-string_new (st_oop klass, const char *bytes)
+string_new (st_oop class, const char *bytes)
 {
     st_oop  string;
     st_uchar *data;
     int len;
     
     len = strlen (bytes);
-    string = st_object_new_arrayed (klass, len);
+    string = st_object_new_arrayed (class, len);
     data = st_byte_array_bytes (string);
 
     memcpy (data, bytes, len);

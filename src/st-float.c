@@ -26,7 +26,7 @@
 #include "st-object.h"
 
 static st_oop
-allocate (st_oop klass)
+allocate (st_oop class)
 {
     st_oop f = st_allocate_object (ST_TYPE_SIZE (struct st_float));
 

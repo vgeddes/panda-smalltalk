@@ -64,13 +64,13 @@ st_heap_object_set_mark (st_oop object, bool mark)
 }
 
 void
-st_heap_object_initialize_header (st_oop object, st_oop klass)
+st_heap_object_initialize_header (st_oop object, st_oop class)
 {
     /* header */
-    st_heap_object_set_format (object, st_smi_value (ST_BEHAVIOR (klass)->format));
+    st_heap_object_set_format (object, st_smi_value (ST_BEHAVIOR (class)->format));
     st_heap_object_set_mark (object, false);
     st_heap_object_set_hash (object, st_current_hash++);
-    st_heap_object_class (object) = klass;
+    st_heap_object_class (object) = class;
 }
 
 void
@@ -95,13 +95,13 @@ st_heap_object_forwarding_pointer (st_oop object)
 }
 
 static st_oop
-allocate (st_oop klass)
+allocate (st_oop class)
 {
-    st_smi instance_size = st_smi_value (ST_BEHAVIOR (klass)->instance_size);
+    st_smi instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
 
     st_oop object = st_allocate_object (ST_TYPE_SIZE (struct st_header) + instance_size);
 
-    st_heap_object_initialize_header (object, klass);
+    st_heap_object_initialize_header (object, class);
     st_heap_object_initialize_body (object, instance_size);
 
     return object;
@@ -110,13 +110,13 @@ allocate (st_oop klass)
 static st_oop
 object_copy (st_oop object)
 {
-    st_oop klass;
+    st_oop class;
     st_oop copy;
     st_smi instance_size;
 
-    klass = st_heap_object_class (object);
-    instance_size = st_smi_value (ST_BEHAVIOR (klass)->instance_size);
-    copy = st_object_new (klass);
+    class = st_heap_object_class (object);
+    instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    copy = st_object_new (class);
 
     st_oops_copy (st_heap_object_body (copy),
 		  st_heap_object_body (object),

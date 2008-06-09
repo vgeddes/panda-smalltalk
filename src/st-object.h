@@ -33,8 +33,8 @@
 #include <glib.h>
 
 
-st_oop        st_object_new               (st_oop klass);
-st_oop        st_object_new_arrayed       (st_oop klass, st_smi size);
+st_oop        st_object_new               (st_oop class);
+st_oop        st_object_new_arrayed       (st_oop class, st_smi size);
 
 INLINE int    st_object_tag               (st_oop object);
 INLINE bool   st_object_is_heap           (st_oop object);
