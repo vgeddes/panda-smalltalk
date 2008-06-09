@@ -23,7 +23,7 @@
 */
 
 #include "st-primitives.h"
-#include "st-interpreter.h"
+#include "st-processor.h"
 #include "st-array.h"
 #include "st-word-array.h"
 #include "st-byte-array.h"

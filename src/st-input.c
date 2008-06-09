@@ -289,7 +289,7 @@ st_input_index (STInput *input)
 static void
 initialize_state (STInput *input, const wchar_t *string)
 {
-    input->text    = string;
+    input->text    = (wchar_t *) string;
     input->n       = wcslen (string);
     input->line    = 1;
     input->column  = 1;

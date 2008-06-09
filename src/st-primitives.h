@@ -26,7 +26,7 @@
 #define __ST_PRIMITIVES_H__
 
 #include <glib.h>
-#include <st-interpreter.h>
+#include <st-processor.h>
 
 typedef void (*st_primitive_func) (st_processor *processor);
 

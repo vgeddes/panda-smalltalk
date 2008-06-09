@@ -41,3 +41,5 @@ tests/test-parser
 TAGS
 tests/test-interpreter
 po/goo.pot
+compile
+src/panda

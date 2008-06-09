@@ -42,7 +42,7 @@
 #include "st-descriptor.h"
 #include "st-compiler.h"
 #include "st-virtual-space.h"
-#include "st-interpreter.h"
+#include "st-processor.h"
 
 #include <glib.h>
 #include <stdlib.h>

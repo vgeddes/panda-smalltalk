@@ -11,59 +11,65 @@
 #include <st-float.h>
 
 #include <stdlib.h>
-#include <glib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <sys/time.h>
 
-#define BUF_SIZE 10000
+#define BUF_SIZE 2000
 
-int
-main (int argc, char *argv[])
+static void
+compile_input (void)
 {
     st_compiler_error error;
     char buffer[BUF_SIZE];
     char *string;
-    st_oop value;
-    st_processor processor;
     char c;
     int i = 0;
-
-    /* the big bang */
-    st_bootstrap_universe ();
 
     while ((c = getchar ()) != EOF && i < (BUF_SIZE - 1))
 	buffer[i++] = c;
     buffer[i] = '\0';
 
-    string = g_strconcat ("doIt ^ [", buffer, "] value", NULL);
+    string = st_strconcat ("doIt ^ [", buffer, "] value", NULL);
 
-    bool result = st_compile_string (st_undefined_object_class, string, &error);
-    if (!result) {
+    if (!st_compile_string (st_undefined_object_class, string, &error)) {
 	fprintf (stderr, "test-processor:%i: %s\n",
 		 error.line, error.message);
-	return 1;
+	exit (1);
     }
+
+    st_free (string);
+}
+
+static double
+get_elapsed_time (struct timeval before, struct timeval after)
+{
+    return after.tv_sec - before.tv_sec + (after.tv_usec - before.tv_usec) / 1.e6;
+}
+
+int
+main (int argc, char *argv[])
+{
+    st_processor processor;
+    struct timeval before, after;
+    st_oop value;
+
+    st_bootstrap_universe ();
+    compile_input ();
 
     st_processor_initialize (&processor);
 
-    struct timeval before, after;
-    double elapsed;
-
     gettimeofday (&before, NULL);
-
     st_processor_main (&processor);
-
     gettimeofday (&after, NULL);
-
-    elapsed = after.tv_sec - before.tv_sec +
-	(after.tv_usec - before.tv_usec) / 1.e6;
     
     /* inspect the returned value on top of the stack */
     value = ST_STACK_PEEK ((&processor));
 
+    printf ("\n");
     printf ("result: %s\n", st_object_printString (value));
-    printf ("time %.9f seconds\n", elapsed);
-
+    printf ("time:   %.3fs\n", get_elapsed_time (before, after));
 
     return 0;
 }
+

@@ -10,7 +10,9 @@ DISTCLEANFILES =
 EXTRA_DIST = \
 	COPYING    \
 	st-mode.el \
-	autogen.sh
+	autogen.sh \
+	docs/bytecodes.txt \
+	docs/object-memory.txt
 
 include Makefile-libtommath.am
 include Makefile-libpanda.am
