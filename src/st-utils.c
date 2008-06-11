@@ -546,42 +546,25 @@ st_utf8_strlen (const char *string)
     return(ret);
 }
 
-/* Derived from libxml2
- * Copyright (C) 1998-2003 Daniel Veillard
- */
 const char *
 st_utf8_offset_to_pointer (const char *string, st_uint offset)
 {
-    st_uchar ch;
+    const char *p = string;
 
-    if (string == NULL)
-	return NULL;
-    if (offset < 0)
-        return NULL;
-    while (offset--) {
-        if ((ch = *string++) == 0)
-	    return NULL;
-        if (ch & 0x80) {
-            /* if not simple ascii, verify proper format */
-            if ((ch & 0xc0) != 0xc0)
-                return NULL;
-            /* then skip over remaining bytes for this char */
-            while ((ch <<= 1) & 0x80)
-                if ((*string++ & 0xc0) != 0x80)
-                    return NULL;
-        }
-    }
-    return string;
+    for (st_uint i = 0; i < offset; i++)
+	p = st_utf8_next_char (p);
+
+    return p;
 }
 
 st_unichar *
 st_utf8_to_ucs4 (const char *string)
 {
-    st_unichar *buffer;
-    st_uint     index = 0;
     const st_uchar *p = string;
+    st_unichar *buffer, c;
+    st_uint     index = 0;
 
-    if (!string)
+    if (string == NULL)
 	return NULL;
 
     buffer = st_malloc (sizeof (st_unichar) * (st_utf8_strlen (string) + 1));
@@ -589,20 +572,24 @@ st_utf8_to_ucs4 (const char *string)
     while (p[0]) {
 	
 	if ((p[0] & 0x80) == 0x00) {
-	    buffer[index] = p[0]; p += 1;
+	    c = p[0];
+	    p += 1;
 	} else if ((p[0] & 0xe0) == 0xc0) {
-	    buffer[index] = ((p[0] & 0x1f) << 6) | (p[1] & 0x3f); p += 2;
+	    c = ((p[0] & 0x1f) << 6) | (p[1] & 0x3f);
+	    p += 2;
 	} else if ((p[0] & 0xf0) == 0xe0) {
-	    buffer[index] = ((p[0] & 0xf) << 12) | ((p[1] & 0x3f) << 6) | (p[2] & 0x3f); p += 3;
+	    c = ((p[0] & 0xf) << 12) | ((p[1] & 0x3f) << 6)  | (p[2] & 0x3f);
+	    p += 3;
 	} else if ((p[0] & 0xf8) == 0xf0) {
-	    buffer[index] = ((p[0] & 0x7) << 18) | ((p[1] & 0x3f) << 12) | ((p[2] & 0x3f) << 6) | (p[3] & 0x3f); p += 4;
+	    c = ((p[0] & 0x7) << 18) | ((p[1] & 0x3f) << 12) | ((p[2] & 0x3f) << 6) | (p[3] & 0x3f);
+	    p += 4;
 	} else
 	    break;
 
-	++index;
+	buffer[index++] = c;
     }
 
     buffer[index] = 0;
-
+    
     return buffer;
 }

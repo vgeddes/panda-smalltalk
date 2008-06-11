@@ -90,6 +90,9 @@ char  *st_strconcat      (const char *first, ...);
 
 typedef st_uint st_unichar;
 
+#define st_utf8_skip(c) (((0xE5000000 >> (((c) >> 3) & 0xFE)) & 3) + 1)
+#define st_utf8_next_char(p) (char *)((p) + st_utf8_skip (*(const char *)(p)))
+
 int         st_utf8_strlen            (const char *string);
 st_unichar  st_utf8_get_unichar       (const char *p);
 bool        st_utf8_validate          (const char *string, ssize_t max_len);

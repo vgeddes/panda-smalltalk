@@ -1625,7 +1625,7 @@ ByteString_size (st_processor *processor)
 
     object = ST_STACK_POP (processor);
 
-    size = g_utf8_strlen ((const char *) st_byte_array_bytes (object), -1);
+    size = st_utf8_strlen ((const char *) st_byte_array_bytes (object));
 
     /* TODO: allow size to go into a LargeInteger on overflow */
     ST_STACK_PUSH (processor, st_smi_new (size));
@@ -1669,12 +1669,12 @@ compare_ordinal (const char *str1, const char *str2)
 	diff = g_utf8_get_char (p) - g_utf8_get_char (q);
 	if (diff != 0)
 	    break;
-	p = g_utf8_next_char(p);
-	q = g_utf8_next_char(q);    
+	p = st_utf8_next_char (p);
+	q = st_utf8_next_char (q);    
     }
 
     if (diff == 0)
-	diff = g_utf8_strlen (str1_normalized, -1) - g_utf8_strlen (str2_normalized, -1);
+	diff = st_utf8_strlen (str1_normalized) - st_utf8_strlen (str2_normalized);
 
     st_free (str1_normalized);
     st_free (str2_normalized);
