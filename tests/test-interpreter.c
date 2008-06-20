@@ -11,7 +11,6 @@
 #include <st-float.h>
 
 #include <stdlib.h>
-#include <glib.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -35,7 +34,7 @@ main (int argc, char *argv[])
 	buffer[i++] = c;
     buffer[i] = '\0';
 
-    string = g_strconcat ("doIt ^ [", buffer, "] value", NULL);
+    string = st_strconcat ("doIt ^ [", buffer, "] value", NULL);
 
     bool result = st_compile_string (st_undefined_object_class, string, &error);
     if (!result) {

@@ -49,7 +49,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#define lookahead(self, k)   ((gunichar) st_input_look_ahead (self->input, k))
+#define lookahead(self, k)   ((char) st_input_look_ahead (self->input, k))
 #define consume(self)        (st_input_consume (self->input))
 #define mark(self)           (st_input_mark (self->input))
 #define rewind(self)         (st_input_rewind (self->input))
@@ -89,7 +89,7 @@ struct st_lexer
     ErrorCode    error_code;
     st_uint        error_line;
     st_uint        error_column;
-    gunichar     error_char;
+    char     error_char;
 
     /* delayed deallocation */
     st_list *allocated_tokens;
@@ -162,7 +162,7 @@ make_number_token (st_lexer *lexer, int radix, int exponent, char *number, bool 
 static void
 raise_error (st_lexer   *lexer,
 	     ErrorCode  error_code,
-	     gunichar      error_char)
+	     char      error_char)
 {
     lexer->failed = true;
 
@@ -183,7 +183,7 @@ raise_error (st_lexer   *lexer,
 }
 
 static void
-match_range (st_lexer *lexer, gunichar a, gunichar b)
+match_range (st_lexer *lexer, char a, char b)
 {
     if (lookahead (lexer, 1) < a || lookahead (lexer, 1) > b) {
 	// mismatch error
@@ -193,7 +193,7 @@ match_range (st_lexer *lexer, gunichar a, gunichar b)
 }
 
 static void
-match (st_lexer *lexer, gunichar c)
+match (st_lexer *lexer, char c)
 {
     if (lookahead (lexer, 1) != c) {
 	// mismatch error
@@ -203,7 +203,7 @@ match (st_lexer *lexer, gunichar c)
 }
 
 static bool
-is_special_char (gunichar c)
+is_special_char (char c)
 {
     switch (c) {
 
@@ -224,7 +224,7 @@ is_special_char (gunichar c)
  * 
  **/
 static bool
-is_radix_numeral (st_uint radix, gunichar c)
+is_radix_numeral (st_uint radix, char c)
 {
     st_assert (radix >= 2 && radix <= 36);
     
@@ -332,14 +332,14 @@ out2:
 static void
 match_identifier (st_lexer *lexer, bool create_token)
 {
-    if (g_unichar_isalpha (lookahead (lexer, 1)))
+    if (isalpha (lookahead (lexer, 1)))
 	consume (lexer);
     else {
 	raise_error (lexer, ERROR_NO_VIABLE_ALT_FOR_CHAR, lookahead (lexer, 1));
     }
 
     while (true) {
-	if (g_unichar_isalpha (lookahead (lexer, 1)))
+	if (isalpha (lookahead (lexer, 1)))
 	    consume (lexer);
 	else if (lookahead (lexer, 1) >= '0' && lookahead (lexer, 1) <= '9')
 	    consume (lexer);
@@ -359,7 +359,7 @@ match_identifier (st_lexer *lexer, bool create_token)
 static void
 match_keyword_or_identifier (st_lexer *lexer, bool create_token)
 {
-    if (g_unichar_isalpha (lookahead (lexer, 1)))
+    if (isalpha (lookahead (lexer, 1)))
 	consume (lexer);
     else {
 	raise_error (lexer, ERROR_NO_VIABLE_ALT_FOR_CHAR, lookahead (lexer, 1));
@@ -367,7 +367,7 @@ match_keyword_or_identifier (st_lexer *lexer, bool create_token)
 
     while (true) {
 
-	if (g_unichar_isalpha (lookahead (lexer, 1)))
+	if (isalpha (lookahead (lexer, 1)))
 	    consume (lexer);
 	else if (lookahead (lexer, 1) >= '0' && lookahead (lexer, 1) <= '9')
 	    consume (lexer);
@@ -500,11 +500,11 @@ match_symbol_constant (st_lexer *lexer)
 {
     match (lexer, '#');
 
-    if (g_unichar_isalpha (lookahead (lexer, 1))) {
+    if (isalpha (lookahead (lexer, 1))) {
 
 	do {
 	    match_keyword_or_identifier (lexer, false);
-	} while (g_unichar_isalpha (lookahead (lexer, 1)));
+	} while (isalpha (lookahead (lexer, 1)));
 
     } else if (lookahead (lexer, 1) == '-' || is_special_char (lookahead (lexer, 1))) {
 	match_binary_selector (lexer, false);
@@ -555,7 +555,7 @@ match_rparen (st_lexer *lexer)
 static void
 match_char_constant (st_lexer *lexer)
 {
-    gunichar ch = 0;
+    char ch = 0;
     match (lexer, '$');
     
     if (lookahead (lexer, 1) == '\\') {
@@ -587,9 +587,6 @@ match_char_constant (st_lexer *lexer)
 	    char *string = st_input_range (lexer->input, start, st_input_index (lexer->input));
 	    ch = strtol (string, NULL, 16);
 	    st_free (string);
-
-	    if (!g_unichar_validate (ch))
-		raise_error (lexer, ERROR_ILLEGAL_CHAR, ch);
 	   
 	} else {
 	    // just match the '\' char then
@@ -597,15 +594,15 @@ match_char_constant (st_lexer *lexer)
 	    consume (lexer);
 	}
 	
-    } else if (g_unichar_isgraph (lookahead (lexer, 1))) {
+    } else if (isgraph (lookahead (lexer, 1))) {
 	ch = lookahead (lexer, 1);
 	consume (lexer);    
     } else {
 	raise_error (lexer, ERROR_INVALID_CHAR_CONST, lookahead (lexer, 1));
     }
 
-    char outbuf[6] = {0};
-    g_unichar_to_utf8 (ch, outbuf);
+    char outbuf[6];
+    st_unichar_to_utf8 (ch, outbuf);
     make_token (lexer, ST_TOKEN_CHARACTER_CONST, st_strdup (outbuf));
 }
 
@@ -757,7 +754,7 @@ st_lexer_next_token (st_lexer *lexer)
 
 	default:
 
-	    if (g_unichar_isalpha (lookahead (lexer, 1)))
+	    if (isalpha (lookahead (lexer, 1)))
 		match_keyword_or_identifier (lexer, true);
 
 	    else if (lookahead (lexer, 1) == '-' && isdigit (lookahead (lexer, 2)))
@@ -806,7 +803,7 @@ lexer_initialize (st_lexer *lexer, st_input *input)
     lexer->column = 1;
     lexer->start = -1;
     lexer->error_code = 0;
-    lexer->failed = FALSE;
+    lexer->failed = false;
     lexer->filter_comments = true;
 
     lexer->allocated_tokens = NULL;
@@ -830,26 +827,11 @@ st_lexer_new (const char *string)
     return lexer;
 }
 
-st_lexer *
-st_lexer_new_ucs4 (const wchar_t *string)
-{
-    st_lexer *lexer;
-
-    st_assert (string != NULL);
-
-    lexer = st_new0 (st_lexer);
-    lexer_initialize (lexer, st_input_new_ucs4 (string)); 
-
-    return lexer;
-}
-
 void
 destroy_token (st_token *token)
 {
-    if (token->type != ST_TOKEN_NUMBER_CONST) {
+    if (token->type != ST_TOKEN_NUMBER_CONST)
 	st_free (token->text);
-
-    }
 
     st_free (token);
 }
@@ -915,7 +897,7 @@ st_lexer_error_column (st_lexer *lexer)
     return lexer->error_column;
 }
 
-gunichar
+char
 st_lexer_error_char (st_lexer *lexer)
 {
     st_assert (lexer != NULL);

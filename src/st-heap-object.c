@@ -27,11 +27,12 @@
 #include "st-byte-array.h"
 #include "st-object.h"
 #include "st-descriptor.h"
+#include "st-object-memory.h"
 
 
 #define HEADER(object) (ST_POINTER (object)->header)
 
-int st_current_hash = 0;
+int st_current_hash = 1;
 
 st_uint
 st_heap_object_hash (st_oop object)
@@ -45,6 +46,12 @@ st_heap_object_set_hash (st_oop object, int value)
     ST_POINTER (object)->hash = (st_smi) value;
 }
 
+st_uint
+st_heap_object_format (st_oop object)
+{
+    return (HEADER (object) >> st_format_shift) & st_format_mask;
+}
+
 void
 st_heap_object_set_format (st_oop object, st_uint format)
 {
@@ -52,13 +59,13 @@ st_heap_object_set_format (st_oop object, st_uint format)
 }
 
 bool
-st_heap_object_mark (st_oop object)
+st_heap_object_marked (st_oop object)
 {
     return (HEADER (object) >> st_mark_shift) & st_mark_mask;
 }
 
 void
-st_heap_object_set_mark (st_oop object, bool mark)
+st_heap_object_set_marked (st_oop object, bool mark)
 {
     HEADER (object) = (HEADER (object) & ~st_mark_mask_in_place) | ((mark ? 1 : 0) << st_mark_shift);
 }
@@ -67,10 +74,13 @@ void
 st_heap_object_initialize_header (st_oop object, st_oop class)
 {
     /* header */
+    HEADER (object) = 0 | ST_MARK_TAG;
     st_heap_object_set_format (object, st_smi_value (ST_BEHAVIOR (class)->format));
-    st_heap_object_set_mark (object, false);
+    st_heap_object_set_marked (object, false);
     st_heap_object_set_hash (object, st_current_hash++);
     st_heap_object_class (object) = class;
+
+    st_assert (st_heap_object_format (object) == (st_smi_value (ST_BEHAVIOR (class)->format)));
 }
 
 void
@@ -80,6 +90,13 @@ st_heap_object_initialize_body (st_oop object, st_smi instance_size)
 
     for (st_smi i = 0; i < instance_size; i++)
 	instvars[i] = st_nil;
+}
+
+void
+st_object_verify (st_oop object)
+{
+    st_assert (st_heap_object_class (object) != st_nil);
+    st_assert (st_heap_object_hash (object) != 0);
 }
 
 void
@@ -95,11 +112,13 @@ st_heap_object_forwarding_pointer (st_oop object)
 }
 
 static st_oop
-allocate (st_oop class)
+allocate (st_space *space, st_oop class)
 {
-    st_smi instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    st_smi instance_size;
+    st_oop object;
 
-    st_oop object = st_allocate_object (ST_TYPE_SIZE (struct st_header) + instance_size);
+    instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    object = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_header) + instance_size);
 
     st_heap_object_initialize_header (object, class);
     st_heap_object_initialize_body (object, instance_size);
@@ -116,13 +135,26 @@ object_copy (st_oop object)
 
     class = st_heap_object_class (object);
     instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
-    copy = st_object_new (class);
+    copy = st_object_new (om->moving_space, class);
 
     st_oops_copy (st_heap_object_body (copy),
 		  st_heap_object_body (object),
 		  instance_size);
 
     return copy;
+}
+
+static st_uint
+object_size (st_oop object)
+{
+    return (sizeof (struct st_header) / sizeof (st_oop)) + st_smi_value (ST_BEHAVIOR (st_heap_object_class (object))->instance_size);
+}
+
+static void
+object_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = st_heap_object_body (object);
+    contents->size = st_smi_value (ST_BEHAVIOR (st_heap_object_class (object))->instance_size);
 }
 
 st_descriptor *
@@ -132,6 +164,8 @@ st_heap_object_descriptor (void)
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
 	  .copy             = object_copy,
+	  .size             = object_size,
+	  .contents         = object_contents,
 	};
 
     return & __descriptor;

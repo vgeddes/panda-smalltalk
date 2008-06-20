@@ -5,7 +5,6 @@
 #include <st-node.h>
 #include <st-universe.h>
 
-#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

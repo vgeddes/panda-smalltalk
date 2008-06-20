@@ -27,7 +27,6 @@
 
 #include <st-types.h>
 #include <st-object.h>
-#include <glib.h>
 
 #define ST_ARRAY(oop) ((struct st_array *) ST_POINTER (oop))
 

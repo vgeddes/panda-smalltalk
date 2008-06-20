@@ -51,7 +51,7 @@ round_size (st_smi size)
 
 
 static st_oop
-allocate_arrayed (st_oop class, st_smi size)
+allocate_arrayed (st_space *space, st_oop class, st_smi size)
 {
     st_oop  array;
     st_smi  size_rounded;
@@ -60,7 +60,7 @@ allocate_arrayed (st_oop class, st_smi size)
     st_assert (size >= 0);
 
     size_rounded = round_size (size);
-    array = st_allocate_object (ST_TYPE_SIZE (struct st_word_array) + size_rounded);
+    array = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_word_array) + size_rounded);
 
     st_heap_object_initialize_header (array, class);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
@@ -80,13 +80,26 @@ word_array_copy (st_oop object)
     
     size = st_smi_value (st_arrayed_object_size (object));
 
-    copy = allocate_arrayed (st_object_class (object), size);
+    copy = allocate_arrayed (om->moving_space, st_object_class (object), size);
 
     memcpy (st_word_array_elements (copy),
 	    st_word_array_elements (object),
 	    sizeof (st_uint) * size);
 
     return copy;
+}
+
+static st_uint
+word_array_size (st_oop object)
+{
+    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + (2 * st_smi_value (st_arrayed_object_size (object)));
+}
+
+static void
+word_array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
 }
 
 st_descriptor *
@@ -96,8 +109,9 @@ st_word_array_descriptor (void)
 	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
 	  .copy             = word_array_copy,
+	  .size             = word_array_size,
+	  .contents         = word_array_contents,
 	};
-
     return & __descriptor;
 }
 

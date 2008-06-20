@@ -26,6 +26,8 @@
 #define __ST_UNIVERSE_H__
 
 #include <st-types.h>
+#include <st-object-memory.h>
+#include <st-processor.h>
 
 extern st_oop
     st_nil,
@@ -91,12 +93,14 @@ enum {
     ST_NUM_SPECIALS,
 };
 
+extern st_object_memory *om;
+
 extern st_oop st_specials[ST_NUM_SPECIALS];
 
 void   st_bootstrap_universe (void);
 
 st_oop st_global_get (const char *name);
 
-
+st_processor *proc;
 
 #endif /* __ST_UNIVERSE_H__ */

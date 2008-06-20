@@ -22,23 +22,62 @@
  * THE SOFTWARE.
 */
 
-#ifndef __ST_VIRTUAL_SPACE__
-#define __ST_VIRTUAL_SPACE__
+#ifndef __ST_OBJECT_MEMORY__
+#define __ST_OBJECT_MEMORY__
 
 #include <st-types.h>
+#include <st-utils.h>
+#include <ptr_array.h>
 
-typedef struct st_virtual_space
+#define ST_COLLECTION_INTERVAL 10000
+
+struct mark_stack {
+    st_oop *stack;
+    st_uint sp;
+};
+
+typedef struct st_space
 {
-    st_oop *start;
-    st_oop *end;
+    st_oop *top;
+    st_oop *bottom;
 
-} st_virtual_space;
+    st_oop *water_level;
 
-st_virtual_space  *st_virtual_space_new      (void);
-bool               st_virtual_space_reserve  (st_virtual_space *space, st_uint size);
-void              *st_virtual_space_start    (st_virtual_space *space);
-void              *st_virtual_space_end      (st_virtual_space *space);
-void               st_virtual_space_destroy  (st_virtual_space *space);
+    st_uint object_count;
+    
+} st_space;
+
+typedef struct st_object_memory
+{
+    st_oop *heap_start, *heap_end;
+
+    st_space *moving_space;
+    st_space *fixed_space;
+
+    struct mark_stack ms;
+
+    st_uchar   *mark_bits;
+    st_uchar   *alloc_bits;
+    st_oop    **offsets;
+    
+    ptr_array roots;
+
+    st_uint alloc_count;
+
+} st_object_memory;
 
 
-#endif /* __ST_VIRTUAL_SPACE__ */
+st_object_memory *st_object_memory_new      (void);
+bool              st_object_memory_reserve  (st_object_memory *om, st_uint size);
+void              st_object_memory_destroy  (st_object_memory *om);
+
+void              st_object_memory_add_root (st_object_memory *om, st_oop root);
+
+void              begin_gc (st_object_memory *om);
+
+st_space         *st_space_new (st_oop *bottom, st_oop *top);
+
+st_oop            st_space_allocate_object (st_space *space, st_uint size);
+
+
+#endif /* __ST_OBJECT_MEMORY__ */

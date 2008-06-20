@@ -28,14 +28,16 @@
 
 
 static st_oop
-allocate_arrayed (st_oop class, st_smi size)
+allocate_arrayed (st_space *space,
+		  st_oop    class,
+		  st_smi    size)
 {
     st_oop  array;
     st_oop *elements;
 
     st_assert (size >= 0);
 
-    array = st_allocate_object (ST_TYPE_SIZE (struct st_array) + size);
+    array = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_array) + size);
 
     st_heap_object_initialize_header (array, class);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
@@ -55,13 +57,26 @@ array_copy (st_oop object)
 
     size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
 
-    copy = st_object_new_arrayed (st_object_class (object), size);
+    copy = st_object_new_arrayed (om->moving_space, st_object_class (object), size);
 
     st_oops_copy (ST_ARRAY (copy)->elements,
 		  ST_ARRAY (object)->elements,
 		  size);
 
     return copy;
+}
+
+static st_uint
+array_size (st_oop object)
+{
+    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + st_smi_value (st_arrayed_object_size (object));
+}
+
+static void
+array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = st_array_elements (object);
+    contents->size = st_smi_value (st_arrayed_object_size (object));
 }
 
 st_descriptor *
@@ -71,6 +86,8 @@ st_array_descriptor (void)
 	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
 	  .copy             = array_copy,
+	  .size             = array_size,
+	  .contents         = array_contents,
 	};
 
     return & __descriptor;

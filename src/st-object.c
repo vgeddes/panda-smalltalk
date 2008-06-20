@@ -33,18 +33,8 @@
 #include "st-symbol.h"
 #include "st-heap-object.h"
 #include "st-character.h"
+#include "st-unicode.h"
 
-st_oop
-st_object_new (st_oop class)
-{  
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (class);
-}
-
-st_oop
-st_object_new_arrayed (st_oop class, st_smi size)
-{
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (class, size);
-}
 
 
 bool
@@ -127,7 +117,7 @@ st_object_printString (st_oop object)
     // Character
     else if (st_object_class (object) == st_character_class) {
 	char outbuf[6] = { 0 };
-	g_unichar_to_utf8 (st_character_value (object), outbuf);
+	st_unichar_to_utf8 (st_character_value (object), outbuf);
 	string = st_strdup_printf ("$%s", outbuf);
 
     // Other

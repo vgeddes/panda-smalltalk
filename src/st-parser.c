@@ -35,9 +35,9 @@
 #include "st-object.h"
 #include "st-array.h"
 #include "st-character.h"
+#include "st-unicode.h"
 
 #include <tommath.h>
-#include <glib.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <setjmp.h> 
@@ -288,7 +288,7 @@ parse_tuple (st_parser *parser)
 
     items = st_list_reverse (items);
 
-    tuple = st_object_new_arrayed (st_array_class, st_list_length (items));
+    tuple = st_object_new_arrayed (om->fixed_space, st_array_class, st_list_length (items));
 
     int i = 1;
     for (st_list *l = items; l; l = l->next)
@@ -331,7 +331,7 @@ parse_primary (st_parser *parser)
     
 	node = st_node_new (ST_LITERAL_NODE);
 	node->line = st_token_get_line (token);
-	node->literal.value = st_string_new (st_token_get_text (token));
+	node->literal.value = st_string_new (om->fixed_space, st_token_get_text (token));
 
 	next (parser, parser->lexer);
 	break;
@@ -349,7 +349,7 @@ parse_primary (st_parser *parser)
 
 	node = st_node_new (ST_LITERAL_NODE);
 	node->line = st_token_get_line (token);
-	node->literal.value = st_character_new (g_utf8_get_char (st_token_get_text (token)));
+	node->literal.value = st_character_new (st_utf8_get_unichar (st_token_get_text (token)));
 
 	next (parser, parser->lexer);
 	break;
@@ -469,14 +469,16 @@ parse_keyword_message (st_parser *parser, st_node *receiver)
 {
     st_token *token;
     st_node  *node, *arguments = NULL, *arg;
-    GString  *selector;
+    char *temp, *string = st_strdup ("");
     
-    selector = g_string_new (NULL);
     token = current (parser->lexer);
     
     while (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR) {
 	
-	g_string_append (selector, st_token_get_text (token));
+	temp = st_strconcat (string, st_token_get_text (token), NULL);
+	st_free (string);
+	string = temp;
+
 	token = next (parser, parser->lexer);
 	
 	arg = parse_keyword_argument (parser, NULL);
@@ -489,10 +491,8 @@ parse_keyword_message (st_parser *parser, st_node *receiver)
 
     node->message.precedence = ST_KEYWORD_PRECEDENCE;
     node->message.receiver = receiver;
-    node->message.selector = st_symbol_new (g_string_free (selector, false));
+    node->message.selector = st_symbol_new (string);
     node->message.arguments = arguments;
-
-    
 
     return node;
 }
@@ -845,12 +845,15 @@ parse_message_pattern (st_parser *parser, st_node *method)
     
     } else if (type == ST_TOKEN_KEYWORD_SELECTOR) {
     
-	GString *gstring = g_string_new (NULL);
+	char *temp, *string = st_strdup ("");
       	st_node  *arg;
 
 	while (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR) {	
-	    g_string_append (gstring, st_token_get_text (token));
 	    
+	    temp = st_strconcat (string, st_token_get_text (token), NULL);
+	    st_free (string);
+	    string = temp;
+
 	    token = next (parser, parser->lexer);
 	    if (st_token_get_type (token) != ST_TOKEN_IDENTIFIER)
 		parse_error (parser,"argument name expected after keyword", token);	
@@ -863,7 +866,7 @@ parse_message_pattern (st_parser *parser, st_node *method)
 	    token = next (parser, parser->lexer);
 	} 
 	
-	method->method.selector = st_symbol_new (g_string_free (gstring, FALSE));
+	method->method.selector = st_symbol_new (string);
 	method->method.precedence = ST_KEYWORD_PRECEDENCE;
 
     } else {

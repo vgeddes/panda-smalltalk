@@ -24,4 +24,6 @@
 
 #include "st-descriptor.h"
 
+#include <stdlib.h>
+
 st_descriptor *st_descriptors[ST_NUM_FORMATS] = { NULL, };

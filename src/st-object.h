@@ -30,11 +30,6 @@
 #include <st-utils.h>
 #include <st-behavior.h>
 #include <st-universe.h>
-#include <glib.h>
-
-
-st_oop        st_object_new               (st_oop class);
-st_oop        st_object_new_arrayed       (st_oop class, st_smi size);
 
 INLINE int    st_object_tag               (st_oop object);
 INLINE bool   st_object_is_heap           (st_oop object);
@@ -46,7 +41,36 @@ st_uint       st_object_hash              (st_oop object);
 
 char         *st_object_printString       (st_oop object);
 
-/* inline definitions */
+
+INLINE st_oop
+st_object_new (st_space *space, st_oop class)
+{  
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (space, class);
+}
+
+INLINE st_oop
+st_object_new_arrayed (st_space *space, st_oop class, st_smi size)
+{
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (space, class, size);
+}
+
+INLINE st_uint
+st_object_size (st_oop object)
+{
+    return st_heap_object_descriptor_for_object (object)->size (object);
+}
+
+INLINE st_uint
+st_object_copy (st_oop object)
+{
+    return st_heap_object_descriptor_for_object (object)->copy (object);
+}
+
+INLINE void
+st_object_contents (st_oop object, struct contents *contents)
+{
+    st_heap_object_descriptor_for_object (object)->contents (object, contents);
+}
 
 INLINE int
 st_object_tag (st_oop object)
@@ -72,13 +96,19 @@ st_object_is_character (st_oop object)
     return st_object_tag (object) == ST_CHARACTER_TAG;
 }
 
+INLINE bool
+st_object_is_mark (st_oop object)
+{
+    return st_object_tag (object) == ST_MARK_TAG;
+}
+
 INLINE st_oop
 st_object_class (st_oop object)
 {
-    if (G_UNLIKELY (st_object_is_smi (object)))
+    if (ST_UNLIKELY (st_object_is_smi (object)))
 	return st_smi_class;
 
-    if (G_UNLIKELY (st_object_is_character (object)))
+    if (ST_UNLIKELY (st_object_is_character (object)))
 	return st_character_class;
 
     return st_heap_object_class (object);

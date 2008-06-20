@@ -28,19 +28,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <config.h>
+#include <stddef.h>
 
 #define ST_TAG_SIZE 2
 
-/* Check host data model
+/* Check host data model. We only support LP64 at the moment.
  */
 #if (SIZEOF_VOID_P == 4 && SIZEOF_INT == 4)
-#  define ST_HOST32         1
-#  define ST_HOST64         0
-#  define ST_BITS_PER_WORD  32
+#  define ST_HOST32             1
+#  define ST_HOST64             0
+#  define ST_BITS_PER_WORD     32
+#  define ST_BITS_PER_INTEGER  32
 #elif (SIZEOF_VOID_P == 8)
-#  define ST_HOST32         0
-#  define ST_HOST64         1
-#  define ST_BITS_PER_WORD  64
+#  define ST_HOST32            0
+#  define ST_HOST64            1
+#  define ST_BITS_PER_WORD     64
+#  define ST_BITS_PER_INTEGER  32
 #else
 #  error platform not supported
 #endif
@@ -50,9 +53,9 @@
 
 enum {
     ST_SMI_TAG,
-    ST_CHARACTER_TAG,
     ST_POINTER_TAG,
-    ST_TAG_UNUSED,
+    ST_CHARACTER_TAG,
+    ST_MARK_TAG,
 };
 
 /* basic oop pointer:
@@ -73,12 +76,9 @@ typedef unsigned char    st_uchar;
 typedef unsigned short   st_ushort;
 typedef unsigned long    st_ulong;
 typedef unsigned int     st_uint;
+typedef void *           st_pointer;
+typedef st_uint          st_unichar;
 
-typedef void *   st_pointer;
-
-
-/* glib already defines `inline' in a portable manner
- */
 #ifdef INLINE
 #  undef INLINE
 #endif

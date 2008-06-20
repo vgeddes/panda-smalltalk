@@ -6,7 +6,6 @@
 #include <st-object.h>
 
 #include <stdlib.h>
-#include <glib.h>
 #include <stdio.h>
 #include <stdbool.h>
 

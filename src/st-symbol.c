@@ -31,22 +31,6 @@
 #include <string.h>
 
 
-char *
-st_string_bytes (st_oop string)
-{
-    if (st_object_class (string) == st_string_class) {
-	return st_strdup ((const char *) st_byte_array_bytes (string));
-
-    } else if (st_object_class (string) == st_wide_string_class) {
-	return g_ucs4_to_utf8 (st_word_array_elements (string),
-			       st_smi_value (st_arrayed_object_size (string)),
-			       NULL, NULL, NULL);
-    } else {
-	st_assert_not_reached ();
-	return NULL;
-    }
-}
-
 bool
 st_symbol_equal (st_oop object, st_oop other)
 {
@@ -60,14 +44,14 @@ st_symbol_equal (st_oop object, st_oop other)
 }
 
 static st_oop
-string_new (st_oop class, const char *bytes)
+string_new (st_space *space, st_oop class, const char *bytes)
 {
     st_oop  string;
     st_uchar *data;
     int len;
     
     len = strlen (bytes);
-    string = st_object_new_arrayed (class, len);
+    string = st_object_new_arrayed (space, class, len);
     data = st_byte_array_bytes (string);
 
     memcpy (data, bytes, len);
@@ -76,20 +60,20 @@ string_new (st_oop class, const char *bytes)
 }
 
 st_oop
-st_string_new (const char *bytes)
+st_string_new (st_space *space, const char *bytes)
 {
-    return string_new (st_string_class, bytes);
+    return string_new (space, st_string_class, bytes);
 }
 
 st_oop
 st_symbol_new (const char *bytes)
 {
-    st_oop element = st_set_like (st_symbol_table, st_string_new (bytes));
+    st_oop element = st_set_like (st_symbol_table, st_string_new (om->moving_space, bytes));
     st_oop symbol;
 
     if (element == st_nil) {
 
-	symbol = string_new (st_symbol_class, bytes);
+	symbol = string_new (om->fixed_space, st_symbol_class, bytes);
 
 	st_set_add (st_symbol_table, symbol);
 

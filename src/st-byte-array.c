@@ -29,40 +29,25 @@
 
 #include <string.h>
 
-INLINE st_smi
-round_size (st_smi size)
-{
-    /* round off number of bytes to a multiple of st_oop size (i.e. a multiple of 4 or 8 bytes,
-     * depending on the platform).
-     * 
-     * we also include space for a null terminator. By doing this, we don't
-     * have to allocate and initialize a new terminated string when interfacing with C string functions.
-     * 
-     * TODO: Only include null terminator for String subclasses of ByteArray 
-     *
-     */
-    size += 1;
-
-    int r = size % sizeof (st_oop);
-
-    if (r == 0)
-	return size;
-    else
-	return size - r + sizeof (st_oop);
-}
-
 static st_oop
-allocate_arrayed (st_oop class, st_smi size)
+allocate_arrayed (st_space *space,
+		  st_oop    class,
+		  st_smi    size)
 {
+    st_uint size_oops;
+    st_oop  array;
+
     st_assert (size >= 0);
 
-    st_smi size_rounded = round_size (size);
-    st_oop array = st_allocate_object (ST_TYPE_SIZE (struct st_byte_array) + (size_rounded / sizeof (st_oop)));
-
+    /* add 1 byte for NULL terminator. Allows toll-free bridging with C string function */
+    size_oops = ST_ROUNDED_UP_OOPS (size + 1);
+    
+    array = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_byte_array) + size_oops);
+    
     st_heap_object_initialize_header (array, class);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
-
-    memset (st_byte_array_bytes (array), 0, size_rounded);
+    
+    memset (st_byte_array_bytes (array), 0, ST_OOPS_TO_BYTES (size_oops));
 
     return array;
 }
@@ -112,13 +97,29 @@ byte_array_copy (st_oop object)
 
     size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
 
-    copy = allocate_arrayed (st_object_class (object), size);
+    copy = allocate_arrayed (om->moving_space, st_object_class (object), size);
     
     memcpy (st_byte_array_bytes (copy),
 	    st_byte_array_bytes (object),
 	    size);
 	    
     return copy;
+}
+
+static st_uint
+byte_array_size (st_oop object)
+{
+    st_uint size;
+
+    size = st_smi_value (st_arrayed_object_size (object));
+    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + ST_ROUNDED_UP_OOPS (size + 1);
+}
+
+static void
+byte_array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
 }
 
 st_descriptor *
@@ -128,6 +129,8 @@ st_byte_array_descriptor (void)
 	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
 	  .copy             = byte_array_copy,
+	  .size             = byte_array_size,
+	  .contents         = byte_array_contents,
 	};
 
     return & __descriptor;

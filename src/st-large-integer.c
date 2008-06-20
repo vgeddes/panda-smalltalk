@@ -49,7 +49,7 @@ st_large_integer_new_from_string (const char *string, st_uint radix)
 
   out:
     mp_clear (&value);
-    g_warning (mp_error_to_string (result));
+    fprintf (stderr, mp_error_to_string (result));
     return st_nil;
 }
 
@@ -72,14 +72,16 @@ st_large_integer_to_string (st_oop integer, st_uint radix)
     return str;
 
   out:
-    g_warning (mp_error_to_string (result));
+    fprintf (stderr, mp_error_to_string (result));
     return NULL;
 }
 
 static st_oop
-allocate_with_value (st_oop class, mp_int * value)
+allocate_with_value (st_space *space, st_oop class, mp_int * value)
 {
-    st_oop object = st_allocate_object (sizeof (struct st_large_integer) / sizeof (st_oop));
+    st_oop object;
+
+    object = st_space_allocate_object (space, sizeof (struct st_large_integer) / sizeof (st_oop));
 
     st_heap_object_initialize_header (object, class);
 
@@ -94,14 +96,14 @@ allocate_with_value (st_oop class, mp_int * value)
 st_oop
 st_large_integer_new (mp_int * value)
 {
-    return allocate_with_value (st_large_integer_class, value);
+    return allocate_with_value (om->moving_space, st_large_integer_class, value);
     
 }
 
 static st_oop
-allocate (st_oop class)
+allocate (st_space *space, st_oop class)
 {
-    return allocate_with_value (class, NULL);
+    return allocate_with_value (space, class, NULL);
 }
 
 
@@ -118,6 +120,19 @@ large_integer_copy (st_oop object)
     return st_large_integer_new (&value);
 }
 
+static st_uint
+large_integer_size (st_oop object)
+{
+    return (sizeof (struct st_large_integer) / sizeof (st_oop));
+}
+
+static void
+large_integer_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
+}
+
 st_descriptor *
 st_large_integer_descriptor (void)
 {
@@ -125,6 +140,8 @@ st_large_integer_descriptor (void)
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
 	  .copy             = large_integer_copy,
+	  .size             = large_integer_size,
+	  .contents         = large_integer_contents,
 	};
 
     return & __descriptor;

@@ -32,7 +32,7 @@
 
 /* Every heap-allocated object starts with this layout */
 /* format of mark oop
- * [ unused: 9 | mark: 1 | format: 6 ]
+ * [ unused: 9 | mark: 1 | format: 6 | tag: 2 ]
  *
  * format:      object format
  * mark:        object contains a forwarding pointer
@@ -42,7 +42,7 @@
 
 struct st_header
 {
-    st_smi header;
+    st_oop header;
     st_smi hash;
     st_oop class;
     
@@ -62,10 +62,12 @@ enum
     st_unused_bits     = 25,
     st_mark_bits       = 1,
     st_format_bits     = 6,
+    st_tag_bits        = 2,
 
-    st_format_shift     = 0,
-    st_mark_shift       = st_format_bits + st_format_shift,
-    st_unused_shift     = st_mark_bits + st_mark_shift,
+    st_tag_shift       = 0,
+    st_format_shift    = st_tag_bits + st_tag_shift,
+    st_mark_shift      = st_format_bits + st_format_shift,
+    st_unused_shift    = st_mark_bits + st_mark_shift,
 
     st_format_mask              = ST_NTH_MASK (st_format_bits),
     st_format_mask_in_place     = st_format_mask << st_format_shift,
@@ -75,7 +77,6 @@ enum
     st_unused_mask_in_place     = st_unused_mask << st_unused_shift,
 };
 
-#define  st_heap_object_format(oop) (ST_POINTER (oop)->header & st_format_mask)
 #define  st_heap_object_class(oop)  (ST_POINTER (oop)->class)
 #define  st_heap_object_body(oop)   (ST_POINTER (oop)->fields)
 
@@ -85,15 +86,18 @@ void     st_heap_object_initialize_header (st_oop object, st_oop class);
 void     st_heap_object_initialize_body   (st_oop object, st_smi instance_size);
 st_uint  st_heap_object_hash              (st_oop object);
 void     st_heap_object_set_hash          (st_oop object, int hash);
-void     st_heap_object_set_format        (st_oop object, st_uint format);
-bool     st_heap_object_mark          (st_oop object);
-void     st_heap_object_set_mark      (st_oop object, bool mark);
+void       st_heap_object_set_format        (st_oop object, st_uint format);
+st_uint  st_heap_object_format           (st_oop object);
+bool     st_heap_object_marked          (st_oop object);
+void     st_heap_object_set_marked      (st_oop object, bool mark);
 
+
+void st_object_verify (st_oop object);
 
 void     st_heap_object_install_forwarding_pointer (st_oop object, st_oop pointer);
 st_oop   st_heap_object_forwarding_pointer         (st_oop object);
 
-st_descriptor *st_heap_object_descriptor (void) G_GNUC_CONST;
+st_descriptor *st_heap_object_descriptor (void);
 
 
 INLINE st_oop

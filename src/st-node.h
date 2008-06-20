@@ -25,7 +25,6 @@
 #ifndef __ST_NODE_H__
 #define __ST_NODE_H__
 
-#include <glib.h>
 #include <st-types.h>
 #include <st-utils.h>
 

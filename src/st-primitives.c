@@ -35,6 +35,7 @@
 #include "st-method.h"
 #include "st-symbol.h"
 #include "st-character.h"
+#include "st-unicode.h"
 
 #include <math.h>
 #include <string.h>
@@ -786,7 +787,7 @@ LargeInteger_asFloat (st_processor *processor)
 
     string = st_large_integer_to_string (receiver, 10);
 
-    dblval = g_ascii_strtod (string, NULL);
+    dblval = strtod (string, NULL);
     st_free (string);
 
     ST_STACK_PUSH (processor, st_float_new (dblval));
@@ -805,7 +806,7 @@ LargeInteger_printString (st_processor *processor)
 
     if (processor->success) {
 	string = st_large_integer_to_string (x, radix);
-	result = st_string_new (string);
+	result = st_string_new (om->moving_space, string);
     }
 
     if (processor->success)
@@ -1379,7 +1380,7 @@ Object_perform (st_processor *processor)
 
 	selector_index = processor->sp - processor->message_argcount;
 
-	st_oops_copy (processor->stack + selector_index,
+	st_oops_move (processor->stack + selector_index,
 		      processor->stack + selector_index + 1,
 		      processor->message_argcount - 1);
 
@@ -1463,7 +1464,7 @@ Behavior_new (st_processor *processor)
 	return;
     }
 
-    instance = st_descriptors[format]->allocate (class);
+    instance = st_descriptors[format]->allocate (om->moving_space, class);
     ST_STACK_PUSH (processor, instance);
 }
 
@@ -1487,7 +1488,7 @@ Behavior_newSize (st_processor *processor)
 	return;
     }
 
-    instance = st_descriptors[format]->allocate_arrayed (class, size);
+    instance = st_descriptors[format]->allocate_arrayed (om->moving_space, class, size);
     ST_STACK_PUSH (processor, instance);
 }
 
@@ -1608,143 +1609,14 @@ ByteString_at (st_processor *processor)
 	ST_STACK_UNPOP (processor, 2);
 	return;
     }
-    
-    charptr = st_utf8_offset_to_pointer ((const char *) st_byte_array_bytes (receiver),
-					index - 1);
 
-    character = st_character_new (st_utf8_get_unichar (charptr));
+    character = st_character_new (st_byte_array_at (receiver, index));
 
     ST_STACK_PUSH (processor, character);
 }
 
 static void
-ByteString_size (st_processor *processor)
-{
-    st_oop object;
-    glong size;
-
-    object = ST_STACK_POP (processor);
-
-    size = st_utf8_strlen ((const char *) st_byte_array_bytes (object));
-
-    /* TODO: allow size to go into a LargeInteger on overflow */
-    ST_STACK_PUSH (processor, st_smi_new (size));
-}
-
-static void
-ByteString_compare (st_processor *processor)
-{
-    st_oop argument = ST_STACK_POP (processor);
-    st_oop receiver = ST_STACK_POP (processor);
-    int order;
-
-    if (st_heap_object_format (argument) != ST_FORMAT_BYTE_ARRAY)
-	set_success (processor, false);
-
-    if (processor->success)
-	order = g_utf8_collate ((const char *) st_byte_array_bytes (receiver),
-				(const char *) st_byte_array_bytes (argument));
-
-    if (processor->success)
-	ST_STACK_PUSH (processor, st_smi_new (order));
-    else
-	ST_STACK_UNPOP (processor, 2);
-}
-
-static int
-compare_ordinal (const char *str1, const char *str2)
-{
-    char *str1_normalized;
-    char *str2_normalized;
-    glong diff = 0;
-    char *p, *q;
-
-    str1_normalized = g_utf8_normalize (str1, -1, G_NORMALIZE_ALL);
-    str2_normalized = g_utf8_normalize (str2, -1, G_NORMALIZE_ALL);
-    
-    p = str1_normalized;
-    q = str2_normalized;
-
-    while (*p && *q) {
-	diff = g_utf8_get_char (p) - g_utf8_get_char (q);
-	if (diff != 0)
-	    break;
-	p = st_utf8_next_char (p);
-	q = st_utf8_next_char (q);    
-    }
-
-    if (diff == 0)
-	diff = st_utf8_strlen (str1_normalized) - st_utf8_strlen (str2_normalized);
-
-    st_free (str1_normalized);
-    st_free (str2_normalized);
-
-    return (int) diff;
-}
-
-static void
-ByteString_compareOrdinal (st_processor *processor)
-{
-    st_oop argument = ST_STACK_POP (processor);
-    st_oop receiver = ST_STACK_POP (processor);
-    int order;
-
-    if (st_heap_object_format (argument) != ST_FORMAT_BYTE_ARRAY)
-	set_success (processor, false);
-
-    if (processor->success)
-	order = compare_ordinal ((const char *) st_byte_array_bytes (receiver),
-				(const char *) st_byte_array_bytes (argument));
-
-    if (processor->success)
-	ST_STACK_PUSH (processor, st_smi_new (order));
-    else
-	ST_STACK_UNPOP (processor, 2);
-}
-
-static void
-ByteString_reversed (st_processor *processor)
-{
-    st_oop receiver = ST_STACK_POP (processor);
-    char  *reversed;
-
-    if (!st_object_is_string (receiver))
-	set_success (processor, false);
-
-    if (processor->success) {
-	reversed = g_utf8_strreverse ((const char *) st_byte_array_bytes (receiver), -1);
-	ST_STACK_PUSH (processor, st_string_new (reversed));
-	st_free (reversed);
-    } else {
-	ST_STACK_UNPOP (processor, 1);
-    }
-}
-
-static void
-WideString_at (st_processor *processor)
-{
-    st_smi index    = pop_integer32 (processor);
-    st_oop receiver = ST_STACK_POP (processor);
-    st_oop character;
-	
-    if (!processor->success) {
-	ST_STACK_UNPOP (processor, 2);
-	return;
-    }
-
-    if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (processor, false);
-	ST_STACK_UNPOP (processor, 2);
-	return;
-    }
-    
-    character = st_character_new ((gunichar) st_word_array_at (receiver, index));
-
-    ST_STACK_PUSH (processor, character);
-}
-
-static void
-WideString_at_put (st_processor *processor)
+ByteString_at_put (st_processor *processor)
 {
     st_oop character = ST_STACK_POP (processor);
     st_smi index    = pop_integer32 (processor);
@@ -1763,7 +1635,93 @@ WideString_at_put (st_processor *processor)
 	return;
     }
 
-    st_word_array_at_put (receiver, index, (st_uint) st_character_value (character));
+    st_byte_array_at_put (receiver, index, (st_uchar) st_character_value (character));
+
+    ST_STACK_PUSH (processor, character);
+}
+
+
+static void
+ByteString_size (st_processor *processor)
+{
+    st_oop receiver;
+    st_uint size;
+
+    receiver = ST_STACK_POP (processor);
+
+    size = st_arrayed_object_size (receiver);
+
+    /* TODO: allow size to go into a LargeInteger on overflow */
+    ST_STACK_PUSH (processor, size);
+}
+
+static void
+ByteString_compare (st_processor *processor)
+{
+    st_oop argument = ST_STACK_POP (processor);
+    st_oop receiver = ST_STACK_POP (processor);
+    int order;
+
+    if (st_heap_object_format (argument) != ST_FORMAT_BYTE_ARRAY)
+	set_success (processor, false);
+
+    if (processor->success)
+	order = strcmp ((const char *) st_byte_array_bytes (receiver),
+			(const char *) st_byte_array_bytes (argument));
+
+    if (processor->success)
+	ST_STACK_PUSH (processor, st_smi_new (order));
+    else
+	ST_STACK_UNPOP (processor, 2);
+}
+
+static void
+WideString_at (st_processor *processor)
+{
+    st_smi index    = pop_integer32 (processor);
+    st_oop receiver = ST_STACK_POP (processor);
+    st_uchar *bytes;
+    st_unichar c;
+	
+    if (!processor->success) {
+	ST_STACK_UNPOP (processor, 2);
+	return;
+    }
+
+    if (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver))) {
+	set_success (processor, false);
+	ST_STACK_UNPOP (processor, 2);
+	return;
+    }
+
+    c = st_word_array_at (receiver, index);
+
+    ST_STACK_PUSH (processor, st_character_new (c));
+}
+
+static void
+WideString_at_put (st_processor *processor)
+{
+    st_oop character = ST_STACK_POP (processor);
+    st_smi index    = pop_integer32 (processor);
+    st_oop receiver = ST_STACK_POP (processor);
+    st_uchar *bytes;
+    st_unichar c;	
+
+    if (!processor->success) {
+	ST_STACK_UNPOP (processor, 3);
+	return;
+    }
+  
+    set_success (processor, st_object_class (character) == st_character_class);
+
+    if (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver))) {
+	set_success (processor, false);
+	ST_STACK_UNPOP (processor, 3);
+	return;
+    }
+
+    st_word_array_at_put (receiver, index, character);
 
     ST_STACK_PUSH (processor, character);
 }
@@ -2042,10 +2000,9 @@ const struct st_primitive st_primitives[] = {
     { "ByteArray_hash",                ByteArray_hash              },
 
     { "ByteString_at",                 ByteString_at               },
+    { "ByteString_at_put",             ByteString_at_put           },
     { "ByteString_size",               ByteString_size             },
     { "ByteString_compare",            ByteString_compare          },
-    { "ByteString_compareOrdinal",     ByteString_compareOrdinal   },
-    { "ByteString_reversed",           ByteString_reversed         },
 
     { "WideString_at",                 WideString_at               },
     { "WideString_at_put",             WideString_at_put           },

@@ -40,12 +40,10 @@ fi
 # recommended gcc optimization flags for libtommath
 if test "x$GCC" = "xyes"; then
     TOMMATH_CFLAGS="-O3 -funroll-loops -fomit-frame-pointer"
+    GDTOA_CFLAGS="-O2 -fPIC -funroll-loops -finline-functions"
 fi
 AC_SUBST(TOMMATH_CFLAGS)
-
-PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.10.0])
-AC_SUBST(GLIB_LIBS)
-AC_SUBST(GLIB_CFLAGS)
+AC_SUBST(GDTOA_CFLAGS)
 
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])

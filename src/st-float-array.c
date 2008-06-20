@@ -26,14 +26,14 @@
 #include "st-object.h"
 
 static st_oop
-allocate_arrayed (st_oop class, st_smi size)
+allocate_arrayed (st_space *space, st_oop class, st_smi size)
 {
     st_oop  object;
     double *elements;
 
     st_assert (size >= 0);
 
-    object = st_allocate_object (ST_TYPE_SIZE (struct st_float_array) + size);
+    object = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_float_array) + size);
     st_heap_object_initialize_header (object, class);
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
@@ -52,13 +52,26 @@ float_array_copy (st_oop object)
     
     size = st_smi_value (st_arrayed_object_size (object));
 
-    copy = allocate_arrayed (st_object_class (object), size);
+    copy = allocate_arrayed (om->moving_space, st_object_class (object), size);
 
     memcpy (st_float_array_elements (copy),
 	    st_float_array_elements (object),
 	    sizeof (double) * size);
 
     return copy;
+}
+
+static st_uint
+float_array_size (st_oop object)
+{
+    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + st_smi_value (st_arrayed_object_size (object));
+}
+
+static void
+float_array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
 }
 
 st_descriptor *
@@ -68,6 +81,8 @@ st_float_array_descriptor (void)
 	{ .allocate         = NULL,
 	  .allocate_arrayed = allocate_arrayed,
 	  .copy             = float_array_copy,
+	  .size             = float_array_size,
+	  .contents         = float_array_contents,
 	};
 
     return & __descriptor;

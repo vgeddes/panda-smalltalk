@@ -34,8 +34,8 @@
 #include "st-universe.h"
 #include "st-behavior.h"
 #include "st-character.h"
+#include "st-unicode.h"
 
-#include <glib.h>
 #include <string.h>
 #include <stdlib.h>
 #include <setjmp.h>
@@ -231,7 +231,7 @@ create_literals_array (Generator *gt)
     count = st_list_length (gt->literals);
 
     if (count > 0) {
-	literals = st_object_new_arrayed (st_array_class, count); 
+	literals = st_object_new_arrayed (om->fixed_space, st_array_class, count); 
 
 	int i = 1;
 	for (st_list *l = gt->literals; l; l = l->next) {
@@ -252,7 +252,7 @@ create_bytecode_array (Generator *gt)
     st_oop  bytecode;
     st_uchar   *bytes;
 
-    bytecode = st_object_new_arrayed (st_byte_array_class, gt->size);
+    bytecode = st_object_new_arrayed (om->fixed_space, st_byte_array_class, gt->size);
     bytes = st_byte_array_bytes (bytecode);
     memcpy (bytes, gt->code, gt->size);
 
@@ -264,7 +264,7 @@ emit (Generator *gt, st_uchar code)
 {
     if (++gt->size > gt->alloc) {
 	gt->alloc += gt->alloc;
-	gt->code = g_realloc (gt->code, gt->alloc);
+	gt->code = st_realloc (gt->code, gt->alloc);
     }
 
     gt->code[gt->size - 1] = code;
@@ -315,11 +315,12 @@ find_literal_const (Generator *gt, st_oop literal)
 static int
 find_literal_var (Generator *gt, char *name)
 {
-    /* check that variable binding exists */
-    st_oop assoc = st_dictionary_association_at (st_smalltalk, st_symbol_new (name));
+    st_oop assoc;
+
+    assoc = st_dictionary_association_at (st_smalltalk, st_symbol_new (name));
     if (assoc == st_nil)
 	return -1;
-    
+
     int i = 0;
     for (st_list *l = gt->literals; l; l = l->next) {
 	if (st_object_equal (assoc, (st_oop) l->data))
@@ -333,7 +334,7 @@ find_literal_var (Generator *gt, char *name)
 static void
 jump_offset (Generator *gt, int offset)
 {
-    st_assert (offset <= G_MAXINT16);
+    st_assert (offset <= INT16_MAX);
     
     emit (gt, JUMP);
 
@@ -1397,7 +1398,10 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     // generate bytecode
     generate_method_statements (gt, node->method.statements);
 
-    method = st_object_new (st_compiled_method_class);
+    method = st_object_new (om->fixed_space, st_compiled_method_class);
+
+    /* TODO: refine */
+    ST_METHOD (method)->header = st_smi_new (0);
 
     st_method_set_arg_count   (method, st_node_list_length (node->method.arguments));
     st_method_set_temp_count  (method, st_list_length (gt->temporaries) - st_node_list_length (node->method.arguments));
@@ -1671,7 +1675,7 @@ print_literal (st_oop lit)
     } else if (st_object_class (lit) == st_character_class) {
 	
 	char outbuf[6] = { 0 };
-	g_unichar_to_utf8 (st_character_value (lit), outbuf);
+	st_unichar_to_utf8 (st_character_value (lit), outbuf);
 	printf ("$%s", outbuf);
     }
 }

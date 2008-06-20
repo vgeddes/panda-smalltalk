@@ -27,7 +27,6 @@
 
 #include <st-types.h>
 #include <st-object.h>
-#include <glib.h>
 
 #define ST_WORD_ARRAY(oop) ((struct st_word_array *) ST_POINTER (oop))
 

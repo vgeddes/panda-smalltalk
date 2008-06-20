@@ -25,12 +25,11 @@
 
 #include "st-input.h"
 #include "st-utils.h"
+#include "st-unicode.h"
 
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <wchar.h>
-#include <glib.h>
 
 typedef struct marker
 {
@@ -42,7 +41,7 @@ typedef struct marker
 
 struct st_input
 {
-    wchar_t *text;
+    char *text;
 
     st_uint p;	    /* current index into text */
 
@@ -53,34 +52,17 @@ struct st_input
     marker marker;
 };
 
-static wchar_t *
-st_wcstrdup (const wchar_t *string)
-{
-    wchar_t *buf;
-    st_uint    len;
-
-    st_assert (string != NULL);
-
-    len = wcslen (string);
-
-    buf = st_malloc (sizeof (wchar_t) * (len + 1));
-    wmemcpy (buf, string, len);
-    buf[len] = 0;
-
-    return buf;
-}
-
-static wchar_t *
-filter_double_bangs (const wchar_t *chunk)
+static char *
+filter_double_bangs (const char *chunk)
 {
     st_uint size, i = 0, count = 0;
-    const wchar_t *p = chunk;
-    wchar_t *buf;
+    const char *p = chunk;
+    char *buf;
 
-    size = wcslen (chunk);
+    size = strlen (chunk);
 
     if (size < 2)
-	return st_wcstrdup (chunk);
+	return st_strdup (chunk);
 
     /* count number of redundant bangs */
     while (p[0] && p[1]) {
@@ -89,7 +71,7 @@ filter_double_bangs (const wchar_t *chunk)
 	p++;
     }
     
-    buf = st_malloc (sizeof (wchar_t) * (size - count + 1));
+    buf = st_malloc (size - count + 1);
 
     /* copy over text skipping over redundant bangs */
     p = chunk;
@@ -104,10 +86,10 @@ filter_double_bangs (const wchar_t *chunk)
     return buf;
 }
 
-wchar_t *
+char *
 st_input_next_chunk (st_input *input)
 {
-    wchar_t *chunk_filtered, *chunk = NULL;
+    char *chunk_filtered, *chunk = NULL;
     st_uint start;
 
     start = st_input_index (input);
@@ -127,7 +109,7 @@ st_input_next_chunk (st_input *input)
 	    continue;
 	}
 
-	chunk = st_input_range_ucs4 (input, start, st_input_index (input));	
+	chunk = st_input_range (input, start, st_input_index (input));	
 	chunk_filtered = filter_double_bangs (chunk);
 	st_input_consume (input);
 	st_free (chunk);	
@@ -144,7 +126,7 @@ st_input_destroy (st_input *input)
     st_assert (input != NULL);
 
     st_free (input->text);
-    g_slice_free (st_input, input);
+    st_free (input);
 }
 
 st_uint
@@ -163,7 +145,7 @@ st_input_get_column (st_input *input)
     return input->column;
 }
 
-wchar_t
+char
 st_input_look_ahead (st_input *input, int i)
 {
     st_assert (input != NULL);
@@ -246,33 +228,17 @@ st_input_size (st_input *input)
     return input->n;
 }
 
-
 char *
 st_input_range (st_input *input, st_uint start, st_uint end)
 {
-    char *buf;
-    GError *error = NULL;
-    
-    buf = g_ucs4_to_utf8 ((const gunichar *) input->text + start, end - start, NULL, NULL, &error);
-    
-    if (!buf) {
-	g_critical (error->message);
-    }
-
-    return buf;
-}
-
-wchar_t *
-st_input_range_ucs4 (st_input *input, st_uint start, st_uint end)
-{
-    wchar_t *buf;
-    st_uint    len;
+    char    *buf;
+    st_uint  len;
 
     st_assert ((end - start) >= 0);
 
     len = end - start;
-    buf = st_malloc (sizeof (wchar_t) * (len + 1));
-    wmemcpy (buf, input->text + start, len);
+    buf = st_malloc (len + 1);
+    memcpy (buf, input->text + start, len);
     buf[len] = 0;
 
     return buf;
@@ -287,10 +253,10 @@ st_input_index (st_input *input)
 }
 
 static void
-initialize_state (st_input *input, const wchar_t *string)
+initialize_state (st_input *input, const char *string)
 {
-    input->text    = (wchar_t *) string;
-    input->n       = wcslen (string);
+    input->text    = (char *) string;
+    input->n       = strlen (string);
     input->line    = 1;
     input->column  = 1;
 
@@ -302,32 +268,13 @@ initialize_state (st_input *input, const wchar_t *string)
 st_input *
 st_input_new (const char *string)
 {
-    wchar_t *string_ucs4;
-    st_input *input;
-
-    st_assert (string != NULL);
-
-    string_ucs4 = (wchar_t *) st_utf8_to_ucs4 (string);
-    if (string_ucs4 == NULL)
-	return NULL;
-
-    input = st_new0 (st_input);
-
-    initialize_state (input, string_ucs4);
-
-    return input;
-}
-
-st_input *
-st_input_new_ucs4 (const wchar_t *string)
-{
     st_input *input;
 
     st_assert (string != NULL);
 
     input = st_new0 (st_input);
 
-    initialize_state (input, st_wcstrdup (string));    
+    initialize_state (input, strdup (string));    
 
     return input;
 }

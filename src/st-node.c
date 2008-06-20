@@ -32,6 +32,7 @@
 #include <st-character.h>
 #include <string.h>
 
+#include <st-unicode.h>
 
 static void print_expression (st_node *expression);
 
@@ -63,7 +64,7 @@ print_object (st_oop object)
     } else if (st_object_class (object) == st_character_class) {
 
 	char outbuf[6] = { 0 };
-	g_unichar_to_utf8 (st_character_value (object), outbuf);
+	st_unichar_to_utf8 (st_character_value (object), outbuf);
 	printf ("$%s", outbuf);
     } else if (st_object_class (object) == st_array_class) {
 
@@ -123,7 +124,7 @@ extract_keywords (char *selector)
 
     /* hide trailing ':' */
     selector[len - 1] = 0; 
-    char **keywords = g_strsplit (selector, ":", 0);
+    char **keywords = st_strsplit (selector, ":", 0);
     selector[len - 1] = ':'; 
 
     return keywords;
@@ -149,7 +150,7 @@ print_method (st_node *node)
 	    
 	    arguments = arguments->next;
 	}
-	g_strfreev (keywords);
+	st_strfreev (keywords);
 
     } else if (node->method.precedence == ST_BINARY_PRECEDENCE) {
 	
@@ -322,7 +323,7 @@ print_message (st_node *node)
 	    
 	    arguments = arguments->next;
 	}
-	g_strfreev (keywords);
+	st_strfreev (keywords);
 
     }
     

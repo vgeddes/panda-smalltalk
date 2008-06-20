@@ -28,7 +28,6 @@
 #include <st-types.h>
 #include <st-small-integer.h>
 #include <st-heap-object.h>
-#include <glib.h>
 
 #define ST_BYTE_ARRAY(oop) ((struct st_byte_array *) ST_POINTER (oop))
 

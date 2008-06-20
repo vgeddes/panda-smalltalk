@@ -15,73 +15,6 @@
 
 #include <stdlib.h>
 #include <setjmp.h>
-#include <glib.h>
-
-#if 0
-
-static void
-create_actual_message (st_processor *processor, st_message *message)
-{
-    st_oop *elements;
-    st_oop  array;
-
-    array = st_object_new_arrayed (st_array_class, message->argcount);
-    elements = st_array_elements (array);
-    for (st_uint i = 0; i < message->argcount; i++)
-	elements[i] =  processor->stack[processor->sp - message->argcount + i];
-
-    processor->sp -= message->argcount;
-
-    ST_STACK_PUSH (processor, st_message_new (message->selector, array));
-
-    message->selector = st_selector_doesNotUnderstand;
-    message->argcount = 1;
-}
-
-INLINE st_oop
-lookup_method (st_processor *processor, st_message *message)
-{
-    st_oop method;
-    st_oop parent;
-    st_uint index;
-    st_method_cache *method_cache;
-
-    method_cache = processor->method_cache;
-
-    parent = class = st_object_class (message->receiver);
-
-    /* find method in cache */
-    index = ST_METHOD_CACHE_HASH (class, message->selector);
-    if (method_cache[index].class    == class &&
-	method_cache[index].selector == message->selector)
-	return method_cache[index].method;
-
-    while (parent != st_nil) {
-	method = st_dictionary_at (ST_BEHAVIOR (parent)->method_dictionary, message->selector);
-	if (method != st_nil) {
-	    
-	    /* install method in cache */
-	    index = ST_METHOD_CACHE_HASH (parent, message->selector);
-	    method_cache[index].class = class;
-	    method_cache[index].selector = message->selector;
-	    method_cache[index].method = method;
-	    
-	    return method;
-	}
-	parent = ST_BEHAVIOR (parent)->superclass;
-    }
-    
-    if (message->selector == st_selector_doesNotUnderstand) {
-	fprintf (stderr, "no method found for #doesNotUnderstand:");
-	exit(1);
-    }
-    
-    create_actual_message (processor, message);
-
-    return lookup_method (processor, message);
-}
-
-#endif
 
 static void
 create_actual_message (st_processor *processor)
@@ -89,7 +22,7 @@ create_actual_message (st_processor *processor)
     st_oop *elements;
     st_oop array;
 
-    array = st_object_new_arrayed (st_array_class, processor->message_argcount);
+    array = st_object_new_arrayed (om->moving_space, st_array_class, processor->message_argcount);
     elements = st_array_elements (array);
     for (st_uint i = 0; i < processor->message_argcount; i++)
 	elements[i] =  processor->stack[processor->sp - processor->message_argcount + i];
@@ -164,7 +97,6 @@ activate_method (st_processor *processor, st_oop method)
 	arguments[i] =  processor->stack[processor->sp - processor->message_argcount + i];
 
     processor->sp -= processor->message_argcount + 1;
-
     st_processor_set_active_context (processor, context);
 }
 
@@ -179,12 +111,13 @@ st_processor_execute_method (st_processor *processor, st_oop method)
 	primitive_index = st_method_get_primitive_index (method);
 	processor->success = true;
 	st_primitives[primitive_index].func (processor);
-	if (G_LIKELY (processor->success))
+	if (ST_LIKELY (processor->success))
 	    return;
     }
-
+    
     activate_method (processor, method);
 }
+
 
 void
 st_processor_set_active_context (st_processor *processor,
@@ -241,7 +174,7 @@ st_processor_send_selector (st_processor *processor,
 	primitive_index = st_method_get_primitive_index (method);
 	processor->success = true;
 	st_primitives[primitive_index].func (processor);
-	if (G_LIKELY (processor->success))
+	if (ST_LIKELY (processor->success))
 	    return;
     }
 
@@ -284,7 +217,7 @@ st_processor_send_selector (st_processor *processor,
 	prim = st_method_get_primitive_index (method);			\
 									\
 	EXECUTE_PRIMITIVE (processor, prim);				\
-	if (G_LIKELY (processor->success))				\
+	if (ST_LIKELY (processor->success))				\
             NEXT ();							\
     }									\
     									\
@@ -356,7 +289,6 @@ void
 st_processor_main (st_processor *processor)
 {
     register const st_uchar *ip;
-    st_message message;
 
     if (setjmp (processor->main_loop))
 	return;
@@ -532,10 +464,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_PLUS) {
 	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_PLUS];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-		
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_PLUS];	    
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -547,10 +475,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_MINUS) {
 
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_MINUS];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-	    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_MINUS];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -561,10 +485,6 @@ st_processor_main (st_processor *processor)
 	}
     
 	CASE (SEND_MUL) {
-
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_MUL];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_MUL];
@@ -577,10 +497,6 @@ st_processor_main (st_processor *processor)
 	}
     
 	CASE (SEND_MOD) {
-	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_MOD];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_MOD];
@@ -594,10 +510,6 @@ st_processor_main (st_processor *processor)
     
 	CASE (SEND_DIV) {
 
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_DIV];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_DIV];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -609,10 +521,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_BITSHIFT) {
     
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_BITSHIFT];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_BITSHIFT];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -624,10 +532,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_BITAND) {
 
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_BITAND];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_BITAND];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -638,10 +542,6 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_BITOR) {
-
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_BITOR];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 	    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_BITOR];
@@ -653,10 +553,6 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_BITXOR) {
-	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_BITXOR];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_BITXOR];
@@ -669,10 +565,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_LT) {
 	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_LT];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_LT];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -683,11 +575,7 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_GT) {
-
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_GT];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
+	    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_GT];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -699,10 +587,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_LE) {
 	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_LE];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_LE];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -714,10 +598,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_GE) {
 	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_GE];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_GE];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -728,10 +608,6 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_CLASS) {
-
-	    message.argcount = 0;
-	    message.selector = st_specials[ST_SPECIAL_CLASS];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 
 	    processor->message_argcount = 0;
 	    processor->message_selector = st_specials[ST_SPECIAL_CLASS];
@@ -744,10 +620,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_SIZE) {
 	    
-	    message.argcount = 0;
-	    message.selector = st_specials[ST_SPECIAL_SIZE];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 0;
 	    processor->message_selector = st_specials[ST_SPECIAL_SIZE];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -759,10 +631,6 @@ st_processor_main (st_processor *processor)
     
 	CASE (SEND_AT) {
 
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_AT];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_AT];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -773,10 +641,6 @@ st_processor_main (st_processor *processor)
 	}
     
 	CASE (SEND_AT_PUT) {
-
-	    message.argcount = 2;
-	    message.selector = st_specials[ST_SPECIAL_ATPUT];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 	    
 	    processor->message_argcount = 2;
 	    processor->message_selector = st_specials[ST_SPECIAL_ATPUT];
@@ -788,10 +652,6 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_EQ) {
-	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_EQ];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_EQ];
@@ -804,10 +664,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_NE) {
 
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_NE];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-	    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_NE];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -831,10 +687,6 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_VALUE) {
     
-	    message.argcount = 0;
-	    message.selector = st_specials[ST_SPECIAL_VALUE];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 0;
 	    processor->message_selector = st_specials[ST_SPECIAL_VALUE];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -846,10 +698,6 @@ st_processor_main (st_processor *processor)
     
 	CASE (SEND_VALUE_ARG) {
 	    
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_VALUE_ARG];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -860,11 +708,7 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_NEW) {
-
-	    message.argcount = 0;
-	    message.selector = st_specials[ST_SPECIAL_NEW];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-	    
+    
 	    processor->message_argcount = 0;
 	    processor->message_selector = st_specials[ST_SPECIAL_NEW];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -875,10 +719,6 @@ st_processor_main (st_processor *processor)
 	}
 	
 	CASE (SEND_NEW_ARG) {
-
-	    message.argcount = 1;
-	    message.selector = st_specials[ST_SPECIAL_NEW_ARG];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
 	    
 	    processor->message_argcount = 1;
 	    processor->message_selector = st_specials[ST_SPECIAL_NEW_ARG];
@@ -895,10 +735,6 @@ st_processor_main (st_processor *processor)
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 
-	    message.argcount = ip[1];
-	    message.selector = processor->literals[ip[2]];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = ip[1];
 	    processor->message_selector = processor->literals[ip[2]];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -912,7 +748,7 @@ st_processor_main (st_processor *processor)
 		primitive_index = st_method_get_primitive_index (method);
 		
 		EXECUTE_PRIMITIVE (processor, primitive_index);
-		if (G_LIKELY (processor->success))
+		if (ST_LIKELY (processor->success))
 		    NEXT ();
 	    }
 	    
@@ -928,10 +764,6 @@ st_processor_main (st_processor *processor)
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 	    
-	    message.argcount = ip[1];
-	    message.selector = processor->literals[ip[2]];
-	    message.receiver = processor->stack[processor->sp - message.argcount - 1];
-
 	    processor->message_argcount = ip[1];
 	    processor->message_selector = processor->literals[ip[2]];
 	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
@@ -947,7 +779,7 @@ st_processor_main (st_processor *processor)
 		primitive_index = st_method_get_primitive_index (method);
 		
 		EXECUTE_PRIMITIVE (processor, primitive_index);
-		if (G_LIKELY (processor->success))
+		if (ST_LIKELY (processor->success))
 		    NEXT ();
 	    }
 	    
@@ -1038,8 +870,8 @@ st_processor_main (st_processor *processor)
     }
 }
 
-static void
-flush_cache (st_processor *processor)
+void
+st_processor_clear_caches (st_processor *processor)
 {
     for (st_uint i = 0; i < ST_METHOD_CACHE_SIZE; i++) {
 	processor->method_cache[i].class    = st_nil;
@@ -1068,7 +900,7 @@ st_processor_initialize (st_processor *processor)
     processor->message_receiver = st_nil;
     processor->message_selector = st_selector_startupSystem;
     
-    flush_cache (processor); 
+    st_processor_clear_caches (processor);
 
     method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));
     st_assert (st_method_get_flags (method) == ST_METHOD_NORMAL);

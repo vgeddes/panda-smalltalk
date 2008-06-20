@@ -1,0 +1,68 @@
+
+
+noinst_LTLIBRARIES += libgdtoa.la
+
+libgdtoa_la_SOURCES =    \
+	libs/libgdtoa/dmisc.c \
+	libs/libgdtoa/dtoa.c             \
+	libs/libgdtoa/g_Qfmt.c           \
+	libs/libgdtoa/g__fmt.c           \
+	libs/libgdtoa/g_ddfmt.c          \
+	libs/libgdtoa/g_dfmt.c \
+	libs/libgdtoa/g_ffmt.c \
+        libs/libgdtoa/g_xLfmt.c \
+	libs/libgdtoa/g_xfmt.c \
+	libs/libgdtoa/gdtoa.c \
+	libs/libgdtoa/gethex.c \
+	libs/libgdtoa/gmisc.c \
+	libs/libgdtoa/hd_init.c \
+	libs/libgdtoa/hexnan.c \
+	libs/libgdtoa/misc.c \
+	libs/libgdtoa/smisc.c \
+	libs/libgdtoa/strtoIQ.c \
+	libs/libgdtoa/strtoId.c \
+	libs/libgdtoa/strtoIdd.c \
+	libs/libgdtoa/strtoIf.c \
+	libs/libgdtoa/strtoIg.c \
+	libs/libgdtoa/strtoIx.c \
+	libs/libgdtoa/strtoIxL.c \
+	libs/libgdtoa/strtod.c \
+	libs/libgdtoa/strtodI.c \
+	libs/libgdtoa/strtodg.c \
+	libs/libgdtoa/strtof.c \
+	libs/libgdtoa/strtopQ.c \
+        libs/libgdtoa/strtopd.c \
+	libs/libgdtoa/strtopdd.c \
+	libs/libgdtoa/strtopf.c \
+	libs/libgdtoa/strtopx.c \
+	libs/libgdtoa/strtopxL.c \
+	libs/libgdtoa/strtorQ.c \
+        libs/libgdtoa/strtord.c \
+	libs/libgdtoa/strtordd.c \
+	libs/libgdtoa/strtorf.c \
+	libs/libgdtoa/strtorx.c \
+	libs/libgdtoa/strtorxL.c \
+	libs/libgdtoa/sum.c \
+	libs/libgdtoa/ulp.c \
+	libs/libgdtoa/gdtoa.h \
+	libs/libgdtoa/gdtoaimp.h
+
+
+BUILT_SOURCES += libs/libgdtoa/arith.h libs/libgdtoa/gd_qnan.h
+CLEANFILES += libs/libgdtoa/arith.h libs/libgdtoa/gd_qnan.h
+
+libs/libgdtoa/arith.h: libs/libgdtoa/arithchk.c
+	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa libs/libgdtoa/arithchk.c -o libs/libgdtoa/a.out || $(CC) -I$(top_srcdir)/libs/libgdtoa -DNO_LONG_LONG $(GDTOA_CFLAGS) libs/libgdtoa/arithchk.c -o libs/libgdtoa/a.out
+	libs/libgdtoa/a.out > libs/libgdtoa/arith.h
+	rm -f libs/libgdtoa/a.out libs/libgdtoa/arithchk.o
+
+libs/libgdtoa/gd_qnan.h: libs/libgdtoa/arith.h libs/libgdtoa/qnan.c
+	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa libs/libgdtoa/qnan.c -o libs/libgdtoa/a.out
+	libs/libgdtoa/a.out > libs/libgdtoa/gd_qnan.h
+	rm -f libs/libgdtoa/a.out libs/libgdtoa/qnan.o
+
+libgdtoa_la_CFLAGS = -fPIC $(GDTOA_CFLAGS)
+libgdtoa_la_CPPFLAGS = -I$(top_srcdir)/libs/libgdtoa
+
+EXTRA_DIST += libs/libgdtoa/test
+

@@ -8,8 +8,6 @@
 #include <st-utils.h>
 #include <st-lexer.h>
 #include <st-node.h>
-#include <glib.h>
-
 
 typedef struct st_compiler_error
 {

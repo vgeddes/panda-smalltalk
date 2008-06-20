@@ -48,10 +48,10 @@ st_association_equal (st_oop object, st_oop other)
 st_oop
 st_association_new (st_oop key, st_oop value)
 {
-    st_oop assoc = st_object_new (st_association_class);
+    st_oop assoc = st_object_new (om->fixed_space, st_association_class);
 
     ST_ASSOCIATION (assoc)->key   =  key;
-    ST_ASSOCIATION (assoc)->value = value;    
+    ST_ASSOCIATION (assoc)->value = value;
 
     return assoc;
 }

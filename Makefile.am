@@ -6,6 +6,8 @@ noinst_LTLIBRARIES =
 bin_PROGRAMS = 
 noinst_PROGRAMS =
 DISTCLEANFILES =
+CLEANFILES = 
+BUILT_SOURCES = 
 
 EXTRA_DIST = \
 	COPYING    \
@@ -16,6 +18,8 @@ EXTRA_DIST = \
 
 include Makefile-libtommath.am
 include Makefile-libpanda.am
+include Makefile-libgdtoa.am
+include Makefile-libmpa.am
 include Makefile-tests.am
 
 dist-hook:

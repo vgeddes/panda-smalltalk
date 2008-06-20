@@ -27,16 +27,13 @@
 
 #include <st-types.h>
 #include <st-descriptor.h>
-#include <glib.h>
+#include <st-object-memory.h>
 
-st_oop st_string_new (const char *bytes);
-
+st_oop st_string_new (st_space *space, const char *bytes);
 
 st_oop st_symbol_new (const char *bytes);
 
 bool   st_symbol_equal (st_oop object, st_oop other);
-
-char *st_string_bytes (st_oop string);
 
 
 #endif /* __ST_SYMBOL_H__ */

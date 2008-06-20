@@ -24,224 +24,188 @@ DEALINGS IN THE SOFTWARE.
 
 Class named: 'Object'
 	  superclass: 'nil'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'UndefinedObject'
 	  superclass: 'Object'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Behavior'
 	  superclass: 'Object'
-	  instanceVariableNames: 'format superclass instanceSize methodDictionary instanceVariableNames'
-      classVariableNames: ''!
+	  instanceVariableNames: 'format superclass instanceSize methodDictionary instanceVariableNames'!
 
 Class named: 'Class'
 	  superclass: 'Behavior'
-	  instanceVariableNames: 'name classPool'
-      classVariableNames: ''!
+	  instanceVariableNames: 'name'!
 
 Class named: 'Metaclass'
 	  superclass: 'Behavior'
-	  instanceVariableNames: 'instanceClass'
-      classVariableNames: ''!
+	  instanceVariableNames: 'instanceClass'!
 
 
 "Collections"
 
 Class named: 'Collection'
 	  superclass: 'Object'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'HashedCollection'
 	  superclass: 'Collection'
-	  instanceVariableNames: 'tally deleted array'
-      classVariableNames: ''!
+	  instanceVariableNames: 'tally array'!
 
 Class named: 'Set'
 	  superclass: 'HashedCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Dictionary'
 	  superclass: 'HashedCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'SequenceableCollection'
 	  superclass: 'Collection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'ArrayedCollection'
 	  superclass: 'SequenceableCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Array'
 	  superclass: 'ArrayedCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'ByteArray'
 	  superclass: 'ArrayedCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'WordArray'
 	  superclass: 'ArrayedCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
+
+"TODO: if FloatArray not declared, then vm exits with an unhelpful assertion"
+Class named: 'FloatArray'
+	  superclass: 'ArrayedCollection'
+	  instanceVariableNames: ''!
 
 Class named: 'Interval'
 	  superclass: 'SequenceableCollection'
-	  instanceVariableNames: 'start stop step'
-      classVariableNames: ''!
+	  instanceVariableNames: 'start stop step'!
 
 Class named: 'Association'
 	  superclass: 'Object'
-	  instanceVariableNames: 'key value'
-      classVariableNames: ''!
+	  instanceVariableNames: 'key value'!
 
 
 "Streams"
 
 Class named: 'Stream'
 	  superclass: 'Object'
-	  instanceVariableNames: ''
-	  classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'PositionableStream'
 	  superclass: 'Stream'
-	  instanceVariableNames: 'collection position readLimit'
-	  classVariableNames: ''!
+	  instanceVariableNames: 'collection position readLimit'!
 
 Class named: 'WriteStream'
 	  superclass: 'PositionableStream'
-	  instanceVariableNames: 'writeLimit'
-	  classVariableNames: ''!
+	  instanceVariableNames: 'writeLimit'!
 
 
 "Execution"
 
 Class named: 'ContextPart'
 	  superclass: 'Object'
-	  instanceVariableNames: 'sender ip sp'
-      classVariableNames: ''!
+	  instanceVariableNames: 'sender ip sp'!
 
 Class named: 'MethodContext'
 	  superclass: 'ContextPart'
-	  instanceVariableNames: 'method receiver'
-      classVariableNames: ''!
+	  instanceVariableNames: 'method receiver'!
 
 Class named: 'BlockContext'
 	  superclass: 'ContextPart'
-	  instanceVariableNames: 'initialIP argcount caller home'
-      classVariableNames: ''!
+	  instanceVariableNames: 'initialIP argcount caller home'!
 
 Class named: 'CompiledMethod'
 	  superclass: 'Object'
-	  instanceVariableNames: 'header bytecode literals selector'
-      classVariableNames: ''!
+	  instanceVariableNames: 'header bytecode literals selector'!
 
 Class named: 'Message'
 	  superclass: 'Object'
-	  instanceVariableNames: 'selector arguments'
-      classVariableNames: ''!
+	  instanceVariableNames: 'selector arguments'!
 
 
 "Strings"
 
 Class named: 'String'
 	  superclass: 'ArrayedCollection'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Symbol'
 	  superclass: 'String'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'ByteString'
 	  superclass: 'String'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'ByteSymbol'
 	  superclass: 'ByteString'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'WideString'
 	  superclass: 'String'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 
 "Numbers"
 
 Class named: 'Magnitude'
 	  superclass: 'Object'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Number'
 	  superclass: 'Magnitude'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Integer'
 	  superclass: 'Number'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'SmallInteger'
 	  superclass: 'Integer'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'LargeInteger'
 	  superclass: 'Integer'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Fraction'
 	  superclass: 'Number'
-	  instanceVariableNames: 'numerator denominator'
-      classVariableNames: ''!
+	  instanceVariableNames: 'numerator denominator'!
 
 Class named: 'Float'
 	  superclass: 'Number'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 
 "Basic data types"
 
 Class named: 'Character'
 	  superclass: 'Magnitude'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'Boolean'
 	  superclass: 'Object'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'True'
 	  superclass: 'Boolean'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 Class named: 'False'
 	  superclass: 'Boolean'
-	  instanceVariableNames: ''
-      classVariableNames: ''!
+	  instanceVariableNames: ''!
 
 
 Class named: 'Exception'
 	  superclass: 'Object'
-	  instanceVariableNames: 'messageString'
-      classVariableNames: ''!
+	  instanceVariableNames: 'messageString'!

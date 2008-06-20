@@ -47,6 +47,8 @@ get_elapsed_time (struct timeval before, struct timeval after)
     return after.tv_sec - before.tv_sec + (after.tv_usec - before.tv_usec) / 1.e6;
 }
 
+#define ST_ROUND_UP_OOPS(m) (ST_BYTES_TO_OOPS ((m) + (ST_OOPS_TO_BYTES(1) - 1)))
+
 int
 main (int argc, char *argv[])
 {
@@ -59,6 +61,8 @@ main (int argc, char *argv[])
 
     st_processor_initialize (&processor);
 
+    proc = &processor;
+
     gettimeofday (&before, NULL);
     st_processor_main (&processor);
     gettimeofday (&after, NULL);
@@ -69,7 +73,7 @@ main (int argc, char *argv[])
     printf ("\n");
     printf ("result: %s\n", st_object_printString (value));
     printf ("time:   %.3fs\n", get_elapsed_time (before, after));
-
+    
     return 0;
 }
 

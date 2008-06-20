@@ -22,14 +22,6 @@ typedef struct st_method_cache
 
 } st_method_cache;
 
-typedef struct st_message
-{
-    st_oop receiver;
-    st_oop selector;
-    int    argcount;
-
-} st_message;
-
 typedef struct st_processor {
 
     st_oop  context;
@@ -69,5 +61,7 @@ void   st_processor_set_active_context (st_processor *processor, st_oop context)
 void   st_processor_send_selector      (st_processor *processor, st_oop selector, st_uint argcount);
 void   st_processor_execute_method     (st_processor *processor, st_oop method);
 st_oop st_processor_lookup_method      (st_processor *processor, st_oop class);
+
+void   st_processor_clear_caches (st_processor *processor);
 
 #endif /* __ST_INTERPRETER_H__ */

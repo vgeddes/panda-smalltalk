@@ -2,7 +2,6 @@
 
 #include <st-lexer.h>
 
-#include <glib.h>
 #include <stdio.h>
 #include <stdbool.h>
 

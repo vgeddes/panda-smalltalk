@@ -6,6 +6,8 @@ libpanda_la_SOURCES = \
 	src/st-heap-object.h \
 	src/st-utils.h \
 	src/st-utils.c \
+	src/st-unicode.h \
+	src/st-unicode.c \
 	src/st-hashed-collection.h \
 	src/st-hashed-collection.c \
 	src/st-array.h \
@@ -51,8 +53,8 @@ libpanda_la_SOURCES = \
 	src/st-input.c \
 	src/st-processor.h \
 	src/st-processor.c \
-	src/st-virtual-space.h \
-	src/st-virtual-space.c
+	src/st-object-memory.h \
+	src/st-object-memory.c \
 	src/st-types.h
 
 libpanda_la_CPPFLAGS =          \
@@ -60,22 +62,23 @@ libpanda_la_CPPFLAGS =          \
 	-I$(top_srcdir)/src   \
 	-I$(top_builddir)   \
         -I$(top_srcdir)/libs/libtommath \
+        -I$(top_srcdir)/libs/libmpa \
+        -I$(top_srcdir)/libs/ucdata \
         -Isrc \
         $(AM_CPPFLAGS)
 
-libpanda_la_CFLAGS =      \
-	$(GLIB_CFLAGS)  \
-	$(WARN_CFLAGS)
+libpanda_la_CFLAGS = $(WARN_CFLAGS)
 
-libpanda_la_LIBADD = $(GLIB_LIBS) libtommath.la -lm
+libpanda_la_LIBADD = libtommath.la libgdtoa.la libmpa.la -lm
 
 
 noinst_PROGRAMS += src/panda
 
 src_panda_SOURCES = src/main.c
-src_panda_LDADD =    libpanda.la -lm
+src_panda_LDADD =    libpanda.la
 src_panda_CFLAGS =   $(WARN_CFLAGS)
-src_panda_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)/src
+src_panda_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/libs/libmpa
+
 
 smalltalk_files = st/*.st
 

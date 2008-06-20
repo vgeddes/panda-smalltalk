@@ -49,7 +49,6 @@ struct st_class
     struct st_behavior parent;
 
     st_oop name;
-    st_oop class_pool;
 };
 
 struct st_metaclass

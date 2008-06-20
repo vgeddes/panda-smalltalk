@@ -76,7 +76,7 @@ typedef enum
  * 
  * flag (3 bits):
  *   0 : Activate method and execute its bytecodes 
- *   1 : The method simply returns 'self'. Don't bother creating a new activation.
+ *   1 : The method simply returns 'self'. Has no side-effects. Don't bother creating a new activation.
  *   2 : The method simply returns an instance variable. Ditto.
  *   3 : The method simply returns a literal. Ditto.
  *   4 : The method performs a primitive operation.

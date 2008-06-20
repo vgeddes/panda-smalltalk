@@ -36,6 +36,19 @@
 #define ST_NTH_BIT(n)         (1 << (n))
 #define ST_NTH_MASK(n)        (ST_NTH_BIT(n) - 1)
 
+#if 1
+#define ST_ROUNDING_MASK 0x7
+#else
+#define ST_ROUNDING_MASK 0x3
+#endif
+
+#define ST_BYTES_TO_OOPS(m) ((m) / sizeof (st_oop))
+#define ST_OOPS_TO_BYTES(m) ((m) * sizeof (st_oop))
+
+#define ST_ROUND_BYTES(size) (((size) ^ ((size) & ST_ROUNDING_MASK)) + (!!((size) & ST_ROUNDING_MASK) * sizeof (st_pointer)))
+
+#define ST_ROUNDED_UP_OOPS(m) (ST_BYTES_TO_OOPS ((m) + ST_OOPS_TO_BYTES (1) - 1))
+
 #define ST_N_ELEMENTS(static_array)  (sizeof(static_array) / sizeof ((static_array) [0]))
 
 #define ST_DIR_SEPARATOR   '/'
@@ -60,21 +73,39 @@
 /* returns the size of a type, in oop's */
 #define ST_TYPE_SIZE(type) (sizeof (type) / sizeof (st_oop))
 
+#ifndef MAX
+#define MAX(a,b) (((a)>(b)) ? (a) : (b))
+#endif
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b)) ? (a) : (b))
+#endif
+
+#ifndef CLAMP
+#define CLAMP(a,low,high) (((a) < (low)) ? (low) : (((a) > (high)) ? (high) : (a)))
+#endif
+
 enum
 {
     st_tag_mask = ST_NTH_MASK (2),
 };
 
-st_oop st_allocate_object (st_uint size);
-
 INLINE void
 st_oops_copy (st_oop *to, st_oop *from, st_uint count)
+{
+    memcpy (to, from, sizeof (st_oop) * count);
+}
+
+INLINE void
+st_oops_move (st_oop *to, st_oop *from, st_uint count)
 {
     memmove (to, from, sizeof (st_oop) * count);
 }
 
-st_pointer  st_malloc  (size_t size) ST_GNUC_MALLOC;
-st_pointer  st_malloc0 (size_t size) ST_GNUC_MALLOC;
+st_pointer  st_malloc   (size_t size) ST_GNUC_MALLOC;
+st_pointer  st_malloc0  (size_t size) ST_GNUC_MALLOC;
+st_pointer  st_realloc  (st_pointer mem, size_t size);
+
 void        st_free    (st_pointer mem);
 
 #define st_new(struct_type)  ((struct_type *) st_malloc  (sizeof (struct_type)))
@@ -88,17 +119,10 @@ char  *st_strdup_printf  (const char *format, ...) ST_GNUC_PRINTF (1, 2);
 char  *st_strdup_vprintf (const char *format, va_list args);
 char  *st_strconcat      (const char *first, ...);
 
-typedef st_uint st_unichar;
+char ** st_strsplit (const char *string, const char *delimiter, int max_tokens);
+void    st_strfreev (char **str_array);
 
-#define st_utf8_skip(c) (((0xE5000000 >> (((c) >> 3) & 0xFE)) & 3) + 1)
-#define st_utf8_next_char(p) (char *)((p) + st_utf8_skip (*(const char *)(p)))
-
-int         st_utf8_strlen            (const char *string);
-st_unichar  st_utf8_get_unichar       (const char *p);
-bool        st_utf8_validate          (const char *string, ssize_t max_len);
-int         st_unichar_to_utf8        (st_unichar ch, char *outbuf);
-const char *st_utf8_offset_to_pointer (const char *string, st_uint offset);
-st_unichar *st_utf8_to_ucs4           (const char *string);
+char   *st_strndup (const char *str, size_t n);
 
 typedef struct st_list st_list;
 
@@ -117,6 +141,34 @@ void      st_list_foreach (st_list *list,  st_list_foreach_func func);
 st_list  *st_list_reverse (st_list *list);
 st_uint   st_list_length  (st_list *list);
 void      st_list_destroy (st_list *list);
+
+typedef struct st_bit_array st_bit_array;
+
+struct st_bit_array {
+    
+    st_uchar *data;
+    st_ulong  data_size;
+};
+
+st_bit_array *st_bit_array_new     (st_ulong size, bool clear);
+
+st_ulong      st_bit_array_size    (st_bit_array *array);
+
+void          st_bit_array_clear   (st_bit_array *array);
+
+void          st_bit_array_destroy (st_bit_array *array);
+
+INLINE bool
+st_bit_array_get (st_bit_array *array, st_ulong index)
+{
+    return (array->data[index >> 3] >> (index & 0x7)) & 1;
+}
+
+INLINE void
+st_bit_array_set (st_bit_array *array, st_ulong index)
+{   
+    array->data[index >> 3] |= 1 << (index & 0x7);
+}
 
 #if  defined(__GNUC__) && defined(__OPTIMIZE__)
 #define ST_LIKELY(condition)     __builtin_expect (!!(condition), 1)

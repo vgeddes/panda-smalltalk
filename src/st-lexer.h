@@ -25,7 +25,6 @@
 #ifndef __ST_LEXER_H__
 #define __ST_LEXER_H__
 
-#include <glib.h>
 #include <stdbool.h>
 #include <st-types.h>
 
@@ -60,11 +59,10 @@ typedef enum
 
  
 st_lexer     *st_lexer_new           (const char *string);
-st_lexer     *st_lexer_new_ucs4      (const wchar_t *string);
 st_token    *st_lexer_next_token    (st_lexer *lexer);
 st_token    *st_lexer_current_token (st_lexer *lexer);
 void         st_lexer_destroy       (st_lexer *lexer);
-gunichar     st_lexer_error_char    (st_lexer *lexer);
+char         st_lexer_error_char    (st_lexer *lexer);
 st_uint      st_lexer_error_line    (st_lexer *lexer);
 st_uint      st_lexer_error_column  (st_lexer *lexer);
 char        *st_lexer_error_message (st_lexer *lexer);

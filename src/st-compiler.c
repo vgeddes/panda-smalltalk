@@ -94,7 +94,7 @@ next_token (FileInParser *parser, st_lexer *lexer)
 static st_lexer *
 next_chunk (FileInParser *parser)
 {
-    wchar_t *chunk;
+    char *chunk;
 
     parser->line = st_input_get_line (parser->input);
 
@@ -102,7 +102,7 @@ next_chunk (FileInParser *parser)
     if (!chunk)
 	return NULL;
     
-    return st_lexer_new_ucs4 (chunk);
+    return st_lexer_new (chunk);
 }
 
 static void
@@ -249,11 +249,11 @@ st_compile_file_in (const char *filename)
 
     parser->input = st_input_new (buffer);
     if (!parser->input) {
-	g_warning ("could not validate input file '%s'", filename);
+	fprintf (stderr, "could not validate input file '%s'", filename);
 	return;
     }
 
-    parser->filename = g_path_get_basename (filename);
+    parser->filename = basename (filename);
     parser->line     = 1;
 
     parse_chunks (parser);

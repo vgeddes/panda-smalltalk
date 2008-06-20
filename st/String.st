@@ -8,14 +8,6 @@ new: sizeRequested
 		ifTrue: [ ^ ByteString new: sizeRequested ]
 		ifFalse: [ ^ (self basicNew: sizeRequested) initialize ]!
 
-String classMethod!
-newFromBytes: aByteArray
-	"Creates an empty String"
-	self == String
-		ifTrue: [ ^ ByteString newFromBytes: aByteArray ]
-		ifFalse: [ ^ self basicNew initializeWithBytes: aByteArray ]!
-
-
 
 "comparing"
 
