@@ -60,11 +60,9 @@ allocate_arrayed (st_space *space, st_oop class, st_smi size)
     st_assert (size >= 0);
 
     size_rounded = round_size (size);
-    array = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_word_array) + size_rounded);
+    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_word_array) + size_rounded);
 
-    st_heap_object_initialize_header (array, class);
-    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
-
+    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = st_word_array_elements (array);
     for (st_smi i = 0; i < size_rounded; i++)
 	elements[i] = 0;

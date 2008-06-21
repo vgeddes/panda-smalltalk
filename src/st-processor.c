@@ -16,6 +16,81 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+static st_oop
+method_context_new (st_processor *processor, st_oop method)
+{
+    st_oop  context;
+    int     stack_size;
+    int     temps_size;
+    st_oop *stack;
+
+    temps_size = st_method_get_temp_count (method) + st_method_get_arg_count (method);
+    stack_size = st_method_get_stack_depth (method) + temps_size;
+
+    context = st_space_allocate_object (om->moving_space,
+					st_method_context_class,
+					ST_TYPE_SIZE (struct st_method_context) + stack_size);
+    
+    st_assert (st_object_is_heap (processor->context));
+
+    ST_CONTEXT_PART (context)->sender     = processor->context;
+    ST_CONTEXT_PART (context)->ip         = st_smi_new (0);
+    ST_CONTEXT_PART (context)->sp         = st_smi_new (0);
+    ST_METHOD_CONTEXT (context)->receiver = processor->message_receiver;
+    ST_METHOD_CONTEXT (context)->method   = method;
+
+    stack = ST_METHOD_CONTEXT (context)->stack;
+    for (st_uint i=0; i < stack_size; i++)
+	stack[i] = st_nil;
+
+    return context;
+}
+
+static st_oop
+block_context_new (st_processor *processor, st_uint initial_ip, st_uint argcount)
+{
+    st_oop home;
+    st_oop context;
+    st_oop method;
+    st_oop *stack;
+    int stack_size;
+	    
+    if (st_object_class (processor->context) == st_block_context_class)
+	home = ST_BLOCK_CONTEXT (processor->context)->home;
+    else
+	home = processor->context;
+
+    method =  ST_METHOD_CONTEXT (home)->method;
+
+    stack_size = st_method_get_stack_depth (method);
+    stack_size += argcount;
+
+    context = st_space_allocate_object (om->moving_space,
+					st_block_context_class,
+					ST_TYPE_SIZE (struct st_block_context) + stack_size);
+
+    /* home might have been moved */
+    if (st_object_class (processor->context) == st_block_context_class)
+	home = ST_BLOCK_CONTEXT (processor->context)->home;
+    else
+	home = processor->context;
+
+    ST_CONTEXT_PART (context)->sender = st_nil;
+    ST_CONTEXT_PART (context)->ip     = st_smi_new (0);
+    ST_CONTEXT_PART (context)->sp     = st_smi_new (0);
+
+    ST_BLOCK_CONTEXT (context)->initial_ip = st_smi_new (initial_ip);
+    ST_BLOCK_CONTEXT (context)->argcount   = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT (context)->caller     = st_nil;
+    ST_BLOCK_CONTEXT (context)->home       = home;
+
+    stack = ST_BLOCK_CONTEXT (context)->stack;
+    for (st_uint i=0; i < stack_size; i++)
+	stack[i] = st_nil;
+
+    return context;
+}
+
 static void
 create_actual_message (st_processor *processor)
 {
@@ -90,13 +165,14 @@ activate_method (st_processor *processor, st_oop method)
     st_oop  context;
     st_oop *arguments;
     
-    context = st_method_context_new (processor->context, processor->message_receiver,  method);
+    context = method_context_new (processor, method);
 
     arguments = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
     for (st_uint i = 0; i < processor->message_argcount; i++)
 	arguments[i] =  processor->stack[processor->sp - processor->message_argcount + i];
 
     processor->sp -= processor->message_argcount + 1;
+
     st_processor_set_active_context (processor, context);
 }
 
@@ -152,6 +228,8 @@ st_processor_set_active_context (st_processor *processor,
     processor->sp       = st_smi_value (ST_CONTEXT_PART (context)->sp);
     processor->ip       = st_smi_value (ST_CONTEXT_PART (context)->ip);
     processor->bytecode = st_method_bytecode_bytes (processor->method);
+
+    st_assert (processor->sp < 9);
 }
 
 void
@@ -208,7 +286,6 @@ st_processor_send_selector (st_processor *processor,
     st_method_flags flags;						\
     									\
     ip += 1;								\
-    processor->ip = ip - processor->bytecode;				\
     									\
     method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));\
     									\
@@ -815,12 +892,7 @@ st_processor_main (st_processor *processor)
 	    
 	    initial_ip = ip - processor->bytecode + 3;
 	    
-	    if (st_object_class (processor->context) == st_block_context_class)
-		home = ST_BLOCK_CONTEXT (processor->context)->home;
-	    else
-		home = processor->context;
-	    
-	    block = st_block_context_new (home, initial_ip, argcount);
+	    block = block_context_new (processor, initial_ip, argcount);
 	    
 	    ST_STACK_PUSH (processor, block);
 	    
@@ -834,21 +906,23 @@ st_processor_main (st_processor *processor)
 	    
 	    value = ST_STACK_PEEK (processor);
 	    
-	    if (st_object_class (processor->context) == st_block_context_class)
+	    if (st_heap_object_class (processor->context) == st_block_context_class)
 		sender = ST_CONTEXT_PART (ST_BLOCK_CONTEXT (processor->context)->home)->sender;
 	    else
 		sender = ST_CONTEXT_PART (processor->context)->sender;
 	    
+	    st_assert (st_object_is_heap (sender));
+
 	    if (sender == st_nil) {
 		ST_STACK_PUSH (processor, processor->context);
 		ST_STACK_PUSH (processor, value);
 		SEND_SELECTOR (processor, st_selector_cannotReturn, 1);
 		NEXT ();
 	    }
-	    
+
 	    ACTIVATE_CONTEXT (processor, sender);
 	    ST_STACK_PUSH (processor, value);
-    
+
 	    NEXT ();
 	}
 
@@ -905,7 +979,7 @@ st_processor_initialize (st_processor *processor)
     method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));
     st_assert (st_method_get_flags (method) == ST_METHOD_NORMAL);
 
-    context = st_method_context_new (processor->context, processor->message_receiver,  method);
+    context = method_context_new (processor,  method);
     st_processor_set_active_context (processor, context);
 }
 

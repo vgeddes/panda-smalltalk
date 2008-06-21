@@ -30,10 +30,7 @@ allocate (st_space *space, st_oop class)
 {
     st_oop f;
 
-    f = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_float));
-
-    st_heap_object_initialize_header (f, st_float_class);
-
+    f = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_float));
     st_float_set_value (f, 0.0);
 
     return f;

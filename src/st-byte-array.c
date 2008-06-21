@@ -42,9 +42,7 @@ allocate_arrayed (st_space *space,
     /* add 1 byte for NULL terminator. Allows toll-free bridging with C string function */
     size_oops = ST_ROUNDED_UP_OOPS (size + 1);
     
-    array = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_byte_array) + size_oops);
-    
-    st_heap_object_initialize_header (array, class);
+    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_byte_array) + size_oops);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     
     memset (st_byte_array_bytes (array), 0, ST_OOPS_TO_BYTES (size_oops));

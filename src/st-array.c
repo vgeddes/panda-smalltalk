@@ -37,11 +37,9 @@ allocate_arrayed (st_space *space,
 
     st_assert (size >= 0);
 
-    array = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_array) + size);
+    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_array) + size);
 
-    st_heap_object_initialize_header (array, class);
-    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);    
-
+    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = ST_ARRAY (array)->elements;
     for (st_smi i = 0; i < size; i++)
 	elements[i] = st_nil;

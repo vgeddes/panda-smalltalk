@@ -33,8 +33,7 @@ allocate_arrayed (st_space *space, st_oop class, st_smi size)
 
     st_assert (size >= 0);
 
-    object = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_float_array) + size);
-    st_heap_object_initialize_header (object, class);
+    object = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_float_array) + size);
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
     elements = ST_FLOAT_ARRAY (object)->elements;
@@ -52,7 +51,7 @@ float_array_copy (st_oop object)
     
     size = st_smi_value (st_arrayed_object_size (object));
 
-    copy = allocate_arrayed (om->moving_space, st_object_class (object), size);
+    copy = allocate_arrayed (om->moving_space, st_heap_object_class (object), size);
 
     memcpy (st_float_array_elements (copy),
 	    st_float_array_elements (object),

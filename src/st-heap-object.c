@@ -118,9 +118,8 @@ allocate (st_space *space, st_oop class)
     st_oop object;
 
     instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
-    object = st_space_allocate_object (space, ST_TYPE_SIZE (struct st_header) + instance_size);
+    object = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_header) + instance_size);
 
-    st_heap_object_initialize_header (object, class);
     st_heap_object_initialize_body (object, instance_size);
 
     return object;

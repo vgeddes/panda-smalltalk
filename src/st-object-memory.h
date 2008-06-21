@@ -29,7 +29,7 @@
 #include <st-utils.h>
 #include <ptr_array.h>
 
-#define ST_COLLECTION_INTERVAL 10000
+#define ST_COLLECTION_INTERVAL 20000
 
 struct mark_stack {
     st_oop *stack;
@@ -72,12 +72,14 @@ bool              st_object_memory_reserve  (st_object_memory *om, st_uint size)
 void              st_object_memory_destroy  (st_object_memory *om);
 
 void              st_object_memory_add_root (st_object_memory *om, st_oop root);
+void              st_object_memory_remove_root (st_object_memory *om, st_oop root);
 
 void              begin_gc (st_object_memory *om);
 
 st_space         *st_space_new (st_oop *bottom, st_oop *top);
 
-st_oop            st_space_allocate_object (st_space *space, st_uint size);
+st_oop            st_space_allocate_object (st_space *space, st_oop class, st_uint size);
+st_oop            st_space_allocate_chunk  (st_space *space, st_uint size);
 
 
 #endif /* __ST_OBJECT_MEMORY__ */

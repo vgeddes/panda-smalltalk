@@ -106,7 +106,7 @@ class_new (st_format format, st_uint instance_size)
 {
     st_oop class;
 
-    class = st_space_allocate_object (om->fixed_space, ST_TYPE_SIZE (struct st_class));
+    class = st_space_allocate_chunk (om->fixed_space, ST_TYPE_SIZE (struct st_class));
 
     /* TODO refactor this initialising */
     ST_POINTER (class)->header = 0 | ST_MARK_TAG;
@@ -121,7 +121,7 @@ class_new (st_format format, st_uint instance_size)
     ST_BEHAVIOR (class)->method_dictionary  = st_nil;
     ST_BEHAVIOR (class)->instance_variables = st_nil;
 
-    ST_CLASS (class)->name   = st_nil;
+    ST_CLASS (class)->name = st_nil;
 
     return class;
 }
@@ -392,12 +392,14 @@ file_in_classes (void)
     }
 }
 
+#define NIL_SIZE_OOPS (sizeof (struct st_header) / sizeof (st_oop))
+
 static st_oop
 create_nil_object (void)
 {
     st_oop nil;
 
-    nil = st_space_allocate_object (om->fixed_space, sizeof (struct st_header) / sizeof (st_oop));
+    nil = st_space_allocate_chunk (om->fixed_space, NIL_SIZE_OOPS);
 
     ST_POINTER (nil)->header = 0 | ST_MARK_TAG;
     st_heap_object_set_marked     (nil, false);
@@ -525,4 +527,10 @@ st_bootstrap_universe (void)
 
     init_specials ();
     file_in_classes ();
+
+    st_object_memory_add_root (om, st_nil);
+    st_object_memory_add_root (om, st_true);
+    st_object_memory_add_root (om, st_false);
+    st_object_memory_add_root (om, st_smalltalk);
+    st_object_memory_add_root (om, st_symbol_table);
 }

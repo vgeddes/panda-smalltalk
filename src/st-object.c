@@ -102,9 +102,9 @@ st_object_printString (st_oop object)
 	string = st_strdup_printf ("%g", st_float_value (object));
 
     // Fraction
-    else if (st_object_class (object) == st_global_get ("Fraction"))
-	string = st_strdup_printf ("%li/%li", st_smi_value (st_heap_object_body (object)[0]),
-		st_smi_value (st_heap_object_body (object)[1]));
+//    else if (st_object_class (object) == st_global_get ("Fraction"))
+//	string = st_strdup_printf ("%li/%li", st_smi_value (st_heap_object_body (object)[0]),
+//		st_smi_value (st_heap_object_body (object)[1]));
 
     // ByteString
     else if (st_object_is_string (object))

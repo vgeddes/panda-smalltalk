@@ -81,9 +81,7 @@ allocate_with_value (st_space *space, st_oop class, mp_int * value)
 {
     st_oop object;
 
-    object = st_space_allocate_object (space, sizeof (struct st_large_integer) / sizeof (st_oop));
-
-    st_heap_object_initialize_header (object, class);
+    object = st_space_allocate_object (space, class, sizeof (struct st_large_integer) / sizeof (st_oop));
 
     if (value)
 	*VALUE (object) = *value;
