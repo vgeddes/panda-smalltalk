@@ -125,10 +125,13 @@ st_file_get_contents (const char *filename,
 	if (count < 0) {
 	    fprintf (stderr, "%s: error: %s: %s\n", program_invocation_short_name, filename, strerror (errno));
 	    st_free (temp);
+	    close (fd);
 	    return false;
 	}
 	total += count;
     }
+
+    close (fd);
 
     temp[info.st_size] = 0;
     *buffer = temp;
@@ -219,6 +222,38 @@ st_strconcat (const char *first, ...)
 	va_end (args);
 
 	return ret;
+}
+
+
+double
+st_timespec_to_double_seconds (struct timespec *interval)
+{
+    /* print in seconds */
+    return interval->tv_sec + (interval->tv_nsec / 1.e9);
+}
+
+void
+st_timespec_difference (struct timespec *start, struct timespec *end, struct timespec *diff)
+{
+    if ((end->tv_nsec - start->tv_nsec) < 0) {
+	diff->tv_sec = end->tv_sec - start->tv_sec - 1;
+	diff->tv_nsec = 1000000000 + end->tv_nsec - start->tv_nsec;
+    } else {
+	diff->tv_sec = end->tv_sec - start->tv_sec;
+	diff->tv_nsec = end->tv_nsec - start->tv_nsec;
+    }
+}
+
+void
+st_timespec_add (struct timespec *t1, struct timespec *t2, struct timespec *result)
+{
+    if ((t1->tv_nsec + t2->tv_nsec) >=  1000000000) {
+	result->tv_sec = t1->tv_sec + t2->tv_sec + 1;
+	result->tv_nsec = t1->tv_nsec + t2->tv_nsec - 1000000000;
+    } else {
+	result->tv_sec = t1->tv_sec + t2->tv_sec;
+	result->tv_nsec = t1->tv_nsec + t2->tv_nsec;
+    }
 }
 
 st_list *

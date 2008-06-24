@@ -50,7 +50,7 @@ st_descriptor *st_large_integer_descriptor (void);
 
 /* inline definitions */
 
-INLINE mp_int *
+static inline mp_int *
 st_large_integer_value (st_oop integer)
 {
     return & ST_LARGE_INTEGER (integer)->value;

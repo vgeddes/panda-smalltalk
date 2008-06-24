@@ -40,19 +40,19 @@ struct st_float_array
 
 st_descriptor *st_float_array_descriptor (void);
 
-INLINE double *
+static inline double *
 st_float_array_elements (st_oop array)
 {
     return ST_FLOAT_ARRAY (array)->elements;
 }
 
-INLINE double
+static inline double
 st_float_array_at (st_oop array, st_smi i)
 {
     return ST_FLOAT_ARRAY (array)->elements[i - 1];
 }
 
-INLINE void
+static inline void
 st_float_array_at_put (st_oop array, st_smi i, double value)
 {
     ST_FLOAT_ARRAY (array)->elements[i - 1] = value;

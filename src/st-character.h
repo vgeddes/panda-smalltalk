@@ -28,32 +28,32 @@
 #include <st-types.h>
 #include <st-descriptor.h>
 
-INLINE st_oop  st_character_new   (wchar_t wc);
-INLINE wchar_t st_character_value (st_oop character);
-INLINE bool    st_character_equal (st_oop m, st_oop n);
-INLINE st_smi  st_character_hash  (st_oop character);
+static inline st_oop  st_character_new   (wchar_t wc);
+static inline wchar_t st_character_value (st_oop character);
+static inline bool    st_character_equal (st_oop m, st_oop n);
+static inline st_smi  st_character_hash  (st_oop character);
 
 /* inline definitions */
 
-INLINE st_oop
+static inline st_oop
 st_character_new (wchar_t wc)
 {
     return (st_oop) ((wc << ST_TAG_SIZE) + ST_CHARACTER_TAG);
 }
 
-INLINE wchar_t
+static inline wchar_t
 st_character_value (st_oop character)
 {
     return ((wchar_t) character) >> ST_TAG_SIZE;
 }
 
-INLINE bool
+static inline bool
 st_character_equal (st_oop m, st_oop n)
 {
     return m == n;
 }
 
-INLINE st_smi
+static inline st_smi
 st_character_hash (st_oop character)
 {
     return (st_smi) st_character_value (character);

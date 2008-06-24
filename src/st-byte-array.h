@@ -45,13 +45,13 @@ st_uint          st_byte_array_hash       (st_oop object);
 st_descriptor *st_byte_array_descriptor (void);
 
 
-INLINE st_uchar *
+static inline st_uchar *
 st_byte_array_bytes (st_oop object)
 {
     return ST_BYTE_ARRAY (object)->bytes;
 }
 
-INLINE st_uchar
+static inline st_uchar
 st_byte_array_at (st_oop object, st_smi i)
 {
     st_assert (1 <= i && i <= st_arrayed_object_size (object));
@@ -59,7 +59,7 @@ st_byte_array_at (st_oop object, st_smi i)
     return st_byte_array_bytes (object)[i - 1];
 }
 
-INLINE void
+static inline void
 st_byte_array_at_put (st_oop object, st_smi i, st_uchar value)
 {
     st_assert (1 <= i && i <= st_arrayed_object_size (object));

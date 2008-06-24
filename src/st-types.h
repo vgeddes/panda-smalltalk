@@ -79,11 +79,6 @@ typedef unsigned int     st_uint;
 typedef void *           st_pointer;
 typedef st_uint          st_unichar;
 
-#ifdef INLINE
-#  undef INLINE
-#endif
-#define INLINE static inline
-
 #define ST_POINTER(oop)          ((struct st_header *) ((oop) - ST_POINTER_TAG))
 #define ST_OOP(ptr)              (((st_oop) (ptr)) + ST_POINTER_TAG)
 

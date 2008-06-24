@@ -26,45 +26,22 @@
 #include "st-utils.h"
 #include "st-descriptor.h"
 
-static st_smi
-round_size (st_smi size)
-{    
-#if ST_HOST64 == 1
-
-    st_assert (sizeof (st_oop) == (2 * sizeof (st_uint)));
-
-    int r = size % 2;
-
-    if (r == 0)
-	return size;
-    else
-	return size - r + 2;
-
-#else
-
-    st_assert (sizeof (st_oop) == sizeof (st_uint));
-
-    return size;
-
-#endif
-}
-
-
 static st_oop
 allocate_arrayed (st_space *space, st_oop class, st_smi size)
 {
-    st_oop  array;
-    st_smi  size_rounded;
-    st_uint  *elements;
+    st_oop   array;
+    st_smi   size_oops;
+    st_uint *elements;
 
     st_assert (size >= 0);
 
-    size_rounded = round_size (size);
-    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_word_array) + size_rounded);
+    size_oops = size * (sizeof (st_uint) / sizeof (st_oop));
+
+    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_word_array) + size_oops);
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = st_word_array_elements (array);
-    for (st_smi i = 0; i < size_rounded; i++)
+    for (st_smi i = 0; i < size; i++)
 	elements[i] = 0;
 
     return array;
@@ -90,7 +67,8 @@ word_array_copy (st_oop object)
 static st_uint
 word_array_size (st_oop object)
 {
-    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + (2 * st_smi_value (st_arrayed_object_size (object)));
+    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + 
+	+ (st_smi_value (st_arrayed_object_size (object)) * (sizeof (st_uint) / sizeof (st_oop)));
 }
 
 static void

@@ -110,7 +110,7 @@ create_actual_message (st_processor *processor)
     processor->message_argcount = 1;
 }
 
-INLINE st_oop
+static inline st_oop
 lookup_method (st_processor *processor, st_oop class)
 {
     st_oop method;
@@ -159,7 +159,7 @@ st_processor_lookup_method (st_processor *processor, st_oop class)
  * frame. Receiver and arguments are then popped off the stack.
  *
  */
-INLINE void
+static inline void
 activate_method (st_processor *processor, st_oop method)
 {
     st_oop  context;
@@ -230,6 +230,14 @@ st_processor_set_active_context (st_processor *processor,
     processor->bytecode = st_method_bytecode_bytes (processor->method);
 
     st_assert (processor->sp < 9);
+}
+
+void
+st_processor_prologue (st_processor *processor)
+{
+    if (st_verbose_mode ()) {
+	fprintf (stderr, "** gc: totalPauseTime: %.6fs\n", st_timespec_to_double_seconds (&om->tot_pause_time));
+    }
 }
 
 void
@@ -368,7 +376,7 @@ st_processor_main (st_processor *processor)
     register const st_uchar *ip;
 
     if (setjmp (processor->main_loop))
-	return;
+	goto out;
 
     ip = processor->bytecode + processor->ip;
 
@@ -942,6 +950,9 @@ st_processor_main (st_processor *processor)
 	    NEXT ();
 	}
     }
+
+out:
+    st_processor_prologue (processor);
 }
 
 void

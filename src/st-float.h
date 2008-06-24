@@ -42,29 +42,29 @@ struct st_float
 
 st_oop        st_float_new       (double value);
 
-INLINE double st_float_value     (st_oop f);
+static inline double st_float_value     (st_oop f);
 
-INLINE void   st_float_set_value (st_oop f, double value);
+static inline void   st_float_set_value (st_oop f, double value);
 
-INLINE bool   st_float_equal     (st_oop object, st_oop other);
+static inline bool   st_float_equal     (st_oop object, st_oop other);
 
-INLINE st_uint  st_float_hash      (st_oop object);
+static inline st_uint  st_float_hash      (st_oop object);
 
 st_descriptor *st_float_descriptor (void);
 
-INLINE double
+static inline double
 st_float_value (st_oop f)
 {
     return ST_FLOAT (f)->value;
 }
 
-INLINE void
+static inline void
 st_float_set_value (st_oop f, double value)
 {
     ST_FLOAT (f)->value = value;
 }
 
-INLINE bool
+static inline bool
 st_float_equal (st_oop object, st_oop other)
 {
     if (st_object_class (other) != st_float_class)
@@ -73,7 +73,7 @@ st_float_equal (st_oop object, st_oop other)
     return st_float_value (object) == st_float_value (other);
 }
 
-INLINE st_uint
+static inline st_uint
 st_float_hash (st_oop object)
 {
     return (st_uint) st_float_value (object);

@@ -69,7 +69,8 @@ libpanda_la_CPPFLAGS =          \
 
 libpanda_la_CFLAGS = $(WARN_CFLAGS)
 
-libpanda_la_LIBADD = libtommath.la libgdtoa.la libmpa.la -lm
+
+libpanda_la_LIBADD = libtommath.la libgdtoa.la liboptparse.la libmpa.la -lm -lrt
 
 
 noinst_PROGRAMS += src/panda
@@ -77,7 +78,7 @@ noinst_PROGRAMS += src/panda
 src_panda_SOURCES = src/main.c
 src_panda_LDADD =    libpanda.la
 src_panda_CFLAGS =   $(WARN_CFLAGS)
-src_panda_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/libs/libmpa
+src_panda_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/libs/libmpa -I$(top_srcdir)/libs/optparse
 
 
 smalltalk_files = st/*.st

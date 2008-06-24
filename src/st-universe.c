@@ -534,3 +534,17 @@ st_bootstrap_universe (void)
     st_object_memory_add_root (om, st_smalltalk);
     st_object_memory_add_root (om, st_symbol_table);
 }
+
+static bool verbosity;
+
+void
+st_set_verbosity (bool verbose)
+{
+    verbosity = verbose;
+}
+
+bool
+st_verbose_mode (void)
+{
+    return verbosity;
+}

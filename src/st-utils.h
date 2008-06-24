@@ -55,11 +55,15 @@
 #define ST_DIR_SEPARATOR_S "/"
 
 #ifdef __GNUC__
-#define ST_GNUC_MALLOC
-#define ST_GNUC_PRINTF(format_index, argument_index)
-#else
+#define ST_GNUC_CONST  __attribute__ ((const))
+#define ST_GNUC_PURE   __attribute__ ((pure))
 #define ST_GNUC_MALLOC __attribute__ ((malloc))
 #define ST_GNUC_PRINTF(format_index, argument_index)  __attribute__ ((format (printf, format_index, argument_index)))
+#else
+#define ST_GNUC_CONST
+#define ST_GNUC_PURE
+#define ST_GNUC_MALLOC
+#define ST_GNUC_PRINTF(format_index, argument_index)
 #endif
 
 /* A comile-time assertion */
@@ -90,13 +94,13 @@ enum
     st_tag_mask = ST_NTH_MASK (2),
 };
 
-INLINE void
+static inline void
 st_oops_copy (st_oop *to, st_oop *from, st_uint count)
 {
     memcpy (to, from, sizeof (st_oop) * count);
 }
 
-INLINE void
+static inline void
 st_oops_move (st_oop *to, st_oop *from, st_uint count)
 {
     memmove (to, from, sizeof (st_oop) * count);
@@ -123,6 +127,16 @@ char ** st_strsplit (const char *string, const char *delimiter, int max_tokens);
 void    st_strfreev (char **str_array);
 
 char   *st_strndup (const char *str, size_t n);
+
+
+double st_timespec_to_double_seconds (struct timespec *t);
+
+void st_timespec_difference (struct timespec *start, struct timespec *end, struct timespec *diff);
+
+void st_timespec_add        (struct timespec *t1, struct timespec *t2, struct timespec *result);
+
+
+
 
 typedef struct st_list st_list;
 
@@ -158,13 +172,13 @@ void          st_bit_array_clear   (st_bit_array *array);
 
 void          st_bit_array_destroy (st_bit_array *array);
 
-INLINE bool
+static inline bool
 st_bit_array_get (st_bit_array *array, st_ulong index)
 {
     return (array->data[index >> 3] >> (index & 0x7)) & 1;
 }
 
-INLINE void
+static inline void
 st_bit_array_set (st_bit_array *array, st_ulong index)
 {   
     array->data[index >> 3] |= 1 << (index & 0x7);

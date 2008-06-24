@@ -35,8 +35,6 @@
 #include "st-character.h"
 #include "st-unicode.h"
 
-
-
 bool
 st_object_equal (st_oop object, st_oop other)
 {

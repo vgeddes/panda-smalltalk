@@ -209,6 +209,7 @@ parse_number (st_parser *parser)
 
 	/* we use strtoll() when smi's are 64-bits wide.
 	 */
+	errno = 0;
 #if ST_HOST32 == 1
 	long int integer = sign * strtol (number, NULL, radix);
 #else

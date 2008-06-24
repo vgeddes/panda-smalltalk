@@ -100,13 +100,13 @@ st_oop   st_heap_object_forwarding_pointer         (st_oop object);
 st_descriptor *st_heap_object_descriptor (void);
 
 
-INLINE st_oop
+static inline st_oop
 st_arrayed_object_size (st_oop object)
 {
     return ST_ARRAYED_OBJECT (object)->size;
 }
 
-INLINE st_descriptor *
+static inline st_descriptor *
 st_heap_object_descriptor_for_object (st_oop object)
 {  
     return st_descriptors[st_heap_object_format (object)];

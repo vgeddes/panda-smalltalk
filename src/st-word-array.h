@@ -39,13 +39,13 @@ struct st_word_array
 
 st_descriptor *st_word_array_descriptor (void);
 
-INLINE st_uint *
+static inline st_uint *
 st_word_array_elements (st_oop object)
 {
     return ST_WORD_ARRAY (object)->elements;
 }
 
-INLINE st_uint
+static inline st_uint
 st_word_array_at (st_oop object, st_smi i)
 {
     st_assert (1 <= i && i <= st_arrayed_object_size (object));
@@ -53,7 +53,7 @@ st_word_array_at (st_oop object, st_smi i)
     return ST_WORD_ARRAY (object)->elements[i - 1];
 }
 
-INLINE void
+static inline void
 st_word_array_at_put (st_oop object, st_smi i, st_uint value)
 {
     st_assert (1 <= i && i <= st_arrayed_object_size (object));

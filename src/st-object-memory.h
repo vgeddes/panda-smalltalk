@@ -29,7 +29,8 @@
 #include <st-utils.h>
 #include <ptr_array.h>
 
-#define ST_COLLECTION_INTERVAL 20000
+/* threshold is 8 Mb or 16 Mb depending on whether system is 32 or 64 bits */
+#define ST_COLLECTION_THRESHOLD (sizeof (st_oop) * 2 * 1024 * 1024)
 
 struct mark_stack {
     st_oop *stack;
@@ -42,8 +43,6 @@ typedef struct st_space
     st_oop *bottom;
 
     st_oop *water_level;
-
-    st_uint object_count;
     
 } st_space;
 
@@ -62,7 +61,14 @@ typedef struct st_object_memory
     
     ptr_array roots;
 
-    st_uint alloc_count;
+    st_uint byte_count;
+
+    /* statistics */
+    struct timespec tot_pause_time;        /* total accumulated pause time */
+    st_ulong avg_pause_time;              /* average time between pauses */
+    st_ulong avg_pause_interval;          /* average pause time */
+    st_ulong bytes_allocated;             /* current number of allocated bytes */
+    st_ulong bytes_collected;             /* number of bytes collected in last compaction */
 
 } st_object_memory;
 

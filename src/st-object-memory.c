@@ -40,8 +40,9 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <time.h>
 
-INLINE st_oop    remap_oop (st_object_memory *om, st_oop ref);
+static inline st_oop    remap_oop (st_object_memory *om, st_oop ref);
 
 static void      garbage_collect (st_object_memory *om);
 
@@ -86,7 +87,7 @@ st_object_memory_reserve (st_object_memory *om, st_uint size)
 }
 
 // RESERVE 500 MB worth of virtual address space
-#define HEAP_SIZE (500 * 1024  * 1024)
+#define HEAP_SIZE (100 * 1024  * 1024)
 
 st_object_memory *
 st_object_memory_new (void)
@@ -102,13 +103,16 @@ st_object_memory_new (void)
     if (!st_object_memory_reserve (om, HEAP_SIZE))
 	abort ();
 
-    /* fixed space gets 1/3 of heap */
-    moving_start = om->heap_start + ((om->heap_end - om->heap_start) / 3);
+    /* fixed space gets 1/5 of heap */
+    moving_start = om->heap_start + ((om->heap_end - om->heap_start) / 5 );
 
     om->fixed_space  = st_space_new (om->heap_start, moving_start);
     om->moving_space = st_space_new (moving_start, om->heap_end);
 
-    om->alloc_count = 0;
+    om->byte_count = 0;
+
+    om->tot_pause_time.tv_sec = 0;
+    om->tot_pause_time.tv_nsec = 0;
 
     return om;
 }
@@ -138,16 +142,17 @@ st_space_allocate_chunk (st_space *space, st_uint size)
 
     st_assert (size >= 2);
 
-    if (om->alloc_count > ST_COLLECTION_INTERVAL) {
+    if (space == om->moving_space && om->byte_count > ST_COLLECTION_THRESHOLD) {
 	garbage_collect (om);
-	om->alloc_count = 0;
+	om->byte_count = 0;
     }
 
     chunk = space->water_level;
     space->water_level += size;
 
-    space->object_count++;
-    om->alloc_count++;
+    om->byte_count += (size * sizeof (st_oop));
+
+    om->bytes_allocated += (size * sizeof (st_oop));
 
     return ST_OOP (chunk);
 }
@@ -181,64 +186,93 @@ st_space_new (st_oop *bottom, st_oop *top)
     space->bottom = bottom;
     space->top = top;
     space->water_level = bottom;
-
-    space->object_count = 0;
     
     return space;
 }
 
-#define POINTER(oop)       ((st_oop *) ST_POINTER (oop))
-#define GET_MARK_BIT(oop)  (get_bit (om->mark_bits,  POINTER (oop) - om->heap_start))
-#define SET_MARK_BIT(oop)  (set_bit (om->mark_bits,  POINTER (oop) - om->heap_start))
-#define GET_ALLOC_BIT(oop) (get_bit (om->alloc_bits, POINTER (oop) - om->heap_start))
-#define SET_ALLOC_BIT(oop) (set_bit (om->alloc_bits, POINTER (oop) - om->heap_start))
 
 #define BLOCK_SIZE       256
 #define BLOCK_SIZE_OOPS  (BLOCK_SIZE / sizeof (st_oop))
 
 st_uint objects_freed = 0;
 
-INLINE bool
+static inline st_oop
+tag (st_oop *ptr)
+{
+    return ST_OOP (ptr);
+}
+
+static inline st_oop *
+detag (st_oop oop)
+{
+    return (st_oop *) ST_POINTER (oop);
+}
+
+static inline bool
 get_bit (st_uchar *bits, st_ulong index)
 {
     return (bits[index >> 3] >> (index & 0x7)) & 1;
 }
 
-INLINE void
+static inline void
 set_bit (st_uchar *bits, st_ulong index)
 {
     bits[index >> 3] |= 1 << (index & 0x7);
 }
 
-INLINE void
+static inline st_ulong
+bit_index (st_object_memory *om, st_oop object)
+{
+    return detag (object) - om->heap_start;
+}
+
+static inline bool
+get_mark_bit (st_object_memory *om, st_oop object)
+{
+    return get_bit (om->mark_bits,  bit_index (om, object));
+}
+
+static inline void
+set_mark_bit (st_object_memory *om, st_oop object)
+{
+    set_bit (om->mark_bits,  bit_index (om, object));
+}
+
+static inline bool
+get_alloc_bit (st_object_memory *om, st_oop object)
+{
+    return get_bit (om->alloc_bits,  bit_index (om, object));
+}
+
+static inline void
+set_alloc_bit (st_object_memory *om, st_oop object)
+{
+    set_bit (om->alloc_bits,  bit_index (om, object));
+}
+
+static inline void
 clear_bits (char *bits, st_ulong size)
 {
     memset (bits, 0, size);
 }
 
-INLINE void
+static inline void
 clear_offsets (st_oop **offsets, st_ulong size)
 {
     memset (offsets, 0, sizeof (st_oop *) * size);
 }
 
-INLINE st_ulong
+static inline st_ulong
 get_block_index (st_object_memory *om, st_oop object)
 {
-    return (POINTER (object) - om->heap_start) / BLOCK_SIZE_OOPS;
+    return (detag (object) - om->heap_start) / BLOCK_SIZE_OOPS;
 }
 
-INLINE st_ulong
-bit_index (st_object_memory *om, st_oop object)
-{
-    return POINTER (object) - om->heap_start;
-}
-
-INLINE st_uint
+static inline st_uint
 compute_ordinal_number (st_object_memory *om, st_oop ref)
 {
-    st_ulong b, k;
     st_uint i, ordinal = 0;
+    st_ulong b, k;
 
     b = bit_index (om, ref) & ~(BLOCK_SIZE_OOPS - 1);
     k = bit_index (om, ref);
@@ -255,29 +289,30 @@ compute_ordinal_number (st_object_memory *om, st_oop ref)
     return 0;
 }
 
-INLINE st_oop
+static inline st_oop
 remap_oop (st_object_memory *om, st_oop ref)
 {
     st_ulong b;
-    st_uint ordinal, i, j;
+    st_uint ordinal, i = 0, j = 0;
     st_oop *offset;
 
     if (!st_object_is_heap (ref))
 	return ref;
 
-    if (POINTER (ref) < om->fixed_space->top)
+    if (detag (ref) < om->fixed_space->top)
 	return ref;
   
     ordinal = compute_ordinal_number (om, ref); 
-    offset = om->offsets[get_block_index (om, ref)];
-    b = bit_index (om, ST_OOP (offset));
+    offset  = om->offsets[get_block_index (om, ref)];
+    b = bit_index (om, tag (offset));
 
-    for (i = 0, j = 0;; i++) {
+    while (true) {
 	if (get_bit (om->alloc_bits, b + i)) {
 	    if (++j == ordinal) {
-		return ST_OOP (offset + i);
+		return tag (offset + i);
 	    }
-	}    
+	}
+	i++;
     }
 
     st_assert_not_reached ();
@@ -290,45 +325,31 @@ remap (st_object_memory *om)
     struct contents contents;
     st_space *space;
     st_oop *p;
-    st_uint size;
+    st_uint size, i;
 
     /* remap fixed space */
     p = om->fixed_space->bottom;
     while (p < om->fixed_space->water_level) {
 
-	st_assert (st_object_is_mark (*p));
+	size = st_object_size (tag (p));
+	st_object_contents (tag (p), &contents);
 
-	size = st_object_size (ST_OOP (p));
-	st_object_contents (ST_OOP (p), &contents);
-
-	for (st_uint i=0; i < contents.size; i++)
+	for (i = 0; i < contents.size; i++)
 	    contents.oops[i] = remap_oop (om, contents.oops[i]);
+
 	p += size;
     }
-
-    st_oop object;
 
     /* remap moving space */
     p = om->moving_space->bottom;
     while (p < om->moving_space->water_level) {
 
-	st_assert (st_object_is_mark (*p));
+	size = st_object_size (tag (p));
+	st_object_contents (tag (p), &contents);
 
-	size = st_object_size (ST_OOP (p));
-	st_object_contents (ST_OOP (p), &contents);
-
-	for (st_uint i=0; i < contents.size; i++) {
-
+	for (i = 0; i < contents.size; i++)
 	    contents.oops[i] = remap_oop (om, contents.oops[i]);
 	
-	}
-
-	object = ST_OOP (p);
-	if (st_heap_object_class (object) == st_method_context_class) {
-	    printf ("%lu sender: %lu; %s >> %s\n", object, ST_CONTEXT_PART (object)->sender,
-		    st_object_printString (ST_METHOD_CONTEXT (object)->receiver),
-		    st_byte_array_bytes (ST_METHOD (ST_METHOD_CONTEXT (object)->method)->selector));
-	}
 	p += size;
     }
 
@@ -361,26 +382,24 @@ void
 compact (st_object_memory *om)
 {
     st_oop *p, *from, *to;
-    st_space *space;
-    st_uint size;
-    long block;
+    st_space *space = om->moving_space;
+    st_uint  size;
+    long block = -1;
 
-    space = om->moving_space;
     p = space->bottom;
     
-    block = -1;
-    while (GET_MARK_BIT (ST_OOP (p))) {
-	SET_ALLOC_BIT (ST_OOP (p));
-	if (block < (long) ((p - om->heap_start) / BLOCK_SIZE_OOPS)) {
-	    block = (p - om->heap_start) / BLOCK_SIZE_OOPS;
+    while (get_mark_bit (om, tag (p))) {
+	set_alloc_bit (om, tag (p));
+	if (block <  (long) get_block_index (om, tag (p))) {
+	    block = get_block_index (om, tag (p));
 	    om->offsets[block] = p;
 	}
-	p += st_object_size (ST_OOP (p));
+	p += st_object_size (tag (p));
     }
     to = p;
 
-    while (!GET_MARK_BIT (ST_OOP (p)))
-	p += st_object_size (ST_OOP (p));
+    while (!get_mark_bit (om, tag (p)) && p < space->water_level)
+	p += st_object_size (tag (p));
     from = p;
 
     st_assert (to < from);
@@ -388,24 +407,25 @@ compact (st_object_memory *om)
     while (from < space->water_level) {
 	st_assert (st_object_is_mark (*from));
 
-	if (GET_MARK_BIT (ST_OOP (from))) {
+	if (get_mark_bit (om, tag (from))) {
 
-	    SET_ALLOC_BIT (ST_OOP (to));
-	    size = st_object_size (ST_OOP (from));
+	    set_alloc_bit (om, tag (to));
+	    size = st_object_size (tag (from));
 	    st_oops_move (to, from, size);
 	    
-	    if (block < (long) ((from - om->heap_start) / BLOCK_SIZE_OOPS)) {
-		block = (from - om->heap_start) / BLOCK_SIZE_OOPS;
+	    if (block < (long) get_block_index (om, tag (from))) {
+		block = get_block_index (om, tag (from));
 		om->offsets[block] = to;
 	    }
-
 	    to += size;
 	    from += size;
 	} else {
-	    from += st_object_size (ST_OOP (from));
-	    objects_freed++;
+	    from += st_object_size (tag (from));
 	}
     }
+
+    om->bytes_collected = (space->water_level - to) * sizeof (st_oop);
+    om->bytes_allocated -= om->bytes_collected;
 
     space->water_level = to;
 }
@@ -440,10 +460,10 @@ mark (st_object_memory *om)
 	if (!st_object_is_heap (object)) 
 	    continue;
 
-	if (GET_MARK_BIT (object))
+	if (get_mark_bit (om, object))
 	    continue;
 
-	SET_MARK_BIT (object);
+	set_mark_bit (om, object);
 
 	om->ms.stack[om->ms.sp++] = st_heap_object_class (object);	
 	st_object_contents (object, &contents);
@@ -455,7 +475,7 @@ mark (st_object_memory *om)
 }
 
 static void
-remap_processor_state (st_object_memory *om, st_processor *processor)
+synchronize_processor (st_object_memory *om, st_processor *processor)
 {
     st_oop context;
     st_oop home;
@@ -483,33 +503,39 @@ remap_processor_state (st_object_memory *om, st_processor *processor)
 
     processor->context  = context;
     processor->bytecode = st_method_bytecode_bytes (processor->method);
-     
 }
 
 static void
 garbage_collect (st_object_memory *om)
 {
-    struct timeval before, after;
-    double elapsed;
+    struct timespec start, end, interval;
     st_oop context;
-
-    gettimeofday (&before, NULL);
-
+    
     initialize_metadata (om);
     context = proc->context;
     
     st_object_memory_add_root (om, context);
+
+    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &start);
+
     mark (om);
     compact (om);
     remap (om);
-    remap_processor_state (om, proc);
+    synchronize_processor (om, proc);
+
+    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &end);
+    st_timespec_difference (&start, &end, &interval);
+    st_timespec_add (&om->tot_pause_time, &interval ,&om->tot_pause_time);
+
+    if (st_verbose_mode ()) {
+	fprintf (stderr, "** gc: %uK->%uK (%uK), %.6fs\n",
+		 (om->bytes_collected + om->bytes_allocated) / 1024,
+		 om->bytes_allocated / 1024,
+		 om->bytes_collected / 1024,
+		 st_timespec_to_double_seconds (&interval));
+    }
+    
     st_object_memory_remove_root (om, context);
-
-    //  print_backtrace (proc);
-
-    gettimeofday (&after, NULL);
-    elapsed = after.tv_sec - before.tv_sec + (after.tv_usec - before.tv_usec) / 1.e6;
-    printf ("time %.9f seconds;\n", elapsed);
 }
 
 

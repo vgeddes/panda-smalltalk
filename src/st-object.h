@@ -31,78 +31,78 @@
 #include <st-behavior.h>
 #include <st-universe.h>
 
-INLINE int    st_object_tag               (st_oop object);
-INLINE bool   st_object_is_heap           (st_oop object);
-INLINE bool   st_object_is_smi            (st_oop object);
+static inline int    st_object_tag               (st_oop object);
+static inline bool   st_object_is_heap           (st_oop object);
+static inline bool   st_object_is_smi            (st_oop object);
 
-INLINE st_oop st_object_class             (st_oop object);
+static inline st_oop st_object_class             (st_oop object);
 bool          st_object_equal             (st_oop object, st_oop other);
 st_uint       st_object_hash              (st_oop object);
 
 char         *st_object_printString       (st_oop object);
 
 
-INLINE st_oop
+static inline st_oop
 st_object_new (st_space *space, st_oop class)
 {  
     return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (space, class);
 }
 
-INLINE st_oop
+static inline st_oop
 st_object_new_arrayed (st_space *space, st_oop class, st_smi size)
 {
     return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (space, class, size);
 }
 
-INLINE st_uint
+static inline st_uint
 st_object_size (st_oop object)
 {
     return st_heap_object_descriptor_for_object (object)->size (object);
 }
 
-INLINE st_uint
+static inline st_uint
 st_object_copy (st_oop object)
 {
     return st_heap_object_descriptor_for_object (object)->copy (object);
 }
 
-INLINE void
+static inline void
 st_object_contents (st_oop object, struct contents *contents)
 {
     st_heap_object_descriptor_for_object (object)->contents (object, contents);
 }
 
-INLINE int
+static inline int
 st_object_tag (st_oop object)
 {
     return object & st_tag_mask;
 }
 
-INLINE bool
+static inline bool
 st_object_is_heap (st_oop object)
 {
     return st_object_tag (object) == ST_POINTER_TAG;
 }
 
-INLINE bool
+static inline bool
 st_object_is_smi (st_oop object)
 {
     return st_object_tag (object) == ST_SMI_TAG;
 }
 
-INLINE bool
+static inline bool
 st_object_is_character (st_oop object)
 {
     return st_object_tag (object) == ST_CHARACTER_TAG;
 }
 
-INLINE bool
+static inline bool
 st_object_is_mark (st_oop object)
 {
     return st_object_tag (object) == ST_MARK_TAG;
 }
 
-INLINE st_oop
+static inline st_oop
 st_object_class (st_oop object)
 {
     if (ST_UNLIKELY (st_object_is_smi (object)))
@@ -114,31 +114,31 @@ st_object_class (st_oop object)
     return st_heap_object_class (object);
 }
 
-INLINE bool
+static inline bool
 st_object_is_symbol (st_oop object)
 {
     return st_object_class (object) == st_symbol_class;
 }
 
-INLINE bool
+static inline bool
 st_object_is_string (st_oop object)
 {
     return st_object_class (object) == st_string_class;
 }
 
-INLINE bool
+static inline bool
 st_object_is_array (st_oop object)
 {
     return st_object_class (object) == st_array_class;
 }
 
-INLINE bool
+static inline bool
 st_object_is_byte_array (st_oop object)
 {
     return st_object_class (object) == st_byte_array_class;
 }
 
-INLINE bool
+static inline bool
 st_object_is_float (st_oop object)
 {
     return st_object_class (object) == st_float_class;

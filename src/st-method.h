@@ -121,31 +121,31 @@ typedef enum
 
 enum
 {
-    st_flag_bits         = 3,
-    st_arg_bits          = 5,
-    st_temp_bits         = 6,
-    st_stack_bits        = 8,
-    st_instvar_bits      = 16,  
-    st_literal_bits      = 4,
-    st_primitive_bits    = 8,
-
-    st_primitive_shift   = ST_TAG_SIZE,
-    st_instvar_shift     = ST_TAG_SIZE,
-    st_literal_shift     = ST_TAG_SIZE,
-    st_stack_shift       = st_primitive_bits + st_primitive_shift,
-    st_temp_shift        = st_stack_bits + st_stack_shift,
-    st_arg_shift         = st_temp_bits + st_temp_shift,
-    st_flag_shift        = st_arg_bits + st_arg_shift,
-
+    st_flag_bits        = 3,
+    st_arg_bits         = 5,
+    st_temp_bits        = 6,
+    st_stack_bits       = 8,
+    st_instvar_bits     = 16,  
+    st_literal_bits     = 4,
+    st_primitive_bits   = 8,
+    
+    st_primitive_shift  = ST_TAG_SIZE,
+    st_instvar_shift    = ST_TAG_SIZE,
+    st_literal_shift    = ST_TAG_SIZE,
+    st_stack_shift      = st_primitive_bits + st_primitive_shift,
+    st_temp_shift       = st_stack_bits + st_stack_shift,
+    st_arg_shift        = st_temp_bits + st_temp_shift,
+    st_flag_shift       = st_arg_bits + st_arg_shift,
+    
     st_primitive_mask           = ST_NTH_MASK (st_primitive_bits),
     st_primitive_mask_aligned   = st_primitive_mask << st_primitive_shift,
-
+    
     st_stack_mask               = ST_NTH_MASK (st_stack_bits),
     st_stack_mask_aligned       = st_stack_mask << st_stack_shift,
     
     st_instvar_mask             = ST_NTH_MASK (st_instvar_bits),
     st_instvar_mask_aligned     = st_instvar_mask << st_instvar_shift,
-
+    
     st_literal_mask             = ST_NTH_MASK (st_literal_bits),
     st_literal_mask_aligned     = st_literal_mask << st_literal_shift,
     
@@ -160,80 +160,80 @@ enum
 };
 
 
-INLINE int
+static inline int
 st_method_get_temp_count (st_oop method)
 {
     return GET_BITFIELD (ST_METHOD (method)->header, temp);
 }
 
-INLINE int
+static inline int
 st_method_get_arg_count (st_oop method)
 {
     return GET_BITFIELD (ST_METHOD (method)->header, arg);
 }
 
-INLINE int
+static inline int
 st_method_get_stack_depth (st_oop method)
 {
     return GET_BITFIELD (ST_METHOD (method)->header, stack);
 }
 
-INLINE int
+static inline int
 st_method_get_primitive_index (st_oop method)
 {
     return GET_BITFIELD (ST_METHOD (method)->header, primitive);
 }
 
-INLINE st_method_flags
+static inline st_method_flags
 st_method_get_flags (st_oop method)
 {   
     return GET_BITFIELD (ST_METHOD (method)->header, flag);
 }
 
-INLINE void
+static inline void
 st_method_set_flags (st_oop method, st_method_flags flags)
 {
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, flag, flags);
 }
 
-INLINE void
+static inline void
 st_method_set_arg_count (st_oop method, int count)
 {	
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, arg, count);
 }
 
-INLINE void
+static inline void
 st_method_set_temp_count (st_oop method, int count)
 {
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, temp, count);
 }
 
-INLINE void
+static inline void
 st_method_set_stack_depth (st_oop method, int depth)
 {
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, stack, depth);
 }
 
-INLINE void
+static inline void
 st_method_set_primitive_index (st_oop method, int index)
 {
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, primitive, index);
 }
 
-INLINE void
+static inline void
 st_method_set_instvar_index (st_oop method, int index)
 {
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, instvar, index);
 }
 
-INLINE void
+static inline void
 st_method_set_literal_type (st_oop method, st_method_literal_type literal_type)
 {
     ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, literal, literal_type);
 }
 
 
-INLINE st_uchar *
+static inline st_uchar *
 st_method_bytecode_bytes (st_oop method)
 {
     return st_byte_array_bytes (ST_METHOD (method)->bytecode);    

@@ -9,6 +9,7 @@
 #include <st-universe.h>
 #include <st-object.h>
 #include <st-float.h>
+#include <optparse.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,6 +17,20 @@
 #include <sys/time.h>
 
 #define BUF_SIZE 2000
+
+static const char license[] =
+PACKAGE_STRING"\n"
+"Copyright (C) 2007-2008 Vincent Geddes";
+
+static bool verbose = false;
+
+struct opt_spec options[] = {
+    {opt_help, "h", "--help", NULL, "Show help information", NULL},
+    {opt_version, "V", "--version", NULL, "Show version information" , (char *) license},
+    {opt_store_1, "v", "--verbose", NULL, "Show verbose messages" , &verbose},
+    {NULL}
+};
+
 
 static void
 compile_input (void)
@@ -47,14 +62,16 @@ get_elapsed_time (struct timeval before, struct timeval after)
     return after.tv_sec - before.tv_sec + (after.tv_usec - before.tv_usec) / 1.e6;
 }
 
-#define ST_ROUND_UP_OOPS(m) (ST_BYTES_TO_OOPS ((m) + (ST_OOPS_TO_BYTES(1) - 1)))
-
 int
 main (int argc, char *argv[])
 {
     st_processor processor;
-    struct timeval before, after;
     st_oop value;
+
+    opt_basename(argv[0], '/');
+    opt_parse ("usage: %s [options]", options, argv);
+    
+    st_set_verbosity (verbose);
 
     st_bootstrap_universe ();
     compile_input ();
@@ -63,17 +80,14 @@ main (int argc, char *argv[])
 
     proc = &processor;
 
-    gettimeofday (&before, NULL);
     st_processor_main (&processor);
-    gettimeofday (&after, NULL);
     
     /* inspect the returned value on top of the stack */
     value = ST_STACK_PEEK ((&processor));
 
-    printf ("\n");
-    printf ("result: %s\n", st_object_printString (value));
-    printf ("time:   %.3fs\n", get_elapsed_time (before, after));
-    
+    fprintf (stdout, "\n");
+    fprintf (stdout, "result: %s\n", st_object_printString (value));
+
     return 0;
 }
 

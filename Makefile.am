@@ -20,6 +20,7 @@ include Makefile-libtommath.am
 include Makefile-libpanda.am
 include Makefile-libgdtoa.am
 include Makefile-libmpa.am
+include Makefile-optparse.am
 include Makefile-tests.am
 
 dist-hook:

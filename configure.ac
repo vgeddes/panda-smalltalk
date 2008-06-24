@@ -1,6 +1,12 @@
 
 AC_PREREQ([2.52])
-AC_INIT([Panda], [0.1],
+
+m4_define(panda_major_version, 0)
+m4_define(panda_minor_version, 0)
+m4_define(panda_micro_version, 54)
+m4_define(panda_version, panda_major_version.panda_minor_version.panda_micro_version)
+
+AC_INIT([Panda], [panda_version],
 	[https://bugs.launchpad.net/panda-smalltalk/+filebug],
 	[panda])
 
@@ -44,6 +50,13 @@ if test "x$GCC" = "xyes"; then
 fi
 AC_SUBST(TOMMATH_CFLAGS)
 AC_SUBST(GDTOA_CFLAGS)
+
+AC_DEFINE(PANDA_MAJOR_VERSION, panda_major_version, [Panda major version])
+AC_SUBST(PANDA_MAJOR_VERSION, panda_major_version)
+AC_DEFINE(PANDA_MINOR_VERSION, panda_minor_version, [Panda minor version])
+AC_SUBST(PANDA_MINOR_VERSION, panda_minor_version)
+AC_DEFINE(PANDA_MICRO_VERSION, panda_micro_version, [Panda micro version])
+AC_SUBST(PANDA_MICRO_VERSION, panda_micro_version)
 
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CFLAGS])

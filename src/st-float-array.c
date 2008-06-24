@@ -30,10 +30,14 @@ allocate_arrayed (st_space *space, st_oop class, st_smi size)
 {
     st_oop  object;
     double *elements;
+    st_smi  size_oops;
 
     st_assert (size >= 0);
+    
+    /* get actual size in oops (dependent on whether system is 64bit or 32bit) */ 
+    size_oops = size * (sizeof (double) / sizeof (st_oop));
 
-    object = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_float_array) + size);
+    object = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_float_array) + size_oops);
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
     elements = ST_FLOAT_ARRAY (object)->elements;
@@ -63,7 +67,8 @@ float_array_copy (st_oop object)
 static st_uint
 float_array_size (st_oop object)
 {
-    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + st_smi_value (st_arrayed_object_size (object));
+    return (sizeof (struct st_arrayed_object) / sizeof (st_oop))
+	+ (st_smi_value (st_arrayed_object_size (object)) * (sizeof (double) / sizeof (st_oop)));
 }
 
 static void

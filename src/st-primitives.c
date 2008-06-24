@@ -46,13 +46,13 @@
     processor->success = false
 
 
-INLINE void
+static inline void
 set_success (st_processor *processor, bool success)
 {
     processor->success = processor->success && success;
 }
 
-INLINE st_smi
+static inline st_smi
 pop_integer (st_processor *processor)
 {
     st_oop object = ST_STACK_POP (processor);
@@ -64,7 +64,7 @@ pop_integer (st_processor *processor)
     return 0;
 }
 
-INLINE st_smi
+static inline st_smi
 pop_integer32 (st_processor *processor)
 {
     st_oop object = ST_STACK_POP (processor);
@@ -404,7 +404,7 @@ OP_PROLOGUE                          \
     result = op (VALUE (a), &value);
 
 
-INLINE st_oop
+static inline st_oop
 pop_large_integer (st_processor *processor)
 {
     st_oop object = ST_STACK_POP (processor);
@@ -843,7 +843,7 @@ LargeInteger_hash (st_processor *processor)
 }
 
 
-INLINE st_oop
+static inline st_oop
 pop_float (st_processor *processor)
 {
     st_oop object = ST_STACK_POP (processor);
@@ -1815,7 +1815,7 @@ FloatArray_at_put (st_processor *processor)
     ST_STACK_PUSH (processor, flt);
 }
 
-INLINE void
+static inline void
 activate_block_context (st_processor *processor)
 {
     st_oop  block;

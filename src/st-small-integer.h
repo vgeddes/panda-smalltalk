@@ -28,46 +28,37 @@
 #include <st-types.h>
 #include <st-descriptor.h>
 
-INLINE st_oop st_smi_new (st_smi num);
-INLINE st_smi st_smi_value (st_oop smi);
-INLINE st_oop st_smi_increment (st_oop smi);
-INLINE st_oop st_smi_decrement (st_oop smi);
-INLINE bool st_smi_equal (st_oop m, st_oop n);
-INLINE st_smi st_smi_hash (st_oop smi);
-
-/* inline definitions */
-
-INLINE st_oop
+static inline st_oop
 st_smi_new (st_smi num)
 {
     return ((st_oop) num) << ST_TAG_SIZE;
 }
 
-INLINE st_smi
+static inline st_smi
 st_smi_value (st_oop smi)
 {
     return ((st_smi) smi) >> ST_TAG_SIZE;
 }
 
-INLINE st_oop
+static inline st_oop
 st_smi_increment (st_oop smi)
 {
     return st_smi_new (st_smi_value (smi) + 1);
 }
 
-INLINE st_oop
+static inline st_oop
 st_smi_decrement (st_oop smi)
 {
     return st_smi_new (st_smi_value (smi) - 1);
 }
 
-INLINE bool
+static inline bool
 st_smi_equal (st_oop m, st_oop n)
 {
     return m == n;
 }
 
-INLINE st_smi
+static inline st_smi
 st_smi_hash (st_oop smi)
 {
     return st_smi_value (smi);
