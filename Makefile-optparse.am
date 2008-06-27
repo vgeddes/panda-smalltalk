@@ -1,0 +1,12 @@
+
+
+noinst_LTLIBRARIES += liboptparse.la
+
+liboptparse_la_SOURCES  = libs/optparse/optparse.c libs/optparse/optparse.h
+liboptparse_la_CPPFLAGS = -I$(top_srcdir)/libs/optparse
+liboptparse_la_CFLAGS   = $(WARN_CFLAGS)
+
+EXTRA_DIST += $(top_srcdir)/libs/optparse/fudd.c \
+	$(top_srcdir)/libs/optparse/notpython.c  \
+	$(top_srcdir)/libs/optparse/optparse.tex \
+	$(top_srcdir)/libs/optparse/Makefile.bak

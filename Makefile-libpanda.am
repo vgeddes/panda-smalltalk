@@ -10,12 +10,6 @@ libpanda_la_SOURCES = \
 	src/st-hashed-collection.c \
 	src/st-array.h \
 	src/st-array.c \
-	src/st-byte-array.h \
-	src/st-byte-array.c \
-	src/st-word-array.h \
-	src/st-word-array.c \
-	src/st-float-array.h \
-	src/st-float-array.c \
 	src/st-character.h \
 	src/st-small-integer.h \
 	src/st-large-integer.h \

@@ -32,7 +32,7 @@
 #include "st-context.h"
 #include "st-method.h"
 #include "st-association.h"
-#include "st-byte-array.h"
+#include "st-array.h"
 #include "st-system.h"
 
 #include <unistd.h>
@@ -248,13 +248,13 @@ bit_index (st_memory *memory, st_oop object)
 }
 
 static inline bool
-get_mark_bit (st_memory *memory, st_oop object)
+ismarked (st_memory *memory, st_oop object)
 {
     return get_bit (memory->mark_bits,  bit_index (memory, object));
 }
 
 static inline void
-set_mark_bit (st_memory *memory, st_oop object)
+set_marked (st_memory *memory, st_oop object)
 {
     set_bit (memory->mark_bits,  bit_index (memory, object));
 }
@@ -268,13 +268,7 @@ get_alloc_bit (st_memory *memory, st_oop object)
 static inline void
 set_alloc_bit (st_memory *memory, st_oop object)
 {
-    set_bit (memory->alloc_bits,  bit_index (memory, object));
-}
-
-static inline void
-clear_offsets (st_oop **offsets, st_ulong size)
-{
-    memset (offsets, 0, sizeof (st_oop *) * size);
+    set_bit (memory->alloc_bits, bit_index (memory, object));
 }
 
 static inline st_ulong
@@ -382,7 +376,7 @@ compact (st_memory *memory)
 
     p = space->bottom;
     
-    while (get_mark_bit (memory, tag (p))) {
+    while (ismarked (memory, tag (p))) {
 	set_alloc_bit (memory, tag (p));
 	if (block <  (long) get_block_index (memory, tag (p))) {
 	    block = get_block_index (memory, tag (p));
@@ -392,7 +386,7 @@ compact (st_memory *memory)
     }
     to = p;
 
-    while (!get_mark_bit (memory, tag (p)) && p < space->water_level) {
+    while (!ismarked (memory, tag (p)) && p < space->water_level) {
 	st_assert (st_object_is_mark (*p));
 	p += st_object_size (tag (p));
     }
@@ -407,7 +401,7 @@ compact (st_memory *memory)
 
     while (from < space->water_level) {
 
-	if (get_mark_bit (memory, tag (from))) {
+	if (ismarked (memory, tag (from))) {
 
 	    set_alloc_bit (memory, tag (to));
 	    size = st_object_size (tag (from));
@@ -464,10 +458,10 @@ mark (st_memory *memory)
 	if (!st_object_is_heap (object)) 
 	    continue;
 
-	if (get_mark_bit (memory, object))
+	if (ismarked (memory, object))
 	    continue;
 
-	set_mark_bit (memory, object);
+	set_marked (memory, object);
 
 	stack[sp++] = ST_HEADER (object)->class;	
 	st_object_contents (object, &contents);

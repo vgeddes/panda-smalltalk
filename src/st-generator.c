@@ -30,7 +30,7 @@
 #include "st-hashed-collection.h"
 #include "st-method.h"
 #include "st-array.h"
-#include "st-byte-array.h"
+#include "st-array.h"
 #include "st-universe.h"
 #include "st-behavior.h"
 #include "st-character.h"

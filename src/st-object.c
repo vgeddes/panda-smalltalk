@@ -29,7 +29,7 @@
 #include "st-association.h"
 #include "st-float.h"
 #include "st-array.h"
-#include "st-byte-array.h"
+#include "st-array.h"
 #include "st-symbol.h"
 #include "st-object.h"
 #include "st-character.h"

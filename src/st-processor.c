@@ -9,7 +9,6 @@
 #include "st-context.h"
 #include "st-primitives.h"
 #include "st-method.h"
-#include "st-byte-array.h"
 #include "st-array.h"
 #include "st-association.h"
 

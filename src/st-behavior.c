@@ -29,7 +29,7 @@
 #include "st-symbol.h"
 #include "st-object.h"
 #include "st-array.h"
-#include "st-byte-array.h"
+#include "st-array.h"
 #include "st-descriptor.h"
 
 

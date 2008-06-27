@@ -1,0 +1,834 @@
+\documentclass{article}
+\pagestyle{plain}
+\addtolength{\textwidth}{20pt}
+
+\newenvironment{chunk}[1]
+{\par\smallskip\noindent\textbf{#1.}\par\nopagebreak}
+{\par\smallskip}
+\newcounter{exnum}
+\newenvironment{example}[1]
+{\par\smallskip\noindent\refstepcounter{exnum}\textbf{Example
+    \theexnum.} The program #1.\par\nopagebreak}
+{\par\smallskip}
+\renewcommand{\tt}{\texttt}
+\newcommand{\synopsis}{\par\noindent\textbf{Synopsis.}}
+\newcommand{\synocont}{\\\phantom{\textbf{Synopsis.}}}
+\newcommand{\descr}{\par\noindent\textbf{Description.}\ }
+\newcommand{\return}{\par\noindent\textbf{Returns:}\ }
+\newcommand{\bsl}{\symbol{92}}
+\begin{document}
+\title{The \tt{optparse.c} module}
+\author{R.A. Litherland}
+\date{}
+\maketitle
+
+\section{Introduction}
+This module, consisting of the files \tt{optparse.c} and
+\tt{optparse.h},  provides functions to parse the optional
+arguments to a program, and to print a help message listing all
+options. It was inspired the Python module optparse, which is
+referred to below as \tt{optparse.py}, and attempts to make it easy to
+get most of the functionality provided by \tt{optparse.py} in a C
+program. Options can have one 
+or more short forms such as \tt{-h}, a long form such as
+\tt{--help}, or both, but only one long form is allowed. Short
+forms can be combined in a single argument, and long
+forms can be abbreviated if the result is unambiguous (and at least
+two characters long). An option may
+require futher information (e.g., a filename), which I call the
+\emph{value} of the option. (Options requiring more than one value can
+be implemented using the function \tt{opt\_remainder}; outside the
+description of that function, this possibility is ignored.) 
+When an option given in short form needs a value, the
+value is the rest of the option argument if that has at least one
+character, and the next argument if not. The value of an option given
+in long form can be given in the same argument, as in
+\tt{--file=foo.txt}, or as the next argument. 
+\begin{chunk}{Terminology}
+  The words ``argument'', ``help'' and ``usage'' will, I'm afraid, be
+  somewhat over-used. An \emph{argument} is either what you pass to a
+  C function, or one of a list of strings you pass to the
+  \tt{opt\_parse} function. The list is typically the \tt{argv} of
+  your \tt{main} function, so I will sometimes refer to these
+  strings as \emph{program arguments}. However, as mentioned above, I
+  refer to the `value' rather than the `argument' of an
+  option. Program arguments are divided into three classes:
+  \emph{option arguments}, which specify one or more options;
+  \emph{value arguments}, which supply the values of options, and
+  \emph{positional arguments}, which are all the rest.
+
+  The \emph{program help message} is everything that gets printed when
+  the user gives the help option to your program. Figure
+  \ref{fig:fudd-help} shows an example, taken from the documentation
+  of \tt{optparse.py} (see pp. 279--280 of the Python Library Reference).
+  \begin{figure}\small
+\begin{verbatim}
+leibniz:~/optparse> ./fudd -h
+usage: fudd [options] arg1 arg2
+options:
+  -h, --help           print this help message and exit
+  -v, --verbose        make lots of noise [default]
+  -q, --quiet          be vewwy quiet (I'm hunting wabbits)
+  -fFILE, --file=FILE  write output to FILE
+  -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+                       [default], 'expert'
+  Dangerous Options:
+    Caution: use of these options is at your own risk.  It is believed that
+    some of them bite.
+    -g                 Group option.
+\end{verbatim}
+    \caption{A program help message.}\label{fig:fudd-help}
+  \end{figure}
+The first line, \\
+\verb+usage: fudd [options] arg1 arg2+\\
+is the \emph{program usage string}. An item like \\
+\verb+  -h, --help           print this help message and exit+\\
+is an \emph{option usage string}, which is made up of the \emph{option
+  names} (\tt{-h, --help}) and the \emph{help text}. Everything else
+is \emph{filler}.
+
+  Finally, by an \emph{empty string} I mean a value \tt{s} of type
+  \tt{char*} satisfying \tt{!s || !*s}. 
+\end{chunk}
+
+In the following sections, I describe all functions, types and macros
+declared in \tt{optparse.h}; their names all begin with \tt{opt\_} or
+\tt{OPT\_}. 
+ 
+\section{Specifying options}
+\begin{chunk}{The type struct opt\_spec}
+  \synopsis \verb+ struct opt_spec {+
+  \synocont \verb+     int (*action)(char *, void *);+
+  \synocont \verb+     const char *sf, *lf, *metavar, *help;+
+  \synocont \verb+     void *data;+
+  \synocont \verb+ };+
+  \descr This struct is used to specify
+  options to the \tt{opt\_parse} function. Suppose that \tt{o} has
+  type \tt{struct opt\_spec}. A null pointer in \tt{o.action} marks
+  the end of an array, and the special value \tt{opt\_text} signals
+  that this item does not specify an option, but just provides text to
+  be included in the program help message; this case is described
+  later. Otherwise, \tt{o.action} is called when the option specified
+  is encountered, with its second argument set to \tt{o.data}. For an
+  action you define, \tt{o.data} can be anything you
+  like\footnote{Probably \tt{NULL}.}. Several pre-defined functions
+  that can be used as the \tt{o.action} field are described in
+  \S\ref{sect:predef}, and what they expect as their second argument
+  is specified there. For an option not taking a value, the first
+  argument will be \tt{NULL}; for one taking a value, it will point to
+  the value. Note that storing this pointer for later use is
+  problematical; see the description of \tt{opt\_store\_str} in
+  \S\ref{sect:predef}. A non-zero return value terminates option
+  processing, causing all later arguments to be positional (except
+  possibly the following argument, if it is the value of the current
+  one).
+
+
+  The characters of \tt{o.sf} are the short-form letters, and
+  \tt{o.lf} is the long form; obviously, these should not both be
+  empty. Unlike \tt{optparse.py}, \tt{optparse.c} does not require
+  that the long form 
+  begin with two hyphens (or even one). After all, I compiled the
+  example programs of \S\ref{sect:examples} using \tt{gcc -ansi
+    -pedantic}. Note, however, that if a user misspells a long form
+  starting with a single hyphen, a confusing error message will
+  probably result since the argument will end up being parsed as a
+  string of short-form options. For an option not taking a value,
+  \tt{o.metavar} should be empty; for one taking a value, it should be
+  non-empty, and is used in forming the usage string for the
+  option. For instance, if \tt{o.sf} is \tt{"f"}, \tt{o.lf} is
+  \tt{"--file"} and \tt{o.metavar} is \tt{"FILE"}, the option names will
+  be \tt{-fFILE, --file=FILE}. The field \tt{o.help} is the help
+  text. If it is null, the option does not appear in the program help
+  message; if it is \tt{""} the option appears with empty help text.
+  Any initial spaces are not printed with the help text, but at the
+  start of the usage string, increasing its indentation. 
+
+  To include text in the program help message that is not associated with an
+  option, set \tt{o.action} to \tt{opt\_text}. Then \tt{o.sf} should
+  be empty, and \tt{o.data} has a special meaning: a non-null value
+  specifies that, for the purposes of computing the starting position
+  for option help text, the option list should be split into two just
+  before this item. (See Example \ref{ex:notpython} in
+  \S\ref{sect:examples}.) If \tt{o.lf} is empty, \tt{o.help} is filler;
+  it is printed with indentation determined by any leading spaces. A
+  non-empty value of \tt{o.lf} is used to produce a usage string for a
+  positional argument, which is formatted exactly as for an option (so
+  \tt{o.metavar} should be empty).
+\end{chunk}
+\begin{chunk}{Macros}
+  The macros
+\begin{verbatim}
+        OPT_NO_ACTION    OPT_NO_SF     OPT_NO_LF
+        OPT_NO_METAVAR   OPT_NO_HELP   OPT_NO_DATA
+\end{verbatim}
+  all expand to \tt{(void *)0}. They may help you remember which
+  fields of an \tt{opt\_spec} struct are being initialised to a
+  null pointer when you read your code a week later. 
+\end{chunk}
+
+\section{Basic functions}
+\begin{chunk}{The function opt\_basename}
+  \synopsis\verb+ void opt_basename(char *filename, char separator);+
+  \descr Modify \tt{filename} in place to its base name, using
+  \tt{separator} as the path separator if it is non-zero, or
+  \tt{'/'} otherwise.
+\end{chunk}
+\begin{chunk}{The function opt\_config}
+  \synopsis\verb+ void opt_config(int width, int max_help_position,+
+  \synocont\verb+                 int indent, const char *separator);+
+  \descr Set parameters controlling the layout of the program help
+  message. These all have default values; to use the defaults, given
+  in brackets, pass a negative or zero value for \tt{width} [79] or
+  \tt{max\_help\_position} [24], negative for \tt{indent} [2], or an
+  empty string for \tt{separator} [\verb*+"  "+]. The argument
+  \tt{width} gives the width in characters to be used for the help
+  message, and \tt{indent} gives the indentation for the option usage
+  strings. Between the names of the option and its help text,
+  \tt{separator} is printed, padded on the left with spaces, if
+  necessary, so that all help text starts in the same column. If
+  starting the help text on the same line as the option names would
+  cause the help text to start to the right of
+  \tt{max\_help\_position}, the line is broken before the separator. 
+\end{chunk}
+\begin{chunk}{The function opt\_options1st}
+  \synopsis\verb+ void opt_options1st(void);+
+  \descr By default, options and positional arguments may appear in
+  any order. If you call \tt{opt\_options1st} before \tt{opt\_parse},
+  the options must appear first; any argument after the first
+  positional argument is treated as positional.\footnote{Greg Ward,
+    the author of \tt{optparse.py}, believes that this behaviour is
+    generally annoying to users. It is, however, used by Python, and
+    seems quite natural for such a program.}
+\end{chunk}
+\begin{chunk}{The function opt\_parse}
+  \synopsis\verb+ int opt_parse(const char *usage, +
+  \synocont\verb+               struct opt_spec *opts,+
+  \synocont\verb+               char **argv);+
+  \descr Parse the list of program arguments \tt{argv}. 
+  The first program argument, \tt{argv[0]}, is treated as the program
+  name, and the 
+  arguments to be parsed are the remaining strings, terminated by a null
+  pointer. (In help and error messages, \tt{argv[0]} is used as
+  is, so you may wish to call \tt{opt\_basename} on it first.) The
+  argument \tt{opts} should be an array of 
+  structs specifying the options to be recognized, terminated by one
+  with a null pointer as its \tt{action} field. The argument
+  \tt{usage} specifies the program usage string. It is
+  used as the format string for a call to \tt{fprintf}, with
+  \tt{argv[0]} as the single following argument. If it is empty,
+  the default \verb+"usage: %s [options]"+ is used, which is fine
+  for a program taking no positional arguments. By default, the next
+  line of the help message is \tt{options:}, but if the first
+  element of \tt{opts} has \tt{opts[0].action} equal to \tt{opt\_text}
+  and \tt{opts[0].lf} empty, this is suppressed.
+
+  \noindent\textbf{Side effect.} Each non-positional argument has its first
+  character replaced by 0.\footnote{\label{fn:why0}Yes, yes, it would
+    be better if on exit the \tt{argv} array contained only positional
+    arguments, but the C standard does not guarantee that it is
+    possible to do this.} 
+
+  \noindent\textbf{Special program arguments.} The string \tt{"--"} is treated
+  as an option argument that terminates option parsing; all subsequent
+  arguments are positional. The string \tt{"-"} is a positional
+  argument;\footnote{It can reasonably be argued that this isn't
+    actually a special case, since it can't match any option.} note
+  that it doesn't terminate option parsing unless you've called
+  \tt{opt\_options1st}. 
+  
+  \return \tt{opt\_parse} returns the number of
+  positional arguments.
+\end{chunk}
+\begin{chunk}{The function opt\_remainder}
+  \synopsis\verb+ char ***opt_remainder(void);+
+  \descr This should only be used within the action function of an
+  option that takes (or can take) more than one value. The
+  corresponding \tt{metavar} field should be non-empty, so that
+  \tt{opt\_parse} treats it as taking one value. Suppose the return
+  value of \tt{opt\_remainder} has been assigned to a variable
+  \tt{p}. Then \tt{*p} is the part of the \tt{argv} array supplied to
+  \tt{opt\_parse} that has not yet been examined. The effect
+  of incrementing \tt{*p} $k$ times is to render $k$ arguments
+  invisible to \tt{opt\_parse}; note that your function is responsible
+  for zeroing out those arguments. Here is the skeleton of an action
+  function for an option requiring two values. 
+\begin{verbatim}
+int gobble(char *val, void *data)
+{
+    char ***p = opt_remainder();
+    if (!**p) opt_err("option %s requires two values");
+    /* Do something with the value strings val and **p. */
+    return **(*p)++ = 0;
+}
+\end{verbatim}
+  \return \tt{opt\_remainder} returns a pointer to the variable
+  used by \tt{opt\_parse} to step through the program arguments.
+\end{chunk}
+\section{Error-reporting functions}
+The following functions should only be called from within the action
+function of an option. The typical reason for doing so is that the
+user gave an incorrect value for the option (say $-5$ for an option
+expecting a positive integer), but one might also call them if the user
+selected an option incompatible with an earlier one. 
+
+\begin{chunk}{The function opt\_name}
+  \synopsis\verb+ const char *opt_name(void);+
+  \return \tt{opt\_name} returns the name of the option, in
+  the form used in the argument, e.g. \tt{"-f"} or \tt{"--file"}, for
+  use in error messages.
+\end{chunk}
+\begin{chunk}{The function opt\_err}
+  \synopsis\verb+ void opt_err(const char *msg);+
+  \descr Print an error message determined by \tt{msg} and exit. The
+  body of this function is:
+\begin{verbatim}
+    opt_err_pfx();
+    fprintf(stderr, msg, opt_name());
+    opt_err_sfx();
+\end{verbatim}
+  If you want a message depending on run-time information other than
+  \tt{opt\_name()}, you can replace the second line.
+\end{chunk}
+\begin{chunk} {The function opt\_err\_pfx}
+  \synopsis\verb+ void opt_err_pfx(void);+
+  \descr Print the prefix to an error message on \tt{stderr};
+  currently, this is the program name followed by \verb*+": "+. 
+\end{chunk}
+\begin{chunk} {The function opt\_err\_sfx}
+  \synopsis\verb+ void opt_err_sfx(void);+
+  \descr Print the suffix to an error message on \tt{stderr}
+  and exit. Currently, this prints \tt{"\bsl noption usage:\bsl n"}
+  followed by the usage string of the option in  question.
+\end{chunk}
+\section{Pre-defined actions}\label{sect:predef}
+These are primarily intended to be stored in the \tt{action} field
+of an \tt{opt\_spec} struct, but can also be called from within an
+action function you define. For each function, any constraints on its
+arguments are specified; after the declaration of the function in the
+synopsis there are up to two lines of code that could appear in the
+body of the function. One is an assertion that the first argument is
+null, or that it isn't null, which must be satisfied. The other
+assigns the second argument to a pointer to a specified type; the
+accesses through this pointer mentioned in the description must be
+valid. (Recall that when a function is stored as \tt{o.action}, it
+will be called with arguments depending on \tt{o.metavar} and
+\tt{o.data}.) 
+\begin{chunk}{The function opt\_text}
+  \synopsis\verb+ int opt_text(char *val, void *data);+
+  \descr This is a special case, whose only purpose is to be stored in
+  an \tt{action} field; it should never be called.
+\end{chunk}
+\begin{chunk}{The function opt\_help}
+  \synopsis\verb+ int opt_help(char *val, void *data);+
+  \synocont\verb+ assert(val == 0);+
+  \descr Print the program help message and exit. If this function is
+  stored as \tt{o.action} and \tt{o.help} is empty, \tt{opt\_parse}
+  will use the default help text
+
+  \tt{"print this help message and exit"}. 
+  \return \tt{opt\_help} never returns.
+\end{chunk}
+\begin{chunk}{The function opt\_version}
+  \synopsis\verb+ int opt_version(char *val, void *data);+
+  \synocont\verb+ const char *p = data;+
+  \synocont\verb+ assert(val == 0);+
+  \descr Print the version string \tt{p} and exit. If this function is
+  stored as \tt{o.action} and \tt{o.help} is empty, \tt{opt\_parse}
+  will use the default help text
+
+  \tt{"print the version number and exit"}. 
+  \return \tt{opt\_version} never returns.
+\end{chunk}
+\begin{chunk}{The function opt\_stop}
+  \synopsis\verb+ int opt_stop(char *val, void *data);+
+  \descr This is the only pre-defined action that returns a non-zero
+  value, halting option processing. Other than the return value, it
+  acts like \tt{opt\_store\_str} if \tt{val} is non-null, and like
+  \tt{opt\_store\_1} if \tt{val} is null and \tt{data} is not, and
+  the arguments must satisfy the constraints for the appropriate
+  function. If both arguments are null, \tt{opt\_stop} does nothing but
+  return a value.
+  \return \tt{opt\_stop} returns 1.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_0}
+  \synopsis\verb+ int opt_store_0(char *val, void *data);+
+  \synocont\verb+ int *p = data;+
+  \synocont\verb+ assert(val == 0);+
+  \descr Set \tt{*p} to 0.
+  \return \tt{opt\_store\_0} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_1}
+  \synopsis\verb+ int opt_store_1(char *val, void *data);+
+  \synocont\verb+ int *p = data;+
+  \synocont\verb+ assert(val == 0);+
+  \descr Set \tt{*p} to 1.
+  \return \tt{opt\_store\_1} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_incr}
+  \synopsis\verb+ int opt_incr(char *val, void *data);+
+  \synocont\verb+ int *p = data;+
+  \synocont\verb+ assert(val == 0);+
+  \descr Increment \tt{*p}.
+  \return \tt{opt\_incr} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_char}
+  \synopsis\verb+ int opt_store_char(char *val, void *data);+
+  \synocont\verb+ char *p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr If the string \tt{val} has length 1, set \tt{*p} to
+  \tt{*val}. Otherwise it is an error.
+  \return \tt{opt\_store\_char} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_int}
+  \synopsis\verb+ int opt_store_int(char *val, void *data);+
+  \synocont\verb+ int *p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr If the string \tt{val} is the decimal representation of an
+  integer, set \tt{*p} to that integer. Otherwise it is an error.
+  \return \tt{opt\_store\_int} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_int\_lim}
+  \synopsis\verb+ int opt_store_int_lim(char *val, void *data);+
+  \synocont\verb+ int *p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr The same as \tt{opt\_store\_int}, except that it is an error
+  if the integer is less than \tt{p[1]} or greater than \tt{p[2]}.
+  \return \tt{opt\_store\_int\_lim} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_double}
+  \synopsis\verb+ int opt_store_double(char *val, void *data);+
+  \synocont\verb+ double *p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr If the string \tt{val} represents a number, as specified
+  for the standard C library function \tt{strtod}, set \tt{*p} to that
+  number. Otherwise it is an error. 
+  \return \tt{opt\_store\_double} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_double\_lim}
+  \synopsis\verb+ int opt_store_double_lim(char *val, void *data);+
+  \synocont\verb+ double *p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr The same as \tt{opt\_store\_double}, except that it is an error
+  if the number is less than \tt{p[1]} or greater than \tt{p[2]}.
+  \return \tt{opt\_store\_double\_lim} returns 0.
+\end{chunk}
+\begin{chunk}{The type struct opt\_str and the function opt\_store\_str}
+  \synopsis\verb+ struct opt_str {char *s, s0;};+
+  \synocont\verb+ int opt_store_str(char *val, void *data);+
+  \synocont\verb+ struct opt_str *p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr Set \tt{p->s} to \tt{val} and \tt{p->s0} to
+  \tt{val[0]}. The reason for doing this is that, if \tt{val} was
+  a separate argument, after this function returns \tt{opt\_parse} will
+  set \tt{val[0]} to 0. (The reason for \emph{that} is explained in
+  footnote \ref{fn:why0} on page \pageref{fn:why0}.) The examples in
+  \S\ref{sect:examples} show how the calling program can cope sensibly
+  with this situation.
+  \return \tt{opt\_store\_str} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_choice}
+  \synopsis\verb+ int opt_store_choice(char *val, void *data);+
+  \synocont\verb+ const char **p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr Allows the user to choose one of the strings in the
+  null-terminated array \tt{p}. If the string \tt{val} compares
+  equal (using \tt{strcmp}) to \tt{p[i]} for some \tt{i}, \tt{p[0]}
+  and \tt{p[i]} are swapped. Otherwise it is an error, unless some
+  \tt{p[i]} is \tt{""}, in which case this is swapped with
+  \tt{p[0]}. (In other words, if some \tt{p[i]} is \tt{""}, invalid
+  choices are quietly ignored. Probably you'd write an action function
+  that calls \tt{opt\_store\_choice} and prints a warning if \tt{""}
+  has been ``chosen''.)
+  \return \tt{opt\_store\_choice} returns 0.
+\end{chunk}
+\begin{chunk}{The function opt\_store\_choice\_abbr}
+  \synopsis\verb+ int opt_store_choice_abbr(char *val, void *data);+
+  \synocont\verb+ const char **p = data;+
+  \synocont\verb+ assert(val != 0);+
+  \descr The same as \tt{opt\_store\_choice}, except that
+  unambiguous abbreviations are accepted, and an ambiguous
+  abbreviation is an unconditional error.
+  \return \tt{opt\_store\_choice\_abbr} returns 0.
+\end{chunk}
+
+\section{Examples}\label{sect:examples}
+The C optparse package contains two complete, if useless, programs, in
+the files \tt{fudd.c} and 
+\tt{notpython.c}. Each program calls \tt{opt\_parse}, and if this
+returns prints which options were used to what effect, and any
+positional arguments remaining. Below I comment on some aspects of
+these programs.
+\begin{example}{Fudd}\label{ex:fudd}
+  This is based on the example from the \tt{optparse.py} documentation
+  referred to earlier, and its help message is shown in Figure
+  \ref{fig:fudd-help}. Figures \ref{fig:fudd-top} and
+  \ref{fig:fudd-main} show the whole program, with the first part
+  setting up the options, and the second being the \tt{main}
+  function. 
+  \begin{figure}\small
+\begin{verbatim}
+#include <stdio.h>
+#include <stdlib.h>
+#include "optparse.h"
+
+int verbose = 1, group = 0;
+struct opt_str fn = {NULL, 0};
+const char *mode[] = {
+    "intermediate", "novice", "expert", NULL
+};
+
+struct opt_spec options[] = {
+    {opt_help, "h", "--help", OPT_NO_METAVAR, OPT_NO_HELP, OPT_NO_DATA},
+    {opt_store_1, "v", "--verbose", OPT_NO_METAVAR,
+     "make lots of noise [default]", &verbose},
+    {opt_store_0, "q", "--quiet", OPT_NO_METAVAR,
+     "be vewwy quiet (I'm hunting wabbits)", &verbose},
+    {opt_store_str, "f", "--file", "FILE", "write output to FILE", &fn},
+    {opt_store_choice, "m", "--mode", "MODE", "interaction mode: one of "
+     "'novice', 'intermediate' [default], 'expert'", mode},
+    {opt_text, OPT_NO_SF, OPT_NO_LF, OPT_NO_METAVAR,
+     "  Dangerous Options:", OPT_NO_DATA},
+    {opt_text, OPT_NO_SF, OPT_NO_LF, OPT_NO_METAVAR,
+     "    Caution: use of these options is at your own risk.  "
+     "It is believed that some of them bite.", OPT_NO_DATA},
+    {opt_store_1, "g", OPT_NO_LF, OPT_NO_METAVAR, "  Group option.", &group},
+    {OPT_NO_ACTION}
+};
+\end{verbatim}
+    \caption{Setting up the options for Fudd.}
+    \label{fig:fudd-top}
+  \end{figure}
+  \begin{figure}\small
+\begin{verbatim}
+int main(int argc, char **argv)
+{
+   int i;
+
+    opt_basename(argv[0], '/');
+    if (opt_parse("usage: %s [options] arg1 arg2", options, argv) != 2) {
+        fprintf(stderr, "%s: 2 arguments required\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    printf("noise level: %s\n", verbose ? "verbose" : "quiet");
+    if (fn.s) {
+        fn.s[0] = fn.s0;
+        printf("output file: %s\n", fn.s);
+    }
+    else
+        puts("output file: none");
+    printf("interaction mode: %s\n", mode[0]);
+    printf("group option: %d\n", group);
+    puts("positional arguments:");
+    for (i = 1; i < argc; ++i) {
+        if (*argv[i] && argv[i] != fn.s)
+            printf("  %s\n", argv[i]);
+    }
+    return 0;
+}
+\end{verbatim}
+    \caption{Fudd's \tt{main} function.}
+    \label{fig:fudd-main}
+  \end{figure}
+  Here are a few points to notice.
+  \begin{itemize}
+  \item I decided that the user can repeat an option, with all but the
+    last use being ignored, and can also use both the conflicting
+    options \tt{-v} and \tt{-q}, with the last-used winning. Given
+    this, we can use only pre-defined actions.
+  \item In \tt{options[0]}, we don't supply help text since the
+    default is what we want.
+  \item In the array \tt{options}, the strings in the \tt{help} fields
+    of the 6th, 7th and 8th members have leading spaces that produce
+    the same indentation in the help message as the use of an option
+    group in \tt{optparse.py}.
+  \item After calling \tt{opt\_parse}, we make sure the value of
+    \tt{-f}, if supplied, has its first character correct:
+{\small
+\begin{verbatim}
+    if (fn.s) {
+        fn.s[0] = fn.s0;
+        printf("output file: %s\n", fn.s);
+    }
+\end{verbatim}}
+    Then, in printing the positional arguments, we have to check that
+    a non-empty argument isn't the value of \tt{-f}:
+{\small
+\begin{verbatim}
+    for (i = 1; i < argc; ++i) {
+        if (*argv[i] && argv[i] != fn.s)
+            printf("  %s\n", argv[i]);
+    }
+\end{verbatim}}
+  \end{itemize}
+Here is the output when several options other than \tt{-h}
+are given.
+{\small
+\begin{verbatim}
+leibniz:~/optparse> ./fudd string1 -qg -f outfile --mode=expert string2
+noise level: quiet
+output file: outfile
+interaction mode: expert
+group option: 1
+positional arguments:
+  string1
+  string2
+\end{verbatim}}
+\noindent This shows an invalid value given to an option.
+{\small
+\begin{verbatim}
+leibniz:~/optparse> ./fudd --mo movice
+fudd: invalid choice 'movice' for option --mode
+option usage:
+  -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+                       [default], 'expert'
+\end{verbatim}}
+\end{example}
+\begin{example}{NotPython}\label{ex:notpython}
+  The object of the exercise here is to write a program that accepts
+  the same options, and produces the same help message, as Python. The
+  help message of NotPython is shown in Figure \ref{fig:notpy-help},
+  and you can check that it is the same as for Python 2.3.5 (except
+  for the program name in the first line, of course). 
+  \begin{figure}\small
+\begin{verbatim}
+julia:~/optparse> ./notpython -h
+usage: notpython [option] ... [-c cmd | file | -] [arg] ...
+Options and arguments (and corresponding environment variables):
+-c cmd : program passed in as string (terminates option list)
+-d     : debug output from parser (also PYTHONDEBUG=x)
+-E     : ignore environment variables (such as PYTHONPATH)
+-h     : print this help message and exit
+-i     : inspect interactively after running script, (also PYTHONINSPECT=x)
+         and force prompts, even if stdin does not appear to be a terminal
+-O     : optimize generated bytecode (a tad; also PYTHONOPTIMIZE=x)
+-OO    : remove doc-strings in addition to the -O optimizations
+-Q arg : division options: -Qold (default), -Qwarn, -Qwarnall, -Qnew
+-S     : don't imply 'import site' on initialization
+-t     : issue warnings about inconsistent tab usage (-tt: issue errors)
+-u     : unbuffered binary stdout and stderr (also PYTHONUNBUFFERED=x)
+         see man page for details on internal buffering relating to '-u'
+-v     : verbose (trace import statements) (also PYTHONVERBOSE=x)
+-V     : print the Python version number and exit
+-W arg : warning control (arg is action:message:category:module:lineno)
+-x     : skip first line of source, allowing use of non-Unix forms of #!cmd
+file   : program read from script file
+-      : program read from stdin (default; interactive mode if a tty)
+arg ...: arguments passed to program in sys.argv[1:]
+Other environment variables:
+PYTHONSTARTUP: file executed on interactive startup (no default)
+PYTHONPATH   : ':'-separated list of directories prefixed to the
+               default module search path.  The result is sys.path.
+PYTHONHOME   : alternate <prefix> directory (or <prefix>:<exec_prefix>).
+               The default module search path uses <prefix>/pythonX.X.
+PYTHONCASEOK : ignore case in 'import' statements (Windows).
+\end{verbatim}
+    \caption{The NotPython help message.}
+    \label{fig:notpy-help}
+  \end{figure}
+  Because of the large number of options, the code is too long to
+  reproduce here; see \tt{notpython.c}. We shall give those parts that
+  seem noteworthy. The formatting of the help message is different
+  from our default, and the options must come first (because Python
+  has to pass arguments to the script it interprets, and these may
+  look like Python options). Therefore just before the call to
+  \tt{opt\_parse} are the lines 
+{\small
+\begin{verbatim}
+    opt_config(0, 0, 0, ": ");
+    opt_options1st();
+\end{verbatim}}
+  \noindent The first two arguments to \tt{opt\_config} select the
+  default width and maximum help position, which are large enough not
+  to cause unwanted line breaks. The line breaks in the long help
+  strings don't correspond to word-wrapping at any width, so we put in
+  explicit newlines. Before \tt{main}, we define some variables used
+  by action functions, one action function \tt{storeW}, and a longish
+  array \tt{options} of \tt{opt\_spec} structs. The second line of the
+  help message differs from the default, so the first element of
+  \tt{options} is 
+{\small
+\begin{verbatim}
+    {opt_text, OPT_NO_SF, OPT_NO_LF, OPT_NO_METAVAR,
+     "Options and arguments (and corresponding environment variables):",
+     OPT_NO_DATA},
+\end{verbatim}}
+There are 14 options; \tt{-OO} is not a separate option, but
+represents giving the \tt{-O} option twice, so the corresponding
+element of \tt{options} pretends that \tt{-OO} is a positional
+variable: 
+{\small
+\begin{verbatim}
+    {opt_text, OPT_NO_SF, "-OO", OPT_NO_METAVAR,
+     "remove doc-strings in addition to the -O optimizations", OPT_NO_DATA},
+\end{verbatim}}
+  \noindent Setting up the \tt{-h} and \tt{-V} options is easy:
+{\small
+\begin{verbatim}
+    {opt_help, "h", OPT_NO_LF, OPT_NO_METAVAR, OPT_NO_HELP, OPT_NO_DATA},
+\end{verbatim}}
+{\small
+\begin{verbatim}
+    {opt_version, "V", OPT_NO_LF, OPT_NO_METAVAR,
+     "print the Python version number and exit", "This is not Python 2.3.5"},
+\end{verbatim}}
+  \noindent There are seven options that are simple switches (\tt{-d}, \tt{-E},
+  \tt{-i}, \tt{-S}, \tt{-u}, \tt{-v} and \tt{-x}), so we define an
+  array
+{\small
+\begin{verbatim}
+int flags[7];
+\end{verbatim}}
+  \noindent and each switch has an entry like
+{\small
+\begin{verbatim}
+    {opt_store_1, "E", OPT_NO_LF, OPT_NO_METAVAR,
+     "ignore environment variables (such as PYTHONPATH)", flags + 1},
+\end{verbatim}}
+  \noindent The \tt{-O} option has different effects depending on
+  whether it is given once or twice, so we define a counter variable 
+{\small
+\begin{verbatim}
+int opt_level;
+\end{verbatim}}
+  \noindent and an \tt{options} element
+{\small
+\begin{verbatim}
+    {opt_incr, "O", OPT_NO_LF, OPT_NO_METAVAR,
+     "optimize generated bytecode (a tad; also PYTHONOPTIMIZE=x)",
+     &opt_level},
+\end{verbatim}}
+  \noindent The variable \tt{opt\_level} will end up holding the
+  number of times \tt{-O} was given. This being a toy program, we just
+  print this number out; in real life, values greater than 2 could be
+  treated as an error, or as equivalent to 2. The \tt{-t} option is
+  handled exactly like \tt{-O}. The \tt{-Q} option has a value
+  which must be one of four strings. They must be entered exactly (I
+  checked), so we define an array giving the choices
+{\small
+\begin{verbatim}
+const char *divchoices[] = {"old", "warn", "warnall", "new", NULL};
+\end{verbatim}}
+  \noindent and an element of \tt{options}
+{\small
+\begin{verbatim}
+    {opt_store_choice, "Q", OPT_NO_LF, " arg",
+     "division options: -Qold (default), -Qwarn, -Qwarnall, -Qnew",
+     divchoices},
+\end{verbatim}}
+  \noindent The option \tt{-c} takes a string value and also
+  terminates the option list, which is handled by a variable
+{\small
+\begin{verbatim}
+struct opt_str scriptstr;
+\end{verbatim}}
+  \noindent and an item in \tt{options}
+{\small
+\begin{verbatim}
+    {opt_stop, "c", OPT_NO_LF, " cmd",
+     "program passed in as string (terminates option list)", &scriptstr},
+\end{verbatim}}
+  \noindent The remaining option, \tt{-W}, is fairly complicated, and
+  cannot be handled by a pre-defined action. Since this is just an
+  example, it does not cope completely with this option. First,
+  multiple \tt{-W} options can be given. I set an arbitrary limit,
+{\small
+\begin{verbatim}
+#define MAXW 10
+\end{verbatim}}
+  \noindent and if this is exceeded print a warning message and ignore
+  extra \tt{-W} options. Next, the value of a \tt{-W} option is a
+  colon-separated list of up to 5 fields, of which the first is one of
+  6 (possibly abbreviated) strings (the action), and invalid values
+  are ignored with a warning. In NotPython, I split the value into the
+  first field and the tail. Then I call \tt{opt\_store\_choice\_abbr}
+  to find out which of the 6 choices was supplied. If none of them
+  was, a warning is given and the option ignored. Otherwise, I store
+  the index of the chosen first field, along with the tail, which is
+  not checked in any way. This is all implemented by: variables
+{\small
+\begin{verbatim}
+int nW, Wactions[MAXW];
+char *Wtails[MAXW];
+\end{verbatim}}
+  \noindent to hold the number of \tt{-W} options used, the indices of
+  their first fields, and their tails; an array
+{\small
+\begin{verbatim}
+const char *Wchoices[] = {
+    "ignore", "default", "all", "module", "once", "error", "", NULL
+};
+\end{verbatim}}
+  \noindent giving the choices for the first field, together with
+  \tt{""} so that \tt{opt\_store\_choice\_abbr} will not treat an
+  invalid choice as an error; the action function \tt{storeW}, shown
+  in Figure \ref{fig:storeW};
+  \begin{figure}\small
+\begin{verbatim}
+int storeW(char *val, void *data)
+{
+    const char *first;
+    char *tail;
+    int i;
+
+    if (nW == MAXW) {
+        fprintf(stderr, "-W options after number %d are ignored.\n", MAXW);
+        return 0;
+    }
+    first = Wchoices[0];
+    tail = strchr(val, ':');
+    if (tail)
+        *tail = 0;
+    opt_store_choice_abbr(val, Wchoices);
+    for (i = 0; Wchoices[i] != first; ++i)
+        ;
+    Wchoices[i] = Wchoices[0];
+    Wchoices[0] = first;
+    if (Wchoices[i][0]) {
+        Wactions[nW] = i;
+        Wtails[nW++] = tail ? tail + 1 : "";
+    }
+    else 
+        fprintf(stderr, "Invalid -W option ignored: invalid action: '%s'\n",
+                val);
+    return 0;
+}
+\end{verbatim}
+    \caption{The action function \tt{storeW}.}
+    \label{fig:storeW}
+  \end{figure}
+  and the element
+{\small
+\begin{verbatim}
+    {storeW, "W", OPT_NO_LF, " arg",
+     "warning control (arg is action:message:category:module:lineno)",
+     OPT_NO_DATA},
+\end{verbatim}}
+  \noindent of \tt{options}. 
+
+  Towards the end of \tt{options} are three elements giving usage
+  strings for positional variables, of which the first is
+{\small
+\begin{verbatim}
+    {opt_text, OPT_NO_SF, "file", OPT_NO_METAVAR,
+     "program read from script file", OPT_NO_DATA},
+\end{verbatim}} 
+\noindent  Then comes a filler element:
+{\small
+\begin{verbatim}
+    {opt_text, OPT_NO_SF, OPT_NO_LF, OPT_NO_METAVAR,
+     "Other environment variables:", ""},
+\end{verbatim}}
+  \noindent Note the use of a non-null \tt{data} field to cause the
+  help text for the following items to start in a different column
+  from that for the previous items. Finally we have four elements
+  giving usage strings for environment variables, of which the first is
+{\small
+\begin{verbatim}
+    {opt_text, OPT_NO_SF, "PYTHONSTARTUP", OPT_NO_METAVAR,
+     "file executed on interactive startup (no default)", OPT_NO_DATA},
+\end{verbatim}}
+  \noindent The part of \tt{main} after the call to \tt{opt\_parse} is
+  straightforward.
+\end{example}
+\end{document}

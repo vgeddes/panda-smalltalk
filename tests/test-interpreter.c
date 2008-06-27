@@ -3,7 +3,7 @@
 #include <st-symbol.h>
 #include <st-compiler.h>
 #include <st-processor.h>
-#include <st-byte-array.h>
+#include <st-array.h>
 #include <st-lexer.h>
 #include <st-node.h>
 #include <st-universe.h>

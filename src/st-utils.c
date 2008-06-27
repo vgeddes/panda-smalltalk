@@ -24,7 +24,7 @@
  
 #include "st-utils.h"
 #include "st-array.h"
-#include "st-byte-array.h"
+#include "st-array.h"
 #include "st-memory.h"
 #include "st-universe.h"
 

@@ -26,10 +26,10 @@
 #include "st-utils.h"
 #include "st-descriptor.h"
 #include "st-behavior.h"
-
+#include <string.h>
 
 static st_oop
-allocate_arrayed (st_space *space,
+array_allocate_arrayed (st_space *space,
 		  st_oop    class,
 		  st_smi    size)
 {
@@ -83,7 +83,7 @@ st_array_descriptor (void)
 {
     static st_descriptor __descriptor =
 	{ .allocate         = NULL,
-	  .allocate_arrayed = allocate_arrayed,
+	  .allocate_arrayed = array_allocate_arrayed,
 	  .copy             = array_copy,
 	  .size             = array_size,
 	  .contents         = array_contents,
@@ -92,3 +92,245 @@ st_array_descriptor (void)
     return & __descriptor;
 }
 
+/* ByteArray */
+
+static st_oop
+byte_allocate_arrayed (st_space *space,
+		  st_oop    class,
+		  st_smi    size)
+{
+    st_uint size_oops;
+    st_oop  array;
+
+    st_assert (size >= 0);
+
+    /* add 1 byte for NULL terminator. Allows toll-free bridging with C string function */
+    size_oops = ST_ROUNDED_UP_OOPS (size + 1);
+    
+    array = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_byte_array) + size_oops);
+    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
+    
+    memset (st_byte_array_bytes (array), 0, ST_OOPS_TO_BYTES (size_oops));
+
+    return array;
+}
+
+bool
+st_byte_array_equal (st_oop object, st_oop other)
+{
+    st_smi size, size_other;
+
+    if (st_object_class (other) != st_byte_array_class &&
+	st_object_class (other) != st_string_class &&
+	st_object_class (other) != st_symbol_class) 
+	return false;
+
+    size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
+    size_other = st_smi_value (ST_ARRAYED_OBJECT (other)->size);
+
+    if (size != size_other)
+	return false;
+
+    return memcmp (st_byte_array_bytes (object), st_byte_array_bytes (other), size) == 0;
+}
+
+st_uint
+st_byte_array_hash (st_oop object)
+{
+    const signed char *p = (signed char *) st_byte_array_bytes (object);
+    st_uint h = *p;
+
+    long size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
+
+    if (size == 0 || !h)
+	return h;
+
+    for (st_smi i = 1; i < size; i++) {
+	h = (h << 5) - h + *(p + i);
+    }
+
+    return h;
+}
+
+static st_oop
+byte_array_copy (st_oop object)
+{
+    st_oop copy;
+    st_smi size;
+
+    size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
+
+    copy = byte_allocate_arrayed (memory->moving_space, st_object_class (object), size);
+    
+    memcpy (st_byte_array_bytes (copy),
+	    st_byte_array_bytes (object),
+	    size);
+	    
+    return copy;
+}
+
+static st_uint
+byte_array_size (st_oop object)
+{
+    st_uint size;
+
+    size = st_smi_value (st_arrayed_object_size (object));
+    return ST_SIZE_OOPS (struct st_arrayed_object) + ST_ROUNDED_UP_OOPS (size + 1);
+}
+
+static void
+byte_array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
+}
+
+st_descriptor *
+st_byte_array_descriptor (void)
+{
+    static st_descriptor __descriptor =
+	{ .allocate         = NULL,
+	  .allocate_arrayed = byte_allocate_arrayed,
+	  .copy             = byte_array_copy,
+	  .size             = byte_array_size,
+	  .contents         = byte_array_contents,
+	};
+
+    return & __descriptor;
+}
+
+/* WordArray */
+
+static st_oop
+word_allocate_arrayed (st_space *space, st_oop class, st_smi size)
+{
+    st_oop   array;
+    st_smi   size_oops;
+    st_uint *elements;
+
+    st_assert (size >= 0);
+
+    size_oops = size / (sizeof (st_oop) / sizeof (st_uint));
+
+    array = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_word_array) + size_oops);
+
+    ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
+    elements = st_word_array_elements (array);
+    for (st_smi i = 0; i < size; i++)
+	elements[i] = 0;
+
+    return array;
+}
+
+static st_oop
+word_array_copy (st_oop object)
+{
+    st_oop copy;
+    st_smi size;
+    
+    size = st_smi_value (st_arrayed_object_size (object));
+
+    copy = word_allocate_arrayed (memory->moving_space, st_object_class (object), size);
+
+    memcpy (st_word_array_elements (copy),
+	    st_word_array_elements (object),
+	    sizeof (st_uint) * size);
+
+    return copy;
+}
+
+static st_uint
+word_array_size (st_oop object)
+{
+    return ST_SIZE_OOPS (struct st_arrayed_object)
+	+ (st_smi_value (st_arrayed_object_size (object)) / (sizeof (st_oop) / sizeof (st_uint)));
+}
+
+static void
+word_array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
+}
+
+st_descriptor *
+st_word_array_descriptor (void)
+{
+    static st_descriptor __descriptor =
+	{ .allocate         = NULL,
+	  .allocate_arrayed = word_allocate_arrayed,
+	  .copy             = word_array_copy,
+	  .size             = word_array_size,
+	  .contents         = word_array_contents,
+	};
+    return & __descriptor;
+}
+
+
+/* FloatArray */
+
+static st_oop
+float_allocate_arrayed (st_space *space, st_oop class, st_smi size)
+{
+    st_oop  object;
+    double *elements;
+    st_smi  size_oops;
+
+    st_assert (size >= 0);
+    
+    /* get actual size in oops (dependent on whether system is 64bit or 32bit) */ 
+    size_oops = size * (sizeof (double) / sizeof (st_oop));
+
+    object = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_float_array) + size_oops);
+    ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
+
+    elements = ST_FLOAT_ARRAY (object)->elements;
+    for (st_smi i = 0; i < size; i++)
+	elements[i] = (double) 0;
+
+    return object;
+}
+
+static st_oop
+float_array_copy (st_oop object)
+{
+    st_oop copy;
+    st_smi size;
+    
+    size = st_smi_value (st_arrayed_object_size (object));
+
+    copy = float_allocate_arrayed (memory->moving_space, ST_HEADER (object)->class, size);
+
+    memcpy (st_float_array_elements (copy),
+	    st_float_array_elements (object),
+	    sizeof (double) * size);
+
+    return copy;
+}
+
+static st_uint
+float_array_size (st_oop object)
+{
+    return ST_SIZE_OOPS (struct st_arrayed_object) + (st_smi_value (st_arrayed_object_size (object)) * ST_SIZE_OOPS (double));
+}
+
+static void
+float_array_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = NULL;
+    contents->size = 0;
+}
+
+st_descriptor *
+st_float_array_descriptor (void)
+{
+    static st_descriptor __descriptor =
+	{ .allocate         = NULL,
+	  .allocate_arrayed = float_allocate_arrayed,
+	  .copy             = float_array_copy,
+	  .size             = float_array_size,
+	  .contents         = float_array_contents,
+	};
+
+    return & __descriptor;
+}

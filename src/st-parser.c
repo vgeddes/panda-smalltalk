@@ -27,7 +27,7 @@
 #include "st-lexer.h"
 #include "st-utils.h"
 #include "st-primitives.h"
-#include "st-byte-array.h"
+#include "st-array.h"
 #include "st-symbol.h"
 #include "st-float.h"
 #include "st-large-integer.h"

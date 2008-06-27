@@ -23,7 +23,7 @@
 */
 
 #include <st-node.h>
-#include <st-byte-array.h>
+#include <st-array.h>
 #include <st-array.h>
 #include <st-types.h>
 #include <st-object.h>
