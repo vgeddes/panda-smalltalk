@@ -26,7 +26,7 @@
 #define __ST_UNIVERSE_H__
 
 #include <st-types.h>
-#include <st-object-memory.h>
+#include <st-memory.h>
 #include <st-processor.h>
 
 extern st_oop
@@ -93,7 +93,7 @@ enum {
     ST_NUM_SPECIALS,
 };
 
-extern st_object_memory *om;
+extern st_memory *memory;
 
 extern st_oop st_specials[ST_NUM_SPECIALS];
 
@@ -104,71 +104,5 @@ st_oop st_global_get (const char *name);
 bool   st_verbose_mode (void) ST_GNUC_PURE;
 
 st_processor *proc;
-
-#if 0
-
-static inline bool
-st_is_nil (st_machine *machine, st_oop object)
-{
-    return object == machine->globals.nil_instance;
-}
-
-static inline bool
-st_is_false (st_machine *machine, st_oop object)
-{
-    return object == machine->globals.false_instance;
-}
-
-static inline bool
-st_is_true (st_machine *machine, st_oop object)
-{
-    return object == machine->globals.true_instance;
-}
-
-typedef struct st_machine {
-
-    st_processor     processor;
-
-    st_object_memory om;
-
-    struct {
-	st_oop
-	    nil_instance,
-	    true_instance,
-	    false_instance,
-	    symbol_table_instance,
-	    smalltalk_instance,
-	    
-	    undefined_object_class,
-	    metaclass_class,
-	    behavior_class,
-	    smi_class,
-	    large_integer_class,
-	    float_class,
-	    character_class,
-	    true_class,
-	    false_class,
-	    array_class,
-	    byte_array_class,
-	    word_array_class,
-	    float_array_class,
-	    set_class,
-	    dictionary_class,
-	    association_class,
-	    string_class,
-	    symbol_class,
-	    wide_string_class,
-	    compiled_method_class,
-	    method_context_class,
-	    block_context_class,
-	    
-	    selector_doesNotUnderstand, 
-	    selector_mustBeBoolean,
-	    selector_startupSystem,
-	    selector_cannotReturn;
-    } globals;
-};
-
-#endif
 
 #endif /* __ST_UNIVERSE_H__ */

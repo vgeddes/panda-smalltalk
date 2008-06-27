@@ -26,7 +26,7 @@
 #define __ST_LARGE_INTEGER__
 
 #include <tommath.h>
-#include <st-heap-object.h>
+#include <st-object.h>
 #include <st-types.h>
 
 #define ST_LARGE_INTEGER(oop) ((struct st_large_integer *) ST_POINTER (oop))

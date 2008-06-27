@@ -45,7 +45,7 @@
 #  define ST_BITS_PER_WORD     64
 #  define ST_BITS_PER_INTEGER  32
 #else
-#  error platform not supported
+#  error Sorry, platform not supported. Patches welcome! 
 #endif
 
 #define ST_SMALL_INTEGER_MIN  (-ST_SMALL_INTEGER_MAX - 1)
@@ -79,7 +79,7 @@ typedef unsigned int     st_uint;
 typedef void *           st_pointer;
 typedef st_uint          st_unichar;
 
-#define ST_POINTER(oop)          ((struct st_header *) ((oop) - ST_POINTER_TAG))
+#define ST_POINTER(oop)          ((st_pointer) ((oop) - ST_POINTER_TAG))
 #define ST_OOP(ptr)              (((st_oop) (ptr)) + ST_POINTER_TAG)
 
 #endif /* __ST_TYPES_H__ */

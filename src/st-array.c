@@ -25,6 +25,7 @@
 #include "st-universe.h"
 #include "st-utils.h"
 #include "st-descriptor.h"
+#include "st-behavior.h"
 
 
 static st_oop
@@ -37,7 +38,7 @@ allocate_arrayed (st_space *space,
 
     st_assert (size >= 0);
 
-    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_array) + size);
+    array = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_array) + size);
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = ST_ARRAY (array)->elements;
@@ -55,7 +56,7 @@ array_copy (st_oop object)
 
     size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
 
-    copy = st_object_new_arrayed (om->moving_space, st_object_class (object), size);
+    copy = st_object_new_arrayed (memory->moving_space, st_object_class (object), size);
 
     st_oops_copy (ST_ARRAY (copy)->elements,
 		  ST_ARRAY (object)->elements,
@@ -67,7 +68,7 @@ array_copy (st_oop object)
 static st_uint
 array_size (st_oop object)
 {
-    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + st_smi_value (st_arrayed_object_size (object));
+    return ST_SIZE_OOPS (struct st_arrayed_object) + st_smi_value (st_arrayed_object_size (object));
 }
 
 static void

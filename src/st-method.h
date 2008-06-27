@@ -26,7 +26,7 @@
 #define __ST_METHOD_H__
 
 #include <st-types.h>
-#include <st-heap-object.h>
+#include <st-object.h>
 #include <st-byte-array.h>
 
 #define ST_METHOD(oop) ((struct st_method *) (ST_POINTER (oop)))

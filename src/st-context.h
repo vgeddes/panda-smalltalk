@@ -26,7 +26,7 @@
 #define __ST_CONTEXT_H__
 
 #include <st-types.h>
-#include <st-heap-object.h>
+#include <st-object.h>
 
 struct st_context_part
 {
@@ -73,20 +73,22 @@ st_oop  st_message_new (st_oop selector, st_oop arguments);
 
 #define ST_METHOD_CONTEXT_TEMPORARY_FRAME(oop) (ST_METHOD_CONTEXT (oop)->stack)
 
-#define ST_METHOD_CONTEXT_STACK(oop)				      \
-    ST_METHOD_CONTEXT (oop)->stack				      \
-  + st_method_get_temp_count (ST_METHOD_CONTEXT (oop)->method)	      \
-  + st_method_get_arg_count (ST_METHOD_CONTEXT (oop)->method)
+#define ST_METHOD_CONTEXT_STACK(oop)					\
+    (ST_METHOD_CONTEXT (oop)->stack					\
+     + st_method_get_temp_count (ST_METHOD_CONTEXT (oop)->method)	\
+     + st_method_get_arg_count (ST_METHOD_CONTEXT (oop)->method))
 
 #define ST_METHOD_CONTEXT_STACK_SIZE(oop)				\
     (st_method_get_temp_count (ST_METHOD_CONTEXT (oop)->method)		\
      + st_method_get_arg_count (ST_METHOD_CONTEXT (oop)->method)	\
      + st_method_get_stack_depth (ST_METHOD_CONTEXT (oop)->method))
 
-#define ST_BLOCK_CONTEXT_STACK_SIZE(oop) (st_method_get_stack_depth (ST_METHOD_CONTEXT (ST_BLOCK_CONTEXT (oop)->home)->method) + st_smi_value (ST_BLOCK_CONTEXT (oop)->argcount) )
+#define ST_BLOCK_CONTEXT_STACK_SIZE(oop) \
+    (st_method_get_stack_depth (ST_METHOD_CONTEXT (ST_BLOCK_CONTEXT (oop)->home)->method) \
+     + st_smi_value (ST_BLOCK_CONTEXT (oop)->argcount))
 
-#define ST_MESSAGE_SELECTOR(oop) (st_heap_object_body (oop)[0])
-#define ST_MESSAGE_ARGUMENTS(oop) (st_heap_object_body (oop)[1])
+#define ST_MESSAGE_SELECTOR(oop) (ST_HEADER (oop)->fields[0])
+#define ST_MESSAGE_ARGUMENTS(oop) (ST_HEADER (oop)->fields[1])
 
 
 st_descriptor *st_context_descriptor (void);

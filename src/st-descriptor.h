@@ -26,7 +26,7 @@
 #define __ST_DESCRIPTOR_H__
 
 #include <st-types.h>
-#include <st-object-memory.h>
+#include <st-memory.h>
 
 
 struct contents

@@ -28,7 +28,8 @@
 #include "st-utils.h"
 #include "st-universe.h"
 #include "st-association.h"
-#include "st-heap-object.h"
+#include "st-object.h"
+#include "st-behavior.h"
 
 #define DEFAULT_CAPACITY     5
 #define TALLY(collection)    (ST_HASHED_COLLECTION (collection)->tally)
@@ -88,7 +89,7 @@ collection_grow (st_oop collection)
 
     st_smi new_size = ARRAY_SIZE (old_array) + collection_grow_size (collection);
 
-    ARRAY (collection) = st_object_new_arrayed (om->moving_space, st_array_class, new_size);
+    ARRAY (collection) = st_object_new_arrayed (memory->moving_space, st_array_class, new_size);
 
     st_smi n = ARRAY_SIZE (old_array);
 
@@ -131,7 +132,7 @@ collection_initialize (st_oop collection, st_smi capacity)
     st_assert (capacity > 0);
 
     TALLY (collection) = st_smi_new (0);
-    ARRAY (collection) = st_object_new_arrayed (om->moving_space, st_array_class, capacity);
+    ARRAY (collection) = st_object_new_arrayed (memory->moving_space, st_array_class, capacity);
 }
 
 static st_smi
@@ -220,7 +221,7 @@ st_dictionary_new_with_capacity (st_smi capacity)
 {
     st_oop dict;
     
-    dict = st_object_new (om->fixed_space, st_dictionary_class);
+    dict = st_object_new (memory->fixed_space, st_dictionary_class);
 
     collection_initialize (dict, capacity);
     
@@ -295,7 +296,7 @@ st_set_new_with_capacity (st_smi capacity)
 {
     st_oop set;
 
-    set = st_object_new (om->fixed_space, st_set_class);
+    set = st_object_new (memory->fixed_space, st_set_class);
 
     collection_initialize (set, capacity);
 

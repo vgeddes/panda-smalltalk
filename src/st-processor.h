@@ -4,13 +4,12 @@
 #define __ST_INTERPRETER_H__
 
 #include <st-types.h>
-#include <st-context.h>
 #include <setjmp.h>
 
 /* cache size must be a power of 2 */
 #define ST_METHOD_CACHE_SIZE      1024
 #define ST_METHOD_CACHE_MASK      (ST_METHOD_CACHE_SIZE - 1)
-#define ST_METHOD_CACHE_HASH(k,s) ((k ^ s) & ST_METHOD_CACHE_MASK)
+#define ST_METHOD_CACHE_HASH(k,s) (((k) ^ (s)) & ST_METHOD_CACHE_MASK)
 
 #define ST_METHOD_IS_CACHED
 

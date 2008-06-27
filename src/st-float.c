@@ -23,14 +23,15 @@
 */
 
 #include "st-float.h"
-#include "st-object.h"
+#include "st-behavior.h"
+
 
 static st_oop
 allocate (st_space *space, st_oop class)
 {
     st_oop f;
 
-    f = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_float));
+    f = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_float));
     st_float_set_value (f, 0.0);
 
     return f;
@@ -39,7 +40,7 @@ allocate (st_space *space, st_oop class)
 st_oop
 st_float_new (double value)
 {
-    st_oop f = st_object_new (om->fixed_space, st_float_class);
+    st_oop f = st_object_new (memory->fixed_space, st_float_class);
 
     st_float_set_value (f, value);
     

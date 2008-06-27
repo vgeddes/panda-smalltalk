@@ -31,7 +31,7 @@
 #include "st-array.h"
 #include "st-byte-array.h"
 #include "st-symbol.h"
-#include "st-heap-object.h"
+#include "st-object.h"
 #include "st-character.h"
 #include "st-unicode.h"
 
@@ -80,7 +80,7 @@ st_object_hash (st_oop object)
     if (st_object_class (object) == st_association_class)
 	return st_association_hash (object);
     
-    return st_heap_object_hash (object);
+    return st_smi_value (ST_HEADER (object)->hash);
 }
 
 char *
@@ -98,11 +98,6 @@ st_object_printString (st_oop object)
     // Float
     else if (st_object_class (object) == st_float_class)
 	string = st_strdup_printf ("%g", st_float_value (object));
-
-    // Fraction
-//    else if (st_object_class (object) == st_global_get ("Fraction"))
-//	string = st_strdup_printf ("%li/%li", st_smi_value (st_heap_object_body (object)[0]),
-//		st_smi_value (st_heap_object_body (object)[1]));
 
     // ByteString
     else if (st_object_is_string (object))
@@ -123,4 +118,89 @@ st_object_printString (st_oop object)
 	string = st_strdup_printf ("%s", class_name);
 
     return string;
+}
+
+int st_current_hash = 1;
+
+static void
+st_object_initialize_header (st_oop object, st_oop class)
+{
+    ST_HEADER (object)->mark = 0 | ST_MARK_TAG;
+    ST_HEADER (object)->hash = st_smi_new (st_current_hash++);
+    ST_HEADER (object)->class = class;
+    st_object_set_format (object, st_smi_value (ST_BEHAVIOR (class)->format));
+
+    st_assert (st_object_format (object) == (st_smi_value (ST_BEHAVIOR (class)->format)));
+}
+
+static void
+st_object_initialize_body (st_oop object, st_smi instance_size)
+{
+    st_oop *fields;
+
+    fields = ST_HEADER (object)->fields;
+
+    for (st_smi i = 0; i < instance_size; i++)
+	fields[i] = st_nil;
+}
+
+static st_oop
+allocate (st_space *space, st_oop class)
+{
+    st_smi instance_size;
+    st_oop object;
+
+    instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    object = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_header) + instance_size);
+
+    st_object_initialize_body (object, instance_size);
+
+
+
+    return object;
+}
+
+static st_oop
+object_copy (st_oop object)
+{
+    st_oop class;
+    st_oop copy;
+    st_smi instance_size;
+
+    class = ST_HEADER (object)->class;
+    instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    copy = st_object_new (memory->moving_space, class);
+
+    st_oops_copy (ST_HEADER (copy)->fields,
+		  ST_HEADER (object)->fields,
+		  instance_size);
+
+    return copy;
+}
+
+static st_uint
+object_size (st_oop object)
+{
+    return (sizeof (struct st_header) / sizeof (st_oop)) + st_smi_value (ST_BEHAVIOR (ST_HEADER (object)->class)->instance_size);
+}
+
+static void
+object_contents (st_oop object, struct contents *contents)
+{
+    contents->oops = ST_HEADER (object)->fields;
+    contents->size = st_smi_value (ST_BEHAVIOR (ST_HEADER (object)->class)->instance_size);
+}
+
+st_descriptor *
+st_object_descriptor (void)
+{
+    static st_descriptor __descriptor =
+	{ .allocate         = allocate,
+	  .allocate_arrayed = NULL,
+	  .copy             = object_copy,
+	  .size             = object_size,
+	  .contents         = object_contents,
+	};
+
+    return & __descriptor;
 }

@@ -231,7 +231,7 @@ create_literals_array (Generator *gt)
     count = st_list_length (gt->literals);
 
     if (count > 0) {
-	literals = st_object_new_arrayed (om->fixed_space, st_array_class, count); 
+	literals = st_object_new_arrayed (memory->fixed_space, st_array_class, count); 
 
 	int i = 1;
 	for (st_list *l = gt->literals; l; l = l->next) {
@@ -252,7 +252,7 @@ create_bytecode_array (Generator *gt)
     st_oop  bytecode;
     st_uchar   *bytes;
 
-    bytecode = st_object_new_arrayed (om->fixed_space, st_byte_array_class, gt->size);
+    bytecode = st_object_new_arrayed (memory->fixed_space, st_byte_array_class, gt->size);
     bytes = st_byte_array_bytes (bytecode);
     memcpy (bytes, gt->code, gt->size);
 
@@ -1398,7 +1398,7 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     // generate bytecode
     generate_method_statements (gt, node->method.statements);
 
-    method = st_object_new (om->fixed_space, st_compiled_method_class);
+    method = st_object_new (memory->fixed_space, st_compiled_method_class);
 
     /* TODO: refine */
     ST_METHOD (method)->header = st_smi_new (0);

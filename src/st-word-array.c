@@ -35,9 +35,9 @@ allocate_arrayed (st_space *space, st_oop class, st_smi size)
 
     st_assert (size >= 0);
 
-    size_oops = size * (sizeof (st_uint) / sizeof (st_oop));
+    size_oops = size / (sizeof (st_oop) / sizeof (st_uint));
 
-    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_word_array) + size_oops);
+    array = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_word_array) + size_oops);
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = st_word_array_elements (array);
@@ -55,7 +55,7 @@ word_array_copy (st_oop object)
     
     size = st_smi_value (st_arrayed_object_size (object));
 
-    copy = allocate_arrayed (om->moving_space, st_object_class (object), size);
+    copy = allocate_arrayed (memory->moving_space, st_object_class (object), size);
 
     memcpy (st_word_array_elements (copy),
 	    st_word_array_elements (object),
@@ -67,8 +67,8 @@ word_array_copy (st_oop object)
 static st_uint
 word_array_size (st_oop object)
 {
-    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + 
-	+ (st_smi_value (st_arrayed_object_size (object)) * (sizeof (st_uint) / sizeof (st_oop)));
+    return ST_SIZE_OOPS (struct st_arrayed_object)
+	+ (st_smi_value (st_arrayed_object_size (object)) / (sizeof (st_oop) / sizeof (st_uint)));
 }
 
 static void

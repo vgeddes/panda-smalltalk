@@ -94,7 +94,7 @@ allocate_with_value (st_space *space, st_oop class, mp_int * value)
 st_oop
 st_large_integer_new (mp_int * value)
 {
-    return allocate_with_value (om->moving_space, st_large_integer_class, value);
+    return allocate_with_value (memory->moving_space, st_large_integer_class, value);
     
 }
 
@@ -103,7 +103,6 @@ allocate (st_space *space, st_oop class)
 {
     return allocate_with_value (space, class, NULL);
 }
-
 
 static st_oop
 large_integer_copy (st_oop object)

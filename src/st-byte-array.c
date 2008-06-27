@@ -42,7 +42,7 @@ allocate_arrayed (st_space *space,
     /* add 1 byte for NULL terminator. Allows toll-free bridging with C string function */
     size_oops = ST_ROUNDED_UP_OOPS (size + 1);
     
-    array = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_byte_array) + size_oops);
+    array = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_byte_array) + size_oops);
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     
     memset (st_byte_array_bytes (array), 0, ST_OOPS_TO_BYTES (size_oops));
@@ -95,7 +95,7 @@ byte_array_copy (st_oop object)
 
     size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
 
-    copy = allocate_arrayed (om->moving_space, st_object_class (object), size);
+    copy = allocate_arrayed (memory->moving_space, st_object_class (object), size);
     
     memcpy (st_byte_array_bytes (copy),
 	    st_byte_array_bytes (object),
@@ -110,7 +110,7 @@ byte_array_size (st_oop object)
     st_uint size;
 
     size = st_smi_value (st_arrayed_object_size (object));
-    return (sizeof (struct st_arrayed_object) / sizeof (st_oop)) + ST_ROUNDED_UP_OOPS (size + 1);
+    return ST_SIZE_OOPS (struct st_arrayed_object) + ST_ROUNDED_UP_OOPS (size + 1);
 }
 
 static void

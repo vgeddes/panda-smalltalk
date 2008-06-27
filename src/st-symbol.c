@@ -25,6 +25,7 @@
 #include "st-symbol.h"
 #include "st-hashed-collection.h"
 #include "st-byte-array.h"
+#include "st-behavior.h"
 #include "st-word-array.h"
 #include "st-object.h"
 
@@ -68,12 +69,12 @@ st_string_new (st_space *space, const char *bytes)
 st_oop
 st_symbol_new (const char *bytes)
 {
-    st_oop element = st_set_like (st_symbol_table, st_string_new (om->moving_space, bytes));
+    st_oop element = st_set_like (st_symbol_table, st_string_new (memory->moving_space, bytes));
     st_oop symbol;
 
     if (element == st_nil) {
 
-	symbol = string_new (om->fixed_space, st_symbol_class, bytes);
+	symbol = string_new (memory->fixed_space, st_symbol_class, bytes);
 
 	st_set_add (st_symbol_table, symbol);
 

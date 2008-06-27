@@ -27,7 +27,7 @@
 
 #include <st-types.h>
 #include <st-descriptor.h>
-#include <st-object-memory.h>
+#include <st-memory.h>
 
 st_oop st_string_new (st_space *space, const char *bytes);
 

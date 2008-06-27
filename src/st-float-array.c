@@ -37,7 +37,7 @@ allocate_arrayed (st_space *space, st_oop class, st_smi size)
     /* get actual size in oops (dependent on whether system is 64bit or 32bit) */ 
     size_oops = size * (sizeof (double) / sizeof (st_oop));
 
-    object = st_space_allocate_object (space, class, ST_TYPE_SIZE (struct st_float_array) + size_oops);
+    object = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_float_array) + size_oops);
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
     elements = ST_FLOAT_ARRAY (object)->elements;
@@ -55,7 +55,7 @@ float_array_copy (st_oop object)
     
     size = st_smi_value (st_arrayed_object_size (object));
 
-    copy = allocate_arrayed (om->moving_space, st_heap_object_class (object), size);
+    copy = allocate_arrayed (memory->moving_space, ST_HEADER (object)->class, size);
 
     memcpy (st_float_array_elements (copy),
 	    st_float_array_elements (object),
@@ -67,8 +67,7 @@ float_array_copy (st_oop object)
 static st_uint
 float_array_size (st_oop object)
 {
-    return (sizeof (struct st_arrayed_object) / sizeof (st_oop))
-	+ (st_smi_value (st_arrayed_object_size (object)) * (sizeof (double) / sizeof (st_oop)));
+    return ST_SIZE_OOPS (struct st_arrayed_object) + (st_smi_value (st_arrayed_object_size (object)) * ST_SIZE_OOPS (double));
 }
 
 static void

@@ -28,48 +28,100 @@
 #include <st-types.h>
 #include <st-small-integer.h>
 #include <st-utils.h>
-#include <st-behavior.h>
 #include <st-universe.h>
+#include <st-descriptor.h>
 
-static inline int    st_object_tag               (st_oop object);
-static inline bool   st_object_is_heap           (st_oop object);
-static inline bool   st_object_is_smi            (st_oop object);
+#define  ST_HEADER(oop)           ((struct st_header *) ST_POINTER (oop))
+#define  ST_ARRAYED_OBJECT(oop)   ((struct st_arrayed_object *) ST_POINTER (oop))
 
-static inline st_oop st_object_class             (st_oop object);
-bool          st_object_equal             (st_oop object, st_oop other);
-st_uint       st_object_hash              (st_oop object);
+/* Every heap-allocated object starts with this header word */
+/* format of mark oop
+ * [ unused: 24 | format: 6 | tag: 2 ]
+ *
+ *
+ * format:      object format
+ * mark:        object contains a forwarding pointer
+ * unused: 	not used yet (haven't implemented GC)
+ * 
+ */
+struct st_header
+{
+    st_oop mark;
+    st_oop hash;
+    st_oop class;
+    st_oop fields[];
+};
 
-char         *st_object_printString       (st_oop object);
+struct st_arrayed_object
+{
+    struct st_header header;
+    st_oop           size;
+};
+
+extern int st_current_hash;
+
+enum
+{
+    st_unused_bits     = 26,
+    st_format_bits     = 6,
+    st_tag_bits        = 2,
+
+    st_tag_shift       = 0,
+    st_format_shift    = st_tag_bits + st_tag_shift,
+    st_unused_shift    = st_format_bits + st_format_shift,
+
+    st_format_mask              = ST_NTH_MASK (st_format_bits),
+    st_format_mask_in_place     = st_format_mask << st_format_shift,
+    st_unused_mask              = ST_NTH_MASK (st_unused_bits),
+    st_unused_mask_in_place     = st_unused_mask << st_unused_shift,
+};
+
+bool           st_object_equal       (st_oop object, st_oop other);
+st_uint        st_object_hash        (st_oop object);
+char          *st_object_printString (st_oop object);
+st_descriptor *st_object_descriptor (void);
 
 
-static inline st_oop
-st_object_new (st_space *space, st_oop class)
-{  
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (space, class);
+static inline void
+st_object_set_format (st_oop object, st_format format)
+{
+    ST_HEADER (object)->mark = (ST_HEADER (object)->mark & ~st_format_mask_in_place) | (format << st_format_shift); 
+}
+
+static inline st_format
+st_object_format (st_oop object)
+{
+    return (ST_HEADER (object)->mark >> st_format_shift) & st_format_mask;
 }
 
 static inline st_oop
-st_object_new_arrayed (st_space *space, st_oop class, st_smi size)
+st_arrayed_object_size (st_oop object)
 {
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (space, class, size);
+    return ST_ARRAYED_OBJECT (object)->size;
+}
+
+static inline st_descriptor *
+st_descriptor_for_object (st_oop object)
+{  
+    return st_descriptors[st_object_format (object)];
 }
 
 static inline st_uint
 st_object_size (st_oop object)
 {
-    return st_heap_object_descriptor_for_object (object)->size (object);
+    return st_descriptor_for_object (object)->size (object);
 }
 
 static inline st_uint
 st_object_copy (st_oop object)
 {
-    return st_heap_object_descriptor_for_object (object)->copy (object);
+    return st_descriptor_for_object (object)->copy (object);
 }
 
 static inline void
 st_object_contents (st_oop object, struct contents *contents)
 {
-    st_heap_object_descriptor_for_object (object)->contents (object, contents);
+    st_descriptor_for_object (object)->contents (object, contents);
 }
 
 static inline int
@@ -111,7 +163,7 @@ st_object_class (st_oop object)
     if (ST_UNLIKELY (st_object_is_character (object)))
 	return st_character_class;
 
-    return st_heap_object_class (object);
+    return ST_HEADER (object)->class;
 }
 
 static inline bool

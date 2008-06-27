@@ -26,7 +26,8 @@
 #define __ST_BEHAVIOR_H__
 
 #include <st-types.h>
-#include <st-heap-object.h>
+#include <st-object.h>
+#include <st-memory.h>
 #include <st-small-integer.h>
 
 #define ST_BEHAVIOR(oop)  ((struct st_behavior *)  ST_POINTER (oop))
@@ -57,6 +58,18 @@ struct st_metaclass
 
     st_oop instance_class;
 };
+
+static inline st_oop
+st_object_new (st_space *space, st_oop class)
+{  
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (space, class);
+}
+
+static inline st_oop
+st_object_new_arrayed (st_space *space, st_oop class, st_smi size)
+{
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (space, class, size);
+}
 
 st_list *st_behavior_all_instance_variables (st_oop class);
 

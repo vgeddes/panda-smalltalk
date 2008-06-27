@@ -25,6 +25,7 @@
 #include "st-types.h"
 #include "st-utils.h"
 #include "st-object.h"
+#include "st-behavior.h"
 #include "st-float.h"
 #include "st-association.h"
 #include "st-method.h"
@@ -37,11 +38,12 @@
 #include "st-large-integer.h"
 #include "st-symbol.h"
 #include "st-universe.h"
-#include "st-heap-object.h"
+#include "st-object.h"
 #include "st-lexer.h"
 #include "st-descriptor.h"
 #include "st-compiler.h"
-#include "st-object-memory.h"
+#include "st-memory.h"
+#include "st-context.h"
 #include "st-processor.h"
 
 #include <stdlib.h>
@@ -106,15 +108,13 @@ class_new (st_format format, st_uint instance_size)
 {
     st_oop class;
 
-    class = st_space_allocate_chunk (om->fixed_space, ST_TYPE_SIZE (struct st_class));
+    class = st_space_allocate_chunk (memory->fixed_space, ST_SIZE_OOPS (struct st_class));
 
-    /* TODO refactor this initialising */
-    ST_POINTER (class)->header = 0 | ST_MARK_TAG;
-    st_heap_object_set_format (class, ST_FORMAT_OBJECT);
-    st_heap_object_set_marked (class, false);
-    st_heap_object_set_hash (class, st_current_hash++);			       
-    st_heap_object_class (class) = st_nil;
-
+    ST_HEADER (class)->mark = 0 | ST_MARK_TAG;
+    ST_HEADER (class)->hash  = st_smi_new (st_current_hash++);
+    ST_HEADER (class)->class = st_nil;
+    st_object_set_format (class, ST_FORMAT_OBJECT);
+    
     ST_BEHAVIOR (class)->format             = st_smi_new (format);
     ST_BEHAVIOR (class)->instance_size      = st_smi_new (instance_size);
     ST_BEHAVIOR (class)->superclass         = st_nil;
@@ -163,8 +163,8 @@ initialize_class  (const char *name,
 
 	metaclass = st_object_class (class);
 	if (metaclass == st_nil) {
-	    metaclass = st_object_new (om->fixed_space, st_metaclass_class);
-	    st_heap_object_class (class) =  metaclass;
+	    metaclass = st_object_new (memory->fixed_space, st_metaclass_class);
+	    ST_HEADER (class)->class = metaclass;
 	}
 
 	ST_BEHAVIOR (class)->superclass     = st_nil;
@@ -181,14 +181,14 @@ initialize_class  (const char *name,
 	if (class == st_nil)
 	    class = class_new (st_smi_value (ST_BEHAVIOR (superclass)->format), 0);
 
-	metaclass = st_heap_object_class (class);
+	metaclass = ST_HEADER (class)->class;
 	if (metaclass == st_nil) {
-	    metaclass = st_object_new (om->fixed_space, st_metaclass_class);
-	    st_heap_object_class (class) = metaclass;
+	    metaclass = st_object_new (memory->fixed_space, st_metaclass_class);
+	    ST_HEADER (class)->class = metaclass;
 	}
 
 	ST_BEHAVIOR (class)->superclass     = superclass;
-	ST_BEHAVIOR (metaclass)->superclass = st_heap_object_class (superclass);
+	ST_BEHAVIOR (metaclass)->superclass = ST_HEADER (superclass)->class;
 
 	ST_BEHAVIOR (class)->instance_size = st_smi_new (st_list_length (ivarnames) +
 							 st_smi_value (ST_BEHAVIOR (superclass)->instance_size));	
@@ -203,7 +203,7 @@ initialize_class  (const char *name,
     if (st_list_length (ivarnames) != 0) {
 	st_oop names;
 	st_uint i = 1;
-	names = st_object_new_arrayed (om->fixed_space, st_array_class, st_list_length (ivarnames));
+	names = st_object_new_arrayed (memory->fixed_space, st_array_class, st_list_length (ivarnames));
 	for (st_list *l = ivarnames; l; l = l->next)
 	    st_array_at_put (names, i++, st_symbol_new (l->data));
 	ST_BEHAVIOR (class)->instance_variables = names;
@@ -399,13 +399,12 @@ create_nil_object (void)
 {
     st_oop nil;
 
-    nil = st_space_allocate_chunk (om->fixed_space, NIL_SIZE_OOPS);
+    nil = st_space_allocate_chunk (memory->fixed_space, NIL_SIZE_OOPS);
 
-    ST_POINTER (nil)->header = 0 | ST_MARK_TAG;
-    st_heap_object_set_marked     (nil, false);
-    st_heap_object_set_format     (nil, ST_FORMAT_OBJECT);
-    st_heap_object_set_hash       (nil, st_current_hash++);
-    st_heap_object_class          (nil) = nil;
+    ST_HEADER (nil)->mark = 0 | ST_MARK_TAG;
+    ST_HEADER (nil)->hash = st_smi_new (st_current_hash++);
+    ST_HEADER (nil)->class = nil;
+    st_object_set_format (nil, ST_FORMAT_OBJECT);
 
     return nil;
 }
@@ -445,24 +444,24 @@ init_specials (void)
     st_selector_cannotReturn        = st_symbol_new ("cannotReturn");
 }
 
-st_object_memory *om;
+st_memory *memory;
 
 void
 st_bootstrap_universe (void)
 {
     st_oop st_object_class_, st_class_class_;
 
-    om = st_object_memory_new ();
+    memory = st_memory_new ();
 
     /* setup format descriptors */
-    st_descriptors[ST_FORMAT_OBJECT]        = st_heap_object_descriptor ();
-    st_descriptors[ST_FORMAT_ARRAY]         = st_array_descriptor       ();
-    st_descriptors[ST_FORMAT_BYTE_ARRAY]    = st_byte_array_descriptor  ();
-    st_descriptors[ST_FORMAT_WORD_ARRAY]    = st_word_array_descriptor  ();
-    st_descriptors[ST_FORMAT_FLOAT_ARRAY]   = st_float_array_descriptor  ();
-    st_descriptors[ST_FORMAT_FLOAT]         = st_float_descriptor       ();
+    st_descriptors[ST_FORMAT_OBJECT]        = st_object_descriptor        ();
+    st_descriptors[ST_FORMAT_ARRAY]         = st_array_descriptor         ();
+    st_descriptors[ST_FORMAT_BYTE_ARRAY]    = st_byte_array_descriptor    ();
+    st_descriptors[ST_FORMAT_WORD_ARRAY]    = st_word_array_descriptor    ();
+    st_descriptors[ST_FORMAT_FLOAT_ARRAY]   = st_float_array_descriptor   ();
+    st_descriptors[ST_FORMAT_FLOAT]         = st_float_descriptor         ();
     st_descriptors[ST_FORMAT_LARGE_INTEGER] = st_large_integer_descriptor ();
-    st_descriptors[ST_FORMAT_CONTEXT]       = st_context_descriptor ();
+    st_descriptors[ST_FORMAT_CONTEXT]       = st_context_descriptor       ();
 
     st_nil = create_nil_object ();
 
@@ -491,11 +490,11 @@ st_bootstrap_universe (void)
     st_method_context_class   = class_new (ST_FORMAT_CONTEXT, 5);
     st_block_context_class    = class_new (ST_FORMAT_CONTEXT, 7);
 
-    st_heap_object_class (st_nil) = st_undefined_object_class;
+    ST_HEADER (st_nil)->class = st_undefined_object_class;
 
     /* special objects */
-    st_true         = st_object_new (om->fixed_space, st_true_class);
-    st_false        = st_object_new (om->fixed_space, st_false_class);
+    st_true         = st_object_new (memory->fixed_space, st_true_class);
+    st_false        = st_object_new (memory->fixed_space, st_false_class);
     st_symbol_table = st_set_new_with_capacity (75);
     st_smalltalk    = st_dictionary_new_with_capacity (75);
 
@@ -528,11 +527,11 @@ st_bootstrap_universe (void)
     init_specials ();
     file_in_classes ();
 
-    st_object_memory_add_root (om, st_nil);
-    st_object_memory_add_root (om, st_true);
-    st_object_memory_add_root (om, st_false);
-    st_object_memory_add_root (om, st_smalltalk);
-    st_object_memory_add_root (om, st_symbol_table);
+    st_memory_add_root (memory, st_nil);
+    st_memory_add_root (memory, st_true);
+    st_memory_add_root (memory, st_false);
+    st_memory_add_root (memory, st_smalltalk);
+    st_memory_add_root (memory, st_symbol_table);
 }
 
 static bool verbosity;

@@ -1,8 +1,9 @@
+
 #include "st-context.h"
 #include "st-array.h"
 #include "st-method.h"
-
 #include "st-object.h"
+#include "st-behavior.h"
 #include "st-universe.h"
 
 st_oop
@@ -10,10 +11,10 @@ st_message_new (st_oop selector, st_oop arguments)
 {
     st_oop object;
 
-    object = st_object_new (om->moving_space, st_global_get ("Message"));
+    object = st_object_new (memory->moving_space, st_global_get ("Message"));
 
-    st_heap_object_body (object)[0] = selector;
-    st_heap_object_body (object)[1] = arguments;
+    ST_HEADER (object)->fields[0] = selector;
+    ST_HEADER (object)->fields[1] = arguments;
 
     return object;
 }
@@ -31,15 +32,10 @@ context_size (st_oop object)
     st_oop class;
     st_uint size;
 
-    class = st_heap_object_class (object);
-
-    size = (sizeof (struct st_header) / sizeof (st_oop)) + st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    class = ST_HEADER (object)->class;
+    size = ST_SIZE_OOPS (struct st_header) + st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    size += 32;
     
-    if (class == st_method_context_class)
-	size += ST_METHOD_CONTEXT_STACK_SIZE (object);
-    else
-	size += ST_BLOCK_CONTEXT_STACK_SIZE (object);
-
     return size;
 }
 
@@ -48,14 +44,10 @@ context_contents (st_oop object, struct contents *contents)
 {
     st_oop class;
 
-    class = st_heap_object_class (object);
-    contents->oops = st_heap_object_body (object);
+    class = ST_HEADER (object)->class;
+    contents->oops = ST_HEADER (object)->fields;
     contents->size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
-    
-    if (class == st_method_context_class)
-	contents->size += ST_METHOD_CONTEXT_STACK_SIZE (object);
-    else
-	contents->size += ST_BLOCK_CONTEXT_STACK_SIZE (object);
+    contents->size += 32;
 }
 
 st_descriptor *

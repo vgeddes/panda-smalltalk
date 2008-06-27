@@ -36,20 +36,13 @@
 #define ST_NTH_BIT(n)         (1 << (n))
 #define ST_NTH_MASK(n)        (ST_NTH_BIT(n) - 1)
 
-#if 1
-#define ST_ROUNDING_MASK 0x7
-#else
-#define ST_ROUNDING_MASK 0x3
-#endif
-
 #define ST_BYTES_TO_OOPS(m) ((m) / sizeof (st_oop))
 #define ST_OOPS_TO_BYTES(m) ((m) * sizeof (st_oop))
-
-#define ST_ROUND_BYTES(size) (((size) ^ ((size) & ST_ROUNDING_MASK)) + (!!((size) & ST_ROUNDING_MASK) * sizeof (st_pointer)))
-
 #define ST_ROUNDED_UP_OOPS(m) (ST_BYTES_TO_OOPS ((m) + ST_OOPS_TO_BYTES (1) - 1))
 
 #define ST_N_ELEMENTS(static_array)  (sizeof(static_array) / sizeof ((static_array) [0]))
+
+#define ST_SIZE_OOPS(type) (sizeof (type) / sizeof (st_oop))
 
 #define ST_DIR_SEPARATOR   '/'
 #define ST_DIR_SEPARATOR_S "/"
@@ -73,9 +66,6 @@
    } while (0)
    
 #define streq(a,b)  (strcmp ((a),(b)) == 0)
-
-/* returns the size of a type, in oop's */
-#define ST_TYPE_SIZE(type) (sizeof (type) / sizeof (st_oop))
 
 #ifndef MAX
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))

@@ -25,7 +25,7 @@
 #ifndef __ST_ASSOCIATION_H__
 #define __ST_ASSOCIATION_H__
 
-#include <st-heap-object.h>
+#include <st-object.h>
 #include <st-types.h>
 
 struct st_association

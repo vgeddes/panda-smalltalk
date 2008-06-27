@@ -23,7 +23,7 @@
 */
 
 #include "st-behavior.h"
-#include "st-heap-object.h"
+#include "st-object.h"
 #include "st-hashed-collection.h"
 #include "st-universe.h"
 #include "st-symbol.h"

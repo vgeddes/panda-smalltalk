@@ -25,7 +25,7 @@
 #ifndef __ST_FLOAT_ARRAY_H__
 #define __ST_FLOAT_ARRAY_H__
 
-#include <st-heap-object.h>
+#include <st-object.h>
 #include <st-types.h>
 #include <st-descriptor.h>
 

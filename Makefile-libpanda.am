@@ -2,8 +2,6 @@
 noinst_LTLIBRARIES += libpanda.la
 
 libpanda_la_SOURCES = \
-	src/st-heap-object.c \
-	src/st-heap-object.h \
 	src/st-utils.h \
 	src/st-utils.c \
 	src/st-unicode.h \
@@ -53,8 +51,10 @@ libpanda_la_SOURCES = \
 	src/st-input.c \
 	src/st-processor.h \
 	src/st-processor.c \
-	src/st-object-memory.h \
-	src/st-object-memory.c \
+	src/st-memory.h \
+	src/st-memory.c \
+	src/st-system.h \
+	src/st-system.c \
 	src/st-types.h
 
 libpanda_la_CPPFLAGS =          \

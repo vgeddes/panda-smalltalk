@@ -16,8 +16,10 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+
+
 static st_oop
-method_context_new (st_processor *processor, st_oop method)
+method_context_new (st_processor *pr, st_oop method)
 {
     st_oop  context;
     int     stack_size;
@@ -25,18 +27,18 @@ method_context_new (st_processor *processor, st_oop method)
     st_oop *stack;
 
     temps_size = st_method_get_temp_count (method) + st_method_get_arg_count (method);
-    stack_size = st_method_get_stack_depth (method) + temps_size;
+    stack_size = 32;
 
-    context = st_space_allocate_object (om->moving_space,
+    context = st_space_allocate_object (memory->moving_space,
 					st_method_context_class,
-					ST_TYPE_SIZE (struct st_method_context) + stack_size);
+					ST_SIZE_OOPS (struct st_method_context) + stack_size);
     
-    st_assert (st_object_is_heap (processor->context));
+    st_assert (st_object_is_heap (pr->context));
 
-    ST_CONTEXT_PART (context)->sender     = processor->context;
+    ST_CONTEXT_PART (context)->sender     = pr->context;
     ST_CONTEXT_PART (context)->ip         = st_smi_new (0);
     ST_CONTEXT_PART (context)->sp         = st_smi_new (0);
-    ST_METHOD_CONTEXT (context)->receiver = processor->message_receiver;
+    ST_METHOD_CONTEXT (context)->receiver = pr->message_receiver;
     ST_METHOD_CONTEXT (context)->method   = method;
 
     stack = ST_METHOD_CONTEXT (context)->stack;
@@ -47,33 +49,25 @@ method_context_new (st_processor *processor, st_oop method)
 }
 
 static st_oop
-block_context_new (st_processor *processor, st_uint initial_ip, st_uint argcount)
+block_context_new (st_processor *pr, st_uint initial_ip, st_uint argcount)
 {
-    st_oop home;
-    st_oop context;
-    st_oop method;
+    st_oop  home;
+    st_oop  context;
+    st_oop  method;
     st_oop *stack;
-    int stack_size;
-	    
-    if (st_object_class (processor->context) == st_block_context_class)
-	home = ST_BLOCK_CONTEXT (processor->context)->home;
-    else
-	home = processor->context;
+    st_uint stack_size;
 
-    method =  ST_METHOD_CONTEXT (home)->method;
-
-    stack_size = st_method_get_stack_depth (method);
-    stack_size += argcount;
-
-    context = st_space_allocate_object (om->moving_space,
+    stack_size = 32;
+    
+    context = st_space_allocate_object (memory->moving_space,
 					st_block_context_class,
-					ST_TYPE_SIZE (struct st_block_context) + stack_size);
-
-    /* home might have been moved */
-    if (st_object_class (processor->context) == st_block_context_class)
-	home = ST_BLOCK_CONTEXT (processor->context)->home;
+					ST_SIZE_OOPS (struct st_block_context) + stack_size);
+    
+    
+    if (ST_HEADER (pr->context)->class == st_block_context_class)
+	home = ST_BLOCK_CONTEXT (pr->context)->home;
     else
-	home = processor->context;
+	home = pr->context;
 
     ST_CONTEXT_PART (context)->sender = st_nil;
     ST_CONTEXT_PART (context)->ip     = st_smi_new (0);
@@ -87,68 +81,68 @@ block_context_new (st_processor *processor, st_uint initial_ip, st_uint argcount
     stack = ST_BLOCK_CONTEXT (context)->stack;
     for (st_uint i=0; i < stack_size; i++)
 	stack[i] = st_nil;
-
+    
     return context;
 }
 
 static void
-create_actual_message (st_processor *processor)
+create_actual_message (st_processor *pr)
 {
     st_oop *elements;
     st_oop array;
 
-    array = st_object_new_arrayed (om->moving_space, st_array_class, processor->message_argcount);
+    array = st_object_new_arrayed (memory->moving_space, st_array_class, pr->message_argcount);
     elements = st_array_elements (array);
-    for (st_uint i = 0; i < processor->message_argcount; i++)
-	elements[i] =  processor->stack[processor->sp - processor->message_argcount + i];
+    for (st_uint i = 0; i < pr->message_argcount; i++)
+	elements[i] =  pr->stack[pr->sp - pr->message_argcount + i];
 
-    processor->sp -= processor->message_argcount;
+    pr->sp -= pr->message_argcount;
 
-    ST_STACK_PUSH (processor, st_message_new (processor->message_selector, array));
+    ST_STACK_PUSH (pr, st_message_new (pr->message_selector, array));
 
-    processor->message_selector = st_selector_doesNotUnderstand;
-    processor->message_argcount = 1;
+    pr->message_selector = st_selector_doesNotUnderstand;
+    pr->message_argcount = 1;
 }
 
 static inline st_oop
-lookup_method (st_processor *processor, st_oop class)
+lookup_method (st_processor *pr, st_oop class)
 {
     st_oop method;
     st_oop parent = class;
     st_uint index;
 
-    index = ST_METHOD_CACHE_HASH (class, processor->message_selector);
+    index = ST_METHOD_CACHE_HASH (class, pr->message_selector);
 
-    if (processor->method_cache[index].class    == class &&
-	processor->method_cache[index].selector == processor->message_selector)
-	return processor->method_cache[index].method;
+    if (pr->method_cache[index].class    == class &&
+	pr->method_cache[index].selector == pr->message_selector)
+	return pr->method_cache[index].method;
 
     while (parent != st_nil) {
-	method = st_dictionary_at (ST_BEHAVIOR (parent)->method_dictionary, processor->message_selector);
+	method = st_dictionary_at (ST_BEHAVIOR (parent)->method_dictionary, pr->message_selector);
 	if (method != st_nil) {
-	    index = ST_METHOD_CACHE_HASH (parent, processor->message_selector);
-	    processor->method_cache[index].class = class;
-	    processor->method_cache[index].selector = processor->message_selector;
-	    processor->method_cache[index].method = method;
+	    index = ST_METHOD_CACHE_HASH (parent, pr->message_selector);
+	    pr->method_cache[index].class = class;
+	    pr->method_cache[index].selector = pr->message_selector;
+	    pr->method_cache[index].method = method;
 	    return method;
 	}
 	parent = ST_BEHAVIOR (parent)->superclass;
     }
 
-    if (processor->message_selector == st_selector_doesNotUnderstand) {
+    if (pr->message_selector == st_selector_doesNotUnderstand) {
 	fprintf (stderr, "no method found for #doesNotUnderstand:");
 	exit(1);
     }
 
-    create_actual_message (processor);
+    create_actual_message (pr);
 
-    return lookup_method (processor, class);
+    return lookup_method (pr, class);
 }
 
 st_oop
-st_processor_lookup_method (st_processor *processor, st_oop class)
+st_processor_lookup_method (st_processor *pr, st_oop class)
 {
-    return lookup_method (processor, class);
+    return lookup_method (pr, class);
 }
 
 /* 
@@ -160,24 +154,24 @@ st_processor_lookup_method (st_processor *processor, st_oop class)
  *
  */
 static inline void
-activate_method (st_processor *processor, st_oop method)
+activate_method (st_processor *pr, st_oop method)
 {
     st_oop  context;
     st_oop *arguments;
     
-    context = method_context_new (processor, method);
+    context = method_context_new (pr, method);
 
     arguments = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
-    for (st_uint i = 0; i < processor->message_argcount; i++)
-	arguments[i] =  processor->stack[processor->sp - processor->message_argcount + i];
+    for (st_uint i = 0; i < pr->message_argcount; i++)
+	arguments[i] =  pr->stack[pr->sp - pr->message_argcount + i];
 
-    processor->sp -= processor->message_argcount + 1;
+    pr->sp -= pr->message_argcount + 1;
 
-    st_processor_set_active_context (processor, context);
+    st_processor_set_active_context (pr, context);
 }
 
 void
-st_processor_execute_method (st_processor *processor, st_oop method)
+st_processor_execute_method (st_processor *pr, st_oop method)
 {
     st_uint primitive_index;
     st_method_flags flags;
@@ -185,63 +179,63 @@ st_processor_execute_method (st_processor *processor, st_oop method)
     flags = st_method_get_flags (method);
     if (flags == ST_METHOD_PRIMITIVE) {
 	primitive_index = st_method_get_primitive_index (method);
-	processor->success = true;
-	st_primitives[primitive_index].func (processor);
-	if (ST_LIKELY (processor->success))
+	pr->success = true;
+	st_primitives[primitive_index].func (pr);
+	if (ST_LIKELY (pr->success))
 	    return;
     }
     
-    activate_method (processor, method);
+    activate_method (pr, method);
 }
 
 
 void
-st_processor_set_active_context (st_processor *processor,
+st_processor_set_active_context (st_processor *pr,
 				 st_oop  context)
 {
     st_oop home;
 
     /* save executation state of active context */
-    if (processor->context != st_nil) {
-	ST_CONTEXT_PART (processor->context)->ip = st_smi_new (processor->ip);
-	ST_CONTEXT_PART (processor->context)->sp = st_smi_new (processor->sp);
+    if (pr->context != st_nil) {
+	ST_CONTEXT_PART (pr->context)->ip = st_smi_new (pr->ip);
+	ST_CONTEXT_PART (pr->context)->sp = st_smi_new (pr->sp);
     }
     
     if (st_object_class (context) == st_block_context_class) {
 
 	home = ST_BLOCK_CONTEXT (context)->home;
 
-	processor->method   = ST_METHOD_CONTEXT (home)->method;
-	processor->receiver = ST_METHOD_CONTEXT (home)->receiver;
-	processor->literals = st_array_elements (ST_METHOD (processor->method)->literals);
-	processor->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
-	processor->stack    = ST_BLOCK_CONTEXT (context)->stack;
+	pr->method   = ST_METHOD_CONTEXT (home)->method;
+	pr->receiver = ST_METHOD_CONTEXT (home)->receiver;
+	pr->literals = st_array_elements (ST_METHOD (pr->method)->literals);
+	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
+	pr->stack    = ST_BLOCK_CONTEXT (context)->stack;
     } else {
-	processor->method   = ST_METHOD_CONTEXT (context)->method;
-	processor->receiver = ST_METHOD_CONTEXT (context)->receiver;
-	processor->literals = st_array_elements (ST_METHOD (processor->method)->literals);
-	processor->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
-	processor->stack    = ST_METHOD_CONTEXT_STACK (context);
+	pr->method   = ST_METHOD_CONTEXT (context)->method;
+	pr->receiver = ST_METHOD_CONTEXT (context)->receiver;
+	pr->literals = st_array_elements (ST_METHOD (pr->method)->literals);
+	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
+	pr->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
 
-    processor->context  = context;
-    processor->sp       = st_smi_value (ST_CONTEXT_PART (context)->sp);
-    processor->ip       = st_smi_value (ST_CONTEXT_PART (context)->ip);
-    processor->bytecode = st_method_bytecode_bytes (processor->method);
+    pr->context  = context;
+    pr->sp       = st_smi_value (ST_CONTEXT_PART (context)->sp);
+    pr->ip       = st_smi_value (ST_CONTEXT_PART (context)->ip);
+    pr->bytecode = st_method_bytecode_bytes (pr->method);
 
-    st_assert (processor->sp < 9);
+    st_assert (pr->sp < 9);
 }
 
 void
-st_processor_prologue (st_processor *processor)
+st_processor_prologue (st_processor *pr)
 {
     if (st_verbose_mode ()) {
-	fprintf (stderr, "** gc: totalPauseTime: %.6fs\n", st_timespec_to_double_seconds (&om->tot_pause_time));
+	fprintf (stderr, "** gc: totalPauseTime: %.6fs\n", st_timespec_to_double_seconds (&memory->tot_pause_time));
     }
 }
 
 void
-st_processor_send_selector (st_processor *processor,
+st_processor_send_selector (st_processor *pr,
 			    st_oop        selector,
 			    st_uint       argcount)
 {
@@ -249,81 +243,81 @@ st_processor_send_selector (st_processor *processor,
     st_uint primitive_index;
     st_method_flags flags;
 
-    processor->message_argcount = argcount;
-    processor->message_receiver = processor->stack[processor->sp - argcount - 1];
-    processor->message_selector = selector;
+    pr->message_argcount = argcount;
+    pr->message_receiver = pr->stack[pr->sp - argcount - 1];
+    pr->message_selector = selector;
     
-    method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));
+    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
     
     flags = st_method_get_flags (method);
     if (flags == ST_METHOD_PRIMITIVE) {
 	primitive_index = st_method_get_primitive_index (method);
-	processor->success = true;
-	st_primitives[primitive_index].func (processor);
-	if (ST_LIKELY (processor->success))
+	pr->success = true;
+	st_primitives[primitive_index].func (pr);
+	if (ST_LIKELY (pr->success))
 	    return;
     }
 
-    activate_method (processor, method);
+    activate_method (pr, method);
 }
 
-#define SEND_SELECTOR(processor, selector, argcount)			\
-    processor->ip = ip - processor->bytecode;				\
-    st_processor_send_selector (processor, selector, argcount);		\
-    ip = processor->bytecode + processor->ip;
+#define SEND_SELECTOR(pr, selector, argcount)				\
+    pr->ip = ip - pr->bytecode;						\
+    st_processor_send_selector (pr, selector, argcount);		\
+    ip = pr->bytecode + pr->ip;
 
-#define ACTIVATE_CONTEXT(processor, context_oop)			\
-    processor->ip = ip - processor->bytecode;				\
-    st_processor_set_active_context (processor, context_oop);		\
-    ip = processor->bytecode + processor->ip;
+#define ACTIVATE_CONTEXT(pr, context_oop)		\
+    pr->ip = ip - pr->bytecode;				\
+    st_processor_set_active_context (pr, context_oop);	\
+    ip = pr->bytecode + pr->ip;
 
-#define ACTIVATE_METHOD(processor, method_oop)			\
-    processor->ip = ip - processor->bytecode;			\
-    activate_method (processor, method_oop);			\
-    ip = processor->bytecode + processor->ip;
+#define ACTIVATE_METHOD(pr, method_oop)			\
+    pr->ip = ip - pr->bytecode;				\
+    activate_method (pr, method_oop);			\
+    ip = pr->bytecode + pr->ip;
 
-#define EXECUTE_PRIMITIVE(processor, index)			\
-    processor->success = true;					\
-    processor->ip = ip - processor->bytecode;			\
-    st_primitives[index].func (processor);			\
-    ip = processor->bytecode + processor->ip;
+#define EXECUTE_PRIMITIVE(pr, index)			\
+    pr->success = true;					\
+    pr->ip = ip - pr->bytecode;				\
+    st_primitives[index].func (pr);			\
+    ip = pr->bytecode + pr->ip;
 
-#define SEND_TEMPLATE(processor)					\
+#define SEND_TEMPLATE(pr)						\
     st_oop method;							\
     st_uint  prim;							\
     st_method_flags flags;						\
     									\
     ip += 1;								\
     									\
-    method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));\
+    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));\
     									\
     flags = st_method_get_flags (method);				\
     if (flags == ST_METHOD_PRIMITIVE) {					\
 	prim = st_method_get_primitive_index (method);			\
 									\
-	EXECUTE_PRIMITIVE (processor, prim);				\
-	if (ST_LIKELY (processor->success))				\
+	EXECUTE_PRIMITIVE (pr, prim);					\
+	if (ST_LIKELY (pr->success))					\
             NEXT ();							\
     }									\
     									\
-    ACTIVATE_METHOD (processor, method);
+    ACTIVATE_METHOD (pr, method);
 
 
 #ifdef __GNUC__
-#define COMPUTED_GOTO
+#define I_HAS_COMPUTED_GOTO
 #endif
 
-#ifdef COMPUTED_GOTO
+#ifdef I_HAS_COMPUTED_GOTO
 #define SWITCH(ip)                              \
 static const st_pointer labels[] =		\
 {						\
-    NULL,                                       \
+    NULL,					\
     && PUSH_TEMP,          && PUSH_INSTVAR,     \
-    && PUSH_LITERAL_CONST, && PUSH_LITERAL_VAR, \
-                                                \
-    && STORE_LITERAL_VAR, && STORE_TEMP, && STORE_INSTVAR, \
+    && PUSH_LITERAL_CONST, && PUSH_LITERAL_VAR,			\
+    								\
+    && STORE_LITERAL_VAR, && STORE_TEMP, && STORE_INSTVAR,	       \
     && STORE_POP_LITERAL_VAR, && STORE_POP_TEMP, && STORE_POP_INSTVAR, \
-                                                                       \
+    								       \
     && PUSH_SELF, && PUSH_NIL, && PUSH_TRUE, && PUSH_FALSE,            \
                                                                        \
     && RETURN_STACK_TOP, && BLOCK_RETURN,       \
@@ -357,13 +351,13 @@ start:             \
 switch (*ip)
 #endif
 
-#ifdef COMPUTED_GOTO
+#ifdef I_HAS_COMPUTED_GOTO
 #define CASE(OP) OP:              
 #else
 #define CASE(OP) case OP:
 #endif
 
-#ifdef COMPUTED_GOTO
+#ifdef I_HAS_COMPUTED_GOTO
 #define NEXT() goto *labels[*ip]
 #else
 #define NEXT() goto start
@@ -371,20 +365,20 @@ switch (*ip)
 
 
 void
-st_processor_main (st_processor *processor)
+st_processor_main (st_processor *pr)
 {
     register const st_uchar *ip;
 
-    if (setjmp (processor->main_loop))
+    if (setjmp (pr->main_loop))
 	goto out;
 
-    ip = processor->bytecode + processor->ip;
+    ip = pr->bytecode + pr->ip;
 
     SWITCH (ip) {
 
 	CASE (PUSH_TEMP) {
 
-	    ST_STACK_PUSH (processor, processor->temps[ip[1]]);
+	    ST_STACK_PUSH (pr, pr->temps[ip[1]]);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -392,7 +386,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (PUSH_INSTVAR) {
     
-	    ST_STACK_PUSH (processor, st_heap_object_body (processor->receiver)[ip[1]]);
+	    ST_STACK_PUSH (pr, ST_HEADER (pr->receiver)->fields[ip[1]]);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -400,7 +394,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (STORE_POP_INSTVAR) {
 	    
-	    st_heap_object_body (processor->receiver)[ip[1]] = ST_STACK_POP (processor);
+	    ST_HEADER (pr->receiver)->fields[ip[1]] = ST_STACK_POP (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -408,7 +402,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (STORE_INSTVAR) {
     
-	    st_heap_object_body (processor->receiver)[ip[1]] = ST_STACK_PEEK (processor);
+	    ST_HEADER (pr->receiver)->fields[ip[1]] = ST_STACK_PEEK (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -416,7 +410,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (STORE_POP_TEMP) {
 	    
-	    processor->temps[ip[1]] = ST_STACK_POP (processor);
+	    pr->temps[ip[1]] = ST_STACK_POP (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -424,7 +418,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (STORE_TEMP) {
 	    
-	    processor->temps[ip[1]] = ST_STACK_PEEK (processor);
+	    pr->temps[ip[1]] = ST_STACK_PEEK (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -432,7 +426,7 @@ st_processor_main (st_processor *processor)
 	
 	CASE (STORE_LITERAL_VAR) {
 	    
-	    ST_ASSOCIATION (processor->literals[ip[1]])->value = ST_STACK_PEEK (processor);
+	    ST_ASSOCIATION (pr->literals[ip[1]])->value = ST_STACK_PEEK (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -440,7 +434,7 @@ st_processor_main (st_processor *processor)
 	    
 	CASE (STORE_POP_LITERAL_VAR) {
 	    
-	    ST_ASSOCIATION (processor->literals[ip[1]])->value = ST_STACK_POP (processor);
+	    ST_ASSOCIATION (pr->literals[ip[1]])->value = ST_STACK_POP (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -448,7 +442,7 @@ st_processor_main (st_processor *processor)
 	
 	CASE (PUSH_SELF) {
     
-	    ST_STACK_PUSH (processor, processor->receiver);
+	    ST_STACK_PUSH (pr, pr->receiver);
 
 	    ip += 1;
 	    NEXT ();
@@ -456,7 +450,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (PUSH_TRUE) {
     
-	    ST_STACK_PUSH (processor, st_true);
+	    ST_STACK_PUSH (pr, st_true);
 	    
 	    ip += 1;
 	    NEXT ();
@@ -464,7 +458,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (PUSH_FALSE) {
 	    
-	    ST_STACK_PUSH (processor, st_false);
+	    ST_STACK_PUSH (pr, st_false);
 	
 	    ip += 1;
 	    NEXT ();
@@ -472,7 +466,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (PUSH_NIL) {
     
-	    ST_STACK_PUSH (processor, st_nil);
+	    ST_STACK_PUSH (pr, st_nil);
 	    
 	    ip += 1;
 	    NEXT ();
@@ -480,7 +474,7 @@ st_processor_main (st_processor *processor)
 	
 	CASE (PUSH_ACTIVE_CONTEXT) {
     
-	    ST_STACK_PUSH (processor, processor->context);
+	    ST_STACK_PUSH (pr, pr->context);
 	    
 	    ip += 1;
 	    NEXT ();
@@ -488,7 +482,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (PUSH_LITERAL_CONST) {
     
-	    ST_STACK_PUSH (processor, processor->literals[ip[1]]);
+	    ST_STACK_PUSH (pr, pr->literals[ip[1]]);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -498,9 +492,9 @@ st_processor_main (st_processor *processor)
 	    
 	    st_oop var;
 	    
-	    var = ST_ASSOCIATION (processor->literals[ip[1]])->value;
+	    var = ST_ASSOCIATION (pr->literals[ip[1]])->value;
 	    
-	    ST_STACK_PUSH (processor, var);	    
+	    ST_STACK_PUSH (pr, var);	    
 	    
 	    ip += 2;
 	    NEXT ();
@@ -508,15 +502,15 @@ st_processor_main (st_processor *processor)
 	    
 	CASE (JUMP_TRUE) {
 	    
-	    if (ST_STACK_PEEK (processor) == st_true) {
-		(void) ST_STACK_POP (processor);
+	    if (ST_STACK_PEEK (pr) == st_true) {
+		(void) ST_STACK_POP (pr);
 		ip += 3 + ((ip[1] << 8) | ip[2]);
-	    } else if (ST_STACK_PEEK (processor) == st_false) {
-		(void) ST_STACK_POP (processor);
+	    } else if (ST_STACK_PEEK (pr) == st_false) {
+		(void) ST_STACK_POP (pr);
 		ip += 3;
 	    } else {
 		ip += 3;
-		SEND_SELECTOR (processor, st_selector_mustBeBoolean, 0);
+		SEND_SELECTOR (pr, st_selector_mustBeBoolean, 0);
 	    }
 	    
 	    NEXT ();
@@ -524,15 +518,15 @@ st_processor_main (st_processor *processor)
 
 	CASE (JUMP_FALSE) {
 	    
-	    if (ST_STACK_PEEK (processor) == st_false) {
-		(void) ST_STACK_POP (processor);
+	    if (ST_STACK_PEEK (pr) == st_false) {
+		(void) ST_STACK_POP (pr);
 		ip += 3 + ((ip[1] << 8) | ip[2]);
-	    } else if (ST_STACK_PEEK (processor) == st_true) {
-		(void) ST_STACK_POP (processor);
+	    } else if (ST_STACK_PEEK (pr) == st_true) {
+		(void) ST_STACK_POP (pr);
 		ip += 3;
 	    } else {
 		ip += 3;
-		SEND_SELECTOR (processor, st_selector_mustBeBoolean, 0);
+		SEND_SELECTOR (pr, st_selector_mustBeBoolean, 0);
 	    }
 	    
 	    NEXT ();
@@ -549,33 +543,33 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_PLUS) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_PLUS];	    
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_PLUS];	    
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_MINUS) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_MINUS];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_MINUS];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
     
 	CASE (SEND_MUL) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_MUL];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_MUL];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	
@@ -583,11 +577,11 @@ st_processor_main (st_processor *processor)
     
 	CASE (SEND_MOD) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_MOD];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_MOD];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	    
@@ -595,165 +589,165 @@ st_processor_main (st_processor *processor)
     
 	CASE (SEND_DIV) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_DIV];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_DIV];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_BITSHIFT) {
     
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_BITSHIFT];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_BITSHIFT];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();	    
 	}
 	
 	CASE (SEND_BITAND) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_BITAND];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_BITAND];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();	    
 	}
 	
 	CASE (SEND_BITOR) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_BITOR];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_BITOR];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();	    
 	}
 	
 	CASE (SEND_BITXOR) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_BITXOR];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_BITXOR];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_LT) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_LT];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_LT];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_GT) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_GT];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_GT];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	
 	    NEXT ();
 	}
 	
 	CASE (SEND_LE) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_LE];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_LE];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();	    
 	}
 	
 	CASE (SEND_GE) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_GE];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_GE];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_CLASS) {
 
-	    processor->message_argcount = 0;
-	    processor->message_selector = st_specials[ST_SPECIAL_CLASS];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 0;
+	    pr->message_selector = st_specials[ST_SPECIAL_CLASS];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	
 	    NEXT ();
 	}
 	
 	CASE (SEND_SIZE) {
 	    
-	    processor->message_argcount = 0;
-	    processor->message_selector = st_specials[ST_SPECIAL_SIZE];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 0;
+	    pr->message_selector = st_specials[ST_SPECIAL_SIZE];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
     
 	CASE (SEND_AT) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_AT];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_AT];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
     
 	CASE (SEND_AT_PUT) {
 	    
-	    processor->message_argcount = 2;
-	    processor->message_selector = st_specials[ST_SPECIAL_ATPUT];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 2;
+	    pr->message_selector = st_specials[ST_SPECIAL_ATPUT];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_EQ) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_EQ];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_EQ];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_NE) {
 
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_NE];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_NE];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	
 	    NEXT ();
 	}
@@ -761,10 +755,10 @@ st_processor_main (st_processor *processor)
 	CASE (SEND_IDENTITY_EQ) {
 
 	    st_oop a, b;
-	    a = ST_STACK_POP (processor);
-	    b = ST_STACK_POP (processor);
+	    a = ST_STACK_POP (pr);
+	    b = ST_STACK_POP (pr);
 	    
-	    ST_STACK_PUSH (processor, (a == b) ? st_true : st_false);
+	    ST_STACK_PUSH (pr, (a == b) ? st_true : st_false);
 
 	    ip += 1;
 	    NEXT ();
@@ -772,44 +766,44 @@ st_processor_main (st_processor *processor)
 	
 	CASE (SEND_VALUE) {
     
-	    processor->message_argcount = 0;
-	    processor->message_selector = st_specials[ST_SPECIAL_VALUE];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 0;
+	    pr->message_selector = st_specials[ST_SPECIAL_VALUE];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
     
 	CASE (SEND_VALUE_ARG) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_NEW) {
     
-	    processor->message_argcount = 0;
-	    processor->message_selector = st_specials[ST_SPECIAL_NEW];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 0;
+	    pr->message_selector = st_specials[ST_SPECIAL_NEW];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
 	
 	CASE (SEND_NEW_ARG) {
 	    
-	    processor->message_argcount = 1;
-	    processor->message_selector = st_specials[ST_SPECIAL_NEW_ARG];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = 1;
+	    pr->message_selector = st_specials[ST_SPECIAL_NEW_ARG];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
-	    SEND_TEMPLATE (processor);
+	    SEND_TEMPLATE (pr);
 	    
 	    NEXT ();
 	}
@@ -820,24 +814,24 @@ st_processor_main (st_processor *processor)
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 
-	    processor->message_argcount = ip[1];
-	    processor->message_selector = processor->literals[ip[2]];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = ip[1];
+	    pr->message_selector = pr->literals[ip[2]];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 
 	    ip += 3;
 
-	    method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));
+	    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
 	    
 	    flags = st_method_get_flags (method);
 	    if (flags == ST_METHOD_PRIMITIVE) {
 		primitive_index = st_method_get_primitive_index (method);
 		
-		EXECUTE_PRIMITIVE (processor, primitive_index);
-		if (ST_LIKELY (processor->success))
+		EXECUTE_PRIMITIVE (pr, primitive_index);
+		if (ST_LIKELY (pr->success))
 		    NEXT ();
 	    }
 	    
-	    ACTIVATE_METHOD (processor, method);
+	    ACTIVATE_METHOD (pr, method);
 	    
 	    NEXT ();
 	}
@@ -849,33 +843,33 @@ st_processor_main (st_processor *processor)
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 	    
-	    processor->message_argcount = ip[1];
-	    processor->message_selector = processor->literals[ip[2]];
-	    processor->message_receiver = processor->stack[processor->sp - processor->message_argcount - 1];
+	    pr->message_argcount = ip[1];
+	    pr->message_selector = pr->literals[ip[2]];
+	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
 	    
 	    ip += 3;
 	    
-	    literal_index = st_smi_value (st_arrayed_object_size (ST_METHOD (processor->method)->literals)) - 1;
+	    literal_index = st_smi_value (st_arrayed_object_size (ST_METHOD (pr->method)->literals)) - 1;
 
-	    method = st_processor_lookup_method (processor, ST_BEHAVIOR (processor->literals[literal_index])->superclass);
+	    method = st_processor_lookup_method (pr, ST_BEHAVIOR (pr->literals[literal_index])->superclass);
 	    
 	    flags = st_method_get_flags (method);
 	    if (flags == ST_METHOD_PRIMITIVE) {
 		primitive_index = st_method_get_primitive_index (method);
 		
-		EXECUTE_PRIMITIVE (processor, primitive_index);
-		if (ST_LIKELY (processor->success))
+		EXECUTE_PRIMITIVE (pr, primitive_index);
+		if (ST_LIKELY (pr->success))
 		    NEXT ();
 	    }
 	    
-	    ACTIVATE_METHOD (processor, method);
+	    ACTIVATE_METHOD (pr, method);
 	    
 	    NEXT ();
 	}
 	
 	CASE (POP_STACK_TOP) {
 	    
-	    (void) ST_STACK_POP (processor);
+	    (void) ST_STACK_POP (pr);
 	    
 	    ip += 1;
 	    NEXT ();
@@ -883,7 +877,7 @@ st_processor_main (st_processor *processor)
 
 	CASE (DUPLICATE_STACK_TOP) {
 	    
-	    ST_STACK_PUSH (processor, ST_STACK_PEEK (processor));
+	    ST_STACK_PUSH (pr, ST_STACK_PEEK (pr));
 	    
 	    ip += 1;
 	    NEXT ();
@@ -898,11 +892,11 @@ st_processor_main (st_processor *processor)
 	    
 	    ip += 2;
 	    
-	    initial_ip = ip - processor->bytecode + 3;
+	    initial_ip = ip - pr->bytecode + 3;
 	    
-	    block = block_context_new (processor, initial_ip, argcount);
+	    block = block_context_new (pr, initial_ip, argcount);
 	    
-	    ST_STACK_PUSH (processor, block);
+	    ST_STACK_PUSH (pr, block);
 	    
 	    NEXT ();
 	}
@@ -912,24 +906,24 @@ st_processor_main (st_processor *processor)
 	    st_oop sender;
 	    st_oop value;
 	    
-	    value = ST_STACK_PEEK (processor);
+	    value = ST_STACK_PEEK (pr);
 	    
-	    if (st_heap_object_class (processor->context) == st_block_context_class)
-		sender = ST_CONTEXT_PART (ST_BLOCK_CONTEXT (processor->context)->home)->sender;
+	    if (ST_HEADER (pr->context)->class == st_block_context_class)
+		sender = ST_CONTEXT_PART (ST_BLOCK_CONTEXT (pr->context)->home)->sender;
 	    else
-		sender = ST_CONTEXT_PART (processor->context)->sender;
+		sender = ST_CONTEXT_PART (pr->context)->sender;
 	    
 	    st_assert (st_object_is_heap (sender));
 
 	    if (sender == st_nil) {
-		ST_STACK_PUSH (processor, processor->context);
-		ST_STACK_PUSH (processor, value);
-		SEND_SELECTOR (processor, st_selector_cannotReturn, 1);
+		ST_STACK_PUSH (pr, pr->context);
+		ST_STACK_PUSH (pr, value);
+		SEND_SELECTOR (pr, st_selector_cannotReturn, 1);
 		NEXT ();
 	    }
 
-	    ACTIVATE_CONTEXT (processor, sender);
-	    ST_STACK_PUSH (processor, value);
+	    ACTIVATE_CONTEXT (pr, sender);
+	    ST_STACK_PUSH (pr, value);
 
 	    NEXT ();
 	}
@@ -939,58 +933,57 @@ st_processor_main (st_processor *processor)
 	    st_oop caller;
 	    st_oop value;
 	    
-	    caller = ST_BLOCK_CONTEXT (processor->context)->caller;
-	    value = ST_STACK_PEEK (processor);
-	    ACTIVATE_CONTEXT (processor, caller);
+	    caller = ST_BLOCK_CONTEXT (pr->context)->caller;
+	    value = ST_STACK_PEEK (pr);
+	    ACTIVATE_CONTEXT (pr, caller);
 	    
 	    /* push returned value onto caller's stack */
-	    ST_STACK_PUSH (processor, value);
-	    st_assert (processor->context == caller);
+	    ST_STACK_PUSH (pr, value);
+	    st_assert (pr->context == caller);
 	    
 	    NEXT ();
 	}
     }
 
 out:
-    st_processor_prologue (processor);
+    st_processor_prologue (pr);
 }
 
 void
-st_processor_clear_caches (st_processor *processor)
+st_processor_clear_caches (st_processor *pr)
 {
     for (st_uint i = 0; i < ST_METHOD_CACHE_SIZE; i++) {
-	processor->method_cache[i].class    = st_nil;
-	processor->method_cache[i].selector = st_nil;
-	processor->method_cache[i].method   = st_nil;
+	pr->method_cache[i].class    = st_nil;
+	pr->method_cache[i].selector = st_nil;
+	pr->method_cache[i].method   = st_nil;
     }
 }
 
 void
-st_processor_initialize (st_processor *processor)
+st_processor_initialize (st_processor *pr)
 {
     st_oop context;
     st_oop method;
 
     /* clear contents */
-    memset (processor, 0, sizeof (st_processor));
-    processor->context = st_nil;
-    processor->receiver = st_nil;
-    processor->method = st_nil;
+    memset (pr, 0, sizeof (st_processor));
+    pr->context = st_nil;
+    pr->receiver = st_nil;
+    pr->method = st_nil;
 
-    processor->ip = 0;
-    processor->sp = 0;
-    processor->stack = NULL;
+    pr->ip = 0;
+    pr->sp = 0;
+    pr->stack = NULL;
 
-    processor->message_argcount = 0;
-    processor->message_receiver = st_nil;
-    processor->message_selector = st_selector_startupSystem;
-    
-    st_processor_clear_caches (processor);
+    pr->message_argcount = 0;
+    pr->message_receiver = st_nil;
+    pr->message_selector = st_selector_startupSystem;
+    st_processor_clear_caches (pr);
 
-    method = st_processor_lookup_method (processor, st_object_class (processor->message_receiver));
+    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
     st_assert (st_method_get_flags (method) == ST_METHOD_NORMAL);
 
-    context = method_context_new (processor,  method);
-    st_processor_set_active_context (processor, context);
+    context = method_context_new (pr,  method);
+    st_processor_set_active_context (pr, context);
 }
 
