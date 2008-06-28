@@ -48,8 +48,8 @@ static inline st_oop    remap_oop (st_memory *om, st_oop ref);
 static void      garbage_collect (st_memory *memory);
 
 // RESERVE 256 MB worth of virtual address space
-#define RESERVED_SIZE        (256 * 1024 * 1024)
-#define INITIAL_COMMIT_SIZE  (128 * 1024 * 1024)
+#define RESERVED_SIZE        (1000 * 1024 * 1024)
+#define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
 
 // 1 MB for mark stack 
 #define MARK_STACK_SIZE      (1 * 1024 * 1024)
@@ -80,7 +80,7 @@ initialize_mark_stack (struct mark_stack *ms)
 }
 
 static void
-initialize_metadata (st_memory *memory)
+ensure_metadata (st_memory *memory)
 {
     /* The bit arrays are implemented using bytes as smallest element of storage.
      * If there are N oops in the heap, then we need ((N + 7) / 8) bytes
@@ -100,6 +100,27 @@ initialize_metadata (st_memory *memory)
 
     memory->offsets      = st_malloc (offsets_size);
     memory->offsets_size = offsets_size;
+}
+
+static void
+grow_heap (st_memory *memory)
+{
+    /* we grow the heap by roughly a quarter (0.4) */
+
+    st_uint  size, grow_size;
+    st_heap *heap;
+
+    heap = memory->heap;
+    size = heap->p - heap->start;
+    grow_size = size / 4;
+
+    st_heap_grow (heap, grow_size);
+    
+    memory->heap_start = (st_oop *) heap->start;
+    memory->heap_end = (st_oop *) heap->p;
+    memory->moving_space->top = memory->heap_end;
+
+    ensure_metadata (memory);
 }
 
 st_memory *
@@ -127,10 +148,10 @@ st_memory_new (void)
 
     memory->tot_pause_time.tv_sec = 0;
     memory->tot_pause_time.tv_nsec = 0;
-    memory->byte_count = 0;
+    memory->counter = 0;
 
     initialize_mark_stack (&memory->ms);
-    initialize_metadata (memory);
+    ensure_metadata (memory);
 
     /* fixed space gets 1/5 of heap, 4/5 for the moving space */    
     ptr = memory->heap_start + ((memory->heap_end - memory->heap_start) / 5) ;
@@ -165,21 +186,17 @@ st_space_allocate_chunk (st_space *space, st_uint size)
 
     st_assert (size >= 2);
 
-    if (space == memory->moving_space
-	&& memory->byte_count > ST_COLLECTION_THRESHOLD) {
-	garbage_collect (memory);
-	memory->byte_count = 0;
-    }
-
-   if (space == memory->moving_space &&
-       (space->water_level + size) >= space->top) {
-       abort ();
+    if (space == memory->moving_space) {
+	if (memory->counter > ST_COLLECTION_THRESHOLD)
+	    garbage_collect (memory);
+	if ((space->water_level + size) >= space->top)
+	    grow_heap (memory);
     }
 
     chunk = space->water_level;
     space->water_level += size;
-
-    memory->byte_count += (size * sizeof (st_oop));
+    
+    memory->counter += (size * sizeof (st_oop));
 
     memory->bytes_allocated += (size * sizeof (st_oop));
 
@@ -194,6 +211,9 @@ st_space_allocate_object (st_space *space,
     st_oop chunk;
     
     chunk = st_space_allocate_chunk (space, size);
+    if (!chunk) {
+	return 0;
+    }
 
     ST_HEADER (chunk)->mark = 0 | ST_MARK_TAG;
     ST_HEADER (chunk)->hash  = st_smi_new (st_current_hash++);
@@ -539,6 +559,8 @@ garbage_collect (st_memory *memory)
 		 memory->bytes_collected / 1024,
 		 st_timespec_to_double_seconds (&interval));
     }
+
+    memory->counter = 0;
 }
 
 st_heap *

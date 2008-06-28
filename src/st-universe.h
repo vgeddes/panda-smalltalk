@@ -62,7 +62,8 @@ extern st_oop
     st_selector_doesNotUnderstand, 
     st_selector_mustBeBoolean,
     st_selector_startupSystem,
-    st_selector_cannotReturn;
+    st_selector_cannotReturn,
+    st_selector_outOfMemory;
 
 enum {
     ST_SPECIAL_PLUS,

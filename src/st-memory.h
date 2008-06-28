@@ -53,9 +53,10 @@ typedef struct st_space
 
 typedef struct st_heap
 {
-    st_pointer start;
-    st_pointer end;
-    st_pointer p;
+    st_uchar *start; /* start of reserved address space */
+    st_uchar *p;     /* end of committed address space (start to p is thus writeable memory) */
+    st_uchar *end;   /* end of reserved address space */
+ 
 } st_heap;
 
 typedef struct st_memory
@@ -79,7 +80,7 @@ typedef struct st_memory
   
     ptr_array  roots;
 
-    st_uint    byte_count;
+    st_uint    counter;
 
     /* statistics */
     struct timespec tot_pause_time;       /* total accumulated pause time */

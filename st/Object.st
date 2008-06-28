@@ -200,8 +200,7 @@ primitiveFailed
 Object method!
 shouldNotImplement
 	"Announce that, although the receiver inherits this message, it should 
-	 not implement it."
-
+	not implement it."
 	self error: 'This message is not appropriate for this object'!
 
 Object method!
@@ -215,6 +214,9 @@ Object method!
 notYetImplemented
 	self error: 'This method is not yet implemented'!
 
+Object method!
+outOfMemory
+	self error: 'Out of memory'!
 
 "copying"
 

@@ -81,7 +81,8 @@ st_oop
     st_selector_doesNotUnderstand   = 0,
     st_selector_mustBeBoolean       = 0,
     st_selector_startupSystem       = 0,
-    st_selector_cannotReturn        = 0;
+    st_selector_cannotReturn        = 0,
+    st_selector_outOfMemory         = 0;
 
 
 st_oop st_specials[ST_NUM_SPECIALS];
@@ -442,6 +443,7 @@ init_specials (void)
     st_selector_mustBeBoolean       = st_symbol_new ("mustBeBoolean");
     st_selector_startupSystem       = st_symbol_new ("startupSystem");
     st_selector_cannotReturn        = st_symbol_new ("cannotReturn");
+    st_selector_outOfMemory         = st_symbol_new ("outOfMemory");
 }
 
 st_memory *memory;
