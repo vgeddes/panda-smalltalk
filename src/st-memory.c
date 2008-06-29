@@ -43,8 +43,8 @@
 #include <string.h>
 #include <time.h>
 
-static inline st_oop    remap_oop  (st_memory *om, st_oop ref);
-static void      garbage_collect   (st_memory *memory);
+static inline st_oop    remap_oop  (st_oop ref);
+static void      garbage_collect   ();
 
 
 
@@ -110,7 +110,7 @@ ensure_metadata (void)
 }
 
 static void
-grow_heap (st_memory *memory)
+grow_heap (void)
 {
     /* we grow the heap by roughly a quarter (0.4) */
 
@@ -189,9 +189,9 @@ st_memory_allocate (st_uint size)
     st_assert (size >= 2);
 
     if (memory->counter > ST_COLLECTION_THRESHOLD)
-	garbage_collect (memory);
+	garbage_collect ();
     if ((memory->p + size) >= memory->end)
-	grow_heap (memory);
+	grow_heap ();
     
     chunk = memory->p;
     memory->p += size;
@@ -284,7 +284,7 @@ compute_ordinal_number (st_memory *memory, st_oop ref)
 }
 
 static inline st_oop
-remap_oop (st_memory *memory, st_oop ref)
+remap_oop (st_oop ref)
 {
     st_uint  b, i = 0, j = 0;
     st_uint  ordinal;
@@ -311,7 +311,7 @@ remap_oop (st_memory *memory, st_oop ref)
 }
 
 static void
-remap (st_memory *memory)
+remap (void)
 {
     st_oop *oops, *p;
     st_uint size;
@@ -320,18 +320,18 @@ remap (st_memory *memory)
     while (p < memory->p) {
 
 	/* remap class field */
-	p[2] = remap_oop (memory, p[2]);
+	p[2] = remap_oop (p[2]);
 	/* remap ivars */
 	st_object_contents (tag (p), &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
-	    oops[i] = remap_oop (memory, oops[i]);
+	    oops[i] = remap_oop (oops[i]);
 	}
 	p += st_object_size (tag (p));
     }
 }
 
 static void
-compact (st_memory *memory)
+compact (void)
 {
     st_oop *p, *from, *to;
     st_uint  size;
@@ -388,7 +388,7 @@ out:
 }
 
 static void
-mark (st_memory *memory)
+mark (void)
 {
     st_oop   object;
     st_oop  *oops, *stack;
@@ -428,53 +428,53 @@ out:
 }
 
 static void
-remap_processor_state (st_memory *memory, st_processor *processor)
+remap_processor (st_processor *pr)
 {
     st_oop context, home;
 
-    context = remap_oop (memory, processor->context);
+    context = remap_oop (pr->context);
     if (ST_HEADER (context)->class == st_block_context_class) {
 	home = ST_BLOCK_CONTEXT (context)->home;
-	processor->method   = ST_METHOD_CONTEXT (home)->method;
-	processor->receiver = ST_METHOD_CONTEXT (home)->receiver;
-	processor->literals = st_array_elements (ST_METHOD (processor->method)->literals);
-	processor->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
-	processor->stack    = ST_BLOCK_CONTEXT (context)->stack;
+	pr->method   = ST_METHOD_CONTEXT (home)->method;
+	pr->receiver = ST_METHOD_CONTEXT (home)->receiver;
+	pr->literals = st_array_elements (ST_METHOD (pr->method)->literals);
+	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
+	pr->stack    = ST_BLOCK_CONTEXT (context)->stack;
     } else {
-	processor->method   = ST_METHOD_CONTEXT (context)->method;
-	processor->receiver = ST_METHOD_CONTEXT (context)->receiver;
-	processor->literals = st_array_elements (ST_METHOD (processor->method)->literals);
-	processor->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
-	processor->stack    = ST_METHOD_CONTEXT_STACK (context);
+	pr->method   = ST_METHOD_CONTEXT (context)->method;
+	pr->receiver = ST_METHOD_CONTEXT (context)->receiver;
+	pr->literals = st_array_elements (ST_METHOD (pr->method)->literals);
+	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
+	pr->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
 
-    processor->context  = context;
-    processor->bytecode = st_method_bytecode_bytes (processor->method);
-    processor->message_receiver = remap_oop (memory, processor->message_receiver);
-    processor->message_selector = remap_oop (memory, processor->message_selector);
-    processor->new_method = remap_oop (memory, processor->new_method);
+    pr->context  = context;
+    pr->bytecode = st_method_bytecode_bytes (pr->method);
+    pr->message_receiver = remap_oop (pr->message_receiver);
+    pr->message_selector = remap_oop (pr->message_selector);
+    pr->new_method = remap_oop (pr->new_method);
 }
 
 static void
-remap_global_state (void)
+remap_globals (void)
 {
-    st_oop mapped;
+    st_uint i;
 
-    for (st_uint i = 0; i < ST_N_ELEMENTS (globals); i++)
-	globals[i] = remap_oop (memory, globals[i]);
+    for (i = 0; i < ST_N_ELEMENTS (globals); i++)
+	globals[i] = remap_oop (globals[i]);
 
-    for (st_uint i = 0; i < ST_N_ELEMENTS (st_specials); i++)
-	st_specials[i] = remap_oop (memory, st_specials[i]);
+    for (i = 0; i < ST_N_ELEMENTS (st_specials); i++)
+	st_specials[i] = remap_oop (st_specials[i]);
 
 
-    for (st_uint i = 0; i < memory->roots->length; i++) {
-	mapped = remap_oop (memory, (st_oop) ptr_array_get_index (memory->roots, i));
-	ptr_array_set_index (memory->roots, i, (st_pointer) mapped);
+    for (i = 0; i < memory->roots->length; i++) {
+	ptr_array_set_index (memory->roots, i,
+			     (st_pointer) remap_oop ((st_oop) ptr_array_get_index (memory->roots, i)));
     }
 }
 
 static void
-clear_metadata (st_memory *memory)
+clear_metadata (void)
 {
     memset (memory->mark_bits, 0, memory->bits_size);
     memset (memory->alloc_bits, 0, memory->bits_size);
@@ -482,34 +482,41 @@ clear_metadata (st_memory *memory)
 }
 
 static void
-garbage_collect (st_memory *memory)
+garbage_collect (void)
 {
     double times[3];
     struct timespec tm;
 
-    clear_metadata (memory);
+    clear_metadata ();
 
+    /* marking */
     timer_start (&tm);
-    mark (memory);
+    mark ();
     timer_stop (&tm);
+
     times[0] = st_timespec_to_double_seconds (&tm);
-    st_timespec_add (&memory->total_pause_time, &tm ,&memory->total_pause_time);
+    st_timespec_add (&memory->total_pause_time, &tm, &memory->total_pause_time);
 
+    /* compaction */
     timer_start (&tm);
-    compact (memory);
+    compact ();
     timer_stop (&tm);
+
     times[1] = st_timespec_to_double_seconds (&tm);
-    st_timespec_add (&memory->total_pause_time, &tm ,&memory->total_pause_time);    
+    st_timespec_add (&memory->total_pause_time, &tm, &memory->total_pause_time);    
 
+    /* remapping */
     timer_start (&tm);
-    remap (memory);
-    remap_global_state ();
-    remap_processor_state (memory, proc);
+    remap ();
+    remap_globals ();
+    remap_processor (proc);
     timer_stop (&tm);
+
     times[2] = st_timespec_to_double_seconds (&tm);
-    st_timespec_add (&memory->total_pause_time, &tm ,&memory->total_pause_time);
+    st_timespec_add (&memory->total_pause_time, &tm, &memory->total_pause_time);
 
     st_processor_clear_caches (proc);
+    memory->counter = 0;
 
     if (st_verbose_mode ()) {
 	fprintf (stderr, "** gc: collected: %uK, heapSize: %uK, marking: %.6fs, compaction: %.6fs, remapping: %.6fs\n",
@@ -517,8 +524,6 @@ garbage_collect (st_memory *memory)
 		 (memory->bytes_collected + memory->bytes_allocated) / 1024,
 		 times[0], times[1], times[2]);
     }
-
-    memory->counter = 0;
 }
 
 st_heap *
