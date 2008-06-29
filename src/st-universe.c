@@ -50,40 +50,7 @@
 #include <string.h>
 #include <stdio.h>
 
-st_oop
-    st_nil		     = 0,
-    st_true		     = 0,
-    st_false		     = 0,
-    st_symbol_table	     = 0,
-    st_smalltalk	     = 0,
-    st_undefined_object_class = 0,
-    st_metaclass_class       = 0,
-    st_behavior_class        = 0,
-    st_smi_class	     = 0,
-    st_large_integer_class   = 0,
-    st_float_class           = 0,
-    st_character_class       = 0,
-    st_true_class            = 0,
-    st_false_class           = 0,
-    st_array_class           = 0,
-    st_byte_array_class      = 0,
-    st_word_array_class      = 0,
-    st_float_array_class      = 0,
-    st_set_class	     = 0,
-    st_dictionary_class      = 0,
-    st_association_class     = 0,
-    st_string_class          = 0,
-    st_symbol_class          = 0,
-    st_wide_string_class     = 0,
-    st_compiled_method_class = 0,
-    st_method_context_class  = 0,
-    st_block_context_class   = 0,
-    st_selector_doesNotUnderstand   = 0,
-    st_selector_mustBeBoolean       = 0,
-    st_selector_startupSystem       = 0,
-    st_selector_cannotReturn        = 0,
-    st_selector_outOfMemory         = 0;
-
+st_oop globals[32];
 
 st_oop st_specials[ST_NUM_SPECIALS];
 
@@ -109,12 +76,13 @@ class_new (st_format format, st_uint instance_size)
 {
     st_oop class;
 
-    class = st_space_allocate_chunk (memory->fixed_space, ST_SIZE_OOPS (struct st_class));
+    class = st_memory_allocate (ST_SIZE_OOPS (struct st_class));
 
     ST_HEADER (class)->mark = 0 | ST_MARK_TAG;
     ST_HEADER (class)->hash  = st_smi_new (st_current_hash++);
     ST_HEADER (class)->class = st_nil;
     st_object_set_format (class, ST_FORMAT_OBJECT);
+    st_object_set_instance_size (class, INSTANCE_SIZE_CLASS);
     
     ST_BEHAVIOR (class)->format             = st_smi_new (format);
     ST_BEHAVIOR (class)->instance_size      = st_smi_new (instance_size);
@@ -164,7 +132,7 @@ initialize_class  (const char *name,
 
 	metaclass = st_object_class (class);
 	if (metaclass == st_nil) {
-	    metaclass = st_object_new (memory->fixed_space, st_metaclass_class);
+	    metaclass = st_object_new (st_metaclass_class);
 	    ST_HEADER (class)->class = metaclass;
 	}
 
@@ -184,7 +152,7 @@ initialize_class  (const char *name,
 
 	metaclass = ST_HEADER (class)->class;
 	if (metaclass == st_nil) {
-	    metaclass = st_object_new (memory->fixed_space, st_metaclass_class);
+	    metaclass = st_object_new (st_metaclass_class);
 	    ST_HEADER (class)->class = metaclass;
 	}
 
@@ -204,7 +172,7 @@ initialize_class  (const char *name,
     if (st_list_length (ivarnames) != 0) {
 	st_oop names;
 	st_uint i = 1;
-	names = st_object_new_arrayed (memory->fixed_space, st_array_class, st_list_length (ivarnames));
+	names = st_object_new_arrayed (st_array_class, st_list_length (ivarnames));
 	for (st_list *l = ivarnames; l; l = l->next)
 	    st_array_at_put (names, i++, st_symbol_new (l->data));
 	ST_BEHAVIOR (class)->instance_variables = names;
@@ -400,12 +368,13 @@ create_nil_object (void)
 {
     st_oop nil;
 
-    nil = st_space_allocate_chunk (memory->fixed_space, NIL_SIZE_OOPS);
+    nil = st_memory_allocate (NIL_SIZE_OOPS);
 
     ST_HEADER (nil)->mark = 0 | ST_MARK_TAG;
     ST_HEADER (nil)->hash = st_smi_new (st_current_hash++);
     ST_HEADER (nil)->class = nil;
     st_object_set_format (nil, ST_FORMAT_OBJECT);
+    st_object_set_instance_size (nil, 0);
 
     return nil;
 }
@@ -453,7 +422,7 @@ st_bootstrap_universe (void)
 {
     st_oop st_object_class_, st_class_class_;
 
-    memory = st_memory_new ();
+    st_memory_new ();
 
     /* setup format descriptors */
     st_descriptors[ST_FORMAT_OBJECT]        = st_object_descriptor        ();
@@ -495,8 +464,8 @@ st_bootstrap_universe (void)
     ST_HEADER (st_nil)->class = st_undefined_object_class;
 
     /* special objects */
-    st_true         = st_object_new (memory->fixed_space, st_true_class);
-    st_false        = st_object_new (memory->fixed_space, st_false_class);
+    st_true         = st_object_new (st_true_class);
+    st_false        = st_object_new (st_false_class);
     st_symbol_table = st_set_new_with_capacity (75);
     st_smalltalk    = st_dictionary_new_with_capacity (75);
 
@@ -529,11 +498,11 @@ st_bootstrap_universe (void)
     init_specials ();
     file_in_classes ();
 
-    st_memory_add_root (memory, st_nil);
-    st_memory_add_root (memory, st_true);
-    st_memory_add_root (memory, st_false);
-    st_memory_add_root (memory, st_smalltalk);
-    st_memory_add_root (memory, st_symbol_table);
+    st_memory_add_root (st_nil);
+    st_memory_add_root (st_true);
+    st_memory_add_root (st_false);
+    st_memory_add_root (st_smalltalk);
+    st_memory_add_root (st_symbol_table);
 }
 
 static bool verbosity;

@@ -60,15 +60,15 @@ struct st_metaclass
 };
 
 static inline st_oop
-st_object_new (st_space *space, st_oop class)
+st_object_new (st_oop class)
 {  
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (space, class);
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (class);
 }
 
 static inline st_oop
-st_object_new_arrayed (st_space *space, st_oop class, st_smi size)
+st_object_new_arrayed (st_oop class, st_smi size)
 {
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (space, class, size);
+    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (class, size);
 }
 
 st_list *st_behavior_all_instance_variables (st_oop class);

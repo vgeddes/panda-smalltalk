@@ -52,18 +52,14 @@ typedef enum st_format
 
 struct st_descriptor
 {
-    st_oop  (* allocate) (st_space         *space,
-			  st_oop            class);
+    st_oop  (* allocate) (st_oop class);
 
-    st_oop  (* allocate_arrayed) (st_space         *space,
-				  st_oop            class,
-				  st_smi            size);
-    
-    st_oop  (* copy) (st_oop object);
-    
+    st_oop  (* allocate_arrayed) (st_oop class,
+				  st_smi size);
+        
     st_uint (* size) (st_oop object);
     
-    void    (* contents) (st_oop object, struct contents *contents);
+    void    (* contents) (st_oop object, st_oop **oops, st_uint *size);
     
 };
 

@@ -45,14 +45,14 @@ st_symbol_equal (st_oop object, st_oop other)
 }
 
 static st_oop
-string_new (st_space *space, st_oop class, const char *bytes)
+string_new (st_oop class, const char *bytes)
 {
     st_oop  string;
     st_uchar *data;
     int len;
     
     len = strlen (bytes);
-    string = st_object_new_arrayed (space, class, len);
+    string = st_object_new_arrayed (class, len);
     data = st_byte_array_bytes (string);
 
     memcpy (data, bytes, len);
@@ -61,20 +61,20 @@ string_new (st_space *space, st_oop class, const char *bytes)
 }
 
 st_oop
-st_string_new (st_space *space, const char *bytes)
+st_string_new (const char *bytes)
 {
-    return string_new (space, st_string_class, bytes);
+    return string_new (st_string_class, bytes);
 }
 
 st_oop
 st_symbol_new (const char *bytes)
 {
-    st_oop element = st_set_like (st_symbol_table, st_string_new (memory->moving_space, bytes));
+    st_oop element = st_set_like (st_symbol_table, st_string_new (bytes));
     st_oop symbol;
 
     if (element == st_nil) {
 
-	symbol = string_new (memory->fixed_space, st_symbol_class, bytes);
+	symbol = string_new (st_symbol_class, bytes);
 
 	st_set_add (st_symbol_table, symbol);
 

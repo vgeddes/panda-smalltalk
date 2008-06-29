@@ -805,7 +805,7 @@ LargeInteger_printString (st_processor *pr)
 
     if (pr->success) {
 	string = st_large_integer_to_string (x, radix);
-	result = st_string_new (memory->moving_space, string);
+	result = st_string_new (string);
     }
 
     if (pr->success)
@@ -1339,13 +1339,91 @@ Object_copy (st_processor *pr)
 {
     st_oop receiver;
     st_oop copy;
+    st_oop class;
+    st_smi size;
 
-    receiver = ST_STACK_POP (pr);
+    (void) ST_STACK_POP (pr);
 
-    if (st_object_is_heap (receiver))
-	copy = st_descriptor_for_object (receiver)->copy (receiver);
-    else
-	copy = receiver;
+    if (!st_object_is_heap (pr->message_receiver)) {
+	ST_STACK_PUSH (pr, pr->message_receiver);
+	return;
+    }
+
+    switch (st_object_format (pr->message_receiver)) {
+
+    case ST_FORMAT_OBJECT:
+    {
+	class = ST_HEADER (pr->message_receiver)->class;
+	size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+	copy = st_object_new (class);
+	st_oops_copy (ST_HEADER (copy)->fields,
+		      ST_HEADER (pr->message_receiver)->fields,
+		      size);
+	break;
+
+    }
+    case ST_FORMAT_ARRAY:
+    {
+	size = st_smi_value (ST_ARRAYED_OBJECT (pr->message_receiver)->size);
+	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	st_oops_copy (ST_ARRAY (copy)->elements,
+		      ST_ARRAY (pr->message_receiver)->elements,
+		      size);
+	break;
+    }
+    case ST_FORMAT_BYTE_ARRAY:
+    {
+	size = st_smi_value (ST_ARRAYED_OBJECT (pr->message_receiver)->size);
+	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	memcpy (st_byte_array_bytes (copy),
+		st_byte_array_bytes (pr->message_receiver),
+		size);
+	break;
+    }
+    case ST_FORMAT_FLOAT_ARRAY:
+    {
+	size = st_smi_value (st_arrayed_object_size (pr->message_receiver));
+	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	memcpy (st_float_array_elements (copy),
+		st_float_array_elements (pr->message_receiver),
+		sizeof (double) * size);
+
+	break;
+    }
+    case ST_FORMAT_WORD_ARRAY:
+    {
+	size = st_smi_value (st_arrayed_object_size (pr->message_receiver));
+	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	memcpy (st_word_array_elements (copy),
+		st_word_array_elements (pr->message_receiver),
+		sizeof (st_uint) * size);
+	break;
+    }
+    case ST_FORMAT_FLOAT:
+    {
+	copy = st_object_new (st_float_class);
+	st_float_set_value (copy, st_float_value (pr->message_receiver));
+	break;
+    }
+    case ST_FORMAT_LARGE_INTEGER:
+    {
+	mp_int value;
+	int    result;
+
+	copy = st_large_integer_new (NULL);
+	
+	result = mp_init_copy (st_large_integer_value (copy),
+			       st_large_integer_value (pr->message_receiver));
+	if (result != MP_OKAY)
+	    st_assert_not_reached ();
+	break;
+    }
+    case ST_FORMAT_CONTEXT:
+    case ST_FORMAT_INTEGER_ARRAY:
+    default:
+	/* not implemented yet */
+	st_assert_not_reached ();
+    }
 
     ST_STACK_PUSH (pr, copy);
 }
@@ -1372,11 +1450,10 @@ Object_perform (st_processor *pr)
     receiver = pr->message_receiver;
 
     set_success (pr, st_object_is_symbol (pr->message_selector));
-    method = st_processor_lookup_method (pr, st_object_class (receiver));
+    pr->new_method = st_processor_lookup_method (pr, st_object_class (receiver));
     set_success (pr, st_method_get_arg_count (method) == (pr->message_argcount - 1));
 
     if (pr->success) {
-
 	selector_index = pr->sp - pr->message_argcount;
 
 	st_oops_move (pr->stack + selector_index,
@@ -1385,7 +1462,7 @@ Object_perform (st_processor *pr)
 
 	pr->sp -= 1;
 	pr->message_argcount -= 1;
-	st_processor_execute_method (pr, method);
+	st_processor_execute_method (pr);
 
     } else {
 	pr->message_selector = selector;
@@ -1428,11 +1505,11 @@ Object_perform_withArguments (st_processor *pr)
 
 	pr->sp += array_size;
 
-	method = st_processor_lookup_method (pr, st_object_class (receiver));
-	set_success (pr, st_method_get_arg_count (method) == array_size);
+	pr->new_method = st_processor_lookup_method (pr, st_object_class (receiver));
+	set_success (pr, st_method_get_arg_count (pr->new_method) == array_size);
     
 	if (pr->success) {
-	    st_processor_execute_method (pr, method);
+	    st_processor_execute_method (pr);
 	} else {
 	    pr->sp -= pr->message_argcount;
 	    ST_STACK_PUSH (pr, pr->message_selector);
@@ -1463,7 +1540,7 @@ Behavior_new (st_processor *pr)
 	return;
     }
 
-    instance = st_descriptors[format]->allocate (memory->moving_space, class);
+    instance = st_descriptors[format]->allocate (class);
     ST_STACK_PUSH (pr, instance);
 }
 
@@ -1487,7 +1564,7 @@ Behavior_newSize (st_processor *pr)
 	return;
     }
 
-    instance = st_descriptors[format]->allocate_arrayed (memory->moving_space, class, size);
+    instance = st_descriptors[format]->allocate_arrayed (class, size);
     ST_STACK_PUSH (pr, instance);
 }
 

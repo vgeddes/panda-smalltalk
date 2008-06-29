@@ -29,41 +29,42 @@
 #include <st-memory.h>
 #include <st-processor.h>
 
-extern st_oop
-    st_nil,
-    st_true,
-    st_false,
-    st_symbol_table,
-    st_smalltalk,
+extern st_oop globals[32];
 
-    st_undefined_object_class,
-    st_metaclass_class,
-    st_behavior_class,
-    st_smi_class,
-    st_large_integer_class,
-    st_float_class,
-    st_character_class,
-    st_true_class,
-    st_false_class,
-    st_array_class,
-    st_byte_array_class,
-    st_word_array_class,
-    st_float_array_class,
-    st_set_class,
-    st_dictionary_class,
-    st_association_class,
-    st_string_class,
-    st_symbol_class,
-    st_wide_string_class,
-    st_compiled_method_class,
-    st_method_context_class,
-    st_block_context_class,
+#define    st_nil                        globals[0]
+#define    st_true                       globals[1]
+#define    st_false                      globals[2]
+#define    st_symbol_table               globals[3]
+#define    st_smalltalk                  globals[4]
 
-    st_selector_doesNotUnderstand, 
-    st_selector_mustBeBoolean,
-    st_selector_startupSystem,
-    st_selector_cannotReturn,
-    st_selector_outOfMemory;
+#define    st_undefined_object_class     globals[5]
+#define    st_metaclass_class            globals[6]
+#define    st_behavior_class             globals[7]
+#define    st_smi_class                  globals[8]
+#define    st_large_integer_class        globals[9]
+#define    st_float_class                globals[10]
+#define    st_character_class            globals[11]
+#define    st_true_class                 globals[12]
+#define    st_false_class                globals[13]
+#define    st_array_class                globals[14]
+#define    st_byte_array_class           globals[15]
+#define    st_word_array_class           globals[16]
+#define    st_float_array_class          globals[17]
+#define    st_set_class                  globals[18]
+#define    st_dictionary_class           globals[19]
+#define    st_association_class          globals[20]
+#define    st_string_class               globals[21]
+#define    st_symbol_class               globals[22]
+#define    st_wide_string_class          globals[23]
+#define    st_compiled_method_class      globals[24]
+#define    st_method_context_class       globals[25]
+#define    st_block_context_class        globals[26]
+
+#define    st_selector_doesNotUnderstand globals[27]
+#define    st_selector_mustBeBoolean     globals[28]
+#define    st_selector_startupSystem     globals[29]
+#define    st_selector_cannotReturn      globals[30]
+#define    st_selector_outOfMemory       globals[31]
 
 enum {
     ST_SPECIAL_PLUS,

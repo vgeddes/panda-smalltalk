@@ -77,16 +77,15 @@ st_large_integer_to_string (st_oop integer, st_uint radix)
 }
 
 static st_oop
-allocate_with_value (st_space *space, st_oop class, mp_int * value)
+allocate_with_value (st_oop class, mp_int * value)
 {
     st_oop object;
 
-    object = st_space_allocate_object (space, class, sizeof (struct st_large_integer) / sizeof (st_oop));
+    object = st_memory_allocate (sizeof (struct st_large_integer) / sizeof (st_oop));
+    st_object_initialize_header (object, class);
 
     if (value)
 	*VALUE (object) = *value;
-    else
-	mp_init (VALUE (object));
 
     return object;
 }
@@ -94,27 +93,14 @@ allocate_with_value (st_space *space, st_oop class, mp_int * value)
 st_oop
 st_large_integer_new (mp_int * value)
 {
-    return allocate_with_value (memory->moving_space, st_large_integer_class, value);
+    return allocate_with_value (st_large_integer_class, value);
     
 }
 
 static st_oop
-allocate (st_space *space, st_oop class)
+allocate (st_oop class)
 {
-    return allocate_with_value (space, class, NULL);
-}
-
-static st_oop
-large_integer_copy (st_oop object)
-{
-    mp_int value;
-    int result;
-
-    result = mp_init_copy (&value, VALUE (object));
-    if (result != MP_OKAY)
-	st_assert_not_reached ();
-
-    return st_large_integer_new (&value);
+    return allocate_with_value (class, NULL);
 }
 
 static st_uint
@@ -124,10 +110,10 @@ large_integer_size (st_oop object)
 }
 
 static void
-large_integer_contents (st_oop object, struct contents *contents)
+large_integer_contents (st_oop object, st_oop **oops, st_uint *size)
 {
-    contents->oops = NULL;
-    contents->size = 0;
+    *oops = NULL;
+    *size = 0;
 }
 
 st_descriptor *
@@ -136,7 +122,6 @@ st_large_integer_descriptor (void)
     static st_descriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
-	  .copy             = large_integer_copy,
 	  .size             = large_integer_size,
 	  .contents         = large_integer_contents,
 	};

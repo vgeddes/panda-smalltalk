@@ -29,7 +29,7 @@
 #include <st-descriptor.h>
 #include <st-memory.h>
 
-st_oop st_string_new (st_space *space, const char *bytes);
+st_oop st_string_new (const char *bytes);
 
 st_oop st_symbol_new (const char *bytes);
 

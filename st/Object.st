@@ -214,10 +214,6 @@ Object method!
 notYetImplemented
 	self error: 'This method is not yet implemented'!
 
-Object method!
-outOfMemory
-	self error: 'Out of memory'!
-
 "copying"
 
 Object method!

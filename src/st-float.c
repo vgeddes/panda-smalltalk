@@ -27,11 +27,12 @@
 
 
 static st_oop
-allocate (st_space *space, st_oop class)
+allocate (st_oop class)
 {
     st_oop f;
 
-    f = st_space_allocate_object (space, class, ST_SIZE_OOPS (struct st_float));
+    f = st_memory_allocate (ST_SIZE_OOPS (struct st_float));
+    st_object_initialize_header (f, class);
     st_float_set_value (f, 0.0);
 
     return f;
@@ -40,7 +41,7 @@ allocate (st_space *space, st_oop class)
 st_oop
 st_float_new (double value)
 {
-    st_oop f = st_object_new (memory->fixed_space, st_float_class);
+    st_oop f = st_object_new (st_float_class);
 
     st_float_set_value (f, value);
     
@@ -60,10 +61,10 @@ float_size (st_oop object)
 }
 
 static void
-float_contents (st_oop object, struct contents *contents)
+float_contents (st_oop object, st_oop **oops, st_uint *size)
 {
-    contents->oops = NULL;
-    contents->size = 0;
+    *oops = NULL;
+    *size = 0;
 }
 
 st_descriptor *
@@ -74,7 +75,6 @@ st_float_descriptor (void)
     static st_descriptor __descriptor =
 	{ .allocate         = allocate,
 	  .allocate_arrayed = NULL,
-	  .copy             = float_copy,
 	  .size             = float_size,
 	  .contents         = float_contents,
 	};

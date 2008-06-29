@@ -43,19 +43,42 @@
 #include <string.h>
 #include <time.h>
 
-static inline st_oop    remap_oop (st_memory *om, st_oop ref);
+static inline st_oop    remap_oop  (st_memory *om, st_oop ref);
+static void      garbage_collect   (st_memory *memory);
 
-static void      garbage_collect (st_memory *memory);
+
+
+static void
+timer_start (struct timespec *spec)
+{
+    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, spec);
+}
+
+static void
+timer_stop (struct timespec *spec)
+{
+    struct timespec tmp;
+    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &tmp);
+    st_timespec_difference (spec, &tmp, spec);
+}
+
 
 // RESERVE 256 MB worth of virtual address space
 #define RESERVED_SIZE        (1000 * 1024 * 1024)
 #define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
 
-// 1 MB for mark stack 
-#define MARK_STACK_SIZE      (1 * 1024 * 1024)
+// 500 KB for mark stack 
+#define MARK_STACK_SIZE      (500 * 1024)
+#define MARK_STACK_SIZE_OOPS (MARK_STACK_SIZE / sizeof (st_oop))
 
 #define BLOCK_SIZE       256
 #define BLOCK_SIZE_OOPS  (BLOCK_SIZE / sizeof (st_oop))
+
+static void
+verify (st_oop object)
+{
+    st_assert (st_object_is_mark (ST_HEADER (object)->mark));
+}
 
 static inline st_uint
 round_pagesize (st_uint size)
@@ -64,23 +87,7 @@ round_pagesize (st_uint size)
 }
 
 static void
-initialize_mark_stack (struct mark_stack *ms)
-{
-    st_pointer result;
-
-    result = st_system_commit_memory (NULL, MARK_STACK_SIZE);
-    if (!result)
-	abort ();
-    
-    ms->address = result;
-    ms->size = MARK_STACK_SIZE;
-
-    ms->stack = (st_oop *) ms->address;
-    ms->sp = 0;
-}
-
-static void
-ensure_metadata (st_memory *memory)
+ensure_metadata (void)
 {
     /* The bit arrays are implemented using bytes as smallest element of storage.
      * If there are N oops in the heap, then we need ((N + 7) / 8) bytes
@@ -90,7 +97,7 @@ ensure_metadata (st_memory *memory)
     st_uint   size, bits_size, offsets_size;
     st_uchar *metadata_start;
 
-    size = memory->heap_end - memory->heap_start;
+    size = memory->end - memory->start;
     bits_size    = ((size + 7) / 8);
     offsets_size = (size / BLOCK_SIZE_OOPS) * sizeof (st_oop *);
    
@@ -116,17 +123,15 @@ grow_heap (st_memory *memory)
 
     st_heap_grow (heap, grow_size);
     
-    memory->heap_start = (st_oop *) heap->start;
-    memory->heap_end = (st_oop *) heap->p;
-    memory->moving_space->top = memory->heap_end;
+    memory->start = (st_oop *) heap->start;
+    memory->end = (st_oop *) heap->p;
 
-    ensure_metadata (memory);
+    ensure_metadata ();
 }
 
 st_memory *
 st_memory_new (void)
 {
-    st_memory *memory;
     st_oop    *ptr;
     st_ulong   size_bits;
     st_heap   *heap;
@@ -141,100 +146,60 @@ st_memory_new (void)
     memory = st_new0 (st_memory);
     
     memory->heap = heap;
-    memory->heap_start = (st_oop *) heap->start;
-    memory->heap_end  = (st_oop *) heap->p;
+    memory->start = (st_oop *) heap->start;
+    memory->end   = (st_oop *) heap->p;
+    memory->p = memory->start;
 
-    memory->roots = ptr_array_new (25);
+    memory->roots = ptr_array_new (15);
 
-    memory->tot_pause_time.tv_sec = 0;
-    memory->tot_pause_time.tv_nsec = 0;
+    memory->total_pause_time.tv_sec = 0;
+    memory->total_pause_time.tv_nsec = 0;
     memory->counter = 0;
 
-    initialize_mark_stack (&memory->ms);
-    ensure_metadata (memory);
+    memory->mark_stack = st_malloc (MARK_STACK_SIZE);
 
-    /* fixed space gets 1/5 of heap, 4/5 for the moving space */    
-    ptr = memory->heap_start + ((memory->heap_end - memory->heap_start) / 5) ;
-    memory->fixed_space  = st_space_new (memory->heap_start, ptr);
-    memory->moving_space = st_space_new (ptr, memory->heap_end);
+    ensure_metadata ();
 
     return memory;
 }
 
 void
-st_memory_destroy (st_memory *memory)
+st_memory_destroy (void)
 {
     st_free (memory);
 }
 
 void
-st_memory_add_root (st_memory *memory, st_oop root)
+st_memory_add_root (st_oop object)
 {
-    ptr_array_append (memory->roots, (st_pointer) root);
+    ptr_array_append (memory->roots, (st_pointer) object);
 }
 
 void
-st_memory_remove_root (st_memory *memory, st_oop root)
+st_memory_remove_root (st_oop object)
 {
-    ptr_array_remove_fast (memory->roots, (st_pointer) root);
+    ptr_array_remove_fast (memory->roots, (st_pointer) object);
 }
 
 st_oop
-st_space_allocate_chunk (st_space *space, st_uint size)
+st_memory_allocate (st_uint size)
 {
     st_oop *chunk;
 
     st_assert (size >= 2);
 
-    if (space == memory->moving_space) {
-	if (memory->counter > ST_COLLECTION_THRESHOLD)
-	    garbage_collect (memory);
-	if ((space->water_level + size) >= space->top)
-	    grow_heap (memory);
-    }
-
-    chunk = space->water_level;
-    space->water_level += size;
+    if (memory->counter > ST_COLLECTION_THRESHOLD)
+	garbage_collect (memory);
+    if ((memory->p + size) >= memory->end)
+	grow_heap (memory);
+    
+    chunk = memory->p;
+    memory->p += size;
     
     memory->counter += (size * sizeof (st_oop));
-
     memory->bytes_allocated += (size * sizeof (st_oop));
 
     return ST_OOP (chunk);
-}
-
-st_oop
-st_space_allocate_object (st_space *space,
-			  st_oop    class,
-			  st_uint   size)
-{
-    st_oop chunk;
-    
-    chunk = st_space_allocate_chunk (space, size);
-    if (!chunk) {
-	return 0;
-    }
-
-    ST_HEADER (chunk)->mark = 0 | ST_MARK_TAG;
-    ST_HEADER (chunk)->hash  = st_smi_new (st_current_hash++);
-    ST_HEADER (chunk)->class = class;
-    st_object_set_format (chunk, st_smi_value (ST_BEHAVIOR (class)->format));
-
-    return chunk;
-}
-
-st_space *
-st_space_new (st_oop *bottom, st_oop *top)
-{
-    st_space *space;
-
-    space = st_new0 (st_space);
-
-    space->bottom = bottom;
-    space->top = top;
-    space->water_level = bottom;
-    
-    return space;
 }
 
 static inline st_oop
@@ -250,21 +215,21 @@ detag (st_oop oop)
 }
 
 static inline bool
-get_bit (st_uchar *bits, st_ulong index)
+get_bit (st_uchar *bits, st_uint index)
 {
     return (bits[index >> 3] >> (index & 0x7)) & 1;
 }
 
 static inline void
-set_bit (st_uchar *bits, st_ulong index)
+set_bit (st_uchar *bits, st_uint index)
 {
     bits[index >> 3] |= 1 << (index & 0x7);
 }
 
-static inline st_ulong
+static inline st_uint
 bit_index (st_memory *memory, st_oop object)
 {
-    return detag (object) - memory->heap_start;
+    return detag (object) - memory->start;
 }
 
 static inline bool
@@ -291,10 +256,10 @@ set_alloc_bit (st_memory *memory, st_oop object)
     set_bit (memory->alloc_bits, bit_index (memory, object));
 }
 
-static inline st_ulong
-get_block_index (st_memory *memory, st_oop object)
+static inline st_uint
+get_block_index (st_memory *memory, st_oop *object)
 {
-    return (detag (object) - memory->heap_start) / BLOCK_SIZE_OOPS;
+    return (object - memory->start) / BLOCK_SIZE_OOPS;
 }
 
 static inline st_uint
@@ -314,25 +279,22 @@ compute_ordinal_number (st_memory *memory, st_oop ref)
 	}
     }
 
-    st_assert_not_reached ();
+    abort ();
     return 0;
 }
 
 static inline st_oop
 remap_oop (st_memory *memory, st_oop ref)
 {
-    st_ulong b;
-    st_uint ordinal, i = 0, j = 0;
-    st_oop *offset;
+    st_uint  b, i = 0, j = 0;
+    st_uint  ordinal;
+    st_oop  *offset;
 
-    if (!st_object_is_heap (ref))
+    if (!st_object_is_heap (ref) || ref == st_nil)
 	return ref;
 
-    if (detag (ref) < memory->fixed_space->top)
-	return ref;
-  
     ordinal = compute_ordinal_number (memory, ref); 
-    offset  = memory->offsets[get_block_index (memory, ref)];
+    offset  = memory->offsets[get_block_index (memory, detag (ref))];
     b = bit_index (memory, tag (offset));
 
     while (true) {
@@ -341,85 +303,63 @@ remap_oop (st_memory *memory, st_oop ref)
 		return tag (offset + i);
 	    }
 	}
-	 i++;
+	i++;
     }
     
-    st_assert_not_reached ();
+    abort ();
     return 0;
 }
 
 static void
 remap (st_memory *memory)
 {
-    struct contents contents;
-    st_space *space;
-    st_oop *p;
-    st_uint size, i;
+    st_oop *oops, *p;
+    st_uint size;
 
-    /* remap fixed space */
-    p = memory->fixed_space->bottom;
-    while (p < memory->fixed_space->water_level) {
+    p = memory->start;
+    while (p < memory->p) {
 
-	size = st_object_size (tag (p));
-	st_object_contents (tag (p), &contents);
-	
-	for (i = 0; i < contents.size; i++)
-	    contents.oops[i] = remap_oop (memory, contents.oops[i]);
-	
-	p += size;
-    }
-    
-    st_oop method;
-
-    /* remap moving space */
-    p = memory->moving_space->bottom;
-    while (p < memory->moving_space->water_level) {
-
-	size = st_object_size (tag (p));
-	st_object_contents (tag (p), &contents);
-
-	for (i = 0; i < contents.size; i++) {
-	    contents.oops[i] = remap_oop (memory, contents.oops[i]);
+	/* remap class field */
+	p[2] = remap_oop (memory, p[2]);
+	/* remap ivars */
+	st_object_contents (tag (p), &oops, &size);
+	for (st_uint i = 0; i < size; i++) {
+	    oops[i] = remap_oop (memory, oops[i]);
 	}
-	p += size;
+	p += st_object_size (tag (p));
     }
-
 }
 
 static void
 compact (st_memory *memory)
 {
     st_oop *p, *from, *to;
-    st_space *space = memory->moving_space;
     st_uint  size;
-    long block = -1;
+    st_uint block = 0;
 
-    p = space->bottom;
+    p = memory->start;
     
-    while (ismarked (memory, tag (p))) {
+    while (ismarked (memory, tag (p)) && p < memory->p) {
 	set_alloc_bit (memory, tag (p));
-	if (block <  (long) get_block_index (memory, tag (p))) {
-	    block = get_block_index (memory, tag (p));
+	if (block < (get_block_index (memory, p) + 1)) {
+	    block = get_block_index (memory, p);
 	    memory->offsets[block] = p;
+	    block += 1;
 	}
 	p += st_object_size (tag (p));
     }
     to = p;
 
-    while (!ismarked (memory, tag (p)) && p < space->water_level) {
+    while (!ismarked (memory, tag (p)) && p < memory->p) {
 	st_assert (st_object_is_mark (*p));
 	p += st_object_size (tag (p));
     }
     from = p;
 
-    if (from == to && p >= space->water_level) {
-	goto out;
-    }
+    if (from == to && p >= memory->p)
+       goto out;
 
-    st_assert (to < from);
-    st_assert (p < space->water_level);
-
-    while (from < space->water_level) {
+    while (from < memory->p) {
 
 	if (ismarked (memory, tag (from))) {
 
@@ -427,11 +367,13 @@ compact (st_memory *memory)
 	    size = st_object_size (tag (from));
 	    st_oops_move (to, from, size);
 	    
-	    if (block < (long) get_block_index (memory, tag (from))) {
-		block = get_block_index (memory, tag (from));
+	    if (block < (get_block_index (memory, from) + 1)) {
+		block = get_block_index (memory, from);
 		memory->offsets[block] = to;
+		block += 1;
 	    }
-	    to += size;
+
+	    to   += size;
 	    from += size;
 	} else {
 	    from += st_object_size (tag (from));
@@ -440,72 +382,59 @@ compact (st_memory *memory)
 
 out:
 
-    memory->bytes_collected = (space->water_level - to) * sizeof (st_oop);
+    memory->bytes_collected = (memory->p - to) * sizeof (st_oop);
     memory->bytes_allocated -= memory->bytes_collected;
-
-    space->water_level = to; 
-}
-
-static void
-add_roots_to_stack (st_memory *memory, struct mark_stack *ms) 
-{
-    st_uint i = 0;
-
-    for (; i < memory->roots->length; i++)
-	ms->stack[i] = (st_oop) ptr_array_get_index (memory->roots, i);
-    ms->sp += i;
-
-    ms->stack[memory->ms.sp++] = proc->context;
+    memory->p = to; 
 }
 
 static void
 mark (st_memory *memory)
 {
-    struct contents contents;
-    st_oop  object;
-    st_oop *oops;
-    st_smi  size;
+    st_oop   object;
+    st_oop  *oops, *stack;
+    st_uint  size, sp;
 
-    add_roots_to_stack (memory, &(memory->ms));
-
-    st_oop *stack = memory->ms.stack;
-    st_uint sp = memory->ms.sp;
+    sp = 0;
+    stack = memory->mark_stack;
+   
+    for (st_uint i = 0; i < memory->roots->length; i++)
+	stack[sp++] = (st_oop) ptr_array_get_index (memory->roots, i);
+    stack[sp++] = proc->context;
 
     while (sp > 0) {
-	
-	object = stack[--sp];
-	
-	if (!st_object_is_heap (object)) 
-	    continue;
 
-	if (ismarked (memory, object))
+	object = stack[--sp];
+	if (!st_object_is_heap (object) || ismarked (memory, object)) 
 	    continue;
 
 	set_marked (memory, object);
+	st_object_contents (object, &oops, &size);	
+	if (ST_UNLIKELY ((sp + size + 1) >= MARK_STACK_SIZE_OOPS))
+	    goto out;
 
-	stack[sp++] = ST_HEADER (object)->class;	
-	st_object_contents (object, &contents);
-	for (st_smi i=0; i < contents.size; i++) {
-	    if (contents.oops[i] != st_nil)
-		stack[sp++] = contents.oops[i];
+	stack[sp++] = ST_HEADER (object)->class;
+	for (st_uint i = 0; i < size; i++) {
+	    if (oops[i] != st_nil) {
+		stack[sp++] = oops[i];
+	    }
 	}
     }
+
+    return;
+out:
+    /* !!! FIX */
+    fprintf (stderr, "panda: error: marking stack overflowed\n");
+    abort ();
 }
 
 static void
-synchronize_processor (st_memory *memory, st_processor *processor)
+remap_processor_state (st_memory *memory, st_processor *processor)
 {
-    st_oop context;
-    st_oop home;
+    st_oop context, home;
 
     context = remap_oop (memory, processor->context);
-
-    st_assert (st_object_is_mark (ST_HEADER (context)->mark));
-
     if (ST_HEADER (context)->class == st_block_context_class) {
-
 	home = ST_BLOCK_CONTEXT (context)->home;
-
 	processor->method   = ST_METHOD_CONTEXT (home)->method;
 	processor->receiver = ST_METHOD_CONTEXT (home)->receiver;
 	processor->literals = st_array_elements (ST_METHOD (processor->method)->literals);
@@ -521,8 +450,27 @@ synchronize_processor (st_memory *memory, st_processor *processor)
 
     processor->context  = context;
     processor->bytecode = st_method_bytecode_bytes (processor->method);
-
     processor->message_receiver = remap_oop (memory, processor->message_receiver);
+    processor->message_selector = remap_oop (memory, processor->message_selector);
+    processor->new_method = remap_oop (memory, processor->new_method);
+}
+
+static void
+remap_global_state (void)
+{
+    st_oop mapped;
+
+    for (st_uint i = 0; i < ST_N_ELEMENTS (globals); i++)
+	globals[i] = remap_oop (memory, globals[i]);
+
+    for (st_uint i = 0; i < ST_N_ELEMENTS (st_specials); i++)
+	st_specials[i] = remap_oop (memory, st_specials[i]);
+
+
+    for (st_uint i = 0; i < memory->roots->length; i++) {
+	mapped = remap_oop (memory, (st_oop) ptr_array_get_index (memory->roots, i));
+	ptr_array_set_index (memory->roots, i, (st_pointer) mapped);
+    }
 }
 
 static void
@@ -536,28 +484,38 @@ clear_metadata (st_memory *memory)
 static void
 garbage_collect (st_memory *memory)
 {
-    struct timespec start, end, interval;
-    st_oop context;
-
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &start);
+    double times[3];
+    struct timespec tm;
 
     clear_metadata (memory);
 
+    timer_start (&tm);
     mark (memory);
-    compact (memory);
-    remap (memory);
-    synchronize_processor (memory, proc);
+    timer_stop (&tm);
+    times[0] = st_timespec_to_double_seconds (&tm);
+    st_timespec_add (&memory->total_pause_time, &tm ,&memory->total_pause_time);
 
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &end);
-    st_timespec_difference (&start, &end, &interval);
-    st_timespec_add (&memory->tot_pause_time, &interval ,&memory->tot_pause_time);
+    timer_start (&tm);
+    compact (memory);
+    timer_stop (&tm);
+    times[1] = st_timespec_to_double_seconds (&tm);
+    st_timespec_add (&memory->total_pause_time, &tm ,&memory->total_pause_time);    
+
+    timer_start (&tm);
+    remap (memory);
+    remap_global_state ();
+    remap_processor_state (memory, proc);
+    timer_stop (&tm);
+    times[2] = st_timespec_to_double_seconds (&tm);
+    st_timespec_add (&memory->total_pause_time, &tm ,&memory->total_pause_time);
+
+    st_processor_clear_caches (proc);
 
     if (st_verbose_mode ()) {
-	fprintf (stderr, "** gc: %uK->%uK (%uK), %.6fs\n",
-		 (memory->bytes_collected + memory->bytes_allocated) / 1024,
-		 memory->bytes_allocated / 1024,
+	fprintf (stderr, "** gc: collected: %uK, heapSize: %uK, marking: %.6fs, compaction: %.6fs, remapping: %.6fs\n",
 		 memory->bytes_collected / 1024,
-		 st_timespec_to_double_seconds (&interval));
+		 (memory->bytes_collected + memory->bytes_allocated) / 1024,
+		 times[0], times[1], times[2]);
     }
 
     memory->counter = 0;
@@ -585,7 +543,7 @@ st_heap_new (st_uint reserved_size)
     heap->start = result;
     heap->end = result + size;
     heap->p = result;
-
+    
     return heap;
 }
 

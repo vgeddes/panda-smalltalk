@@ -32,24 +32,8 @@
 /* threshold is 8 Mb or 16 Mb depending on whether system is 32 or 64 bits */
 #define ST_COLLECTION_THRESHOLD (sizeof (st_oop) * 2 * 1024 * 1024)
 
-struct mark_stack {
-
-    st_oop *stack;
-    st_uint sp;
-
-    /* virtual memory mapping */
-    st_pointer address;
-    st_uint    size;
-};
-
-typedef struct st_space
-{
-    st_oop *top;
-    st_oop *bottom;
-
-    st_oop *water_level;
-    
-} st_space;
+#define RESERVED_SIZE        (1000 * 1024 * 1024)
+#define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
 
 typedef struct st_heap
 {
@@ -61,14 +45,12 @@ typedef struct st_heap
 
 typedef struct st_memory
 {
-    st_oop *heap_start, *heap_end;
+    st_heap   *heap;
 
-    st_heap  *heap;
+    st_oop    *start, *end;
+    st_oop    *p;
 
-    st_space *moving_space;
-    st_space *fixed_space;
-
-    struct mark_stack ms;
+    st_oop    *mark_stack;
 
     st_uchar  *mark_bits;
     st_uchar  *alloc_bits;
@@ -77,37 +59,25 @@ typedef struct st_memory
     st_oop   **offsets;
     st_uint    offsets_size; /* in bytes */
 
-  
     ptr_array  roots;
-
     st_uint    counter;
 
     /* statistics */
-    struct timespec tot_pause_time;       /* total accumulated pause time */
-    st_ulong avg_pause_time;              /* average time between pauses */
-    st_ulong avg_pause_interval;          /* average pause time */
+    struct timespec total_pause_time;     /* total accumulated pause time */
     st_ulong bytes_allocated;             /* current number of allocated bytes */
     st_ulong bytes_collected;             /* number of bytes collected in last compaction */
 
 } st_memory;
 
-st_memory  *st_memory_new      (void);
-bool        st_memory_reserve  (st_memory *om, st_uint size);
-void        st_memory_destroy  (st_memory *om);
+st_memory *st_memory_new             (void);
+void       st_memory_destroy         (void);
+void       st_memory_add_root        (st_oop object);
+void       st_memory_remove_root     (st_oop object);
+st_oop     st_memory_allocate        (st_uint size);
 
-void        st_memory_add_root (st_memory *om, st_oop root);
-void        st_memory_remove_root (st_memory *om, st_oop root);
-
-void        begin_gc (st_memory *om);
-
-st_space   *st_space_new (st_oop *bottom, st_oop *top);
-st_oop      st_space_allocate_object (st_space *space, st_oop class, st_uint size);
-st_oop      st_space_allocate_chunk  (st_space *space, st_uint size);
-
-
-st_heap *st_heap_new       (st_uint reserved_size);
-bool     st_heap_grow      (st_heap *heap, st_uint grow_size);
-bool     st_heap_shrink    (st_heap *heap, st_uint shrink_size);
-void     st_heap_destroy   (st_heap *heap);
+st_heap  *st_heap_new       (st_uint reserved_size);
+bool      st_heap_grow      (st_heap *heap, st_uint grow_size);
+bool      st_heap_shrink    (st_heap *heap, st_uint shrink_size);
+void      st_heap_destroy   (st_heap *heap);
 
 #endif /* __ST_MEMORY__ */

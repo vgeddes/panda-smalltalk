@@ -40,6 +40,8 @@ typedef struct st_processor {
     st_oop  message_selector;
     int     message_argcount;
     
+    st_oop  new_method;
+
     bool    success;
 
     jmp_buf main_loop;
@@ -58,7 +60,7 @@ void   st_processor_main               (st_processor *processor);
 void   st_processor_initialize         (st_processor *processor);
 void   st_processor_set_active_context (st_processor *processor, st_oop context);
 void   st_processor_send_selector      (st_processor *processor, st_oop selector, st_uint argcount);
-void   st_processor_execute_method     (st_processor *processor, st_oop method);
+void   st_processor_execute_method     (st_processor *processor);
 st_oop st_processor_lookup_method      (st_processor *processor, st_oop class);
 
 void   st_processor_clear_caches (st_processor *processor);

@@ -15,30 +15,23 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-
-
-static st_oop
-method_context_new (st_processor *pr, st_oop method)
+static st_oop 
+method_context_new (st_processor *pr)
 {
     st_oop  context;
     int     stack_size;
-    int     temps_size;
     st_oop *stack;
 
-    temps_size = st_method_get_temp_count (method) + st_method_get_arg_count (method);
     stack_size = 32;
 
-    context = st_space_allocate_object (memory->moving_space,
-					st_method_context_class,
-					ST_SIZE_OOPS (struct st_method_context) + stack_size);
-    
-    st_assert (st_object_is_heap (pr->context));
+    context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + stack_size);
+    st_object_initialize_header (context, st_method_context_class);
 
     ST_CONTEXT_PART (context)->sender     = pr->context;
     ST_CONTEXT_PART (context)->ip         = st_smi_new (0);
     ST_CONTEXT_PART (context)->sp         = st_smi_new (0);
     ST_METHOD_CONTEXT (context)->receiver = pr->message_receiver;
-    ST_METHOD_CONTEXT (context)->method   = method;
+    ST_METHOD_CONTEXT (context)->method   = pr->new_method;
 
     stack = ST_METHOD_CONTEXT (context)->stack;
     for (st_uint i=0; i < stack_size; i++)
@@ -58,10 +51,8 @@ block_context_new (st_processor *pr, st_uint initial_ip, st_uint argcount)
 
     stack_size = 32;
     
-    context = st_space_allocate_object (memory->moving_space,
-					st_block_context_class,
-					ST_SIZE_OOPS (struct st_block_context) + stack_size);
-    
+    context = st_memory_allocate (ST_SIZE_OOPS (struct st_block_context) + stack_size);
+    st_object_initialize_header (context, st_block_context_class);
     
     if (ST_HEADER (pr->context)->class == st_block_context_class)
 	home = ST_BLOCK_CONTEXT (pr->context)->home;
@@ -90,7 +81,7 @@ create_actual_message (st_processor *pr)
     st_oop *elements;
     st_oop array;
 
-    array = st_object_new_arrayed (memory->moving_space, st_array_class, pr->message_argcount);
+    array = st_object_new_arrayed (st_array_class, pr->message_argcount);
     elements = st_array_elements (array);
     for (st_uint i = 0; i < pr->message_argcount; i++)
 	elements[i] =  pr->stack[pr->sp - pr->message_argcount + i];
@@ -153,12 +144,12 @@ st_processor_lookup_method (st_processor *pr, st_oop class)
  *
  */
 static inline void
-activate_method (st_processor *pr, st_oop method)
+activate_method (st_processor *pr)
 {
     st_oop  context;
     st_oop *arguments;
     
-    context = method_context_new (pr, method);
+    context = method_context_new (pr);
 
     arguments = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
     for (st_uint i = 0; i < pr->message_argcount; i++)
@@ -170,21 +161,21 @@ activate_method (st_processor *pr, st_oop method)
 }
 
 void
-st_processor_execute_method (st_processor *pr, st_oop method)
+st_processor_execute_method (st_processor *pr)
 {
     st_uint primitive_index;
     st_method_flags flags;
 
-    flags = st_method_get_flags (method);
+    flags = st_method_get_flags (pr->new_method);
     if (flags == ST_METHOD_PRIMITIVE) {
-	primitive_index = st_method_get_primitive_index (method);
+	primitive_index = st_method_get_primitive_index (pr->new_method);
 	pr->success = true;
 	st_primitives[primitive_index].func (pr);
 	if (ST_LIKELY (pr->success))
 	    return;
     }
     
-    activate_method (pr, method);
+    activate_method (pr);
 }
 
 
@@ -222,14 +213,13 @@ st_processor_set_active_context (st_processor *pr,
     pr->ip       = st_smi_value (ST_CONTEXT_PART (context)->ip);
     pr->bytecode = st_method_bytecode_bytes (pr->method);
 
-    st_assert (pr->sp < 9);
 }
 
 void
 st_processor_prologue (st_processor *pr)
 {
     if (st_verbose_mode ()) {
-	fprintf (stderr, "** gc: totalPauseTime: %.6fs\n", st_timespec_to_double_seconds (&memory->tot_pause_time));
+	fprintf (stderr, "** gc: totalPauseTime: %.6fs\n", st_timespec_to_double_seconds (&memory->total_pause_time));
     }
 }
 
@@ -246,18 +236,18 @@ st_processor_send_selector (st_processor *pr,
     pr->message_receiver = pr->stack[pr->sp - argcount - 1];
     pr->message_selector = selector;
     
-    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
+    pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
     
-    flags = st_method_get_flags (method);
+    flags = st_method_get_flags (pr->new_method);
     if (flags == ST_METHOD_PRIMITIVE) {
-	primitive_index = st_method_get_primitive_index (method);
+	primitive_index = st_method_get_primitive_index (pr->new_method);
 	pr->success = true;
 	st_primitives[primitive_index].func (pr);
 	if (ST_LIKELY (pr->success))
 	    return;
     }
 
-    activate_method (pr, method);
+    activate_method (pr);
 }
 
 #define SEND_SELECTOR(pr, selector, argcount)				\
@@ -265,14 +255,14 @@ st_processor_send_selector (st_processor *pr,
     st_processor_send_selector (pr, selector, argcount);		\
     ip = pr->bytecode + pr->ip;
 
-#define ACTIVATE_CONTEXT(pr, context_oop)		\
+#define ACTIVATE_CONTEXT(pr, context)			\
     pr->ip = ip - pr->bytecode;				\
-    st_processor_set_active_context (pr, context_oop);	\
+    st_processor_set_active_context (pr, context);	\
     ip = pr->bytecode + pr->ip;
 
-#define ACTIVATE_METHOD(pr, method_oop)			\
+#define ACTIVATE_METHOD(pr)				\
     pr->ip = ip - pr->bytecode;				\
-    activate_method (pr, method_oop);			\
+    activate_method (pr);				\
     ip = pr->bytecode + pr->ip;
 
 #define EXECUTE_PRIMITIVE(pr, index)			\
@@ -282,24 +272,23 @@ st_processor_send_selector (st_processor *pr,
     ip = pr->bytecode + pr->ip;
 
 #define SEND_TEMPLATE(pr)						\
-    st_oop method;							\
     st_uint  prim;							\
     st_method_flags flags;						\
     									\
     ip += 1;								\
     									\
-    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));\
+    pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));\
     									\
-    flags = st_method_get_flags (method);				\
+    flags = st_method_get_flags (pr->new_method);			\
     if (flags == ST_METHOD_PRIMITIVE) {					\
-	prim = st_method_get_primitive_index (method);			\
+	prim = st_method_get_primitive_index (pr->new_method);		\
 									\
 	EXECUTE_PRIMITIVE (pr, prim);					\
 	if (ST_LIKELY (pr->success))					\
             NEXT ();							\
     }									\
     									\
-    ACTIVATE_METHOD (pr, method);
+    ACTIVATE_METHOD (pr);
 
 
 #ifdef __GNUC__
@@ -809,7 +798,6 @@ st_processor_main (st_processor *pr)
 	
 	CASE (SEND) {
 	    
-	    st_oop method;
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 
@@ -819,25 +807,23 @@ st_processor_main (st_processor *pr)
 
 	    ip += 3;
 
-	    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
+	    pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
 	    
-	    flags = st_method_get_flags (method);
+	    flags = st_method_get_flags (pr->new_method);
 	    if (flags == ST_METHOD_PRIMITIVE) {
-		primitive_index = st_method_get_primitive_index (method);
+		primitive_index = st_method_get_primitive_index (pr->new_method);
 		
 		EXECUTE_PRIMITIVE (pr, primitive_index);
 		if (ST_LIKELY (pr->success))
 		    NEXT ();
 	    }
 	    
-	    ACTIVATE_METHOD (pr, method);
-	    
+	    ACTIVATE_METHOD (pr);
 	    NEXT ();
 	}
     
 	CASE (SEND_SUPER) {
 	    
-	    st_oop method;
 	    st_oop literal_index;
 	    st_uint  primitive_index;
 	    st_method_flags flags;
@@ -850,19 +836,18 @@ st_processor_main (st_processor *pr)
 	    
 	    literal_index = st_smi_value (st_arrayed_object_size (ST_METHOD (pr->method)->literals)) - 1;
 
-	    method = st_processor_lookup_method (pr, ST_BEHAVIOR (pr->literals[literal_index])->superclass);
+	    pr->new_method = st_processor_lookup_method (pr, ST_BEHAVIOR (pr->literals[literal_index])->superclass);
 	    
-	    flags = st_method_get_flags (method);
+	    flags = st_method_get_flags (pr->new_method);
 	    if (flags == ST_METHOD_PRIMITIVE) {
-		primitive_index = st_method_get_primitive_index (method);
+		primitive_index = st_method_get_primitive_index (pr->new_method);
 		
 		EXECUTE_PRIMITIVE (pr, primitive_index);
 		if (ST_LIKELY (pr->success))
 		    NEXT ();
 	    }
 	    
-	    ACTIVATE_METHOD (pr, method);
-	    
+	    ACTIVATE_METHOD (pr);
 	    NEXT ();
 	}
 	
@@ -979,10 +964,10 @@ st_processor_initialize (st_processor *pr)
     pr->message_selector = st_selector_startupSystem;
     st_processor_clear_caches (pr);
 
-    method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
-    st_assert (st_method_get_flags (method) == ST_METHOD_NORMAL);
+    pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
+    st_assert (st_method_get_flags (pr->new_method) == ST_METHOD_NORMAL);
 
-    context = method_context_new (pr,  method);
+    context = method_context_new (pr);
     st_processor_set_active_context (pr, context);
 }
 
