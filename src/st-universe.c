@@ -351,7 +351,8 @@ file_in_classes (void)
 	    "Behavior.st",
 	    "ContextPart.st",
 	    "BlockContext.st",
-	    "Message.st"
+	    "Message.st",
+	    "OrderedCollection.st"
 	};
 
     for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {

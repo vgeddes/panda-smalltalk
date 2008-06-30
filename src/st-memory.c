@@ -101,6 +101,10 @@ ensure_metadata (void)
     bits_size    = ((size + 7) / 8);
     offsets_size = (size / BLOCK_SIZE_OOPS) * sizeof (st_oop *);
    
+    st_free (memory->mark_bits);
+    st_free (memory->alloc_bits);
+    st_free (memory->offsets);
+
     memory->mark_bits  = st_malloc (bits_size); 
     memory->alloc_bits = st_malloc (bits_size); 
     memory->bits_size  = bits_size;
@@ -157,6 +161,10 @@ st_memory_new (void)
     memory->counter = 0;
 
     memory->mark_stack = st_malloc (MARK_STACK_SIZE);
+
+    memory->mark_bits   = NULL;
+    memory->alloc_bits  = NULL;
+    memory->offsets     = NULL;
 
     ensure_metadata ();
 

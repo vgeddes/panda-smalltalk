@@ -50,7 +50,7 @@ remove: anObject ifAbsent: anExceptionBlock
 
 Collection method!
 remove: anObject
-	self remove: anObject ifAbsent: [self errorNotFound]!
+	^ self remove: anObject ifAbsent: [self errorNotFound]!
 
 Collection method!
 removeAll: aCollection

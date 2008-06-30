@@ -81,6 +81,10 @@ Class named: 'WordArray'
 	  superclass: 'ArrayedCollection'
 	  instanceVariableNames: ''!
 
+Class named: 'OrderedCollection'
+	  superclass: 'SequenceableCollection'
+	  instanceVariableNames: 'array size'!
+
 "TODO: if FloatArray not declared, then vm exits with an unhelpful assertion"
 Class named: 'FloatArray'
 	  superclass: 'ArrayedCollection'

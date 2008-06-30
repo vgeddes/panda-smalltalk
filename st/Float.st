@@ -1,5 +1,5 @@
 "
-opyright (c) 2008 Vincent Geddes
+Copyright (c) 2008 Vincent Geddes
 Copyright (c) 2007 Luca Bruno
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
