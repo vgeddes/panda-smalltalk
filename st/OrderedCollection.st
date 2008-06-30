@@ -89,18 +89,17 @@ remove: anObject ifAbsent: aBlock
 	[ (i := i + 1) <= size ]
 		whileTrue:
 			[anObject = (array at: i)
-				ifTrue: [ self removeIndex: i.
-						  ^ anObject]].
+				ifTrue: [ self removeIndex: i. ^ anObject]].
 				
 	^ aBlock value!
 
 OrderedCollection method!
 removeFirst
-	self removeAt: 0!
+	^ self removeAt: 0!
 
 OrderedCollection method!
 removeLast
-	self removeAt: size!
+	^ self removeAt: size!
 
 OrderedCollection method!
 do: aBlock
