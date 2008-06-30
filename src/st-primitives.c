@@ -40,6 +40,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 #define ST_PRIMITIVE_FAIL(pr)			\
     pr->success = false
@@ -1986,6 +1989,129 @@ Character_characterFor (st_processor *pr)
 	ST_STACK_UNPOP (pr, 2);
 }
 
+static void
+FileStream_open (st_processor *pr)
+{
+    int fd;
+    int mode;
+    st_oop name;
+    st_oop mode_oop;
+    char *str;
+
+    mode_oop = ST_STACK_POP (pr);
+    name =  ST_STACK_POP (pr);
+
+    if (st_object_class (mode_oop) != st_symbol_class) {
+	ST_PRIMITIVE_FAIL (pr);
+	return;
+    }
+
+    if (st_object_class (name) != st_string_class) {
+	ST_PRIMITIVE_FAIL (pr);
+	return;
+    }
+    
+    str = st_byte_array_bytes (mode_oop);
+    if (streq (str, "read"))
+	mode = O_RDONLY;
+    else if (streq (str, "write"))
+	mode = O_WRONLY;
+    else if (streq (str, "readWrite"))
+	mode = O_RDWR;
+    else {
+	ST_PRIMITIVE_FAIL (pr);
+	return;
+    }
+
+    str = st_byte_array_bytes (name);
+    fd = open (str, O_CREAT | mode, 0644);
+    ST_STACK_PUSH (pr, st_smi_new (fd));
+}
+
+static void
+FileStream_close (st_processor *pr)
+{
+    int fd;
+    int byte;
+
+    fd = pop_integer (pr);
+
+    if (!pr->success)
+	return;
+
+    close (fd);
+
+    ST_STACK_PUSH (pr, st_true);
+}
+
+static void
+FileStream_write (st_processor *pr)
+{
+    int fd;
+    int byte;
+
+    byte = pop_integer (pr);
+    fd = pop_integer (pr);
+
+    if (!pr->success)
+	return;
+
+    write (fd, &byte, 1);
+
+    ST_STACK_PUSH (pr, st_true);
+}
+
+static void
+FileStream_read (st_processor *pr)
+{
+
+}
+
+static void
+FileStream_writeN (st_processor *pr)
+{
+    st_oop array;
+    int fd;
+    st_uint size;
+    char *buf;
+
+    array = ST_STACK_POP (pr);
+    fd = pop_integer (pr);
+
+    if (st_object_format (array) != ST_FORMAT_BYTE_ARRAY) {
+	ST_PRIMITIVE_FAIL (pr);
+	return;
+    }
+
+    if (!pr->success)
+	return;
+
+    size = st_smi_value (st_arrayed_object_size (array));
+    buf = st_byte_array_bytes (array);
+
+    write (fd, buf, size);
+
+    ST_STACK_PUSH (pr, st_true);
+}
+
+static void
+FileStream_readN (st_processor *pr)
+{
+
+}
+
+static void
+FileStream_position (st_processor *pr)
+{
+
+}
+
+static void
+FileStream_setPosition (st_processor *pr)
+{
+
+}
+
 const struct st_primitive st_primitives[] = {
     { "SmallInteger_add",      SmallInteger_add      },
     { "SmallInteger_sub",      SmallInteger_sub      },
@@ -2096,6 +2222,15 @@ const struct st_primitive st_primitives[] = {
 
     { "BlockContext_value",               BlockContext_value               },
     { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
+
+    { "FileStream_open", FileStream_open },
+    { "FileStream_close", FileStream_close },
+    { "FileStream_write", FileStream_write },
+    { "FileStream_read", FileStream_read },
+    { "FileStream_writeN", FileStream_writeN },
+    { "FileStream_readN", FileStream_readN },
+    { "FileStream_position", FileStream_position },
+    { "FileStream_setPosition", FileStream_setPosition },
 };
 
 /* returns 0 if there no primitive function corresponding

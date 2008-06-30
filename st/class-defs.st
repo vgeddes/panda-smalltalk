@@ -113,6 +113,10 @@ Class named: 'WriteStream'
 	  superclass: 'PositionableStream'
 	  instanceVariableNames: 'writeLimit'!
 
+Class named: 'FileStream'
+	  superclass: 'WriteStream'
+	  instanceVariableNames: 'fdesc mode'!
+
 
 "Execution"
 
