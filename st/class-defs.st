@@ -98,6 +98,14 @@ Class named: 'Association'
 	  superclass: 'Object'
 	  instanceVariableNames: 'key value'!
 
+Class named: 'List'
+	  superclass: 'SequenceableCollection'
+	  instanceVariableNames: 'first last size'!
+
+Class named: 'Link'
+	  superclass: 'Object'
+	  instanceVariableNames: 'value next'!
+
 
 "Streams"
 

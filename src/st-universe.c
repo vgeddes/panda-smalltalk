@@ -353,7 +353,8 @@ file_in_classes (void)
 	    "BlockContext.st",
 	    "Message.st",
 	    "OrderedCollection.st",
-	    "FileStream.st"
+	    "FileStream.st",
+	    "List.st"
 	};
 
     for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {

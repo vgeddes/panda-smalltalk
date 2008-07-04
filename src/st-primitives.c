@@ -2035,13 +2035,19 @@ FileStream_close (st_processor *pr)
     int byte;
 
     fd = pop_integer (pr);
+    (void) ST_STACK_POP (pr);
 
-    if (!pr->success)
+    if (!pr->success) {
+	ST_STACK_UNPOP (pr, 2);
 	return;
+    }
 
-    close (fd);
+    if (close (fd) != 0) {
+	ST_STACK_UNPOP (pr, 2);
+	ST_PRIMITIVE_FAIL (pr);
+    }
 
-    ST_STACK_PUSH (pr, st_true);
+    ST_STACK_PUSH (pr, pr->message_receiver);
 }
 
 static void
@@ -2052,13 +2058,19 @@ FileStream_write (st_processor *pr)
 
     byte = pop_integer (pr);
     fd = pop_integer (pr);
+    (void) ST_STACK_POP (pr);
 
-    if (!pr->success)
-	return;
+    if (!pr->success) {
+	ST_PRIMITIVE_FAIL (pr);
+	ST_STACK_UNPOP (pr, 3);	
+    }
 
-    write (fd, &byte, 1);
+    if (write (fd, &byte, 1) < 0) {
+	ST_PRIMITIVE_FAIL (pr);
+	ST_STACK_UNPOP (pr, 3);	
+    }
 
-    ST_STACK_PUSH (pr, st_true);
+    ST_STACK_PUSH (pr, pr->message_receiver);
 }
 
 static void

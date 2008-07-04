@@ -67,8 +67,8 @@ timer_stop (struct timespec *spec)
 #define RESERVED_SIZE        (1000 * 1024 * 1024)
 #define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
 
-// 500 KB for mark stack 
-#define MARK_STACK_SIZE      (500 * 1024)
+// 1 MB for mark stack 
+#define MARK_STACK_SIZE      (1 * 1024 * 1024)
 #define MARK_STACK_SIZE_OOPS (MARK_STACK_SIZE / sizeof (st_oop))
 
 #define BLOCK_SIZE       256
