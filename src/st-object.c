@@ -41,8 +41,8 @@ st_object_initialize_header (st_oop object, st_oop class)
     ST_HEADER (object)->mark = 0 | ST_MARK_TAG;
     ST_HEADER (object)->hash  = st_smi_new (st_current_hash++);
     ST_HEADER (object)->class = class;
-    st_object_set_format (object, st_smi_value (ST_BEHAVIOR (class)->format));
-    st_object_set_instance_size (object, st_smi_value (ST_BEHAVIOR (class)->instance_size));
+    st_object_set_format (object, st_smi_value (ST_BEHAVIOR_FORMAT (class)));
+    st_object_set_instance_size (object, st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class)));
 }
 
 bool
@@ -139,7 +139,7 @@ allocate (st_oop class)
     st_smi instance_size;
     st_oop object;
 
-    instance_size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+    instance_size = st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class));
     object = st_memory_allocate (ST_SIZE_OOPS (struct st_header) + instance_size);
     st_object_initialize_header (object, class);
 

@@ -108,7 +108,7 @@ lookup_method (st_processor *pr, st_oop class)
 	return pr->method_cache[index].method;
 
     while (parent != st_nil) {
-	method = st_dictionary_at (ST_BEHAVIOR (parent)->method_dictionary, pr->message_selector);
+	method = st_dictionary_at (ST_BEHAVIOR_METHOD_DICTIONARY (parent), pr->message_selector);
 	if (method != st_nil) {
 	    index = ST_METHOD_CACHE_HASH (parent, pr->message_selector);
 	    pr->method_cache[index].class = class;
@@ -116,7 +116,7 @@ lookup_method (st_processor *pr, st_oop class)
 	    pr->method_cache[index].method = method;
 	    return method;
 	}
-	parent = ST_BEHAVIOR (parent)->superclass;
+	parent = ST_BEHAVIOR_SUPERCLASS (parent);
     }
 
     if (pr->message_selector == st_selector_doesNotUnderstand) {
@@ -836,7 +836,7 @@ st_processor_main (st_processor *pr)
 	    
 	    literal_index = st_smi_value (st_arrayed_object_size (ST_METHOD (pr->method)->literals)) - 1;
 
-	    pr->new_method = st_processor_lookup_method (pr, ST_BEHAVIOR (pr->literals[literal_index])->superclass);
+	    pr->new_method = st_processor_lookup_method (pr, ST_BEHAVIOR_SUPERCLASS (pr->literals[literal_index]));
 	    
 	    flags = st_method_get_flags (pr->new_method);
 	    if (flags == ST_METHOD_PRIMITIVE) {

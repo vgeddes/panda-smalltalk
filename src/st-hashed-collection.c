@@ -147,7 +147,7 @@ dict_scan_for_object (st_oop dict, st_oop object)
 
 	if (element == st_nil)
 	    return i;
-	if (st_object_equal (object, ST_ASSOCIATION (element)->key))
+	if (st_object_equal (object, ST_ASSOCIATION_KEY (element)))
 	    return i;
     }
 
@@ -157,7 +157,7 @@ dict_scan_for_object (st_oop dict, st_oop object)
 
 	if (element == st_nil)
 	    return i;
-	if (st_object_equal (object, ST_ASSOCIATION (element)->key))
+	if (st_object_equal (object, ST_ASSOCIATION_KEY (element)))
 	    return i;
 
     }
@@ -169,7 +169,7 @@ static void
 dict_no_check_add (st_oop dict, st_oop object)
 {
     st_array_at_put (ARRAY (dict),
-		     collection_find_element_or_nil (dict, ST_ASSOCIATION (object)->key), object);
+		     collection_find_element_or_nil (dict, ST_ASSOCIATION_KEY (object)), object);
 }
 
 void

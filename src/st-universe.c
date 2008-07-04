@@ -124,6 +124,8 @@ initialize_class  (const char *name,
 		   st_list    *ivarnames)
 {
     st_oop metaclass, class, superclass;
+    st_oop names;
+    st_uint i = 1;
 
     if (streq (name, "Object") && streq (super_name, "nil")) {
 
@@ -136,9 +138,9 @@ initialize_class  (const char *name,
 	    ST_HEADER (class)->class = metaclass;
 	}
 
-	ST_BEHAVIOR (class)->superclass     = st_nil;
-	ST_BEHAVIOR (class)->instance_size  = st_smi_new (0);
-	ST_BEHAVIOR (metaclass)->superclass = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
+	ST_BEHAVIOR_SUPERCLASS (class)     = st_nil;
+	ST_BEHAVIOR_INSTANCE_SIZE (class)  = st_smi_new (0);
+	ST_BEHAVIOR_SUPERCLASS (metaclass) = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
 
     } else {
 	
@@ -148,7 +150,7 @@ initialize_class  (const char *name,
 
 	class = st_global_get (name);
 	if (class == st_nil)
-	    class = class_new (st_smi_value (ST_BEHAVIOR (superclass)->format), 0);
+	    class = class_new (st_smi_value (ST_BEHAVIOR_FORMAT (superclass)), 0);
 
 	metaclass = ST_HEADER (class)->class;
 	if (metaclass == st_nil) {
@@ -156,33 +158,28 @@ initialize_class  (const char *name,
 	    ST_HEADER (class)->class = metaclass;
 	}
 
-	ST_BEHAVIOR (class)->superclass     = superclass;
-	ST_BEHAVIOR (metaclass)->superclass = ST_HEADER (superclass)->class;
-
-	ST_BEHAVIOR (class)->instance_size = st_smi_new (st_list_length (ivarnames) +
-							 st_smi_value (ST_BEHAVIOR (superclass)->instance_size));	
+	ST_BEHAVIOR_SUPERCLASS (class)     = superclass;
+	ST_BEHAVIOR_SUPERCLASS (metaclass) = ST_HEADER (superclass)->class;
+	ST_BEHAVIOR_INSTANCE_SIZE (class) = st_smi_new (st_list_length (ivarnames) +
+							st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (superclass)));	
     }
 
-    ST_BEHAVIOR (metaclass)->format             = st_smi_new (ST_FORMAT_OBJECT);
-    ST_BEHAVIOR (metaclass)->method_dictionary  = st_dictionary_new ();
-    ST_BEHAVIOR (metaclass)->instance_variables = st_nil;
-    ST_BEHAVIOR (metaclass)->instance_size      = st_smi_new (INSTANCE_SIZE_CLASS);
-    ST_METACLASS (metaclass)->instance_class    = class;
-
+    names = st_nil;
     if (st_list_length (ivarnames) != 0) {
-	st_oop names;
-	st_uint i = 1;
 	names = st_object_new_arrayed (st_array_class, st_list_length (ivarnames));
 	for (st_list *l = ivarnames; l; l = l->next)
 	    st_array_at_put (names, i++, st_symbol_new (l->data));
-	ST_BEHAVIOR (class)->instance_variables = names;
-
-    } else {
-	ST_BEHAVIOR (class)->instance_variables = st_nil;
+	ST_BEHAVIOR_INSTANCE_VARIABLES (class) = names;
     }
 
-    ST_BEHAVIOR (class)->method_dictionary = st_dictionary_new ();
-    ST_CLASS (class)->name = st_symbol_new (name);
+    ST_BEHAVIOR_FORMAT (metaclass)             = st_smi_new (ST_FORMAT_OBJECT);
+    ST_BEHAVIOR_METHOD_DICTIONARY (metaclass)  = st_dictionary_new ();
+    ST_BEHAVIOR_INSTANCE_VARIABLES (metaclass) = st_nil;
+    ST_BEHAVIOR_INSTANCE_SIZE (metaclass)      = st_smi_new (INSTANCE_SIZE_CLASS);
+    ST_METACLASS_INSTANCE_CLASS (metaclass)    = class;
+    ST_BEHAVIOR_INSTANCE_VARIABLES (class)     = names;
+    ST_BEHAVIOR_METHOD_DICTIONARY (class)      = st_dictionary_new ();
+    ST_CLASS_NAME (class)                      = st_symbol_new (name);
 
     st_dictionary_at_put (st_smalltalk, st_symbol_new (name), class);
 }

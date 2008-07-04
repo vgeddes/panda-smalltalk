@@ -28,7 +28,7 @@ add: anObject
 	(array at: index) ifNotNil: [ ^ anObject ].
 
 	array at: index put: anObject. 
-	tally := tally + 1.
+	size := size + 1.
 
 	self growIfNeeded.
 
@@ -50,7 +50,7 @@ remove: anObject ifAbsent: aBlock
 	(array at: index) ifNil: [^ aBlock value]. 
 
 	array at: index put: self.
-	tally := tally - 1.
+	size := size - 1.
 	deleted := deleted + 1.
 
 	^ anObject!
@@ -100,7 +100,7 @@ growIfNeeded
 
 HashedCollection method!
 size
-	^ tally!
+	^ size!
 
 HashedCollection method!
 capacity
@@ -138,12 +138,12 @@ arraySizeForCapacity: capacity
 
 HashedCollection method!
 occupiedCount
-	^ tally + deleted!
+	^ size + deleted!
 
 HashedCollection method!
 initialize: initialCapacity
 	array := Array new: (self arraySizeForCapacity: initialCapacity).
-	tally := 0.
+	size := 0.
 	deleted := 0!
 
 HashedCollection method!

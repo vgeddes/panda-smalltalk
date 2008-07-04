@@ -51,7 +51,7 @@ Class named: 'Collection'
 
 Class named: 'HashedCollection'
 	  superclass: 'Collection'
-	  instanceVariableNames: 'tally array'!
+	  instanceVariableNames: 'size array'!
 
 Class named: 'Set'
 	  superclass: 'HashedCollection'

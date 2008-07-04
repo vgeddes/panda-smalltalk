@@ -175,7 +175,7 @@ removeLast
 				  [link next == last ]
 					  whileFalse: [ link := link next].
 				  link next: nil.
-				  last := link.]
+				  last := link].
 
 	size := size - 1.
 	^ removed!

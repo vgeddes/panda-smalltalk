@@ -18,7 +18,7 @@
 
 #define BUF_SIZE 2000
 
-static const char license[] =
+static const char version[] =
 PACKAGE_STRING"\n"
 "Copyright (C) 2007-2008 Vincent Geddes";
 
@@ -26,7 +26,7 @@ static bool verbose = false;
 
 struct opt_spec options[] = {
     {opt_help, "h", "--help", NULL, "Show help information", NULL},
-    {opt_version, "V", "--version", NULL, "Show version information" , (char *) license},
+    {opt_version, "V", "--version", NULL, "Show version information" , (char *) version},
     {opt_store_1, "v", "--verbose", NULL, "Show verbose messages" , &verbose},
     {NULL}
 };

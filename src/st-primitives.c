@@ -1357,7 +1357,7 @@ Object_copy (st_processor *pr)
     case ST_FORMAT_OBJECT:
     {
 	class = ST_HEADER (pr->message_receiver)->class;
-	size = st_smi_value (ST_BEHAVIOR (class)->instance_size);
+	size = st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class));
 	copy = st_object_new (class);
 	st_oops_copy (ST_HEADER (copy)->fields,
 		      ST_HEADER (pr->message_receiver)->fields,
@@ -1534,7 +1534,7 @@ Behavior_new (st_processor *pr)
     st_smi format;
 
     class = ST_STACK_POP (pr);
-    format = st_smi_value (ST_BEHAVIOR (class)->format);
+    format = st_smi_value (ST_BEHAVIOR_FORMAT (class));
 
     set_success (pr, st_descriptors[format]->allocate != NULL);
 
@@ -1558,7 +1558,7 @@ Behavior_newSize (st_processor *pr)
     size = pop_integer32 (pr);
     class = ST_STACK_POP (pr);
 
-    format = st_smi_value (ST_BEHAVIOR (class)->format);
+    format = st_smi_value (ST_BEHAVIOR_FORMAT (class));
 
     set_success (pr, st_descriptors[format]->allocate_arrayed != NULL);
 

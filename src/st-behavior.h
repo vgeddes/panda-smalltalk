@@ -59,6 +59,15 @@ struct st_metaclass
     st_oop instance_class;
 };
 
+#define ST_BEHAVIOR_FORMAT(oop)             (ST_BEHAVIOR (oop)->format)
+#define ST_BEHAVIOR_SUPERCLASS(oop)         (ST_BEHAVIOR (oop)->superclass)
+#define ST_BEHAVIOR_INSTANCE_SIZE(oop)      (ST_BEHAVIOR (oop)->instance_size)
+#define ST_BEHAVIOR_METHOD_DICTIONARY(oop)  (ST_BEHAVIOR (oop)->method_dictionary)
+#define ST_BEHAVIOR_INSTANCE_VARIABLES(oop) (ST_BEHAVIOR (oop)->instance_variables)
+#define ST_CLASS_NAME(oop)                  (ST_CLASS (oop)->name)
+#define ST_METACLASS_INSTANCE_CLASS(oop)    (ST_METACLASS (oop)->instance_class)
+
+
 static inline st_oop
 st_object_new (st_oop class)
 {  
