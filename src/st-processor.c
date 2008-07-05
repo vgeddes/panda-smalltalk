@@ -959,10 +959,11 @@ st_processor_initialize (st_processor *pr)
     pr->sp = 0;
     pr->stack = NULL;
 
-    pr->message_argcount = 0;
-    pr->message_receiver = st_nil;
-    pr->message_selector = st_selector_startupSystem;
     st_processor_clear_caches (pr);
+
+    pr->message_argcount = 0;
+    pr->message_receiver = st_smalltalk;
+    pr->message_selector = st_selector_startupSystem;
 
     pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
     st_assert (st_method_get_flags (pr->new_method) == ST_METHOD_NORMAL);

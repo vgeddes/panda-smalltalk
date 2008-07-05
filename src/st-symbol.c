@@ -69,14 +69,14 @@ st_string_new (const char *bytes)
 st_oop
 st_symbol_new (const char *bytes)
 {
-    st_oop element = st_set_like (st_symbol_table, st_string_new (bytes));
+    st_oop element = st_set_like (st_symbols, st_string_new (bytes));
     st_oop symbol;
 
     if (element == st_nil) {
 
 	symbol = string_new (st_symbol_class, bytes);
 
-	st_set_add (st_symbol_table, symbol);
+	st_set_add (st_symbols, symbol);
 
 	return symbol;
     }

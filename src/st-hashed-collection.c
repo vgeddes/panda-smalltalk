@@ -31,8 +31,10 @@
 #include "st-object.h"
 #include "st-behavior.h"
 
-#define DEFAULT_CAPACITY     5
-#define TALLY(collection)    (ST_HASHED_COLLECTION (collection)->tally)
+#define DEFAULT_CAPACITY     8
+#define MINIMUM_CAPACITY     4
+#define SIZE(collection)     (ST_HASHED_COLLECTION (collection)->size)
+#define DELETED(collection)  (ST_HASHED_COLLECTION (collection)->deleted)
 #define ARRAY(collection)    (ST_HASHED_COLLECTION (collection)->array)
 #define ARRAY_SIZE(array)    (st_smi_value (ST_ARRAYED_OBJECT (array)->size))
 
@@ -42,21 +44,39 @@ struct st_hashed_collection
 {
     struct st_header header;
 
-    st_oop tally;
+    st_oop size;
+    st_oop deleted;
     st_oop array;
 
 };
 
-static st_smi  dict_scan_for_object (st_oop dict, st_oop object);
+static st_uint  dict_find (st_oop dict, st_oop object);
+static st_uint  set_find  (st_oop set, st_oop object);
+static void     dict_no_check_add    (st_oop dict, st_oop object);
+static void     set_no_check_add     (st_oop set, st_oop object);
 
-static void    dict_no_check_add    (st_oop dict, st_oop object);
-
-static void    set_no_check_add     (st_oop set, st_oop object);
-
-static st_smi  set_scan_for_object  (st_oop set, st_oop object);
 
 
 /* Hashed Collection methods */
+
+static inline st_uint
+occupied_count (st_oop collection)
+{
+    return st_smi_value (SIZE (collection)) + st_smi_value (DELETED (collection));
+}
+
+static st_uint
+array_size_for_capacity (st_uint capacity)
+{
+    st_uint size;
+
+    size = MINIMUM_CAPACITY;
+
+    while (size < capacity)
+	size = size + size;
+
+    return size;
+}
 
 static st_smi
 collection_find_element_or_nil (st_oop collection, st_oop object)
@@ -64,9 +84,9 @@ collection_find_element_or_nil (st_oop collection, st_oop object)
     st_smi index;
 
     if (st_object_class (collection) == st_dictionary_class)
-	index = dict_scan_for_object (collection, object);
+	index = dict_find (collection, object);
     else if (st_object_class (collection) == st_set_class)
-	index = set_scan_for_object (collection, object);
+	index = set_find (collection, object);
     else
 	st_assert_not_reached ();
 
@@ -76,44 +96,35 @@ collection_find_element_or_nil (st_oop collection, st_oop object)
     st_assert_not_reached ();
 }
 
-static st_smi
-collection_grow_size (st_oop collection)
-{
-    return MAX (ARRAY_SIZE (ARRAY (collection)), 2);
-}
-
 static void
-collection_grow (st_oop collection)
+collection_check_grow (st_oop collection)
 {
-    st_oop old_array = ARRAY (collection);
+    st_smi array_size;
+    st_oop old_array;
+    st_smi new_size;
+    st_smi n;
 
-    st_smi new_size = ARRAY_SIZE (old_array) + collection_grow_size (collection);
+    array_size = ARRAY_SIZE (ARRAY (collection));
+    
+    if ((occupied_count (collection) * 2) <= array_size)
+	return;
 
+    old_array = ARRAY (collection);
+    new_size = ARRAY_SIZE (old_array) * 2;
     ARRAY (collection) = st_object_new_arrayed (st_array_class, new_size);
-
-    st_smi n = ARRAY_SIZE (old_array);
+    n = ARRAY_SIZE (old_array);
 
     for (st_smi i = 1; i <= n; i++)
 	if (st_array_at (old_array, i) != st_nil) {
-
-	    if (st_object_class (collection) == st_dictionary_class) {
+	    if (st_object_class (collection) == st_dictionary_class)
 		dict_no_check_add (collection, st_array_at (old_array, i));
-	    } else if (st_object_class (collection) == st_set_class) {
+	    else if (st_object_class (collection) == st_set_class)
 		set_no_check_add (collection, st_array_at (old_array, i));
-	    } else {
+	    else
 		st_assert_not_reached ();
-	    }
 	}
-}
 
-static void
-collection_full_check (st_oop collection)
-{
-    st_smi array_size = ARRAY_SIZE (ARRAY (collection));
-    st_smi tally = st_smi_value (TALLY (collection));
-
-    if ((array_size - tally) < MAX ((array_size / 4), 1))
-	collection_grow (collection);
+    DELETED (collection) = st_smi_new (0);
 }
 
 static void
@@ -121,9 +132,9 @@ collection_at_new_index_put (st_oop collection, st_smi index, st_oop object)
 {
     st_array_at_put (ARRAY (collection), index, object);
 
-    TALLY (collection) = st_smi_increment (TALLY (collection));
+    SIZE (collection) = st_smi_increment (SIZE (collection));
 
-    collection_full_check (collection);
+    collection_check_grow (collection);
 }
 
 static void
@@ -131,37 +142,32 @@ collection_initialize (st_oop collection, st_smi capacity)
 {
     st_assert (capacity > 0);
 
-    TALLY (collection) = st_smi_new (0);
+    capacity = array_size_for_capacity (capacity);
+
+    SIZE (collection) = st_smi_new (0);
+    DELETED (collection) = st_smi_new (0);
     ARRAY (collection) = st_object_new_arrayed (st_array_class, capacity);
 }
 
-static st_smi
-dict_scan_for_object (st_oop dict, st_oop object)
+static st_uint
+dict_find (st_oop dict, st_oop object)
 {
-    st_smi finish = ARRAY_SIZE (ARRAY (dict));
-    st_smi start = (st_object_hash (object) % finish) + 1;
+    st_oop el;
+    st_uint mask;
+    st_uint i;
 
-    for (st_smi i = start; i <= finish; i++) {
+    mask = ARRAY_SIZE (ARRAY (dict)) - 1;
+    i = (st_object_hash (object) & mask) + 1;
 
-	st_oop element = st_array_at (ARRAY (dict), i);
+    while (true) {
+	el = st_array_at (ARRAY (dict), i);
 
-	if (element == st_nil)
+	if (el == st_nil || st_object_equal (object, ST_ASSOCIATION_KEY (el)))
 	    return i;
-	if (st_object_equal (object, ST_ASSOCIATION_KEY (element)))
-	    return i;
+	i = ((i + 106720) & mask) + 1;
     }
 
-    for (st_smi i = 1; i <= (start - 1); i++) {
-
-	st_oop element = st_array_at (ARRAY (dict), i);
-
-	if (element == st_nil)
-	    return i;
-	if (st_object_equal (object, ST_ASSOCIATION_KEY (element)))
-	    return i;
-
-    }
-
+    abort ();
     return 0;
 }
 
@@ -176,17 +182,12 @@ void
 st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
 {
     st_smi index = collection_find_element_or_nil (dict, key);
-
     st_oop assoc = st_array_at (ARRAY (dict), index);
 
-    if (assoc == st_nil) {
-
-	assoc = st_association_new (key, value);
-	collection_at_new_index_put (dict, index, assoc);
-
-    } else {
-	ST_ASSOCIATION (assoc)->value = value;
-    }
+    if (assoc == st_nil)
+	collection_at_new_index_put (dict, index, st_association_new (key, value));
+    else
+	ST_ASSOCIATION_VALUE (assoc) = value;
 }
 
 st_oop
@@ -197,7 +198,7 @@ st_dictionary_at (st_oop dict, st_oop key)
     st_oop assoc = st_array_at (ARRAY (dict), index);
 
     if (assoc != st_nil)
-	return ST_ASSOCIATION (assoc)->value;
+	return ST_ASSOCIATION_VALUE (assoc);
 
     return st_nil;
 }
@@ -222,41 +223,32 @@ st_dictionary_new_with_capacity (st_smi capacity)
     st_oop dict;
     
     dict = st_object_new (st_dictionary_class);
-
     collection_initialize (dict, capacity);
     
     return dict;
 }
 
-static st_smi
-set_scan_for_object (st_oop set, st_oop object)
+static st_uint
+set_find (st_oop dict, st_oop object)
 {
-    st_smi finish = ARRAY_SIZE (ARRAY (set));
-    st_smi start = (st_object_hash (object) % finish) + 1;
+    st_oop el;
+    st_uint mask;
+    st_uint i;
 
-    for (st_smi i = start; i <= finish; i++) {
+    mask = ARRAY_SIZE (ARRAY (dict)) - 1;
+    i = (st_object_hash (object) & mask) + 1;
 
-	st_oop element = st_array_at (ARRAY (set), i);
-
-	if (element == st_nil)
+    while (true) {
+	el = st_array_at (ARRAY (dict), i);
+	if (el == st_nil || st_object_equal (el, object))
 	    return i;
-	if (st_object_equal (object, element))
-	    return i;
+	i = ((i + 106720) & mask) + 1;
     }
 
-    for (st_smi i = 1; i <= (start - 1); i++) {
-
-	st_oop element = st_array_at (ARRAY (set), i);
-
-	if (element == st_nil)
-	    return i;
-	if (st_object_equal (object, element))
-	    return i;
-
-    }
-
+    abort ();
     return 0;
 }
+
 
 static void
 set_no_check_add (st_oop set, st_oop object)
@@ -267,12 +259,10 @@ set_no_check_add (st_oop set, st_oop object)
 void
 st_set_add (st_oop set, st_oop object)
 {
-    st_smi index = collection_find_element_or_nil (set, object);
+    st_smi  index;
 
-    st_oop element = st_array_at (ARRAY (set), index);
-
-    if (element == st_nil)
-	collection_at_new_index_put (set, index, object);
+    index = collection_find_element_or_nil (set, object);
+    collection_at_new_index_put (set, index, object);
 }
 
 bool

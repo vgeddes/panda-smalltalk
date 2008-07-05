@@ -1,6 +1,11 @@
 
 
 Dictionary method!
+at: key
+
+
+
+Dictionary method!
 keyFor: anObject
 	^ anObject key!
 

@@ -28,17 +28,3 @@ UndefinedObject method!
 printOn: aStream
 	aStream nextPutAll: 'nil'!
 
-"system"
-
-UndefinedObject method!
-startupSystem
-	self exitWithResult: self doIt!
-
-UndefinedObject method!
-exitWithResult: anObject
-	<primitive: 'UndefinedObject_exitWithResult'>
-	self primitiveFailed!
-
-UndefinedObject method!
-exit
-	self exitWithResult: nil!

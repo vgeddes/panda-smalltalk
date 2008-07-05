@@ -317,7 +317,7 @@ find_literal_var (Generator *gt, char *name)
 {
     st_oop assoc;
 
-    assoc = st_dictionary_association_at (st_smalltalk, st_symbol_new (name));
+    assoc = st_dictionary_association_at (st_globals, st_symbol_new (name));
     if (assoc == st_nil)
 	return -1;
 

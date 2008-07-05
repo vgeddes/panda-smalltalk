@@ -127,12 +127,12 @@ valueFor: anObject
 
 HashedCollection method!
 arraySizeForCapacity: capacity
-	| size |
+	| minsize |
 
-	size := HashedCollection minimumCapacity.
+	minsize := HashedCollection minimumCapacity.
 
-	[ size < capacity ]
-		whileTrue: [ size := size + size ].
+	[ minsize < capacity ]
+		whileTrue: [ minsize := minsize + minsize ].
 
 	^ size!
 

@@ -51,7 +51,7 @@ Class named: 'Collection'
 
 Class named: 'HashedCollection'
 	  superclass: 'Collection'
-	  instanceVariableNames: 'size array'!
+	  instanceVariableNames: 'size deleted array'!
 
 Class named: 'Set'
 	  superclass: 'HashedCollection'
@@ -222,6 +222,8 @@ Class named: 'False'
 	  instanceVariableNames: ''!
 
 
-Class named: 'Exception'
+"System"
+
+Class named: 'System'
 	  superclass: 'Object'
-	  instanceVariableNames: 'messageString'!
+	  instanceVariableNames: 'globals symbols'!

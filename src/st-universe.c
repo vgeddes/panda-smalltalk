@@ -30,9 +30,6 @@
 #include "st-association.h"
 #include "st-method.h"
 #include "st-array.h"
-#include "st-array.h"
-#include "st-array.h"
-#include "st-array.h"
 #include "st-small-integer.h"
 #include "st-hashed-collection.h"
 #include "st-large-integer.h"
@@ -50,7 +47,7 @@
 #include <string.h>
 #include <stdio.h>
 
-st_oop globals[32];
+st_oop globals[34];
 
 st_oop st_specials[ST_NUM_SPECIALS];
 
@@ -58,7 +55,7 @@ st_oop st_specials[ST_NUM_SPECIALS];
 st_oop
 st_global_get (const char *name)
 {
-    return st_dictionary_at (st_smalltalk, st_symbol_new (name));
+    return st_dictionary_at (st_globals, st_symbol_new (name));
 }
 
 enum
@@ -66,9 +63,10 @@ enum
     INSTANCE_SIZE_UNDEFINED = 0,
     INSTANCE_SIZE_CLASS = 6,
     INSTANCE_SIZE_METACLASS = 6,
-    INSTANCE_SIZE_DICTIONARY = 2,
-    INSTANCE_SIZE_SET = 2,
+    INSTANCE_SIZE_DICTIONARY = 3,
+    INSTANCE_SIZE_SET = 3,
     INSTANCE_SIZE_ASSOCIATION = 2,
+    INSTANCE_SIZE_SYSTEM = 2,
 };
 
 static st_oop
@@ -104,10 +102,10 @@ add_global (const char *name, st_oop object)
     st_assert (st_symbol_new (name) == st_symbol_new (name));
 
     symbol = st_symbol_new (name);
-    st_dictionary_at_put (st_smalltalk, symbol, object);
+    st_dictionary_at_put (st_globals, symbol, object);
 
     // sanity check for dictionary
-    st_assert (st_dictionary_at (st_smalltalk, symbol) == object);
+    st_assert (st_dictionary_at (st_globals, symbol) == object);
 }
 
 static void
@@ -129,7 +127,7 @@ initialize_class  (const char *name,
 
     if (streq (name, "Object") && streq (super_name, "nil")) {
 
-	class = st_dictionary_at (st_smalltalk, st_symbol_new ("Object"));
+	class = st_dictionary_at (st_globals, st_symbol_new ("Object"));
 	st_assert (class != st_nil);
 
 	metaclass = st_object_class (class);
@@ -140,7 +138,7 @@ initialize_class  (const char *name,
 
 	ST_BEHAVIOR_SUPERCLASS (class)     = st_nil;
 	ST_BEHAVIOR_INSTANCE_SIZE (class)  = st_smi_new (0);
-	ST_BEHAVIOR_SUPERCLASS (metaclass) = st_dictionary_at (st_smalltalk, st_symbol_new ("Class"));
+	ST_BEHAVIOR_SUPERCLASS (metaclass) = st_dictionary_at (st_globals, st_symbol_new ("Class"));
 
     } else {
 	
@@ -181,7 +179,7 @@ initialize_class  (const char *name,
     ST_BEHAVIOR_METHOD_DICTIONARY (class)      = st_dictionary_new ();
     ST_CLASS_NAME (class)                      = st_symbol_new (name);
 
-    st_dictionary_at_put (st_smalltalk, st_symbol_new (name), class);
+    st_dictionary_at_put (st_globals, st_symbol_new (name), class);
 }
 
 
@@ -319,8 +317,8 @@ file_in_classes (void)
 	    "Collection.st",
 	    "SequenceableCollection.st",
 	    "ArrayedCollection.st",
-//	    "HashedCollection.st",
-//	    "Set.st",
+	    "HashedCollection.st",
+	    "Set.st",
 	    "Array.st",
 	    "ByteArray.st",
 	    "WordArray.st",
@@ -351,7 +349,8 @@ file_in_classes (void)
 	    "Message.st",
 	    "OrderedCollection.st",
 	    "FileStream.st",
-	    "List.st"
+	    "List.st",
+	    "System.st"
 	};
 
     for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {
@@ -420,6 +419,7 @@ st_memory *memory;
 void
 st_bootstrap_universe (void)
 {
+    st_oop smalltalk;
     st_oop st_object_class_, st_class_class_;
 
     st_memory_new ();
@@ -460,14 +460,18 @@ st_bootstrap_universe (void)
     st_compiled_method_class  = class_new (ST_FORMAT_OBJECT, 0);
     st_method_context_class   = class_new (ST_FORMAT_CONTEXT, 5);
     st_block_context_class    = class_new (ST_FORMAT_CONTEXT, 7);
+    st_system_class           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SYSTEM);
 
     ST_HEADER (st_nil)->class = st_undefined_object_class;
 
     /* special objects */
     st_true         = st_object_new (st_true_class);
     st_false        = st_object_new (st_false_class);
-    st_symbol_table = st_set_new_with_capacity (75);
-    st_smalltalk    = st_dictionary_new_with_capacity (75);
+    st_symbols      = st_set_new_with_capacity (100);
+    st_globals      = st_dictionary_new_with_capacity (100);
+    st_smalltalk    = st_object_new (st_system_class);
+    ST_HEADER (st_smalltalk)->fields[0] = st_globals;
+    ST_HEADER (st_smalltalk)->fields[1] = st_symbols;
 
     /* add class names to symbol table */
     add_global ("Object", st_object_class_);
@@ -494,6 +498,8 @@ st_bootstrap_universe (void)
     add_global ("CompiledMethod", st_compiled_method_class);
     add_global ("MethodContext", st_method_context_class);
     add_global ("BlockContext", st_block_context_class);
+    add_global ("System", st_system_class);
+    add_global ("Smalltalk", st_smalltalk);
 
     init_specials ();
     file_in_classes ();
@@ -502,7 +508,6 @@ st_bootstrap_universe (void)
     st_memory_add_root (st_true);
     st_memory_add_root (st_false);
     st_memory_add_root (st_smalltalk);
-    st_memory_add_root (st_symbol_table);
 }
 
 static bool verbosity;
