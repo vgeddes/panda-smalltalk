@@ -22,7 +22,7 @@
  * THE SOFTWARE.
 */
 
-#include "st-hashed-collection.h"
+#include "st-dictionary.h"
 #include "st-array.h"
 #include "st-small-integer.h"
 #include "st-utils.h"

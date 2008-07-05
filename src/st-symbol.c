@@ -23,7 +23,7 @@
 */
 
 #include "st-symbol.h"
-#include "st-hashed-collection.h"
+#include "st-dictionary.h"
 #include "st-array.h"
 #include "st-behavior.h"
 #include "st-array.h"

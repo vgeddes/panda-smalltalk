@@ -31,7 +31,7 @@
 #include "st-method.h"
 #include "st-array.h"
 #include "st-small-integer.h"
-#include "st-hashed-collection.h"
+#include "st-dictionary.h"
 #include "st-large-integer.h"
 #include "st-symbol.h"
 #include "st-universe.h"

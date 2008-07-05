@@ -6,8 +6,8 @@ libpanda_la_SOURCES = \
 	src/st-utils.c \
 	src/st-unicode.h \
 	src/st-unicode.c \
-	src/st-hashed-collection.h \
-	src/st-hashed-collection.c \
+	src/st-dictionary.h \
+	src/st-dictionary.c \
 	src/st-array.h \
 	src/st-array.c \
 	src/st-character.h \

@@ -27,7 +27,7 @@
 #include "st-types.h"
 #include "st-object.h"
 #include "st-symbol.h"
-#include "st-hashed-collection.h"
+#include "st-dictionary.h"
 #include "st-method.h"
 #include "st-array.h"
 #include "st-array.h"

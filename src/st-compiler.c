@@ -2,7 +2,7 @@
 #include "st-compiler.h"
 #include "st-symbol.h"
 #include "st-universe.h"
-#include "st-hashed-collection.h"
+#include "st-dictionary.h"
 #include "st-behavior.h"
 #include "st-input.h"
 #include "st-node.h"
