@@ -35,6 +35,7 @@ void    st_dictionary_at_put     (st_oop dict, st_oop key, st_oop value);
 st_oop  st_dictionary_association_at (st_oop dict, st_oop key);
 
 st_oop  st_set_new               (void);
+st_oop  st_set_intern_cstring    (st_oop set, const char *string);
 st_oop  st_set_new_with_capacity (st_smi capacity);
 bool    st_set_includes          (st_oop set, st_oop object);
 st_oop  st_set_like              (st_oop set, st_oop object);

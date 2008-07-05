@@ -119,19 +119,7 @@ st_byte_array_equal (st_oop object, st_oop other)
 st_uint
 st_byte_array_hash (st_oop object)
 {
-    const signed char *p = (signed char *) st_byte_array_bytes (object);
-    st_uint h = *p;
-
-    long size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);
-
-    if (size == 0 || !h)
-	return h;
-
-    for (st_smi i = 1; i < size; i++) {
-	h = (h << 5) - h + *(p + i);
-    }
-
-    return h;
+    return st_string_hash ((char *) st_byte_array_bytes (object));
 }
 
 static st_uint

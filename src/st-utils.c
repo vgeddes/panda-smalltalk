@@ -474,61 +474,18 @@ st_strndup (const char *str, size_t n)
 #endif
 }
 
-st_bit_array *
-st_bit_array_new  (st_ulong size, bool clear)
+st_uint
+st_string_hash (const char *string)
 {
-    st_bit_array *array;
-    
-    array = st_new (st_bit_array);
+    const signed char *p = (signed char *) string;
+    st_uint h = *p;
 
-    array->data_size = (size / 8) + 1;
-    array->data = st_malloc (array->data_size);
-    
-    if (clear)
-	st_bit_array_clear (array);
-    
-    return array;
-}
+    if (*p == 0)
+	return h;
 
-void
-st_bit_array_clear (st_bit_array *array)
-{
-    memset (array->data, 0, array->data_size);
-}
-
-st_ulong
-st_bit_array_size (st_bit_array *array)
-{
-    return array->data_size * 8;
-}
-
-void
-st_bit_array_destroy (st_bit_array *array)
-{
-    st_free (array->data);
-    st_free (array);
-}
-
-#ifdef ST_DEBUG
-void
-st_bit_array_test  (void)
-{
-    st_bit_array *array;
-
-    array = st_bit_array_new (1000, true);
-    
-    st_bit_array_set (array, 760);
-    st_assert (st_bit_array_get (array, 760) == true);
-    
-    st_bit_array_set (array, 340);
-    st_assert (st_bit_array_get (array, 340) == true);
-
-    for (st_ulong i = 0; i < 1000; i++) {
-	st_bit_array_set (array, i);
-	st_assert (st_bit_array_get (array, i) == true);
+    while (*p) {
+	h = (h << 5) - h + *p++;
     }
-    
-    st_bit_array_destroy (array);
-}
 
-#endif
+    return h;
+}

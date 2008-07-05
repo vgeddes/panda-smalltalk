@@ -55,7 +55,13 @@ st_oop st_specials[ST_NUM_SPECIALS];
 st_oop
 st_global_get (const char *name)
 {
-    return st_dictionary_at (st_globals, st_symbol_new (name));
+    st_oop sym;
+
+    st_assert (st_symbol_new (name) == st_symbol_new (name));
+
+    sym = st_symbol_new (name);
+
+    return st_dictionary_at (st_globals, sym);
 }
 
 enum
@@ -467,8 +473,8 @@ st_bootstrap_universe (void)
     /* special objects */
     st_true         = st_object_new (st_true_class);
     st_false        = st_object_new (st_false_class);
-    st_symbols      = st_set_new_with_capacity (100);
-    st_globals      = st_dictionary_new_with_capacity (100);
+    st_symbols      = st_set_new_with_capacity (256);
+    st_globals      = st_dictionary_new_with_capacity (256);
     st_smalltalk    = st_object_new (st_system_class);
     ST_HEADER (st_smalltalk)->fields[0] = st_globals;
     ST_HEADER (st_smalltalk)->fields[1] = st_symbols;

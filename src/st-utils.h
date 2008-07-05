@@ -146,33 +146,7 @@ st_list  *st_list_reverse (st_list *list);
 st_uint   st_list_length  (st_list *list);
 void      st_list_destroy (st_list *list);
 
-typedef struct st_bit_array st_bit_array;
-
-struct st_bit_array {
-    
-    st_uchar *data;
-    st_ulong  data_size;
-};
-
-st_bit_array *st_bit_array_new     (st_ulong size, bool clear);
-
-st_ulong      st_bit_array_size    (st_bit_array *array);
-
-void          st_bit_array_clear   (st_bit_array *array);
-
-void          st_bit_array_destroy (st_bit_array *array);
-
-static inline bool
-st_bit_array_get (st_bit_array *array, st_ulong index)
-{
-    return (array->data[index >> 3] >> (index & 0x7)) & 1;
-}
-
-static inline void
-st_bit_array_set (st_bit_array *array, st_ulong index)
-{   
-    array->data[index >> 3] |= 1 << (index & 0x7);
-}
+st_uint   st_string_hash (const char *string);
 
 #if  defined(__GNUC__) && defined(__OPTIMIZE__)
 #define ST_LIKELY(condition)     __builtin_expect (!!(condition), 1)
