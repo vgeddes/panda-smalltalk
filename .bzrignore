@@ -43,3 +43,4 @@ tests/test-interpreter
 po/goo.pot
 compile
 src/panda
+tests/test-heap
