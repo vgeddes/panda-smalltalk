@@ -44,3 +44,5 @@ po/goo.pot
 compile
 src/panda
 tests/test-heap
+libs/libgdtoa/arith.h
+libs/libgdtoa/gd_qnan.h
