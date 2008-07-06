@@ -49,3 +49,66 @@ methodDictionary
 Behavior method!
 instanceVariableNames
 	^ instanceVariableNames!
+
+"methods"
+
+Behavior method!
+addSelector: aSymbol withMethod: aMethod
+	methodDictionary at: aSymbol put: aMethod!
+
+Behavior method!
+removeSelector: aSymbol
+	methodDictionary removeKey: aSymbol!
+
+Behavior method!
+selectors
+	^ methodDictionary keys!
+
+Behavior method!
+allSelectors
+	| class selectors |
+
+	selectors := Set new.
+
+	class := self.
+	[class ~~ nil]
+		whileTrue:
+			[selectors includeAll: class selectors.
+			 class := class superclass].
+
+	^ selectors!
+
+Behavior method!
+hasMethods
+	^ methodDictionary isEmpty not!
+
+Behavior method!
+includesSelector: aSymbol
+	^ methodDictionary includes: aSymbol!
+
+Behavior method!
+canUnderstand: aSymbol
+	| class |
+
+	class := self.
+	[class ~~ nil]
+		whileTrue:
+			[(methodDictionary includesKey: aSymbol) ifTrue: [^ true].
+			 class := class superclass].
+
+	^ false!
+
+Behavior method!
+inheritsFrom: aClass
+	| class |
+
+	class := superclass.
+	[class ~~ nil]
+		whileTrue:
+			[class == aClass ifTrue: [^ true].
+			 class := class superclass].
+
+	^ false!
+
+
+	

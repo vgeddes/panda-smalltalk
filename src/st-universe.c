@@ -325,6 +325,7 @@ file_in_classes (void)
 	    "ArrayedCollection.st",
 	    "HashedCollection.st",
 	    "Set.st",
+	    "Dictionary.st",
 	    "Array.st",
 	    "ByteArray.st",
 	    "WordArray.st",
@@ -498,8 +499,8 @@ st_bootstrap_universe (void)
     add_global ("ByteString", st_string_class);
     add_global ("ByteSymbol", st_symbol_class);
     add_global ("WideString", st_wide_string_class);
-    add_global ("Set", st_set_class);
-    add_global ("Dictionary", st_dictionary_class);
+    add_global ("IdentitySet", st_set_class);
+    add_global ("IdentityDictionary", st_dictionary_class);
     add_global ("Association", st_association_class);
     add_global ("CompiledMethod", st_compiled_method_class);
     add_global ("MethodContext", st_method_context_class);

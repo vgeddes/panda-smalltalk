@@ -61,6 +61,14 @@ Class named: 'Dictionary'
 	  superclass: 'HashedCollection'
 	  instanceVariableNames: ''!
 
+Class named: 'IdentitySet'
+	  superclass: 'Set'
+	  instanceVariableNames: ''!
+
+Class named: 'IdentityDictionary'
+	  superclass: 'Dictionary'
+	  instanceVariableNames: ''!
+
 Class named: 'SequenceableCollection'
 	  superclass: 'Collection'
 	  instanceVariableNames: ''!

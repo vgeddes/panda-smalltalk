@@ -1,7 +1,5 @@
 
-
-
-IdentityDictionary method!
+IdentitySet method!
 find: anObject in: anArray
 	| i mask |
 
@@ -13,9 +11,7 @@ find: anObject in: anArray
 
 	  object := anArray at: i.
 
-	  (object == nil)
-		  ifTrue: [^ i].
-	  (object key == anObject) 
+	  (object == anObject) | (object == nil)
 		  ifTrue: [^ i].
 
 	  i := (i + 106720 bitAnd: mask) + 1.

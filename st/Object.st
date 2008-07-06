@@ -81,18 +81,6 @@ printString
     self printOn: stream.
     ^ stream contents!
 
-
-"testing"
-
-Object method!
-isNil
-	^ false!
-
-Object method!
-isNotNil
-	^ true!
-
-
 "controlling"
 
 Object method!
@@ -165,6 +153,26 @@ isInteger
 Object method!
 isFraction
 	^ false!
+
+Object method!
+isNil
+	^ false!
+
+Object method!
+isNotNil
+	^ true!
+
+Object method!
+isMemberOf: aClass
+	^ self class == aClass!
+
+Object method!
+isKindOf: aClass
+	^ self class inheritsFrom: aClass!
+
+Object method!
+respondsTo: aSymbol
+	^ self class canUnderstand: aSymbol!
 
 
 "error handling"

@@ -8,24 +8,13 @@ HashedCollection classMethod!
 new: initialCapacity
 	^ self basicNew initialize: initialCapacity!
 
-HashedCollection method!
-includes: anObject
-	| index |
-
-	index := self find: anObject.
-	(array at: index) ifNil: [^ false].
-
-	^ true!
+HashedCollection classMethod!
+with: an
+	^ self new: self defaultCapacity!
 
 HashedCollection method!
-add: anObject
+at: index include: anObject
 	| index |
-
-	anObject == self
-		ifTrue: [ self error: 'cannot insert self into dictionary' ].
-
-	index := self find: anObject.
-	(array at: index) ifNotNil: [ ^ anObject ].
 
 	array at: index put: anObject. 
 	size := size + 1.
@@ -35,25 +24,11 @@ add: anObject
 	^ anObject!
 
 HashedCollection method!
-remove: anObject
-	^ self remove: anObject ifAbsent: []!
-
-HashedCollection method!
-remove: anObject ifAbsent: aBlock
-	| index |
-
-	anObject == self
-		ifTrue: [ self error: 'cannot remove self from dictionary' ].
-
-	index := self find: anObject.
-
-	(array at: index) ifNil: [^ aBlock value]. 
-
-	array at: index put: self.
+removeAtIndex: index
+	array at: index put: array.
 	size := size - 1.
-	deleted := deleted + 1.
+	deleted := deleted + 1!
 
-	^ anObject!
 
 HashedCollection method!
 find: anObject
@@ -61,22 +36,7 @@ find: anObject
 
 HashedCollection method!
 find: anObject in: anArray
-	| i mask |
-
-	mask := anArray size - 1.
-
-	i := ((self keyFor: anObject) hash bitAnd: mask) + 1.
-
-	[ |  object | 
-
-	  object := anArray at: i.
-
-	  (object = (self valueFor: anObject)) | (object == nil)
-		  ifTrue: [ ^ i].
-
-	  i := (i + 106720 bitAnd: mask) + 1.
-
-	] repeat!
+	self subclassResponsibility!
 
 HashedCollection method!
 grow
@@ -84,7 +44,7 @@ grow
 
 	newArray := Array new: (array size + array size).
 	
-	self contents do: [ :object |
+	self do: [ :object |
 		newArray at: (self find: object in: newArray) put: object].
 
 	array := newArray.
@@ -107,6 +67,15 @@ capacity
 	^ array size // 2!
 
 
+"enumerating"
+HashedCollection method!
+do: aBlock
+	1 to: array size do:
+		[ :i | | object |
+			object := array at: i.
+			(object ~~ nil) & (object ~~ array) ifTrue: [ aBlock value: object ]]!
+
+
 "private"
 
 HashedCollection classMethod!
@@ -118,15 +87,7 @@ defaultCapacity
 	^ 8!
 
 HashedCollection method!
-keyFor: anObject
-	^ anObject!
-
-HashedCollection method!
-valueFor: anObject
-	^ anObject!
-
-HashedCollection method!
-arraySizeForCapacity: capacity
+sizeForCapacity: capacity
 	| minsize |
 
 	minsize := HashedCollection minimumCapacity.
@@ -134,7 +95,7 @@ arraySizeForCapacity: capacity
 	[ minsize < capacity ]
 		whileTrue: [ minsize := minsize + minsize ].
 
-	^ size!
+	^ minsize!
 
 HashedCollection method!
 occupiedCount
@@ -142,14 +103,10 @@ occupiedCount
 
 HashedCollection method!
 initialize: initialCapacity
-	array := Array new: (self arraySizeForCapacity: initialCapacity).
+	array := Array new: (self sizeForCapacity: initialCapacity).
 	size := 0.
 	deleted := 0!
 
 HashedCollection method!
 loadFactor
 	^ self occupiedCount / array size!
-
-HashedCollection method!
-contents
-	^ array select: [ :object | (object ~~ nil) & (object ~~ self) ]!
