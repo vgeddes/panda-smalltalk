@@ -5,7 +5,7 @@ Dictionary method!
 at: key
 	| assoc |
 
-	assoc := array at: (self find: key)
+	assoc := array at: (self find: key).
 	assoc ifNil: [^ nil].
 
 	^ assoc value!
