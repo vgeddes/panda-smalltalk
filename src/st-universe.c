@@ -357,7 +357,8 @@ file_in_classes (void)
 	    "OrderedCollection.st",
 	    "FileStream.st",
 	    "List.st",
-	    "System.st"
+	    "System.st",
+	    "CompiledMethod.st"
 	};
 
     for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {

@@ -30,7 +30,41 @@ keys
 	self do: [ :assoc | keys include: assoc key ].
 	^ keys!
 
+Dictionary method!
+values
+	| values |
+
+	values := WriteStream on: (Array new: self size).
+	self do: [ :assoc | values nextPut: assoc value ].
+	^ values contents!
+
+
+"enumerating"
+
+Dictionary method!
+keysDo: aBlock
+	self do: [ :assoc | aBlock value: assoc key ]!
+
+Dictionary method!
+valuesDo: aBlock
+	self do: [ :assoc | aBlock value: assoc value ]!
+
+Dictionary method!
+select: aBlock
+	| stream |
+	
+	stream := WriteStream on: (Array new: self size).
+	self do: [ :assoc |
+				(aBlock value: assoc value)
+					ifTrue: [stream nextPut: assoc value]].
+
+	^ stream contents!
+				
+
+
+
 "testing"
+
 Dictionary method!
 includesKey: anObject
 	| index assoc |

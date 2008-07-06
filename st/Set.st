@@ -17,6 +17,12 @@ includes: anObject
 
 	^ true!
 
+Set method!
+occurancesOf: anObject
+	(self includes: anObject)
+		ifTrue: [^ 1]
+		ifFalse: [^ 0]!
+
 
 "including"
 
