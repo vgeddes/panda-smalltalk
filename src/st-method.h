@@ -64,6 +64,11 @@ typedef enum
 
 } st_method_literal_type;
 
+#define ST_METHOD_HEADER(oop)   (ST_METHOD (oop)->header)
+#define ST_METHOD_LITERALS(oop) (ST_METHOD (oop)->literals)
+#define ST_METHOD_BYTECODE(oop) (ST_METHOD (oop)->bytecode)
+#define ST_METHOD_SELECTOR(oop) (ST_METHOD (oop)->selector)
+
 /*
  * CompiledMethod Header:
  *
@@ -163,80 +168,80 @@ enum
 static inline int
 st_method_get_temp_count (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD (method)->header, temp);
+    return GET_BITFIELD (ST_METHOD_HEADER (method), temp);
 }
 
 static inline int
 st_method_get_arg_count (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD (method)->header, arg);
+    return GET_BITFIELD (ST_METHOD_HEADER (method), arg);
 }
 
 static inline int
 st_method_get_stack_depth (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD (method)->header, stack);
+    return GET_BITFIELD (ST_METHOD_HEADER (method), stack);
 }
 
 static inline int
 st_method_get_primitive_index (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD (method)->header, primitive);
+    return GET_BITFIELD (ST_METHOD_HEADER (method), primitive);
 }
 
 static inline st_method_flags
 st_method_get_flags (st_oop method)
 {   
-    return GET_BITFIELD (ST_METHOD (method)->header, flag);
+    return GET_BITFIELD (ST_METHOD_HEADER (method), flag);
 }
 
 static inline void
 st_method_set_flags (st_oop method, st_method_flags flags)
 {
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, flag, flags);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), flag, flags);
 }
 
 static inline void
 st_method_set_arg_count (st_oop method, int count)
 {	
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, arg, count);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), arg, count);
 }
 
 static inline void
 st_method_set_temp_count (st_oop method, int count)
 {
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, temp, count);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), temp, count);
 }
 
 static inline void
 st_method_set_stack_depth (st_oop method, int depth)
 {
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, stack, depth);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), stack, depth);
 }
 
 static inline void
 st_method_set_primitive_index (st_oop method, int index)
 {
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, primitive, index);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), primitive, index);
 }
 
 static inline void
 st_method_set_instvar_index (st_oop method, int index)
 {
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, instvar, index);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), instvar, index);
 }
 
 static inline void
 st_method_set_literal_type (st_oop method, st_method_literal_type literal_type)
 {
-    ST_METHOD (method)->header = SET_BITFIELD (ST_METHOD (method)->header, literal, literal_type);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), literal, literal_type);
 }
 
 
 static inline st_uchar *
 st_method_bytecode_bytes (st_oop method)
 {
-    return st_byte_array_bytes (ST_METHOD (method)->bytecode);    
+    return st_byte_array_bytes (ST_METHOD_BYTECODE (method));    
 }
 
 #endif /* __ST_METHOD_H__ */

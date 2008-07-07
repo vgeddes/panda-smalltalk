@@ -1267,13 +1267,13 @@ print_backtrace (st_processor *pr)
 	st_oop receiver;
 
 	if (st_object_class (context) == st_block_context_class)
-	    home = ST_BLOCK_CONTEXT (context)->home;
+	    home = ST_BLOCK_CONTEXT_HOME (context);
 	else
 	    home = context;
 
-	receiver = ST_METHOD_CONTEXT (home)->receiver;
+	receiver = ST_METHOD_CONTEXT_RECEIVER (home);
 
-	selector = (char*) st_byte_array_bytes (ST_METHOD (ST_METHOD_CONTEXT (home)->method)->selector);
+	selector = (char*) st_byte_array_bytes (ST_METHOD_SELECTOR (ST_METHOD_CONTEXT_METHOD (home)));
   
 	if (st_object_class (st_object_class (receiver)) == st_metaclass_class)
 	    class = st_strdup_printf ("%s class", (char *) st_byte_array_bytes (ST_CLASS (receiver)->name));
@@ -1287,9 +1287,9 @@ print_backtrace (st_processor *pr)
 	    printf ("\n");
 
 	if (st_object_class (context) == st_block_context_class)
-	    context = ST_BLOCK_CONTEXT (context)->caller;
+	    context = ST_BLOCK_CONTEXT_CALLER (context);
 	else
-	    context = ST_CONTEXT_PART (context)->sender;
+	    context = ST_CONTEXT_PART_SENDER (context);
     }
 }
 
@@ -1486,9 +1486,9 @@ Object_perform_withArguments (st_processor *pr)
     set_success (pr, st_object_class (array) == st_array_class);
 
     if (st_object_class (pr->context) == st_block_context_class)
-	method = ST_METHOD_CONTEXT (ST_BLOCK_CONTEXT (pr->context)->home)->method;
+	method = ST_METHOD_CONTEXT_METHOD (ST_BLOCK_CONTEXT_HOME (pr->context));
     else
-	method = ST_METHOD_CONTEXT (pr->context)->method;
+	method = ST_METHOD_CONTEXT_METHOD (pr->context);
 
     array_size = st_smi_value (st_arrayed_object_size (array));
     set_success (pr, (pr->sp + array_size - 1) < st_method_get_stack_depth (method));
@@ -1901,21 +1901,21 @@ activate_block_context (st_processor *pr)
     st_smi  argcount;
 
     block = pr->message_receiver;
-    argcount = st_smi_value (ST_BLOCK_CONTEXT (block)->argcount);
+    argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
     if (argcount != pr->message_argcount) {
 	pr->success = false;
 	return;
     }
 
-    st_oops_copy (ST_BLOCK_CONTEXT (block)->stack,
+    st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
 		  pr->stack + pr->sp - argcount,
 		  argcount);
 
     pr->sp -= pr->message_argcount + 1;
     
-    ST_CONTEXT_PART (block)->ip      = ST_BLOCK_CONTEXT (block)->initial_ip;
-    ST_CONTEXT_PART (block)->sp      = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT (block)->caller = pr->context;
+    ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
+    ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT_CALLER (block) = pr->context;
 
     st_processor_set_active_context (pr, block);
 }
@@ -1941,21 +1941,21 @@ BlockContext_valueWithArguments (st_processor *pr)
 	return;
     }
 
-    argcount = st_smi_value (ST_BLOCK_CONTEXT (block)->argcount);
+    argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
     if (argcount != st_smi_value (st_arrayed_object_size (values))) {
 	set_success (pr, false);
 	return;
     }
     
-    st_oops_copy (ST_BLOCK_CONTEXT (block)->stack,
+    st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
 		  ST_ARRAY (values)->elements,
 		  argcount);
     
     pr->sp -= pr->message_argcount + 1;
 
-    ST_CONTEXT_PART (block)->ip      = ST_BLOCK_CONTEXT (block)->initial_ip;
-    ST_CONTEXT_PART (block)->sp      = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT (block)->caller = pr->context;
+    ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
+    ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
+    ST_BLOCK_CONTEXT_CALLER (block) = pr->context;
 
     st_processor_set_active_context (pr, block);
 }

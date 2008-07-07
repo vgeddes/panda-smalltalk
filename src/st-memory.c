@@ -442,16 +442,16 @@ remap_processor (st_processor *pr)
 
     context = remap_oop (pr->context);
     if (ST_HEADER (context)->class == st_block_context_class) {
-	home = ST_BLOCK_CONTEXT (context)->home;
-	pr->method   = ST_METHOD_CONTEXT (home)->method;
-	pr->receiver = ST_METHOD_CONTEXT (home)->receiver;
-	pr->literals = st_array_elements (ST_METHOD (pr->method)->literals);
+	home = ST_BLOCK_CONTEXT_HOME (context);
+	pr->method   = ST_METHOD_CONTEXT_METHOD (home);
+	pr->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
+	pr->literals = st_array_elements (ST_METHOD_LITERALS (pr->method));
 	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
-	pr->stack    = ST_BLOCK_CONTEXT (context)->stack;
+	pr->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
-	pr->method   = ST_METHOD_CONTEXT (context)->method;
-	pr->receiver = ST_METHOD_CONTEXT (context)->receiver;
-	pr->literals = st_array_elements (ST_METHOD (pr->method)->literals);
+	pr->method   = ST_METHOD_CONTEXT_METHOD (context);
+	pr->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
+	pr->literals = st_array_elements (ST_METHOD_LITERALS (pr->method));
 	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
 	pr->stack    = ST_METHOD_CONTEXT_STACK (context);
     }

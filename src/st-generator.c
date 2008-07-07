@@ -1400,8 +1400,7 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 
     method = st_object_new (st_compiled_method_class);
 
-    /* TODO: refine */
-    ST_METHOD (method)->header = st_smi_new (0);
+    ST_METHOD_HEADER (method) = st_smi_new (0);
 
     st_method_set_arg_count   (method, st_node_list_length (node->method.arguments));
     st_method_set_temp_count  (method, st_list_length (gt->temporaries) - st_node_list_length (node->method.arguments));
@@ -1415,9 +1414,9 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 
     st_method_set_primitive_index (method, node->method.primitive);
 
-    ST_METHOD (method)->literals = create_literals_array (gt);
-    ST_METHOD (method)->bytecode = create_bytecode_array (gt); 
-    ST_METHOD (method)->selector = node->method.selector;
+    ST_METHOD_LITERALS (method) = create_literals_array (gt);
+    ST_METHOD_BYTECODE (method) = create_bytecode_array (gt); 
+    ST_METHOD_SELECTOR (method) = node->method.selector;
 
     generator_destroy (gt);
 
@@ -1716,9 +1715,9 @@ st_print_method (st_oop method)
     
     printf ("\n");
 
-    literals  = ST_METHOD (method)->literals;
+    literals  = ST_METHOD_LITERALS (method);
     bytecodes = st_method_bytecode_bytes (method);
-    size      = ST_ARRAYED_OBJECT (ST_METHOD (method)->bytecode)->size;
+    size      = ST_ARRAYED_OBJECT (ST_METHOD_BYTECODE (method))->size;
 
     print_bytecodes (literals, bytecodes, size);
     

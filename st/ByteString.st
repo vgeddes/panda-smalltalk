@@ -11,7 +11,7 @@ at: anInteger
 		ifTrue: [ ^ self at: anInteger asInteger ]
 		ifFalse: [ self error: 'index is not an integer']!
 
-WideString method!
+ByteString method!
 at: anInteger put: aCharacter
 	<primitive: 'ByteString_at_put'>
 	anInteger isInteger

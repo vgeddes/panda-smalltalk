@@ -40,7 +40,7 @@ struct st_context_part
 
 struct st_method_context
 {
-    struct st_context_part parent;
+    struct st_context_part __parent__;
     st_oop method;   
     st_oop receiver;
 
@@ -49,7 +49,7 @@ struct st_method_context
 
 struct st_block_context
 {
-    struct st_context_part parent;
+    struct st_context_part __parent__;
     st_oop initial_ip;
     st_oop argcount;
     st_oop caller;
@@ -71,21 +71,24 @@ st_oop  st_message_new (st_oop selector, st_oop arguments);
 #define ST_METHOD_CONTEXT(oop)     ((struct st_method_context *) ST_POINTER (oop))
 #define ST_BLOCK_CONTEXT(oop)      ((struct st_block_context *)  ST_POINTER (oop))
 
-#define ST_METHOD_CONTEXT_TEMPORARY_FRAME(oop) (ST_METHOD_CONTEXT (oop)->stack)
 
+#define ST_CONTEXT_PART_SENDER(oop)  (ST_CONTEXT_PART (oop)->sender)
+#define ST_CONTEXT_PART_IP(oop)      (ST_CONTEXT_PART (oop)->ip)
+#define ST_CONTEXT_PART_SP(oop)      (ST_CONTEXT_PART (oop)->sp)
+
+#define ST_METHOD_CONTEXT_METHOD(oop)          (ST_METHOD_CONTEXT (oop)->method)
+#define ST_METHOD_CONTEXT_RECEIVER(oop)        (ST_METHOD_CONTEXT (oop)->receiver)
+#define ST_METHOD_CONTEXT_TEMPORARY_FRAME(oop) (ST_METHOD_CONTEXT (oop)->stack)
 #define ST_METHOD_CONTEXT_STACK(oop)					\
     (ST_METHOD_CONTEXT (oop)->stack					\
-     + st_method_get_temp_count (ST_METHOD_CONTEXT (oop)->method)	\
-     + st_method_get_arg_count (ST_METHOD_CONTEXT (oop)->method))
+     + st_method_get_temp_count (ST_METHOD_CONTEXT_METHOD (oop))	\
+     + st_method_get_arg_count (ST_METHOD_CONTEXT_METHOD (oop)))
 
-#define ST_METHOD_CONTEXT_STACK_SIZE(oop)				\
-    (st_method_get_temp_count (ST_METHOD_CONTEXT (oop)->method)		\
-     + st_method_get_arg_count (ST_METHOD_CONTEXT (oop)->method)	\
-     + st_method_get_stack_depth (ST_METHOD_CONTEXT (oop)->method))
-
-#define ST_BLOCK_CONTEXT_STACK_SIZE(oop) \
-    (st_method_get_stack_depth (ST_METHOD_CONTEXT (ST_BLOCK_CONTEXT (oop)->home)->method) \
-     + st_smi_value (ST_BLOCK_CONTEXT (oop)->argcount))
+#define ST_BLOCK_CONTEXT_INITIALIP(oop) (ST_BLOCK_CONTEXT (oop)->initial_ip)
+#define ST_BLOCK_CONTEXT_ARGCOUNT(oop)  (ST_BLOCK_CONTEXT (oop)->argcount)
+#define ST_BLOCK_CONTEXT_CALLER(oop)    (ST_BLOCK_CONTEXT (oop)->caller)
+#define ST_BLOCK_CONTEXT_HOME(oop)      (ST_BLOCK_CONTEXT (oop)->home)
+#define ST_BLOCK_CONTEXT_STACK(oop)     (ST_BLOCK_CONTEXT (oop)->stack)
 
 #define ST_MESSAGE_SELECTOR(oop) (ST_HEADER (oop)->fields[0])
 #define ST_MESSAGE_ARGUMENTS(oop) (ST_HEADER (oop)->fields[1])
