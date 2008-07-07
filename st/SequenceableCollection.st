@@ -48,7 +48,32 @@ hash
 
 	^ hash!
 
+"finding"
+
+
 "accessing"
+SequenceableCollection method!
+findFirst: aBlock
+	| i el |
+	i := 0.
+	[(i := i + 1) <= self size]
+		whileTrue:
+			[ el := self at: i.
+			 (aBlock value: el) ifTrue: [^ el]].
+
+	 ^ nil!
+
+"accessing"
+SequenceableCollection method!
+findLast: aBlock
+	| i el |
+	i := self size + 1.
+	[(i := i - 1) >= 1]
+		whileTrue:
+			[ el := self at: i.
+			 (aBlock value: el) ifTrue: [^ el]].
+
+	 ^ nil!
 
 SequenceableCollection method!
 size

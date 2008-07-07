@@ -38,6 +38,13 @@ gcd: aNumber
 	    num := tmp ].
     ^ num abs!
 
+Integer method!
+isEven
+	^ self \\ 2 = self zero!
+
+Integer method!
+isOdd
+	^ self isEven not!
 
 "bit-wise operations"
 
