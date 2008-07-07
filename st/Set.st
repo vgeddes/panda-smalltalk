@@ -23,7 +23,6 @@ occurancesOf: anObject
 		ifTrue: [^ 1]
 		ifFalse: [^ 0]!
 
-
 "including"
 
 Set method!
@@ -32,6 +31,8 @@ add: anObject
 
 Set method!
 include: anObject
+	anObject ifNil: [ self error: 'Sets cannot meaningfully contain nil'].
+
 	self at: (self find: anObject) include: anObject.
 	^ anObject!
 

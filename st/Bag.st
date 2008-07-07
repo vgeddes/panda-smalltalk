@@ -38,6 +38,14 @@ remove: anObject ifAbsent: aBlock
 	^ anObject!
 
 Bag method!
+occurancesOf: anObject
+	| count |
+	count := (contents at: anObject).
+	count ifNil: [^ 0].
+	^ count!
+
+
+Bag method!
 do: aBlock
 	contents keysDo: [ :object | (contents at: object) timesRepeat: [aBlock value: object]]!
 
