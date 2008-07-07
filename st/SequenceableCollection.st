@@ -41,7 +41,7 @@ SequenceableCollection method!
 hash
 	| hash |
 
-	hash := 11111111111111111.
+	hash := 56.
 
 	self do: [ :element |
 		hash := hash bitXor: ((hash bitShift: 5) + element hash + (hash bitShift: -2))].

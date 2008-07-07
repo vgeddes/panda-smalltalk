@@ -1584,7 +1584,7 @@ SequenceableCollection_size (st_processor *pr)
 static void
 Array_at (st_processor *pr)
 {
-    st_smi index    = pop_integer (pr);
+    st_smi index    = pop_integer32 (pr);
     st_oop receiver = ST_STACK_POP (pr);
     
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {

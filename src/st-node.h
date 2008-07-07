@@ -130,6 +130,8 @@ st_node *st_node_new          (st_node_type type);
 
 st_node *st_node_list_append  (st_node *list, st_node *node);
 
+st_node *st_node_list_at      (st_node *list, st_uint index);
+
 st_uint  st_node_list_length  (st_node *list);
 
 void     st_print_method_node (st_node *method);

@@ -47,12 +47,17 @@ add: anObject
 
 ArrayedCollection method!
 sort
-	self mergeSortWithBuffer: (Array new: self size)
-		 low: 1
-		 high: self size!
+	self sortBy: [ :u :v | u <= v ]!
 
 ArrayedCollection method!
-mergeSortWithBuffer: b low: lo high: hi
+sortBy: aBlock
+	self mergeSortWithBuffer: (Array new: self size)
+		 low: 1
+		 high: self size
+	     sortBlock: aBlock!
+
+ArrayedCollection method!
+mergeSortWithBuffer: b low: lo high: hi sortBlock: aBlock
 	"Merge Sort
      Copyright (C) Jeffrey Stedfast
      http://jeffreystedfast.blogspot.com/2007/02/merge-sort.html"
@@ -66,10 +71,12 @@ mergeSortWithBuffer: b low: lo high: hi
 
 	self mergeSortWithBuffer: b
 		 low: lo
-		 high: mid.
+		 high: mid
+	     sortBlock: aBlock.
 	self mergeSortWithBuffer: b
 		 low: mid + 1
-		 high: hi.
+		 high: hi
+	     sortBlock: aBlock.
 
 	l := lo.
 	h := mid + 1.
@@ -77,7 +84,7 @@ mergeSortWithBuffer: b low: lo high: hi
 
 	[(l <= mid) & (h <= hi)]
 		whileTrue:
-			[(self at: l) <= (self at: h)
+			[(aBlock value: (self at: l) value: (self at: h))
 				ifTrue: [b at: i put: (self at: l). l := l + 1]
 				ifFalse: [b at: i put: (self at: h). h := h + 1].
 			 i := i + 1].
@@ -93,6 +100,3 @@ mergeSortWithBuffer: b low: lo high: hi
 	     to: lo + (i - 2)
 	     with: b
 	     startingAt: 1!
-
-	
-	

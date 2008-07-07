@@ -408,6 +408,16 @@ st_node_list_length (st_node *list)
     return len;
 }
 
+st_node *
+st_node_list_at (st_node *list, st_uint index)
+{
+    st_uint  i = 0;
+    st_node *l;
+    for (l = list; i < index; i++)
+	l = l->next;
+    return l;
+}
+
 void
 st_node_destroy (st_node *node)
 {

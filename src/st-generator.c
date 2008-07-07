@@ -510,11 +510,16 @@ generate_block (Generator *gt, st_node *node)
     size += sizes[BLOCK_RETURN];
     jump_offset (gt, size);
 
-    /* store all block arguments into the temporary frame */
-    for (st_node *l = node->block.arguments; l; l = l->next) {
+    /* Store all block arguments into the temporary frame.
+       Note that upon a block activation, the stack pointer sits
+       above the last argument to to the block */
+    st_node *l;
+    st_uint i = st_node_list_length (node->block.arguments);
+    for (; i > 0; --i) {
+	l = st_node_list_at (node->block.arguments, i - 1);
 	index = find_temporary (gt, l->variable.name);
 	st_assert (index >= 0);
-	assign_temp (gt, index, true); 	
+	assign_temp (gt, index, true);
     }
 
     generate_statements (gt, node->block.statements);
