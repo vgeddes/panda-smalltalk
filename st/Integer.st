@@ -197,5 +197,4 @@ isInteger
 
 Integer method!
 timesRepeat: aBlock
-    1 to: self do: [ :ea |
-					aBlock value ]!
+    1 to: self do: [ :ea | aBlock value ]!

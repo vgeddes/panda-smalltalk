@@ -1,24 +1,54 @@
-!Bag methodsFor: 'accessing'!
 
-indexOf: anObject
-    "This method is similiar to Set>>indexOf: except that return the position only of empty entries"
-    | h2 pos size |
-    size := self basicSize.
-    pos := anObject hash \\ (size - 1).
-    h2 := pos quo: 4.
 
-    h2 := h2 max: 1.
-    (h2 ~= 1 & ((h2 \\ 2) isZero))
-	ifTrue: [ h2 := h2 - 1 ].
-    
-    pos := pos + 1.
-    1 to: size do: [ :i |
-	| key |
-	key := self basicAt: pos.
-	key isNil
-	    ifTrue: [ ^pos ].
-	pos := pos + h2.
-	pos > size
-	    ifTrue: [ pos := pos - size ] ].
-    self error: 'Full'
-! !
+
+Bag classMethod!
+new
+	^ self new: self defaultCapacity!
+
+Bag classMethod!
+new: requestedCapacity
+	^ self basicNew initialize: requestedCapacity!
+
+Bag classMethod!
+defaultCapacity
+	^ 4!
+
+Bag classMethod!
+minimumCapacity
+	^ 4!
+
+Bag method!
+add: anObject withOccurances: anInteger
+	(contents at: anObject)
+		isNil ifTrue: [contents at: anObject put: anInteger]
+			  ifFalse: [contents at: anObject put: ((contents at: anObject) + anInteger)]!
+
+Bag method!
+add: anObject
+	self add: anObject withOccurances: 1!
+
+Bag method!
+remove: anObject ifAbsent: aBlock
+	| count |
+	count := (contents at: anObject).
+	count ifNil: [^ aBlock value].
+	(count := count - 1) = 0
+		ifTrue: [contents removeKey: anObject]
+		ifFalse: [contents at: anObject put: count].
+	^ anObject!
+
+Bag method!
+do: aBlock
+	contents keysDo: [ :object | (contents at: object) timesRepeat: [aBlock value: object]]!
+
+Bag method!
+size
+	| count |
+	count := 0.
+	self do: [ :object | count := count + 1].
+	^ count!
+	
+
+Bag method!
+initialize: requestedCapacity
+	contents := Dictionary new: (self class minimumCapacity max: requestedCapacity)!

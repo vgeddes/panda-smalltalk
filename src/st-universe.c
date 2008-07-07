@@ -326,6 +326,9 @@ file_in_classes (void)
 	    "HashedCollection.st",
 	    "Set.st",
 	    "Dictionary.st",
+	    "IdentitySet.st",
+	    "IdentityDictionary.st",
+	    "Bag.st",
 	    "Array.st",
 	    "ByteArray.st",
 	    "WordArray.st",
@@ -362,7 +365,7 @@ file_in_classes (void)
 	};
 
     for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {
-	filename = st_strconcat("..", ST_DIR_SEPARATOR_S, "st", ST_DIR_SEPARATOR_S, files[i], NULL);
+	filename = st_strconcat ("..", ST_DIR_SEPARATOR_S, "st", ST_DIR_SEPARATOR_S, files[i], NULL);
 	st_compile_file_in (filename);
 	st_free (filename);
     }

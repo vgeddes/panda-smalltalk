@@ -69,6 +69,10 @@ Class named: 'IdentityDictionary'
 	  superclass: 'Dictionary'
 	  instanceVariableNames: ''!
 
+Class named: 'Bag'
+	  superclass: 'Collection'
+	  instanceVariableNames: 'contents'!
+
 Class named: 'SequenceableCollection'
 	  superclass: 'Collection'
 	  instanceVariableNames: ''!
