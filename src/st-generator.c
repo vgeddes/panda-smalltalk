@@ -338,11 +338,10 @@ jump_offset (Generator *gt, int offset)
     
     emit (gt, JUMP);
 
-    /* push high byte */
-    emit (gt, (offset >> 8) & 0xFF);
     /* push low byte */
     emit (gt, offset & 0xFF);
-
+    /* push high byte */
+    emit (gt, (offset >> 8) & 0xFF);
 }
 
 
@@ -553,15 +552,15 @@ generation_func_1 (Generator *gt, st_node *node, st_uint subpattern_index)
 	emit (gt, JUMP_FALSE);
     else
 	emit (gt, JUMP_TRUE);
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
+    emit (gt, (size >> 8) & 0xFF);
 	
     generate_statements (gt, block->block.statements);
 	
     if (!node->message.is_statement) {
 	emit (gt, JUMP);
-	emit (gt, 0);
 	emit (gt, 1);
+	emit (gt, 0);
 	emit (gt, PUSH_NIL);
     } else {
 	emit (gt, POP_STACK_TOP);
@@ -619,16 +618,16 @@ generation_func_2 (Generator *gt, st_node *node, st_uint subpattern_index)
 	emit (gt, JUMP_FALSE);
     else
 	emit (gt, JUMP_TRUE);
-
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
+    emit (gt, (size >> 8) & 0xFF);
+
 
     generate_statements (gt, true_block->block.statements);
 
     size = size_statements (gt, false_block->block.statements);
     emit (gt, JUMP);
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
+    emit (gt, (size >> 8) & 0xFF);
 
     generate_statements (gt, false_block->block.statements);
 
@@ -682,8 +681,9 @@ generation_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
 	emit (gt, JUMP_FALSE);
     else
 	emit (gt, JUMP_TRUE);
-    emit (gt, 0);
     emit (gt, 3);
+    emit (gt, 0);
+
 
     size = size_statements (gt, block->block.statements);
     size += sizes[JUMP_FALSE];
@@ -691,9 +691,9 @@ generation_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
     size = - size;
 	
     emit (gt, JUMP);
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
-	
+    emit (gt, (size >> 8) & 0xFF);	
+
     if (!node->message.is_statement)
 	emit (gt, PUSH_NIL);
 }
@@ -746,8 +746,9 @@ generation_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
     // include size of POP and JUMP statement
     size += sizes[POP_STACK_TOP] + sizes[JUMP];
 
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
+    emit (gt, (size >> 8) & 0xFF);
+
 
     generate_statements (gt, node->message.arguments->block.statements);
 	
@@ -757,8 +758,8 @@ generation_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
     emit (gt, POP_STACK_TOP);
 
     emit (gt, JUMP);
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
+    emit (gt, (size >> 8) & 0xFF);
 
     if (!node->message.is_statement)
 	emit (gt, PUSH_NIL);
@@ -813,14 +814,14 @@ generation_func_5 (Generator *gt, st_node *node, st_uint subpattern_index)
 	emit (gt, JUMP_FALSE);
     else
 	emit (gt, JUMP_TRUE);
-    emit (gt, (size >> 8) & 0xFF);
     emit (gt, size & 0xFF);
+    emit (gt, (size >> 8) & 0xFF);
 
     generate_statements (gt, block->block.statements);
 
     emit (gt, JUMP);
-    emit (gt, 0);
     emit (gt, 1);
+    emit (gt, 0);
 
     if (subpattern_index == 0)
 	emit (gt, PUSH_FALSE);
