@@ -89,7 +89,7 @@ typedef enum
  * Bitfield format
  * 
  * flag = 0:
- *   [ flag: 3 | arg_count: 5 | temp_count: 6 | stack_depth: 8 | primitive: 8 | tag: 2 ]
+ *   [ flag: 3 | arg_count: 5 | temp_count: 6 | unused: 7 | large_context: 1 | primitive: 8 | tag: 2 ]
  *
  *   arg_count:      number of args
  *   temp_count:     number of temps
@@ -129,7 +129,8 @@ enum
     st_flag_bits        = 3,
     st_arg_bits         = 5,
     st_temp_bits        = 6,
-    st_stack_bits       = 8,
+    st_method_unused_bits = 7,
+    st_large_bits       = 1,
     st_instvar_bits     = 16,  
     st_literal_bits     = 4,
     st_primitive_bits   = 8,
@@ -137,16 +138,17 @@ enum
     st_primitive_shift  = ST_TAG_SIZE,
     st_instvar_shift    = ST_TAG_SIZE,
     st_literal_shift    = ST_TAG_SIZE,
-    st_stack_shift      = st_primitive_bits + st_primitive_shift,
-    st_temp_shift       = st_stack_bits + st_stack_shift,
+    st_large_shift      = st_primitive_bits + st_primitive_shift,
+    st_method_unused_shift      = st_large_bits + st_large_shift,
+    st_temp_shift       = st_method_unused_bits + st_method_unused_shift,
     st_arg_shift        = st_temp_bits + st_temp_shift,
     st_flag_shift       = st_arg_bits + st_arg_shift,
     
     st_primitive_mask           = ST_NTH_MASK (st_primitive_bits),
     st_primitive_mask_aligned   = st_primitive_mask << st_primitive_shift,
     
-    st_stack_mask               = ST_NTH_MASK (st_stack_bits),
-    st_stack_mask_aligned       = st_stack_mask << st_stack_shift,
+    st_large_mask               = ST_NTH_MASK (st_large_bits),
+    st_large_mask_aligned       = st_large_mask << st_large_shift,
     
     st_instvar_mask             = ST_NTH_MASK (st_instvar_bits),
     st_instvar_mask_aligned     = st_instvar_mask << st_instvar_shift,
@@ -178,9 +180,9 @@ st_method_get_arg_count (st_oop method)
 }
 
 static inline int
-st_method_get_stack_depth (st_oop method)
+st_method_get_large_context (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD_HEADER (method), stack);
+    return GET_BITFIELD (ST_METHOD_HEADER (method), large);
 }
 
 static inline int
@@ -214,9 +216,9 @@ st_method_set_temp_count (st_oop method, int count)
 }
 
 static inline void
-st_method_set_stack_depth (st_oop method, int depth)
+st_method_set_large_context (st_oop method, bool is_large)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), stack, depth);
+    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), large, is_large);
 }
 
 static inline void

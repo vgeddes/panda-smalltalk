@@ -1407,9 +1407,15 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 
     ST_METHOD_HEADER (method) = st_smi_new (0);
 
-    st_method_set_arg_count   (method, st_node_list_length (node->method.arguments));
-    st_method_set_temp_count  (method, st_list_length (gt->temporaries) - st_node_list_length (node->method.arguments));
-    st_method_set_stack_depth (method, gt->max_stack_depth);
+    st_uint argcount;
+    st_uint tempcount;
+
+    argcount = st_node_list_length (node->method.arguments);
+    tempcount = st_list_length (gt->temporaries) - st_node_list_length (node->method.arguments);
+
+    st_method_set_arg_count    (method, argcount);
+    st_method_set_temp_count   (method, tempcount);
+    st_method_set_large_context (method, (gt->max_stack_depth + argcount + tempcount) > 12);
 
     if (node->method.primitive >= 0) {
 	st_method_set_flags (method, ST_METHOD_PRIMITIVE);	
@@ -1715,7 +1721,7 @@ st_print_method (st_oop method)
     printf ("flags: %i; ", st_method_get_flags (method));
     printf ("arg-count: %i; ", st_method_get_arg_count (method));
     printf ("temp-count: %i; ", st_method_get_temp_count (method));
-    printf ("stack-depth: %i; ", st_method_get_stack_depth (method));
+    printf ("large-context: %i; ", st_method_get_large_context (method));
     printf ("primitive: %i;\n", st_method_get_primitive_index (method));
     
     printf ("\n");

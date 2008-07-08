@@ -63,6 +63,7 @@ extern int st_current_hash;
 enum
 {
     st_unused_bits     = 16,
+    st_object_large_bits = 1,
     st_size_bits       = 8,
     st_format_bits     = 6,
     st_tag_bits        = 2,
@@ -70,14 +71,17 @@ enum
     st_tag_shift       = 0,
     st_format_shift    = st_tag_bits + st_tag_shift,
     st_size_shift      = st_format_bits + st_format_shift,
-    st_unused_shift    = st_size_bits + st_size_shift,
+    st_object_large_shift     = st_size_bits + st_size_shift,
+    st_unused_shift    = st_object_large_bits + st_object_large_shift,
 
-    st_format_mask            = ST_NTH_MASK (st_format_bits),
-    st_format_mask_in_place   = st_format_mask << st_format_shift,
-    st_size_mask              = ST_NTH_MASK (st_size_bits),
-    st_size_mask_in_place     = st_size_mask << st_size_shift,
-    st_unused_mask            = ST_NTH_MASK (st_unused_bits),
-    st_unused_mask_in_place   = st_unused_mask << st_unused_shift,
+    st_format_mask          = ST_NTH_MASK (st_format_bits),
+    st_format_mask_in_place = st_format_mask << st_format_shift,
+    st_size_mask            = ST_NTH_MASK (st_size_bits),
+    st_size_mask_in_place   = st_size_mask << st_size_shift,
+    st_object_large_mask    = ST_NTH_MASK (st_object_large_bits),
+    st_object_large_mask_in_place  = st_object_large_mask << st_object_large_shift,
+    st_unused_mask          = ST_NTH_MASK (st_unused_bits),
+    st_unused_mask_in_place = st_unused_mask << st_unused_shift,
 };
 
 bool           st_object_equal       (st_oop object, st_oop other);
@@ -96,6 +100,18 @@ static inline st_format
 st_object_format (st_oop object)
 {
     return (ST_HEADER (object)->mark >> st_format_shift) & st_format_mask;
+}
+
+static inline void
+st_object_set_large_context (st_oop object, bool is_large)
+{
+    ST_HEADER (object)->mark = (ST_HEADER (object)->mark & ~st_object_large_mask_in_place) | (is_large << st_object_large_shift); 
+}
+
+static inline st_format
+st_object_large_context (st_oop object)
+{
+    return (ST_HEADER (object)->mark >> st_object_large_shift) & st_object_large_mask;
 }
 
 static inline st_uint

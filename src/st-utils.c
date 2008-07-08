@@ -23,10 +23,6 @@
 */
  
 #include "st-utils.h"
-#include "st-array.h"
-#include "st-array.h"
-#include "st-memory.h"
-#include "st-universe.h"
 
 #include <sys/stat.h>
 #include <string.h>
@@ -42,7 +38,6 @@
 
 int vasprintf(char **strp, const char *fmt, va_list ap);
 
-extern st_memory *memory;
 extern char *program_invocation_short_name;
 
 st_pointer

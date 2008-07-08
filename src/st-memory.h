@@ -62,6 +62,10 @@ typedef struct st_memory
     ptr_array  roots;
     st_uint    counter;
 
+    /* free context pool */
+    st_oop     free_context_large;
+    st_oop     free_context;
+
     /* statistics */
     struct timespec total_pause_time;     /* total accumulated pause time */
     st_ulong bytes_allocated;             /* current number of allocated bytes */
@@ -74,6 +78,9 @@ void       st_memory_destroy         (void);
 void       st_memory_add_root        (st_oop object);
 void       st_memory_remove_root     (st_oop object);
 st_oop     st_memory_allocate        (st_uint size);
+
+st_oop     st_memory_allocate_context (bool large);
+void       st_memory_recycle_context  (st_oop context);
 
 st_heap  *st_heap_new       (st_uint reserved_size);
 bool      st_heap_grow      (st_heap *heap, st_uint grow_size);

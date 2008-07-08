@@ -1491,7 +1491,7 @@ Object_perform_withArguments (st_processor *pr)
 	method = ST_METHOD_CONTEXT_METHOD (pr->context);
 
     array_size = st_smi_value (st_arrayed_object_size (array));
-    set_success (pr, (pr->sp + array_size - 1) < st_method_get_stack_depth (method));
+    set_success (pr, (pr->sp + array_size - 1) < (st_method_get_large_context (method) ? 32 : 12));
 
     if (pr->success) {
 	

@@ -21,11 +21,14 @@ method_context_new (st_processor *pr)
     st_oop  context;
     int     stack_size;
     st_oop *stack;
+    bool large;
 
-    stack_size = 32;
+    large = st_method_get_large_context (pr->new_method);
+    stack_size = large ? 32 : 12;
 
-    context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + stack_size);
+    context = st_memory_allocate_context (large);
     st_object_initialize_header (context, st_method_context_class);
+    st_object_set_large_context (context, large);
 
     ST_CONTEXT_PART_SENDER (context)     = pr->context;
     ST_CONTEXT_PART_IP (context)         = st_smi_new (0);
@@ -493,7 +496,7 @@ st_processor_main (st_processor *pr)
 	    if (ST_STACK_PEEK (pr) == st_true) {
 		(void) ST_STACK_POP (pr);
 		ip += 3 + ((ip[1] << 8) | ip[2]);
-	    } else if (ST_STACK_PEEK (pr) == st_false) {
+	    } else if (ST_LIKELY (ST_STACK_PEEK (pr) == st_false)) {
 		(void) ST_STACK_POP (pr);
 		ip += 3;
 	    } else {
@@ -509,7 +512,7 @@ st_processor_main (st_processor *pr)
 	    if (ST_STACK_PEEK (pr) == st_false) {
 		(void) ST_STACK_POP (pr);
 		ip += 3 + ((ip[1] << 8) | ip[2]);
-	    } else if (ST_STACK_PEEK (pr) == st_true) {
+	    } else if (ST_LIKELY (ST_STACK_PEEK (pr) == st_true)) {
 		(void) ST_STACK_POP (pr);
 		ip += 3;
 	    } else {
@@ -522,7 +525,7 @@ st_processor_main (st_processor *pr)
     
 	CASE (JUMP) {
 	    
-	    short offset =  ((ip[1] << 8) | ip[2]);    
+	    short offset = ((ip[1] << 8) | ip[2]);    
 	    
 	    ip += ((offset >= 0) ? 3 : 0) + offset;
 	    
@@ -530,6 +533,20 @@ st_processor_main (st_processor *pr)
 	}
 	
 	CASE (SEND_PLUS) {
+	    
+	    st_oop a, b;
+
+	    if (ST_LIKELY (st_object_is_smi (ST_STACK_PEEK (pr)))) {
+		a = ST_STACK_POP (pr);
+		if (ST_LIKELY (st_object_is_smi (ST_STACK_PEEK (pr)))) {
+		    b = ST_STACK_POP (pr);
+		    ST_STACK_PUSH (pr, (a + b)); // zero tagged!
+		    ip++;
+		    NEXT ();
+		} else {
+		    ST_STACK_UNPOP (pr, 1);
+		}
+	    }
 	    
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_PLUS];	    
@@ -905,6 +922,9 @@ st_processor_main (st_processor *pr)
 		SEND_SELECTOR (pr, st_selector_cannotReturn, 1);
 		NEXT ();
 	    }
+
+	    if (ST_HEADER (pr->context)->class == st_method_context_class)
+		st_memory_recycle_context (pr->context);
 
 	    ACTIVATE_CONTEXT (pr, sender);
 	    ST_STACK_PUSH (pr, value);

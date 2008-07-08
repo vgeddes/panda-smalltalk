@@ -166,6 +166,9 @@ st_memory_new (void)
     memory->alloc_bits  = NULL;
     memory->offsets     = NULL;
 
+    memory->free_context = 0;
+    memory->free_context_large = 0;
+
     ensure_metadata ();
 
     return memory;
@@ -208,6 +211,40 @@ st_memory_allocate (st_uint size)
     memory->bytes_allocated += (size * sizeof (st_oop));
 
     return ST_OOP (chunk);
+}
+
+st_oop
+st_memory_allocate_context (bool large)
+{
+    st_oop context;
+
+    if (large) {
+	if (ST_LIKELY (memory->free_context_large)) {
+	    context = memory->free_context_large;
+	    memory->free_context_large = ST_CONTEXT_PART_SENDER (memory->free_context_large);
+	    return context;
+	}
+    } else {
+	if (ST_LIKELY (memory->free_context)) {
+	    context = memory->free_context;
+	    memory->free_context = ST_CONTEXT_PART_SENDER (memory->free_context);
+	    return context;
+	}
+    }
+
+    return st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+}
+
+void
+st_memory_recycle_context  (st_oop context)
+{
+    if (st_object_large_context (context)) {
+	ST_CONTEXT_PART_SENDER (context) = memory->free_context_large;
+	memory->free_context_large = context;
+    } else {
+	ST_CONTEXT_PART_SENDER (context) = memory->free_context;
+	memory->free_context = context;
+    }
 }
 
 static inline st_oop
@@ -494,6 +531,10 @@ garbage_collect (void)
 {
     double times[3];
     struct timespec tm;
+    
+    /* clear context pool */
+    memory->free_context = 0;
+    memory->free_context_large = 0;
 
     clear_metadata ();
 

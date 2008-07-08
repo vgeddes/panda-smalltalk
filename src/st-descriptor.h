@@ -26,14 +26,6 @@
 #define __ST_DESCRIPTOR_H__
 
 #include <st-types.h>
-#include <st-memory.h>
-
-
-struct contents
-{
-    st_oop  *oops;
-    st_uint  size;
-};
 
 typedef enum st_format
 {

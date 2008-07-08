@@ -111,6 +111,27 @@ select: aBlock
 	self do: [ :each | (aBlock value: each) ifTrue: [newCollection add: each ]].
 	^ newCollection!
 
+"printing" 
+Collection method!
+printOn: aStream
+    | tooMany |
+    tooMany := aStream position + 50.
+    aStream
+        nextPutAll: self class name;
+        nextPutAll: ' ('.
+
+    self do: [ :ea |
+        aStream position > tooMany
+            ifTrue: [
+                aStream nextPutAll: '...etc...)'.
+                ^self ].
+        ea == self
+            ifTrue: [ '...' printOn: aStream ]
+            ifFalse: [ ea printOn: aStream ].
+        aStream nextPutAll: ' ' ].
+    aStream nextPut: $)
+!
+
 "private"
 
 Collection method!

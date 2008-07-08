@@ -57,7 +57,7 @@ sortBy: aBlock
 	     sortBlock: aBlock!
 
 ArrayedCollection method!
-mergeSortWithBuffer: b low: lo high: hi sortBlock: aBlock
+mergeSortWithBuffer: buf low: lo high: hi sortBlock: aBlock
 	"Merge Sort
      Copyright (C) Jeffrey Stedfast
      http://jeffreystedfast.blogspot.com/2007/02/merge-sort.html"
@@ -69,11 +69,11 @@ mergeSortWithBuffer: b low: lo high: hi sortBlock: aBlock
 
 	mid := lo + ((hi - lo) // 2).
 
-	self mergeSortWithBuffer: b
+	self mergeSortWithBuffer: buf
 		 low: lo
 		 high: mid
 	     sortBlock: aBlock.
-	self mergeSortWithBuffer: b
+	self mergeSortWithBuffer: buf
 		 low: mid + 1
 		 high: hi
 	     sortBlock: aBlock.
@@ -85,18 +85,18 @@ mergeSortWithBuffer: b low: lo high: hi sortBlock: aBlock
 	[(l <= mid) & (h <= hi)]
 		whileTrue:
 			[(aBlock value: (self at: l) value: (self at: h))
-				ifTrue: [b at: i put: (self at: l). l := l + 1]
-				ifFalse: [b at: i put: (self at: h). h := h + 1].
+				ifTrue: [buf at: i put: (self at: l). l := l + 1]
+				ifFalse: [buf at: i put: (self at: h). h := h + 1].
 			 i := i + 1].
 
 	[l <= mid]
 		whileTrue:
-			[b at: i put: (self at: l). i := i + 1. l := l + 1].
+			[buf at: i put: (self at: l). i := i + 1. l := l + 1].
 	[h <= hi]
 		whileTrue:
-			[b at: i put: (self at: h). i := i + 1. h := h + 1].
+			[buf at: i put: (self at: h). i := i + 1. h := h + 1].
 
 	self replaceFrom: lo
 	     to: lo + (i - 2)
-	     with: b
+	     with: buf
 	     startingAt: 1!

@@ -77,7 +77,7 @@ Object method!
 printString
     "Answer a String representation of the receiver"
     | stream |
-    stream := WriteStream on: (WideString new: 20).
+    stream := WriteStream on: (String new: 20).
     self printOn: stream.
     ^ stream contents!
 
