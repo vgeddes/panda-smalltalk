@@ -56,6 +56,7 @@ block_context_new (st_processor *pr, st_uint initial_ip, st_uint argcount)
     
     context = st_memory_allocate (ST_SIZE_OOPS (struct st_block_context) + stack_size);
     st_object_initialize_header (context, st_block_context_class);
+    st_object_set_large_context (context, true);
     
     if (ST_HEADER (pr->context)->class == st_block_context_class)
 	home = ST_BLOCK_CONTEXT_HOME (pr->context);
@@ -309,7 +310,7 @@ static const st_pointer labels[] =		\
     && STORE_LITERAL_VAR, && STORE_TEMP, && STORE_INSTVAR,	       \
     && STORE_POP_LITERAL_VAR, && STORE_POP_TEMP, && STORE_POP_INSTVAR, \
     								       \
-    && PUSH_SELF, && PUSH_NIL, && PUSH_TRUE, && PUSH_FALSE,            \
+    && PUSH_SELF, && PUSH_NIL, && PUSH_TRUE, && PUSH_FALSE, && PUSH_INTEGER, \
                                                                        \
     && RETURN_STACK_TOP, && BLOCK_RETURN,       \
     && POP_STACK_TOP, && DUPLICATE_STACK_TOP,   \
@@ -460,6 +461,14 @@ st_processor_main (st_processor *pr)
 	    ST_STACK_PUSH (pr, st_nil);
 	    
 	    ip += 1;
+	    NEXT ();
+	}
+
+	CASE (PUSH_INTEGER) {
+    
+	    ST_STACK_PUSH (pr, st_smi_new ((signed char) ip[1]));
+	    
+	    ip += 2;
 	    NEXT ();
 	}
 	

@@ -94,6 +94,7 @@ check_init (void)
     sizes[PUSH_NIL]              = 1;
     sizes[PUSH_TRUE]             = 1;
     sizes[PUSH_FALSE]            = 1;
+    sizes[PUSH_INTEGER]          = 2;
     sizes[STORE_LITERAL_VAR]     = 2;
     sizes[STORE_TEMP]            = 2;
     sizes[STORE_INSTVAR]         = 2; 
@@ -1073,7 +1074,16 @@ size_expression (Generator *gt, st_node *node)
 	generation_error (gt, "unknown variable", node);
     }
     case ST_LITERAL_NODE:
-	size += sizes[PUSH_LITERAL_CONST];
+
+	/* use optimized PUSH_INTEGER for smis in the range of -127..127 */
+	if (st_object_is_smi (node->literal.value) &&
+	    ((st_smi_value (node->literal.value) >= -127) && 
+	     (st_smi_value (node->literal.value) <= 127))) {
+	    size += sizes[PUSH_INTEGER];
+	} else {
+	    size += sizes[PUSH_LITERAL_CONST];
+	}
+
 	break;
 
     case ST_ASSIGN_NODE:
@@ -1151,8 +1161,17 @@ generate_expression (Generator *gt, st_node *node)
 
     }
     case ST_LITERAL_NODE:
-	index = find_literal_const (gt, node->literal.value);
-	push (gt, PUSH_LITERAL_CONST, index);
+
+	/* use optimized PUSH_INTEGER for smis in the range of -127..127 */
+	if (st_object_is_smi (node->literal.value) &&
+	    ((st_smi_value (node->literal.value) >= -127) && 
+	     (st_smi_value (node->literal.value) <= 127))) {
+	    emit (gt, PUSH_INTEGER);
+	    emit (gt, st_smi_value (node->literal.value));
+	} else {
+	    index = find_literal_const (gt, node->literal.value);
+	    push (gt, PUSH_LITERAL_CONST, index);
+	}
 	break;
 
     case ST_ASSIGN_NODE:
@@ -1509,6 +1528,12 @@ print_bytecodes (st_oop literals, st_uchar *codes, int len)
 	case PUSH_NIL:
 	    printf (FORMAT (ip), ip[0]);
 	    printf ("pushConst: nil");
+
+	    NEXT (ip);
+
+	case PUSH_INTEGER:
+	    printf (FORMAT (ip), ip[0], ip[1]);
+	    printf ("pushConst: %i", (signed char) ip[1]);
 
 	    NEXT (ip);
 

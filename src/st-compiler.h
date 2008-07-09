@@ -52,6 +52,7 @@ typedef enum
     PUSH_NIL,
     PUSH_TRUE,
     PUSH_FALSE,
+    PUSH_INTEGER,
 
     RETURN_STACK_TOP,
     BLOCK_RETURN,
