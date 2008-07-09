@@ -28,8 +28,8 @@ context_size (st_oop object)
 static void
 context_contents (st_oop object, st_oop **oops, st_uint *size)
 {
-    *oops = ST_HEADER (object)->fields; 
-    *size = st_object_instance_size (object) + st_smi_value (ST_CONTEXT_PART_SP (object));
+    *oops = ST_HEADER (object)->fields;
+    *size = st_object_instance_size (object) + (st_object_large_context (object) ? 32 : 12);
 }
 
 st_descriptor *
