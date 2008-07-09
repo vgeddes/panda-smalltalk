@@ -232,7 +232,11 @@ st_memory_allocate_context (bool large)
 	}
     }
 
-    return st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+    context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+    st_object_initialize_header (context, st_method_context_class);
+    st_object_set_large_context (context, large);
+
+    return context;
 }
 
 void

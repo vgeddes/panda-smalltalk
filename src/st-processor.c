@@ -15,30 +15,20 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-static st_oop 
+static inline st_oop 
 method_context_new (st_processor *pr)
 {
     st_oop  context;
     int     stack_size;
     st_oop *stack;
-    bool large;
-
-    large = st_method_get_large_context (pr->new_method);
-    stack_size = large ? 32 : 12;
-
-    context = st_memory_allocate_context (large);
-    st_object_initialize_header (context, st_method_context_class);
-    st_object_set_large_context (context, large);
+    
+    context = st_memory_allocate_context (st_method_get_large_context (pr->new_method));
 
     ST_CONTEXT_PART_SENDER (context)     = pr->context;
     ST_CONTEXT_PART_IP (context)         = st_smi_new (0);
     ST_CONTEXT_PART_SP (context)         = st_smi_new (0);
     ST_METHOD_CONTEXT_RECEIVER (context) = pr->message_receiver;
     ST_METHOD_CONTEXT_METHOD (context)   = pr->new_method;
-
-    stack = ST_METHOD_CONTEXT (context)->stack;
-    for (st_uint i=0; i < stack_size; i++)
-	stack[i] = st_nil;
 
     return context;
 }
