@@ -29,6 +29,9 @@
 #include <st-object.h>
 #include <st-memory.h>
 #include <st-small-integer.h>
+#include <st-array.h>
+#include <st-float.h>
+#include <st-large-integer.h>
 
 #define ST_BEHAVIOR(oop)  ((struct st_behavior *)  ST_POINTER (oop))
 #define ST_CLASS(oop)     ((struct st_class *)     ST_POINTER (oop))
@@ -68,17 +71,8 @@ struct st_metaclass
 #define ST_METACLASS_INSTANCE_CLASS(oop)    (ST_METACLASS (oop)->instance_class)
 
 
-static inline st_oop
-st_object_new (st_oop class)
-{  
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate (class);
-}
-
-static inline st_oop
-st_object_new_arrayed (st_oop class, st_smi size)
-{
-    return st_descriptors[st_smi_value (ST_BEHAVIOR (class)->format)]->allocate_arrayed (class, size);
-}
+st_oop st_object_new (st_oop class);
+st_oop st_object_new_arrayed (st_oop class, st_smi size);
 
 st_list *st_behavior_all_instance_variables (st_oop class);
 

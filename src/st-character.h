@@ -26,7 +26,6 @@
 #define __ST_CHARACTER_H__
 
 #include <st-types.h>
-#include <st-descriptor.h>
 
 static inline st_oop  st_character_new   (wchar_t wc);
 static inline wchar_t st_character_value (st_oop character);

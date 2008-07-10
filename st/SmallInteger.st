@@ -136,8 +136,8 @@ bitShift: aNumber
 SmallInteger method!
 fibonacci
 	self <= 2
-		ifTrue: [ ^ 1 ]
-		ifFalse: [ ^ (self - 2) fibonacci + (self - 1) fibonacci ].!
+		ifTrue: [^ 1]
+		ifFalse: [^ (self - 2) fibonacci + (self - 1) fibonacci].!
 
 
 "testing"

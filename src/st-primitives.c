@@ -1328,7 +1328,7 @@ Object_identityHash (st_processor *pr)
     object = ST_STACK_POP (pr);
     
     if (st_object_is_heap (object))
-	result = ST_HEADER (object)->hash;
+	result = ST_OBJECT_HASH (object);
     else if (st_object_is_smi (object))
 	result = st_smi_new (st_smi_hash (object));
     else
@@ -1356,11 +1356,11 @@ Object_copy (st_processor *pr)
 
     case ST_FORMAT_OBJECT:
     {
-	class = ST_HEADER (pr->message_receiver)->class;
+	class = ST_OBJECT_CLASS (pr->message_receiver);
 	size = st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class));
 	copy = st_object_new (class);
-	st_oops_copy (ST_HEADER (copy)->fields,
-		      ST_HEADER (pr->message_receiver)->fields,
+	st_oops_copy (ST_OBJECT_FIELDS (copy),
+		      ST_OBJECT_FIELDS (pr->message_receiver),
 		      size);
 	break;
 
@@ -1368,7 +1368,7 @@ Object_copy (st_processor *pr)
     case ST_FORMAT_ARRAY:
     {
 	size = st_smi_value (ST_ARRAYED_OBJECT (pr->message_receiver)->size);
-	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
 	st_oops_copy (ST_ARRAY (copy)->elements,
 		      ST_ARRAY (pr->message_receiver)->elements,
 		      size);
@@ -1377,7 +1377,7 @@ Object_copy (st_processor *pr)
     case ST_FORMAT_BYTE_ARRAY:
     {
 	size = st_smi_value (ST_ARRAYED_OBJECT (pr->message_receiver)->size);
-	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
 	memcpy (st_byte_array_bytes (copy),
 		st_byte_array_bytes (pr->message_receiver),
 		size);
@@ -1386,7 +1386,7 @@ Object_copy (st_processor *pr)
     case ST_FORMAT_FLOAT_ARRAY:
     {
 	size = st_smi_value (st_arrayed_object_size (pr->message_receiver));
-	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
 	memcpy (st_float_array_elements (copy),
 		st_float_array_elements (pr->message_receiver),
 		sizeof (double) * size);
@@ -1396,7 +1396,7 @@ Object_copy (st_processor *pr)
     case ST_FORMAT_WORD_ARRAY:
     {
 	size = st_smi_value (st_arrayed_object_size (pr->message_receiver));
-	copy = st_object_new_arrayed (ST_HEADER (pr->message_receiver)->class, size);
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
 	memcpy (st_word_array_elements (copy),
 		st_word_array_elements (pr->message_receiver),
 		sizeof (st_uint) * size);
@@ -1534,16 +1534,23 @@ Behavior_new (st_processor *pr)
     st_smi format;
 
     class = ST_STACK_POP (pr);
-    format = st_smi_value (ST_BEHAVIOR_FORMAT (class));
 
-    set_success (pr, st_descriptors[format]->allocate != NULL);
-
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 1);
-	return;
+    switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
+    case ST_FORMAT_OBJECT:
+	instance =  st_object_allocate (class);
+    case ST_FORMAT_CONTEXT:
+	/* not implemented */
+	abort ();
+	break;
+    case ST_FORMAT_FLOAT:
+	instance =  st_float_allocate (class);
+    case ST_FORMAT_LARGE_INTEGER:
+	instance = st_large_integer_allocate (class, NULL);
+    default:
+	/* should not reach */
+	abort ();
     }
 
-    instance = st_descriptors[format]->allocate (class);
     ST_STACK_PUSH (pr, instance);
 }
 
@@ -1558,16 +1565,28 @@ Behavior_newSize (st_processor *pr)
     size = pop_integer32 (pr);
     class = ST_STACK_POP (pr);
 
-    format = st_smi_value (ST_BEHAVIOR_FORMAT (class));
-
-    set_success (pr, st_descriptors[format]->allocate_arrayed != NULL);
-
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
-	return;
+    switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
+    case ST_FORMAT_ARRAY:
+	instance = st_array_allocate (class, size);
+	break;
+    case ST_FORMAT_BYTE_ARRAY:
+	instance =  st_byte_array_allocate (class, size);
+	break;
+    case ST_FORMAT_WORD_ARRAY:
+	instance =  st_word_array_allocate (class, size);
+	break;
+    case ST_FORMAT_FLOAT_ARRAY:
+	instance = st_float_array_allocate (class, size);
+	break;
+    case ST_FORMAT_INTEGER_ARRAY:
+	/* not implemented */
+	abort ();
+	break;
+    default:
+	/* should not reach */
+	abort ();
     }
 
-    instance = st_descriptors[format]->allocate_arrayed (class, size);
     ST_STACK_PUSH (pr, instance);
 }
 

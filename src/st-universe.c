@@ -37,7 +37,6 @@
 #include "st-universe.h"
 #include "st-object.h"
 #include "st-lexer.h"
-#include "st-descriptor.h"
 #include "st-compiler.h"
 #include "st-memory.h"
 #include "st-context.h"
@@ -82,17 +81,17 @@ class_new (st_format format, st_uint instance_size)
 
     class = st_memory_allocate (ST_SIZE_OOPS (struct st_class));
 
-    ST_HEADER (class)->mark = 0 | ST_MARK_TAG;
-    ST_HEADER (class)->hash  = st_smi_new (st_current_hash++);
-    ST_HEADER (class)->class = st_nil;
+    ST_OBJECT_MARK (class)  = 0 | ST_MARK_TAG;
+    ST_OBJECT_HASH (class)  = st_smi_new (st_current_hash++);
+    ST_OBJECT_CLASS (class) = st_nil;
     st_object_set_format (class, ST_FORMAT_OBJECT);
     st_object_set_instance_size (class, INSTANCE_SIZE_CLASS);
     
-    ST_BEHAVIOR (class)->format             = st_smi_new (format);
-    ST_BEHAVIOR (class)->instance_size      = st_smi_new (instance_size);
-    ST_BEHAVIOR (class)->superclass         = st_nil;
-    ST_BEHAVIOR (class)->method_dictionary  = st_nil;
-    ST_BEHAVIOR (class)->instance_variables = st_nil;
+    ST_BEHAVIOR_FORMAT (class)             = st_smi_new (format);
+    ST_BEHAVIOR_INSTANCE_SIZE (class)      = st_smi_new (instance_size);
+    ST_BEHAVIOR_SUPERCLASS (class)         = st_nil;
+    ST_BEHAVIOR_METHOD_DICTIONARY (class)  = st_nil;
+    ST_BEHAVIOR_INSTANCE_VARIABLES (class) = st_nil;
 
     ST_CLASS (class)->name = st_nil;
 
@@ -139,7 +138,7 @@ initialize_class  (const char *name,
 	metaclass = st_object_class (class);
 	if (metaclass == st_nil) {
 	    metaclass = st_object_new (st_metaclass_class);
-	    ST_HEADER (class)->class = metaclass;
+	    ST_OBJECT_CLASS (class) = metaclass;
 	}
 
 	ST_BEHAVIOR_SUPERCLASS (class)     = st_nil;
@@ -147,8 +146,7 @@ initialize_class  (const char *name,
 	ST_BEHAVIOR_SUPERCLASS (metaclass) = st_dictionary_at (st_globals, st_symbol_new ("Class"));
 
     } else {
-	
-	superclass = st_global_get (super_name);
+       	superclass = st_global_get (super_name);
 	if (superclass == st_nil)
 	    st_assert (superclass != st_nil);
 
@@ -159,7 +157,7 @@ initialize_class  (const char *name,
 	metaclass = ST_HEADER (class)->class;
 	if (metaclass == st_nil) {
 	    metaclass = st_object_new (st_metaclass_class);
-	    ST_HEADER (class)->class = metaclass;
+	    ST_OBJECT_CLASS (class) = metaclass;
 	}
 
 	ST_BEHAVIOR_SUPERCLASS (class)     = superclass;
@@ -225,6 +223,7 @@ parse_class (st_lexer *lexer, st_token *token)
 {
     char *class_name = NULL;
     char *superclass_name = NULL;
+    st_list *ivarnames = NULL;
 
     // 'Class' token
     if (st_token_get_type (token) != ST_TOKEN_IDENTIFIER
@@ -261,23 +260,18 @@ parse_class (st_lexer *lexer, st_token *token)
 	parse_error ("expected string literal", token);
     }
 
-    st_list *ivarnames = NULL;
-
     // 'instanceVariableNames:' keyword selector        
     token = st_lexer_next_token (lexer);
     if (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
 	streq (st_token_get_text (token), "instanceVariableNames:")) {
 
 	parse_variable_names (lexer, &ivarnames);
-
     } else {
 	parse_error (NULL, token);
     }
 
     token = st_lexer_next_token (lexer);
-
     initialize_class (class_name, superclass_name, ivarnames);
-
     st_list_destroy (ivarnames);
     
     return;
@@ -380,9 +374,9 @@ create_nil_object (void)
 
     nil = st_memory_allocate (NIL_SIZE_OOPS);
 
-    ST_HEADER (nil)->mark = 0 | ST_MARK_TAG;
-    ST_HEADER (nil)->hash = st_smi_new (st_current_hash++);
-    ST_HEADER (nil)->class = nil;
+    ST_OBJECT_MARK (nil)  = 0 | ST_MARK_TAG;
+    ST_OBJECT_HASH (nil)  = st_smi_new (st_current_hash++);
+    ST_OBJECT_CLASS (nil) = nil;
     st_object_set_format (nil, ST_FORMAT_OBJECT);
     st_object_set_instance_size (nil, 0);
 
@@ -435,16 +429,6 @@ st_bootstrap_universe (void)
 
     st_memory_new ();
 
-    /* setup format descriptors */
-    st_descriptors[ST_FORMAT_OBJECT]        = st_object_descriptor        ();
-    st_descriptors[ST_FORMAT_ARRAY]         = st_array_descriptor         ();
-    st_descriptors[ST_FORMAT_BYTE_ARRAY]    = st_byte_array_descriptor    ();
-    st_descriptors[ST_FORMAT_WORD_ARRAY]    = st_word_array_descriptor    ();
-    st_descriptors[ST_FORMAT_FLOAT_ARRAY]   = st_float_array_descriptor   ();
-    st_descriptors[ST_FORMAT_FLOAT]         = st_float_descriptor         ();
-    st_descriptors[ST_FORMAT_LARGE_INTEGER] = st_large_integer_descriptor ();
-    st_descriptors[ST_FORMAT_CONTEXT]       = st_context_descriptor       ();
-
     st_nil = create_nil_object ();
 
     st_object_class_          = class_new (ST_FORMAT_OBJECT, 0); 
@@ -473,7 +457,7 @@ st_bootstrap_universe (void)
     st_block_context_class    = class_new (ST_FORMAT_CONTEXT, 7);
     st_system_class           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SYSTEM);
 
-    ST_HEADER (st_nil)->class = st_undefined_object_class;
+    ST_OBJECT_CLASS (st_nil)  = st_undefined_object_class;
 
     /* special objects */
     st_true         = st_object_new (st_true_class);
@@ -481,8 +465,8 @@ st_bootstrap_universe (void)
     st_symbols      = st_set_new_with_capacity (256);
     st_globals      = st_dictionary_new_with_capacity (256);
     st_smalltalk    = st_object_new (st_system_class);
-    ST_HEADER (st_smalltalk)->fields[0] = st_globals;
-    ST_HEADER (st_smalltalk)->fields[1] = st_symbols;
+    ST_OBJECT_FIELDS (st_smalltalk)[0] = st_globals;
+    ST_OBJECT_FIELDS (st_smalltalk)[1] = st_symbols;
 
     /* add class names to symbol table */
     add_global ("Object", st_object_class_);

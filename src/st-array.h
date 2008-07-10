@@ -61,13 +61,13 @@ struct st_byte_array
     st_uchar bytes[];
 };
 
-st_descriptor *st_array_descriptor       (void);
-st_descriptor *st_float_array_descriptor (void);
-st_descriptor *st_word_array_descriptor  (void);
-st_descriptor *st_byte_array_descriptor  (void);
-
 bool      st_byte_array_equal   (st_oop object, st_oop other);
 st_uint   st_byte_array_hash    (st_oop object);
+
+st_oop  st_array_allocate (st_oop class, st_smi size);
+st_oop  st_float_array_allocate (st_oop class, st_smi size);
+st_oop  st_word_array_allocate (st_oop class, st_smi size);
+st_oop  st_byte_array_allocate (st_oop class, st_smi size);
 
 static inline st_oop *
 st_array_elements (st_oop object)

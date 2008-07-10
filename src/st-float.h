@@ -26,8 +26,6 @@
 #define __ST_FLOAT_H__
 
 #include <st-types.h>
-#include <st-descriptor.h>
-#include <st-object.h>
 #include <st-object.h>
 
 #define ST_FLOAT(oop) ((struct st_float *) ST_POINTER (oop))
@@ -40,9 +38,10 @@ struct st_float
 
 };
 
-st_oop         st_float_new       (double value);
+st_oop  st_float_new       (double value);
 
-st_descriptor *st_float_descriptor (void);
+st_oop  st_float_allocate (st_oop class);
+
 
 static inline double
 st_float_value (st_oop f)

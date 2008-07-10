@@ -38,9 +38,9 @@
 void
 st_object_initialize_header (st_oop object, st_oop class)
 {
-    ST_HEADER (object)->mark = 0 | ST_MARK_TAG;
-    ST_HEADER (object)->hash  = st_smi_new (st_current_hash++);
-    ST_HEADER (object)->class = class;
+    ST_OBJECT_MARK (object)  = 0 | ST_MARK_TAG;
+    ST_OBJECT_HASH (object)  = st_smi_new (st_current_hash++);
+    ST_OBJECT_CLASS (object) = class;
     st_object_set_format (object, st_smi_value (ST_BEHAVIOR_FORMAT (class)));
     st_object_set_instance_size (object, st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class)));
 }
@@ -51,20 +51,20 @@ st_object_equal (st_oop object, st_oop other)
     if (st_object_class (object) == st_smi_class)
 	return st_smi_equal (object, other);
 
-    if (st_object_class (object) == st_float_class)
-	return st_float_equal (object, other);
-
-    if (st_object_class (object) == st_character_class)
+   if (st_object_class (object) == st_character_class)
 	return st_character_equal (object, other);
 
-    if (st_object_class (object) == st_association_class)
+    if (ST_OBJECT_CLASS (object) == st_float_class)
+	return st_float_equal (object, other);
+
+    if (ST_OBJECT_CLASS (object) == st_association_class)
 	return st_association_equal (object, other);
 
-    if (st_object_class (object) == st_symbol_class)
+    if (ST_OBJECT_CLASS (object) == st_symbol_class)
 	return st_symbol_equal (object, other);
     
-    if (st_object_class (object) == st_byte_array_class ||
-	st_object_class (object) == st_string_class)
+    if (ST_OBJECT_CLASS (object) == st_byte_array_class ||
+	ST_OBJECT_CLASS (object) == st_string_class)
 	return st_byte_array_equal (object, other);
     
     return object == other;    
@@ -132,46 +132,20 @@ st_object_printString (st_oop object)
 
 int st_current_hash = 1;
 
-static st_oop
-allocate (st_oop class)
+st_oop
+st_object_allocate (st_oop class)
 {
     st_oop *fields;
-    st_smi instance_size;
-    st_oop object;
+    st_uint instance_size;
+    st_oop  object;
 
     instance_size = st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class));
     object = st_memory_allocate (ST_SIZE_OOPS (struct st_header) + instance_size);
     st_object_initialize_header (object, class);
 
-    fields = ST_HEADER (object)->fields;
-    for (st_smi i = 0; i < instance_size; i++)
+    fields = ST_OBJECT_FIELDS (object);
+    for (st_uint i = 0; i < instance_size; i++)
 	fields[i] = st_nil;
 
     return object;
-}
-
-static st_uint
-object_size (st_oop object)
-{
-    return (sizeof (struct st_header) / sizeof (st_oop)) + st_object_instance_size (object);
-}
-
-static void
-object_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = ST_HEADER (object)->fields;
-    *size = st_object_instance_size (object);
-}
-
-st_descriptor *
-st_object_descriptor (void)
-{
-    static st_descriptor __descriptor =
-	{ .allocate         = allocate,
-	  .allocate_arrayed = NULL,
-	  .size             = object_size,
-	  .contents         = object_contents,
-	};
-
-    return & __descriptor;
 }

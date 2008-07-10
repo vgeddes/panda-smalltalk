@@ -26,8 +26,8 @@
 #include "st-behavior.h"
 
 
-static st_oop
-allocate (st_oop class)
+st_oop
+st_float_allocate (st_oop class)
 {
     st_oop f;
 
@@ -46,38 +46,4 @@ st_float_new (double value)
     st_float_set_value (f, value);
     
     return f;
-}
-
-static st_oop
-float_copy (st_oop object)
-{
-    return st_float_new (st_float_value (object));
-}
-
-static st_uint
-float_size (st_oop object)
-{
-    return (sizeof (struct st_float) / sizeof (st_oop));
-}
-
-static void
-float_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = NULL;
-    *size = 0;
-}
-
-st_descriptor *
-st_float_descriptor (void)
-{
-    assert_static (sizeof (struct st_float) == (sizeof (struct st_header) + sizeof (double)));
-    
-    static st_descriptor __descriptor =
-	{ .allocate         = allocate,
-	  .allocate_arrayed = NULL,
-	  .size             = float_size,
-	  .contents         = float_contents,
-	};
-    
-    return & __descriptor;
 }

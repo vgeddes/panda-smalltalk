@@ -29,7 +29,6 @@
 #include <st-small-integer.h>
 #include <st-utils.h>
 #include <st-universe.h>
-#include <st-descriptor.h>
 
 #define  ST_HEADER(oop)           ((struct st_header *) ST_POINTER (oop))
 #define  ST_ARRAYED_OBJECT(oop)   ((struct st_arrayed_object *) ST_POINTER (oop))
@@ -84,16 +83,37 @@ enum
     st_unused_mask_in_place = st_unused_mask << st_unused_shift,
 };
 
+typedef enum st_format
+{
+    ST_FORMAT_OBJECT,
+    ST_FORMAT_FLOAT,
+    ST_FORMAT_LARGE_INTEGER,
+    ST_FORMAT_ARRAY,
+    ST_FORMAT_BYTE_ARRAY,
+    ST_FORMAT_FLOAT_ARRAY,
+    ST_FORMAT_INTEGER_ARRAY,
+    ST_FORMAT_WORD_ARRAY,
+    ST_FORMAT_CONTEXT,
+
+    ST_NUM_FORMATS
+} st_format;
+
+
 bool           st_object_equal       (st_oop object, st_oop other);
 st_uint        st_object_hash        (st_oop object);
 char          *st_object_printString (st_oop object);
-st_descriptor *st_object_descriptor (void);
 
+#define ST_OBJECT_MARK(oop)   (ST_HEADER (oop)->mark)
+#define ST_OBJECT_HASH(oop)   (ST_HEADER (oop)->hash)
+#define ST_OBJECT_CLASS(oop)  (ST_HEADER (oop)->class)
+#define ST_OBJECT_FIELDS(oop) (ST_HEADER (oop)->fields)
+
+st_oop st_object_allocate (st_oop class);
 
 static inline void
 st_object_set_format (st_oop object, st_format format)
 {
-    ST_HEADER (object)->mark = (ST_HEADER (object)->mark & ~st_format_mask_in_place) | (format << st_format_shift); 
+    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_format_mask_in_place) | (format << st_format_shift); 
 }
 
 static inline st_format
@@ -105,26 +125,25 @@ st_object_format (st_oop object)
 static inline void
 st_object_set_large_context (st_oop object, bool is_large)
 {
-    ST_HEADER (object)->mark = (ST_HEADER (object)->mark & ~st_object_large_mask_in_place) | (is_large << st_object_large_shift); 
+    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_object_large_mask_in_place) | (is_large << st_object_large_shift); 
 }
 
 static inline st_format
 st_object_large_context (st_oop object)
 {
-    return (ST_HEADER (object)->mark >> st_object_large_shift) & st_object_large_mask;
+    return (ST_OBJECT_MARK (object) >> st_object_large_shift) & st_object_large_mask;
 }
 
 static inline st_uint
 st_object_instance_size (st_oop object)
 {
-    return (ST_HEADER (object)->mark >> st_size_shift) & st_size_mask;
+    return (ST_OBJECT_MARK (object) >> st_size_shift) & st_size_mask;
 }
 
 static inline st_uint
 st_object_set_instance_size (st_oop object, st_uint size)
 {
-    st_assert (size <= 255);
-    ST_HEADER (object)->mark = (ST_HEADER (object)->mark & ~st_size_mask_in_place) | (size << st_size_shift); 
+    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_size_mask_in_place) | (size << st_size_shift); 
 }
 
 void st_object_initialize_header (st_oop object, st_oop class);
@@ -133,24 +152,6 @@ static inline st_oop
 st_arrayed_object_size (st_oop object)
 {
     return ST_ARRAYED_OBJECT (object)->size;
-}
-
-static inline st_descriptor *
-st_descriptor_for_object (st_oop object)
-{  
-    return st_descriptors[st_object_format (object)];
-}
-
-static inline st_uint
-st_object_size (st_oop object)
-{
-    return st_descriptor_for_object (object)->size (object);
-}
-
-static inline void
-st_object_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    st_descriptor_for_object (object)->contents (object, oops, size);
 }
 
 static inline int
@@ -192,7 +193,7 @@ st_object_class (st_oop object)
     if (ST_UNLIKELY (st_object_is_character (object)))
 	return st_character_class;
 
-    return ST_HEADER (object)->class;
+    return ST_OBJECT_CLASS (object);
 }
 
 static inline bool

@@ -25,7 +25,8 @@
 #include "st-memory.h"
 #include "st-types.h"
 #include "st-utils.h"
-#include "st-descriptor.h"
+#include "st-float.h"
+#include "st-large-integer.h"
 #include "st-object.h"
 #include "st-behavior.h"
 #include "st-array.h"
@@ -68,7 +69,7 @@ timer_stop (struct timespec *spec)
 #define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
 
 // 1 MB for mark stack 
-#define MARK_STACK_SIZE      (1 * 1024 * 1024)
+#define MARK_STACK_SIZE      (10 * 1024 * 1024)
 #define MARK_STACK_SIZE_OOPS (MARK_STACK_SIZE / sizeof (st_oop))
 
 #define BLOCK_SIZE       256
@@ -77,7 +78,7 @@ timer_stop (struct timespec *spec)
 static void
 verify (st_oop object)
 {
-    st_assert (st_object_is_mark (ST_HEADER (object)->mark));
+    st_assert (st_object_is_mark (ST_OBJECT_MARK (object)));
 }
 
 static inline st_uint
@@ -113,17 +114,19 @@ ensure_metadata (void)
     memory->offsets_size = offsets_size;
 }
 
+
+
 static void
-grow_heap (void)
+grow_heap (st_uint min_size_oops)
 {
-    /* we grow the heap by roughly a quarter (0.4) */
+    /* we grow the heap by roughly 0.25 or size_oops, whichever is larger */
 
     st_uint  size, grow_size;
     st_heap *heap;
 
     heap = memory->heap;
     size = heap->p - heap->start;
-    grow_size = size / 4;
+    grow_size = MAX (size / 4, min_size_oops * sizeof (st_oop));
 
     st_heap_grow (heap, grow_size);
     
@@ -202,7 +205,7 @@ st_memory_allocate (st_uint size)
     if (memory->counter > ST_COLLECTION_THRESHOLD)
 	garbage_collect ();
     if ((memory->p + size) >= memory->end)
-	grow_heap ();
+	grow_heap (size);
     
     chunk = memory->p;
     memory->p += size;
@@ -232,7 +235,11 @@ st_memory_allocate_context (bool large)
 	}
     }
 
-    return st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+    context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+    st_object_initialize_header (context, st_method_context_class);
+    st_object_set_large_context (context, large);
+
+    return context;
 }
 
 void
@@ -307,6 +314,69 @@ get_block_index (st_memory *memory, st_oop *object)
     return (object - memory->start) / BLOCK_SIZE_OOPS;
 }
 
+static st_uint
+object_size (st_oop object)
+{
+    switch (st_object_format (object)) {
+    case ST_FORMAT_OBJECT:
+	return ST_SIZE_OOPS (struct st_header) + st_object_instance_size (object);
+    case ST_FORMAT_FLOAT:
+	return ST_SIZE_OOPS (struct st_float);
+    case ST_FORMAT_LARGE_INTEGER:
+	return ST_SIZE_OOPS (struct st_large_integer);
+    case ST_FORMAT_ARRAY:
+	return ST_SIZE_OOPS (struct st_arrayed_object) + st_smi_value (st_arrayed_object_size (object));
+    case ST_FORMAT_BYTE_ARRAY:
+	return ST_SIZE_OOPS (struct st_arrayed_object) + ST_ROUNDED_UP_OOPS (st_smi_value (st_arrayed_object_size (object)) + 1);
+    case ST_FORMAT_WORD_ARRAY:
+	return ST_SIZE_OOPS (struct st_arrayed_object)
+	    + (st_smi_value (st_arrayed_object_size (object)) / (sizeof (st_oop) / sizeof (st_uint)));
+	break;
+    case ST_FORMAT_FLOAT_ARRAY:
+	return ST_SIZE_OOPS (struct st_arrayed_object) + (st_smi_value (st_arrayed_object_size (object)) * ST_SIZE_OOPS (double));
+    case ST_FORMAT_INTEGER_ARRAY:
+	/* object format not used yet */
+	abort ();
+	break;
+    case ST_FORMAT_CONTEXT:
+	return ST_SIZE_OOPS (struct st_header) + st_object_instance_size (object) + (st_object_large_context (object) ? 32 : 12);
+    }
+    /* should not reach */
+    abort ();
+    return 0;
+}
+
+static void
+object_contents (st_oop object, st_oop **oops, st_uint *size)
+{
+    switch (st_object_format (object)) {
+    case ST_FORMAT_OBJECT:
+	*oops = ST_OBJECT_FIELDS (object);
+	*size = st_object_instance_size (object);
+	break;
+    case ST_FORMAT_ARRAY:
+	*oops = st_array_elements (object);
+	*size = st_smi_value (st_arrayed_object_size (object));
+	break;
+    case ST_FORMAT_CONTEXT:
+	*oops = ST_OBJECT_FIELDS (object);
+	*size = st_object_instance_size (object) + (st_object_large_context (object) ? 32 : 12);
+	break;
+    case ST_FORMAT_FLOAT:
+    case ST_FORMAT_LARGE_INTEGER:
+    case ST_FORMAT_BYTE_ARRAY:
+    case ST_FORMAT_WORD_ARRAY:
+    case ST_FORMAT_FLOAT_ARRAY:
+    case ST_FORMAT_INTEGER_ARRAY:
+	*oops = NULL;
+	*size = 0;
+	break;
+    default:
+	/* should not reach */
+	abort ();
+    }
+}
+
 static inline st_uint
 compute_ordinal_number (st_memory *memory, st_oop ref)
 {
@@ -367,13 +437,21 @@ remap (void)
 	/* remap class field */
 	p[2] = remap_oop (p[2]);
 	/* remap ivars */
-	st_object_contents (tag (p), &oops, &size);
+	object_contents (tag (p), &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
 	    oops[i] = remap_oop (oops[i]);
 	}
-	p += st_object_size (tag (p));
+	p += object_size (tag (p));
     }
 }
+
+static inline void
+basic_finalize (st_oop object)
+{
+    if (ST_UNLIKELY (st_object_format (object) == ST_FORMAT_LARGE_INTEGER))
+	mp_clear (st_large_integer_value (object));
+}
+
 
 static void
 compact (void)
@@ -391,13 +469,13 @@ compact (void)
 	    memory->offsets[block] = p;
 	    block += 1;
 	}
-	p += st_object_size (tag (p));
+	p += object_size (tag (p));
     }
     to = p;
 
     while (!ismarked (memory, tag (p)) && p < memory->p) {
-	st_assert (st_object_is_mark (*p));
-	p += st_object_size (tag (p));
+	basic_finalize (tag (p));
+	p += object_size (tag (p));
     }
     from = p;
 
@@ -409,7 +487,7 @@ compact (void)
 	if (ismarked (memory, tag (from))) {
 
 	    set_alloc_bit (memory, tag (to));
-	    size = st_object_size (tag (from));
+	    size = object_size (tag (from));
 	    st_oops_move (to, from, size);
 	    
 	    if (block < (get_block_index (memory, from) + 1)) {
@@ -421,7 +499,8 @@ compact (void)
 	    to   += size;
 	    from += size;
 	} else {
-	    from += st_object_size (tag (from));
+	    basic_finalize (tag (from));
+	    from += object_size (tag (from));
 	}
     }
 
@@ -453,12 +532,11 @@ mark (void)
 	    continue;
 
 	set_marked (memory, object);
-	st_object_contents (object, &oops, &size);	
-	if (ST_UNLIKELY ((sp + size + 1) >= MARK_STACK_SIZE_OOPS))
-	    goto out;
-
-	stack[sp++] = ST_HEADER (object)->class;
+	stack[sp++] = ST_OBJECT_CLASS (object);
+	object_contents (object, &oops, &size);	
 	for (st_uint i = 0; i < size; i++) {
+	    if (ST_UNLIKELY (sp >= MARK_STACK_SIZE_OOPS))
+		goto out;
 	    if (oops[i] != st_nil) {
 		stack[sp++] = oops[i];
 	    }
@@ -478,7 +556,7 @@ remap_processor (st_processor *pr)
     st_oop context, home;
 
     context = remap_oop (pr->context);
-    if (ST_HEADER (context)->class == st_block_context_class) {
+    if (ST_OBJECT_CLASS (context) == st_block_context_class) {
 	home = ST_BLOCK_CONTEXT_HOME (context);
 	pr->method   = ST_METHOD_CONTEXT_METHOD (home);
 	pr->receiver = ST_METHOD_CONTEXT_RECEIVER (home);

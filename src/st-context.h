@@ -90,10 +90,7 @@ st_oop  st_message_new (st_oop selector, st_oop arguments);
 #define ST_BLOCK_CONTEXT_HOME(oop)      (ST_BLOCK_CONTEXT (oop)->home)
 #define ST_BLOCK_CONTEXT_STACK(oop)     (ST_BLOCK_CONTEXT (oop)->stack)
 
-#define ST_MESSAGE_SELECTOR(oop) (ST_HEADER (oop)->fields[0])
-#define ST_MESSAGE_ARGUMENTS(oop) (ST_HEADER (oop)->fields[1])
-
-
-st_descriptor *st_context_descriptor (void);
+#define ST_MESSAGE_SELECTOR(oop)  (ST_OBJECT_FIELDS (oop)[0])
+#define ST_MESSAGE_ARGUMENTS(oop) (ST_OBJECT_FIELDS (oop)[1])
 
 #endif /* __ST_CONTEXT_H__ */

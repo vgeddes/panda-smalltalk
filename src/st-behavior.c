@@ -30,7 +30,6 @@
 #include "st-object.h"
 #include "st-array.h"
 #include "st-array.h"
-#include "st-descriptor.h"
 
 
 st_list *
@@ -53,4 +52,47 @@ st_behavior_all_instance_variables (st_oop class)
     }
 
     return st_list_concat (a, st_list_reverse (b));
+}
+
+
+st_oop
+st_object_new (st_oop class)
+{
+    switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
+    case ST_FORMAT_OBJECT:
+	return st_object_allocate (class);
+    case ST_FORMAT_CONTEXT:
+	/* not implemented */
+	abort ();
+	break;
+    case ST_FORMAT_FLOAT:
+	return st_float_allocate (class);
+    case ST_FORMAT_LARGE_INTEGER:
+	return st_large_integer_allocate (class, NULL);
+    default:
+	/* should not reach */
+	abort ();
+    }
+}
+
+st_oop
+st_object_new_arrayed (st_oop class, st_smi size)
+{
+    switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
+    case ST_FORMAT_ARRAY:
+	return st_array_allocate (class, size);
+    case ST_FORMAT_BYTE_ARRAY:
+	return st_byte_array_allocate (class, size);
+    case ST_FORMAT_WORD_ARRAY:
+	return st_word_array_allocate (class, size);
+    case ST_FORMAT_FLOAT_ARRAY:
+	return st_float_array_allocate (class, size);
+    case ST_FORMAT_INTEGER_ARRAY:
+	/* not implemented */
+	abort ();
+	break;
+    default:
+	/* should not reach */
+	abort ();
+    }
 }

@@ -26,7 +26,6 @@
 #define __ST_SYMBOL_H__
 
 #include <st-types.h>
-#include <st-descriptor.h>
 #include <st-memory.h>
 
 st_oop st_string_new (const char *bytes);

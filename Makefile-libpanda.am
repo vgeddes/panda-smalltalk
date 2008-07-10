@@ -29,8 +29,6 @@ libpanda_la_SOURCES = \
 	src/st-context.c \
 	src/st-object.h \
 	src/st-object.c \
-	src/st-descriptor.c \
-	src/st-descriptor.h \
 	src/st-primitives.c \
 	src/st-primitives.h \
 	src/st-node.c \

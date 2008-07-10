@@ -76,12 +76,12 @@ st_large_integer_to_string (st_oop integer, st_uint radix)
     return NULL;
 }
 
-static st_oop
-allocate_with_value (st_oop class, mp_int * value)
+st_oop
+st_large_integer_allocate (st_oop class, mp_int *value)
 {
     st_oop object;
 
-    object = st_memory_allocate (sizeof (struct st_large_integer) / sizeof (st_oop));
+    object = st_memory_allocate (ST_SIZE_OOPS (struct st_large_integer));
     st_object_initialize_header (object, class);
 
     if (value)
@@ -93,38 +93,6 @@ allocate_with_value (st_oop class, mp_int * value)
 st_oop
 st_large_integer_new (mp_int * value)
 {
-    return allocate_with_value (st_large_integer_class, value);
+    return st_large_integer_allocate (st_large_integer_class, value);
     
-}
-
-static st_oop
-allocate (st_oop class)
-{
-    return allocate_with_value (class, NULL);
-}
-
-static st_uint
-large_integer_size (st_oop object)
-{
-    return (sizeof (struct st_large_integer) / sizeof (st_oop));
-}
-
-static void
-large_integer_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = NULL;
-    *size = 0;
-}
-
-st_descriptor *
-st_large_integer_descriptor (void)
-{
-    static st_descriptor __descriptor =
-	{ .allocate         = allocate,
-	  .allocate_arrayed = NULL,
-	  .size             = large_integer_size,
-	  .contents         = large_integer_contents,
-	};
-
-    return & __descriptor;
 }

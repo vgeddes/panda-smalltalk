@@ -27,8 +27,6 @@ method_context_new (st_processor *pr)
     stack_size = large ? 32 : 12;
 
     context = st_memory_allocate_context (large);
-    st_object_initialize_header (context, st_method_context_class);
-    st_object_set_large_context (context, large);
 
     ST_CONTEXT_PART_SENDER (context)     = pr->context;
     ST_CONTEXT_PART_IP (context)         = st_smi_new (0);
@@ -58,7 +56,7 @@ block_context_new (st_processor *pr, st_uint initial_ip, st_uint argcount)
     st_object_initialize_header (context, st_block_context_class);
     st_object_set_large_context (context, true);
     
-    if (ST_HEADER (pr->context)->class == st_block_context_class)
+    if (ST_OBJECT_CLASS (pr->context) == st_block_context_class)
 	home = ST_BLOCK_CONTEXT_HOME (pr->context);
     else
 	home = pr->context;
@@ -378,7 +376,7 @@ st_processor_main (st_processor *pr)
 
 	CASE (PUSH_INSTVAR) {
     
-	    ST_STACK_PUSH (pr, ST_HEADER (pr->receiver)->fields[ip[1]]);
+	    ST_STACK_PUSH (pr, ST_OBJECT_FIELDS (pr->receiver)[ip[1]]);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -386,7 +384,7 @@ st_processor_main (st_processor *pr)
 
 	CASE (STORE_POP_INSTVAR) {
 	    
-	    ST_HEADER (pr->receiver)->fields[ip[1]] = ST_STACK_POP (pr);
+	    ST_OBJECT_FIELDS (pr->receiver)[ip[1]] = ST_STACK_POP (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -394,7 +392,7 @@ st_processor_main (st_processor *pr)
 
 	CASE (STORE_INSTVAR) {
     
-	    ST_HEADER (pr->receiver)->fields[ip[1]] = ST_STACK_PEEK (pr);
+	    ST_OBJECT_FIELDS (pr->receiver)[ip[1]] = ST_STACK_PEEK (pr);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -1039,7 +1037,7 @@ st_processor_main (st_processor *pr)
 	    
 	    value = ST_STACK_PEEK (pr);
 	    
-	    if (ST_HEADER (pr->context)->class == st_block_context_class)
+	    if (ST_OBJECT_CLASS (pr->context) == st_block_context_class)
 		sender = ST_CONTEXT_PART_SENDER (ST_BLOCK_CONTEXT_HOME (pr->context));
 	    else
 		sender = ST_CONTEXT_PART_SENDER (pr->context);
@@ -1053,7 +1051,7 @@ st_processor_main (st_processor *pr)
 		NEXT ();
 	    }
 
-	    if (ST_HEADER (pr->context)->class == st_method_context_class)
+	    if (ST_OBJECT_CLASS (pr->context) == st_method_context_class)
 		st_memory_recycle_context (pr->context);
 
 	    ACTIVATE_CONTEXT (pr, sender);

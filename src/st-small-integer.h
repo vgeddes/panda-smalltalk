@@ -26,7 +26,6 @@
 #define __ST_SMALL_INTEGER_H__
 
 #include <st-types.h>
-#include <st-descriptor.h>
 
 static inline st_oop
 st_smi_new (st_smi num)

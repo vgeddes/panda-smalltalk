@@ -24,13 +24,11 @@
 #include "st-array.h"
 #include "st-universe.h"
 #include "st-utils.h"
-#include "st-descriptor.h"
 #include "st-behavior.h"
 #include <string.h>
 
-static st_oop
-array_allocate_arrayed (st_oop    class,
-			st_smi    size)
+st_oop
+st_array_allocate (st_oop class, st_smi size)
 {
     st_oop  array;
     st_oop *elements;
@@ -48,37 +46,11 @@ array_allocate_arrayed (st_oop    class,
     return array;
 }
 
-static st_uint
-array_size (st_oop object)
-{
-    return ST_SIZE_OOPS (struct st_arrayed_object) + st_smi_value (st_arrayed_object_size (object));
-}
-
-static void
-array_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = st_array_elements (object);
-    *size = st_smi_value (st_arrayed_object_size (object));
-}
-
-st_descriptor *
-st_array_descriptor (void)
-{
-    static st_descriptor __descriptor =
-	{ .allocate         = NULL,
-	  .allocate_arrayed = array_allocate_arrayed,
-	  .size             = array_size,
-	  .contents         = array_contents,
-	};
-
-    return & __descriptor;
-}
 
 /* ByteArray */
 
-static st_oop
-byte_allocate_arrayed (st_oop    class,
-		       st_smi    size)
+st_oop
+st_byte_array_allocate (st_oop class, st_smi size)
 {
     st_uint size_oops;
     st_oop  array;
@@ -122,39 +94,10 @@ st_byte_array_hash (st_oop object)
     return st_string_hash ((char *) st_byte_array_bytes (object));
 }
 
-static st_uint
-byte_array_size (st_oop object)
-{
-    st_uint size;
-
-    size = st_smi_value (st_arrayed_object_size (object));
-    return ST_SIZE_OOPS (struct st_arrayed_object) + ST_ROUNDED_UP_OOPS (size + 1);
-}
-
-static void
-byte_array_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = NULL;
-    *size = 0;
-}
-
-st_descriptor *
-st_byte_array_descriptor (void)
-{
-    static st_descriptor __descriptor =
-	{ .allocate         = NULL,
-	  .allocate_arrayed = byte_allocate_arrayed,
-	  .size             = byte_array_size,
-	  .contents         = byte_array_contents,
-	};
-
-    return & __descriptor;
-}
-
 /* WordArray */
 
-static st_oop
-word_allocate_arrayed (st_oop class, st_smi size)
+st_oop
+st_word_array_allocate (st_oop class, st_smi size)
 {
     st_oop   array;
     st_smi   size_oops;
@@ -175,38 +118,10 @@ word_allocate_arrayed (st_oop class, st_smi size)
     return array;
 }
 
-
-static st_uint
-word_array_size (st_oop object)
-{
-    return ST_SIZE_OOPS (struct st_arrayed_object)
-	+ (st_smi_value (st_arrayed_object_size (object)) / (sizeof (st_oop) / sizeof (st_uint)));
-}
-
-static void
-word_array_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = NULL;
-    *size = 0;
-}
-
-st_descriptor *
-st_word_array_descriptor (void)
-{
-    static st_descriptor __descriptor =
-	{ .allocate         = NULL,
-	  .allocate_arrayed = word_allocate_arrayed,
-	  .size             = word_array_size,
-	  .contents         = word_array_contents,
-	};
-    return & __descriptor;
-}
-
-
 /* FloatArray */
 
-static st_oop
-float_allocate_arrayed (st_oop class, st_smi size)
+st_oop
+st_float_array_allocate (st_oop class, st_smi size)
 {
     st_oop  object;
     double *elements;
@@ -227,30 +142,4 @@ float_allocate_arrayed (st_oop class, st_smi size)
 	elements[i] = (double) 0;
 
     return object;
-}
-
-static st_uint
-float_array_size (st_oop object)
-{
-    return ST_SIZE_OOPS (struct st_arrayed_object) + (st_smi_value (st_arrayed_object_size (object)) * ST_SIZE_OOPS (double));
-}
-
-static void
-float_array_contents (st_oop object, st_oop **oops, st_uint *size)
-{
-    *oops = NULL;
-    *size = 0;
-}
-
-st_descriptor *
-st_float_array_descriptor (void)
-{
-    static st_descriptor __descriptor =
-	{ .allocate         = NULL,
-	  .allocate_arrayed = float_allocate_arrayed,
-	  .size             = float_array_size,
-	  .contents         = float_array_contents,
-	};
-
-    return & __descriptor;
 }
