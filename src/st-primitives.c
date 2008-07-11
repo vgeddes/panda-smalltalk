@@ -1449,7 +1449,7 @@ Object_perform (st_processor *pr)
     st_uint selector_index;
 
     selector = pr->message_selector;
-    pr->message_selector = pr->stack[pr->sp - pr->message_argcount];
+    pr->message_selector = pr->stack[pr_sp - pr->message_argcount];
     receiver = pr->message_receiver;
 
     set_success (pr, st_object_is_symbol (pr->message_selector));
@@ -1457,13 +1457,13 @@ Object_perform (st_processor *pr)
     set_success (pr, st_method_get_arg_count (method) == (pr->message_argcount - 1));
 
     if (pr->success) {
-	selector_index = pr->sp - pr->message_argcount;
+	selector_index = pr_sp - pr->message_argcount;
 
 	st_oops_move (pr->stack + selector_index,
 		      pr->stack + selector_index + 1,
 		      pr->message_argcount - 1);
 
-	pr->sp -= 1;
+	pr_sp -= 1;
 	pr->message_argcount -= 1;
 	st_processor_execute_method (pr);
 
@@ -1491,7 +1491,7 @@ Object_perform_withArguments (st_processor *pr)
 	method = ST_METHOD_CONTEXT_METHOD (pr->context);
 
     array_size = st_smi_value (st_arrayed_object_size (array));
-    set_success (pr, (pr->sp + array_size - 1) < (st_method_get_large_context (method) ? 32 : 12));
+    set_success (pr, (pr_sp + array_size - 1) < (st_method_get_large_context (method) ? 32 : 12));
 
     if (pr->success) {
 	
@@ -1502,11 +1502,11 @@ Object_perform_withArguments (st_processor *pr)
 
 	set_success (pr, st_object_is_symbol (pr->message_selector));
     
-	st_oops_copy (pr->stack + pr->sp,
+	st_oops_copy (pr->stack + pr_sp,
 		      st_array_elements (array),
 		      array_size);
 
-	pr->sp += array_size;
+	pr_sp += array_size;
 
 	pr->new_method = st_processor_lookup_method (pr, st_object_class (receiver));
 	set_success (pr, st_method_get_arg_count (pr->new_method) == array_size);
@@ -1514,7 +1514,7 @@ Object_perform_withArguments (st_processor *pr)
 	if (pr->success) {
 	    st_processor_execute_method (pr);
 	} else {
-	    pr->sp -= pr->message_argcount;
+	    pr_sp -= pr->message_argcount;
 	    ST_STACK_PUSH (pr, pr->message_selector);
 	    ST_STACK_PUSH (pr, array);
 	    pr->message_argcount = 2;
@@ -1927,10 +1927,10 @@ activate_block_context (st_processor *pr)
     }
 
     st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
-		  pr->stack + pr->sp - argcount,
+		  pr->stack + pr_sp - argcount,
 		  argcount);
 
-    pr->sp -= pr->message_argcount + 1;
+    pr_sp -= pr->message_argcount + 1;
     
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
@@ -1970,7 +1970,7 @@ BlockContext_valueWithArguments (st_processor *pr)
 		  ST_ARRAY (values)->elements,
 		  argcount);
     
-    pr->sp -= pr->message_argcount + 1;
+    pr_sp -= pr->message_argcount + 1;
 
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);

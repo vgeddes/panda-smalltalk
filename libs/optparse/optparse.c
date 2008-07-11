@@ -13,7 +13,7 @@ static struct {
     int width, maxhelppos, indent;
     const char *helppfx;
     char sf[3]; /* Initialised to 0 from here on. */
-    const char *prog, *usage, *helplf;
+    const char *prog, *usage, *message, *helplf;
     char helpsf, **argv;
     struct opt_spec *opts, *curr, header;
     int opts1st, helppos;
@@ -37,6 +37,11 @@ void opt_basename(char *fn, char sep)
     }
     while ((*fn++ = *++loc))
         ;
+}
+
+void opt_message(char *message)
+{
+    globals.message = message;
 }
 
 void opt_config(int width, int max_help_pos,
@@ -239,6 +244,10 @@ int opt_help(char *arg, void *data)
 {
     assert(!arg);
     printf(globals.usage, globals.prog);
+    putchar('\n');
+    if (globals.message)
+	printf (globals.message);
+    putchar('\n');
     putchar('\n');
     printopts(stdout);
     exit(0);

@@ -33,8 +33,6 @@ typedef struct st_processor {
     st_oop *temps;
 
     st_oop *stack;
-    st_uint   sp;
-    st_uint   ip;
 
     st_oop  message_receiver;
     st_oop  message_selector;
@@ -50,11 +48,13 @@ typedef struct st_processor {
 
 } st_processor;
 
+extern const st_uchar *pr_ip;
+extern       st_uint   pr_sp;
 
-#define ST_STACK_POP(processor)          ((processor)->stack[--(processor)->sp])
-#define ST_STACK_PUSH(processor, oop)    ((processor)->stack[(processor)->sp++] = oop)
-#define ST_STACK_PEEK(processor)         ((processor)->stack[(processor)->sp-1])
-#define ST_STACK_UNPOP(processor, count) ((processor)->sp += count)
+#define ST_STACK_POP(processor)          ((processor)->stack[--pr_sp])
+#define ST_STACK_PUSH(processor, oop)    ((processor)->stack[pr_sp++] = oop)
+#define ST_STACK_PEEK(processor)         ((processor)->stack[pr_sp-1])
+#define ST_STACK_UNPOP(processor, count) (pr_sp += count)
 
 void   st_processor_main               (st_processor *processor);
 void   st_processor_initialize         (st_processor *processor);

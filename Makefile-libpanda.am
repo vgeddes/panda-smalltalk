@@ -55,7 +55,6 @@ libpanda_la_CPPFLAGS =          \
 	-I$(top_builddir)   \
         -I$(top_srcdir)/libs/libtommath \
         -I$(top_srcdir)/libs/libmpa \
-        -I$(top_srcdir)/libs/ucdata \
         -Isrc \
         $(AM_CPPFLAGS)
 

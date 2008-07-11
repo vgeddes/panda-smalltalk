@@ -68,8 +68,9 @@ main (int argc, char *argv[])
     st_processor processor;
     st_oop value;
 
-    opt_basename(argv[0], '/');
-    opt_parse ("usage: %s [options]", options, argv);
+    opt_basename (argv[0], '/');
+    opt_message ("Read Smalltalk expressions from standard input and evaluate them.");
+    opt_parse ("Usage: %s [options]", options, argv);
     
     st_set_verbosity (verbose);
 

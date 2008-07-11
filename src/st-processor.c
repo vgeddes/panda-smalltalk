@@ -86,9 +86,9 @@ create_actual_message (st_processor *pr)
     array = st_object_new_arrayed (st_array_class, pr->message_argcount);
     elements = st_array_elements (array);
     for (st_uint i = 0; i < pr->message_argcount; i++)
-	elements[i] =  pr->stack[pr->sp - pr->message_argcount + i];
+	elements[i] =  pr->stack[pr_sp - pr->message_argcount + i];
 
-    pr->sp -= pr->message_argcount;
+    pr_sp -= pr->message_argcount;
 
     ST_STACK_PUSH (pr, st_message_new (pr->message_selector, array));
 
@@ -155,9 +155,9 @@ activate_method (st_processor *pr)
 
     arguments = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
     for (st_uint i = 0; i < pr->message_argcount; i++)
-	arguments[i] =  pr->stack[pr->sp - pr->message_argcount + i];
+	arguments[i] =  pr->stack[pr_sp - pr->message_argcount + i];
 
-    pr->sp -= pr->message_argcount + 1;
+    pr_sp -= pr->message_argcount + 1;
 
     st_processor_set_active_context (pr, context);
 }
@@ -189,8 +189,8 @@ st_processor_set_active_context (st_processor *pr,
 
     /* save executation state of active context */
     if (pr->context != st_nil) {
-	ST_CONTEXT_PART_IP (pr->context) = st_smi_new (pr->ip);
-	ST_CONTEXT_PART_SP (pr->context) = st_smi_new (pr->sp);
+	ST_CONTEXT_PART_IP (pr->context) = st_smi_new (pr_ip - st_method_bytecode_bytes (pr->method));
+	ST_CONTEXT_PART_SP (pr->context) = st_smi_new (pr_sp);
     }
     
     if (st_object_class (context) == st_block_context_class) {
@@ -211,8 +211,8 @@ st_processor_set_active_context (st_processor *pr,
     }
 
     pr->context  = context;
-    pr->sp       = st_smi_value (ST_CONTEXT_PART_SP (context));
-    pr->ip       = st_smi_value (ST_CONTEXT_PART_IP (context));
+    pr_sp        = st_smi_value (ST_CONTEXT_PART_SP (context));
+    pr_ip        = st_method_bytecode_bytes (pr->method) + st_smi_value (ST_CONTEXT_PART_IP (context));
     pr->bytecode = st_method_bytecode_bytes (pr->method);
 
 }
@@ -235,7 +235,7 @@ st_processor_send_selector (st_processor *pr,
     st_method_flags flags;
 
     pr->message_argcount = argcount;
-    pr->message_receiver = pr->stack[pr->sp - argcount - 1];
+    pr->message_receiver = pr->stack[pr_sp - argcount - 1];
     pr->message_selector = selector;
     
     pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
@@ -253,31 +253,23 @@ st_processor_send_selector (st_processor *pr,
 }
 
 #define SEND_SELECTOR(pr, selector, argcount)				\
-    pr->ip = ip - pr->bytecode;						\
     st_processor_send_selector (pr, selector, argcount);		\
-    ip = pr->bytecode + pr->ip;
 
 #define ACTIVATE_CONTEXT(pr, context)			\
-    pr->ip = ip - pr->bytecode;				\
     st_processor_set_active_context (pr, context);	\
-    ip = pr->bytecode + pr->ip;
 
 #define ACTIVATE_METHOD(pr)				\
-    pr->ip = ip - pr->bytecode;				\
     activate_method (pr);				\
-    ip = pr->bytecode + pr->ip;
 
 #define EXECUTE_PRIMITIVE(pr, index)			\
     pr->success = true;					\
-    pr->ip = ip - pr->bytecode;				\
-    st_primitives[index].func (pr);			\
-    ip = pr->bytecode + pr->ip;
+    st_primitives[index].func (pr);
 
 #define SEND_TEMPLATE(pr)						\
     st_uint  prim;							\
     st_method_flags flags;						\
     									\
-    ip += 1;								\
+    pr_ip += 1;								\
     									\
     pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));\
     									\
@@ -348,85 +340,85 @@ switch (*ip)
 #endif
 
 #ifdef I_HAS_COMPUTED_GOTO
-#define NEXT() goto *labels[*ip]
+#define NEXT() goto *labels[*pr_ip]
 #else
 #define NEXT() goto start
 #endif
 
+const st_uchar *pr_ip;
+st_uint         pr_sp;
 
 void
 st_processor_main (st_processor *pr)
 {
-    register const st_uchar *ip;
-
     if (setjmp (pr->main_loop))
 	goto out;
 
-    ip = pr->bytecode + pr->ip;
+    pr_ip = pr->bytecode;
 
-    SWITCH (ip) {
+    SWITCH (pr_ip) {
 
 	CASE (PUSH_TEMP) {
 
-	    ST_STACK_PUSH (pr, pr->temps[ip[1]]);
+	    ST_STACK_PUSH (pr, pr->temps[pr_ip[1]]);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 
 	CASE (PUSH_INSTVAR) {
     
-	    ST_STACK_PUSH (pr, ST_OBJECT_FIELDS (pr->receiver)[ip[1]]);
+	    ST_STACK_PUSH (pr, ST_OBJECT_FIELDS (pr->receiver)[pr_ip[1]]);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 
 	CASE (STORE_POP_INSTVAR) {
 	    
-	    ST_OBJECT_FIELDS (pr->receiver)[ip[1]] = ST_STACK_POP (pr);
+	    ST_OBJECT_FIELDS (pr->receiver)[pr_ip[1]] = ST_STACK_POP (pr);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 
 	CASE (STORE_INSTVAR) {
     
-	    ST_OBJECT_FIELDS (pr->receiver)[ip[1]] = ST_STACK_PEEK (pr);
+	    ST_OBJECT_FIELDS (pr->receiver)[pr_ip[1]] = ST_STACK_PEEK (pr);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 
 	CASE (STORE_POP_TEMP) {
 	    
-	    pr->temps[ip[1]] = ST_STACK_POP (pr);
+	    pr->temps[pr_ip[1]] = ST_STACK_POP (pr);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}    
 
 	CASE (STORE_TEMP) {
 	    
-	    pr->temps[ip[1]] = ST_STACK_PEEK (pr);
+	    pr->temps[pr_ip[1]] = ST_STACK_PEEK (pr);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}    
 	
 	CASE (STORE_LITERAL_VAR) {
 	    
-	    ST_ASSOCIATION (pr->literals[ip[1]])->value = ST_STACK_PEEK (pr);
+	    ST_ASSOCIATION_VALUE (pr->literals[pr_ip[1]]) = ST_STACK_PEEK (pr);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 	    
 	CASE (STORE_POP_LITERAL_VAR) {
 	    
-	    ST_ASSOCIATION (pr->literals[ip[1]])->value = ST_STACK_POP (pr);
+	    ST_ASSOCIATION_VALUE (pr->literals[pr_ip[1]]) = ST_STACK_POP (pr);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 	
@@ -434,7 +426,7 @@ st_processor_main (st_processor *pr)
     
 	    ST_STACK_PUSH (pr, pr->receiver);
 
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 
@@ -442,7 +434,7 @@ st_processor_main (st_processor *pr)
     
 	    ST_STACK_PUSH (pr, st_true);
 	    
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 
@@ -450,7 +442,7 @@ st_processor_main (st_processor *pr)
 	    
 	    ST_STACK_PUSH (pr, st_false);
 	
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 
@@ -458,15 +450,15 @@ st_processor_main (st_processor *pr)
     
 	    ST_STACK_PUSH (pr, st_nil);
 	    
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 
 	CASE (PUSH_INTEGER) {
     
-	    ST_STACK_PUSH (pr, st_smi_new ((signed char) ip[1]));
+	    ST_STACK_PUSH (pr, st_smi_new ((signed char) pr_ip[1]));
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 	
@@ -474,15 +466,15 @@ st_processor_main (st_processor *pr)
     
 	    ST_STACK_PUSH (pr, pr->context);
 	    
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 
 	CASE (PUSH_LITERAL_CONST) {
     
-	    ST_STACK_PUSH (pr, pr->literals[ip[1]]);
+	    ST_STACK_PUSH (pr, pr->literals[pr_ip[1]]);
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 
@@ -490,11 +482,11 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop var;
 	    
-	    var = ST_ASSOCIATION (pr->literals[ip[1]])->value;
+	    var = ST_ASSOCIATION (pr->literals[pr_ip[1]])->value;
 	    
 	    ST_STACK_PUSH (pr, var);	    
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    NEXT ();
 	}
 	    
@@ -502,12 +494,12 @@ st_processor_main (st_processor *pr)
 	    
 	    if (ST_STACK_PEEK (pr) == st_true) {
 		(void) ST_STACK_POP (pr);
-		ip += 3 + *((short *) (ip + 1));
+		pr_ip += 3 + *((short *) (pr_ip + 1));
 	    } else if (ST_LIKELY (ST_STACK_PEEK (pr) == st_false)) {
 		(void) ST_STACK_POP (pr);
-		ip += 3;
+		pr_ip += 3;
 	    } else {
-		ip += 3;
+		pr_ip += 3;
 		SEND_SELECTOR (pr, st_selector_mustBeBoolean, 0);
 	    }
 	    
@@ -518,12 +510,12 @@ st_processor_main (st_processor *pr)
 	    
 	    if (ST_STACK_PEEK (pr) == st_false) {
 		(void) ST_STACK_POP (pr);
-		ip += 3 + *((short *) (ip + 1));
+		pr_ip += 3 + *((short *) (pr_ip + 1));
 	    } else if (ST_LIKELY (ST_STACK_PEEK (pr) == st_true)) {
 		(void) ST_STACK_POP (pr);
-		ip += 3;
+		pr_ip += 3;
 	    } else {
-		ip += 3;
+		pr_ip += 3;
 		SEND_SELECTOR (pr, st_selector_mustBeBoolean, 0);
 	    }
 	    
@@ -532,9 +524,9 @@ st_processor_main (st_processor *pr)
     
 	CASE (JUMP) {
 	    
-	    short offset = *((short *) (ip + 1));
+	    short offset = *((short *) (pr_ip + 1));
 	    
-	    ip += ((offset >= 0) ? 3 : 0) + offset;
+	    pr_ip += ((offset >= 0) ? 3 : 0) + offset;
 	    
 	    NEXT ();    
 	}
@@ -543,18 +535,18 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop a, b;
 	    
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) + st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
     
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_PLUS];	    
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 
 	    SEND_TEMPLATE (pr);
 	    
@@ -565,18 +557,18 @@ st_processor_main (st_processor *pr)
 
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) - st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_MINUS];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 
 	    SEND_TEMPLATE (pr);
 	    
@@ -587,18 +579,18 @@ st_processor_main (st_processor *pr)
 
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) * st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_MUL];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -610,18 +602,18 @@ st_processor_main (st_processor *pr)
 
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) % st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_MOD];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -633,7 +625,7 @@ st_processor_main (st_processor *pr)
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_DIV];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -644,21 +636,21 @@ st_processor_main (st_processor *pr)
 
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		if (st_smi_value (b) < 0) {
 		    ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) >> -st_smi_value (b)));
 		} else
 		    ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) << st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
     
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_BITSHIFT];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -669,18 +661,18 @@ st_processor_main (st_processor *pr)
 
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) & st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_BITAND];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -691,18 +683,18 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) | st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_BITOR];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	
 	    SEND_TEMPLATE (pr);
 	    
@@ -713,18 +705,18 @@ st_processor_main (st_processor *pr)
 
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_new (st_smi_value (a) ^ st_smi_value (b)));
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_BITXOR];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -735,18 +727,18 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_value (a) < st_smi_value (b) ? st_true : st_false);
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_LT];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -757,18 +749,18 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_value (a) > st_smi_value (b) ? st_true : st_false);
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_GT];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	
@@ -779,18 +771,18 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_value (a) <= st_smi_value (b) ? st_true : st_false);
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 	    
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_LE];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -801,18 +793,18 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop a, b;
 
-	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr->sp - 1]) &&
-			   st_object_is_smi (pr->stack[pr->sp - 2]))) {
+	    if (ST_LIKELY (st_object_is_smi (pr->stack[pr_sp - 1]) &&
+			   st_object_is_smi (pr->stack[pr_sp - 2]))) {
 		b = ST_STACK_POP (pr);
 		a = ST_STACK_POP (pr);
 		ST_STACK_PUSH (pr, st_smi_value (a) >= st_smi_value (b) ? st_true : st_false);
-		ip++;
+		pr_ip++;
 		NEXT ();
 	    }
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_GE];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -823,7 +815,7 @@ st_processor_main (st_processor *pr)
 
 	    pr->message_argcount = 0;
 	    pr->message_selector = st_specials[ST_SPECIAL_CLASS];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	
@@ -834,7 +826,7 @@ st_processor_main (st_processor *pr)
 	    
 	    pr->message_argcount = 0;
 	    pr->message_selector = st_specials[ST_SPECIAL_SIZE];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -845,7 +837,7 @@ st_processor_main (st_processor *pr)
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_AT];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -856,7 +848,7 @@ st_processor_main (st_processor *pr)
 	    
 	    pr->message_argcount = 2;
 	    pr->message_selector = st_specials[ST_SPECIAL_ATPUT];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -867,7 +859,7 @@ st_processor_main (st_processor *pr)
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_EQ];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -878,7 +870,7 @@ st_processor_main (st_processor *pr)
 
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_NE];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	
@@ -893,7 +885,7 @@ st_processor_main (st_processor *pr)
 	    
 	    ST_STACK_PUSH (pr, (a == b) ? st_true : st_false);
 
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 	
@@ -901,7 +893,7 @@ st_processor_main (st_processor *pr)
     
 	    pr->message_argcount = 0;
 	    pr->message_selector = st_specials[ST_SPECIAL_VALUE];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -912,7 +904,7 @@ st_processor_main (st_processor *pr)
 	    
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -923,7 +915,7 @@ st_processor_main (st_processor *pr)
     
 	    pr->message_argcount = 0;
 	    pr->message_selector = st_specials[ST_SPECIAL_NEW];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -934,7 +926,7 @@ st_processor_main (st_processor *pr)
 	    
 	    pr->message_argcount = 1;
 	    pr->message_selector = st_specials[ST_SPECIAL_NEW_ARG];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
 	    SEND_TEMPLATE (pr);
 	    
@@ -946,11 +938,11 @@ st_processor_main (st_processor *pr)
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 
-	    pr->message_argcount = ip[1];
-	    pr->message_selector = pr->literals[ip[2]];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_argcount = pr_ip[1];
+	    pr->message_selector = pr->literals[pr_ip[2]];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 
-	    ip += 3;
+	    pr_ip += 3;
 
 	    pr->new_method = st_processor_lookup_method (pr, st_object_class (pr->message_receiver));
 	    
@@ -973,11 +965,11 @@ st_processor_main (st_processor *pr)
 	    st_uint  primitive_index;
 	    st_method_flags flags;
 	    
-	    pr->message_argcount = ip[1];
-	    pr->message_selector = pr->literals[ip[2]];
-	    pr->message_receiver = pr->stack[pr->sp - pr->message_argcount - 1];
+	    pr->message_argcount = pr_ip[1];
+	    pr->message_selector = pr->literals[pr_ip[2]];
+	    pr->message_receiver = pr->stack[pr_sp - pr->message_argcount - 1];
 	    
-	    ip += 3;
+	    pr_ip += 3;
 	    
 	    literal_index = st_smi_value (st_arrayed_object_size (ST_METHOD_LITERALS (pr->method))) - 1;
 
@@ -1000,7 +992,7 @@ st_processor_main (st_processor *pr)
 	    
 	    (void) ST_STACK_POP (pr);
 	    
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 
@@ -1008,7 +1000,7 @@ st_processor_main (st_processor *pr)
 	    
 	    ST_STACK_PUSH (pr, ST_STACK_PEEK (pr));
 	    
-	    ip += 1;
+	    pr_ip += 1;
 	    NEXT ();
 	}
 	
@@ -1016,15 +1008,15 @@ st_processor_main (st_processor *pr)
 	    
 	    st_oop block;
 	    st_oop home;
-	    st_uint argcount = ip[1];
+	    st_uint argcount = pr_ip[1];
 	    st_uint initial_ip;
 	    
-	    ip += 2;
+	    pr_ip += 2;
 	    
-	    initial_ip = ip - pr->bytecode + 3;
+	    initial_ip = pr_ip - pr->bytecode + 3;
 	    
 	    block = block_context_new (pr, initial_ip, argcount);
-	    
+
 	    ST_STACK_PUSH (pr, block);
 	    
 	    NEXT ();
@@ -1103,8 +1095,7 @@ st_processor_initialize (st_processor *pr)
     pr->receiver = st_nil;
     pr->method = st_nil;
 
-    pr->ip = 0;
-    pr->sp = 0;
+    pr_sp = 0;
     pr->stack = NULL;
 
     st_processor_clear_caches (pr);

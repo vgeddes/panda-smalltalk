@@ -331,7 +331,6 @@ object_size (st_oop object)
     case ST_FORMAT_WORD_ARRAY:
 	return ST_SIZE_OOPS (struct st_arrayed_object)
 	    + (st_smi_value (st_arrayed_object_size (object)) / (sizeof (st_oop) / sizeof (st_uint)));
-	break;
     case ST_FORMAT_FLOAT_ARRAY:
 	return ST_SIZE_OOPS (struct st_arrayed_object) + (st_smi_value (st_arrayed_object_size (object)) * ST_SIZE_OOPS (double));
     case ST_FORMAT_INTEGER_ARRAY:
@@ -616,6 +615,8 @@ garbage_collect (void)
 
     clear_metadata ();
 
+    st_uint ip = pr_ip - st_method_bytecode_bytes (proc->method);
+
     /* marking */
     timer_start (&tm);
     mark ();
@@ -645,8 +646,14 @@ garbage_collect (void)
     st_processor_clear_caches (proc);
     memory->counter = 0;
 
+    pr_ip = st_method_bytecode_bytes (proc->method) + ip;
+
     if (st_verbose_mode ()) {
-	fprintf (stderr, "** gc: collected: %uK, heapSize: %uK, marking: %.6fs, compaction: %.6fs, remapping: %.6fs\n",
+	fprintf (stderr, "** gc: collected:       %uK\n"
+                         "       heapSize:        %uK\n"
+                         "       marking time:    %.6fs\n"
+                         "       compaction time: %.6fs\n"
+                         "       remapping time:  %.6fs\n\n",
 		 memory->bytes_collected / 1024,
 		 (memory->bytes_collected + memory->bytes_allocated) / 1024,
 		 times[0], times[1], times[2]);
