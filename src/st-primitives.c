@@ -414,7 +414,7 @@ pop_large_integer (struct st_cpu *cpu)
 
     set_success (cpu, st_object_class (object) == st_large_integer_class);
     
-    return object;
+   return object;
 }
 
 static void
@@ -1593,10 +1593,10 @@ Behavior_newSize (struct st_cpu *cpu)
 	instance = st_array_allocate (class, size);
 	break;
     case ST_FORMAT_BYTE_ARRAY:
-	instance =  st_byte_array_allocate (class, size);
+	instance = st_byte_array_allocate (class, size);
 	break;
     case ST_FORMAT_WORD_ARRAY:
-	instance =  st_word_array_allocate (class, size);
+	instance = st_word_array_allocate (class, size);
 	break;
     case ST_FORMAT_FLOAT_ARRAY:
 	instance = st_float_array_allocate (class, size);
@@ -1941,10 +1941,11 @@ activate_block_context (struct st_cpu *cpu)
 {
     st_oop  block;
     st_smi  argcount;
+    st_oop home;
 
     block = cpu->message_receiver;
     argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
-    if (argcount != cpu->message_argcount) {
+    if (ST_UNLIKELY (argcount != cpu->message_argcount)) {
 	cpu->success = false;
 	return;
     }
@@ -1952,14 +1953,26 @@ activate_block_context (struct st_cpu *cpu)
     st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
 		  cpu->stack + cpu->sp - argcount,
 		  argcount);
-
     cpu->sp -= cpu->message_argcount + 1;
     
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
     ST_BLOCK_CONTEXT_CALLER (block) = cpu->context;
 
-    st_cpu_set_active_context (block);
+    ST_CONTEXT_PART_IP (cpu->context) = st_smi_new (cpu->ip);
+    ST_CONTEXT_PART_SP (cpu->context) = st_smi_new (cpu->sp);
+
+    home = ST_BLOCK_CONTEXT_HOME (block);
+    cpu->context  = block;
+    cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
+    cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
+    cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+    cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
+    cpu->stack    = ST_BLOCK_CONTEXT_STACK (block);
+    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (block));
+    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (block));
+    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+
 }
 
 static void

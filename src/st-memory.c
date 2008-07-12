@@ -114,8 +114,6 @@ ensure_metadata (void)
     memory->offsets_size = offsets_size;
 }
 
-
-
 static void
 grow_heap (st_uint min_size_oops)
 {
@@ -359,7 +357,7 @@ object_contents (st_oop object, st_oop **oops, st_uint *size)
 	break;
     case ST_FORMAT_CONTEXT:
 	*oops = ST_OBJECT_FIELDS (object);
-	*size = st_object_instance_size (object) + (st_object_large_context (object) ? 32 : 12);
+	*size = st_object_instance_size (object) + st_smi_value (ST_CONTEXT_PART_SP (object));
 	break;
     case ST_FORMAT_FLOAT:
     case ST_FORMAT_LARGE_INTEGER:
@@ -532,7 +530,7 @@ mark (void)
 
 	set_marked (memory, object);
 	stack[sp++] = ST_OBJECT_CLASS (object);
-	object_contents (object, &oops, &size);	
+	object_contents (object, &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
 	    if (ST_UNLIKELY (sp >= MARK_STACK_SIZE_OOPS))
 		goto out;
@@ -560,13 +558,13 @@ remap_cpu (struct st_cpu *cpu)
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
 	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-	cpu->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
+	cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
 	cpu->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
 	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-	cpu->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
+	cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
 	cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
 

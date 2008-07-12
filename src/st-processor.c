@@ -15,28 +15,31 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-static st_oop 
+static inline st_oop 
 method_context_new (void)
 {
     register struct st_cpu *cpu = &__cpu;
     st_oop  context;
     int     stack_size;
+    st_uint temp_count;
     st_oop *stack;
     bool    large;
 
     large = st_method_get_large_context (cpu->new_method);
+    temp_count = st_method_get_arg_count (cpu->new_method) + st_method_get_temp_count (cpu->new_method);
     stack_size = large ? 32 : 12;
 
     context = st_memory_allocate_context (large);
 
     ST_CONTEXT_PART_SENDER (context)     = cpu->context;
     ST_CONTEXT_PART_IP (context)         = st_smi_new (0);
-    ST_CONTEXT_PART_SP (context)         = st_smi_new (0);
+    ST_CONTEXT_PART_SP (context)         = st_smi_new (temp_count);
     ST_METHOD_CONTEXT_RECEIVER (context) = cpu->message_receiver;
     ST_METHOD_CONTEXT_METHOD (context)   = cpu->new_method;
 
-    stack = ST_METHOD_CONTEXT (context)->stack;
-    for (st_uint i=0; i < stack_size; i++)
+    /* clear temporaries (and nothing above) */
+    stack = ST_METHOD_CONTEXT_STACK (context);
+    for (st_uint i=0; i < temp_count; i++)
 	stack[i] = st_nil;
 
     return context;
@@ -72,9 +75,7 @@ block_context_new (st_uint initial_ip, st_uint argcount)
     ST_BLOCK_CONTEXT_CALLER (context)    = st_nil;
     ST_BLOCK_CONTEXT_HOME (context)      = home;
 
-    stack = ST_BLOCK_CONTEXT (context)->stack;
-    for (st_uint i=0; i < stack_size; i++)
-	stack[i] = st_nil;
+    /* don't nil stack, not needed */
     
     return context;
 }
@@ -148,7 +149,7 @@ activate_method (void)
     
     context = method_context_new ();
 
-    arguments = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
+    arguments = ST_METHOD_CONTEXT_STACK (context);
     for (st_uint i = 0; i < cpu->message_argcount; i++)
 	arguments[i] =  cpu->stack[cpu->sp - cpu->message_argcount + i];
 
@@ -189,18 +190,18 @@ st_cpu_set_active_context (st_oop context)
 	ST_CONTEXT_PART_SP (cpu->context) = st_smi_new (cpu->sp);
     }
     
-    if (st_object_class (context) == st_block_context_class) {
+    if (ST_OBJECT_CLASS (context) == st_block_context_class) {
 	home = ST_BLOCK_CONTEXT_HOME (context);
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
 	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-	cpu->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
+	cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
 	cpu->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
 	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-	cpu->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
+	cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
 	cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
 
@@ -514,7 +515,7 @@ st_cpu_main (void)
 	    
 	    st_oop a, b;
 	    
-/*	    if (ST_LIKELY (st_object_is_smi (sp[-1]) &&
+	    if (ST_LIKELY (st_object_is_smi (sp[-1]) &&
 			   st_object_is_smi (sp[-2]))) {
 		b = STACK_POP ();
 		a = STACK_POP ();
@@ -522,7 +523,7 @@ st_cpu_main (void)
 		ip++;
 		NEXT ();
 	    }
-*/
+
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = st_specials[ST_SPECIAL_PLUS];	    
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
@@ -916,6 +917,8 @@ st_cpu_main (void)
 	    
 	    st_uint primitive_index;
 	    st_method_flags flags;
+	    st_oop  context;
+	    st_oop *arguments;
 
 	    cpu->message_argcount = ip[1];
 	    cpu->message_selector = cpu->literals[ip[2]];
@@ -926,14 +929,14 @@ st_cpu_main (void)
 	    
 	common:
 
-//	    if (!lookup_method_in_cache ()) {
+	    if (!lookup_method_in_cache ()) {
 		cpu->ip = ip - cpu->bytecode;
 		cpu->sp = sp - cpu->stack;
 		cpu->new_method = lookup_method (cpu->lookup_class);
 		ip = cpu->bytecode + cpu->ip;
 		sp = cpu->stack + cpu->sp;
-		//	install_method_in_cache ();
-		// }
+		install_method_in_cache ();
+	    }
 	    
 	    flags = st_method_get_flags (cpu->new_method);
 	    if (flags == ST_METHOD_PRIMITIVE) {
@@ -950,11 +953,26 @@ st_cpu_main (void)
 		    NEXT ();
 	    }
 	    
-	    cpu->ip = ip - cpu->bytecode;
-	    cpu->sp = sp - cpu->stack;
-	    activate_method ();
-	    ip = cpu->bytecode + cpu->ip;
+	    context = method_context_new ();
+	    arguments = ST_METHOD_CONTEXT_STACK (context);
+	    for (int i = 0; i < cpu->message_argcount; i++)
+		arguments[i] =  sp[- cpu->message_argcount + i];
+	    sp -= cpu->message_argcount + 1;
+
+	    ST_CONTEXT_PART_IP (cpu->context) = st_smi_new (ip - cpu->bytecode);
+	    ST_CONTEXT_PART_SP (cpu->context) = st_smi_new (sp - cpu->stack);
+	    cpu->context  = context;
+	    cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
+	    cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
+	    cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+	    cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
+	    cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
+	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (context));
+	    cpu->ip       = st_smi_value (0);
+	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+	    ip = cpu->bytecode;
 	    sp = cpu->stack + cpu->sp;
+
 	    NEXT ();
 	}
 
@@ -1001,7 +1019,14 @@ st_cpu_main (void)
 	    
 	    initial_ip = ip - cpu->bytecode + 3;
 	    
+	    cpu->ip = ip - cpu->bytecode;
+	    cpu->sp = sp - cpu->stack;
+
 	    block = block_context_new (initial_ip, argcount);
+
+	    /* update ip in case bytecodes moved during gc */ 
+	    ip = cpu->bytecode + cpu->ip;
+	    sp = cpu->stack + cpu->sp;
 
 	    STACK_PUSH (block);
 	    
@@ -1012,27 +1037,43 @@ st_cpu_main (void)
 	    
 	    st_oop sender;
 	    st_oop value;
+	    st_oop home;
 	    
 	    value = STACK_PEEK ();
 	    
 	    if (ST_OBJECT_CLASS (cpu->context) == st_block_context_class)
 		sender = ST_CONTEXT_PART_SENDER (ST_BLOCK_CONTEXT_HOME (cpu->context));
-	    else
+	    else {
 		sender = ST_CONTEXT_PART_SENDER (cpu->context);
+		st_memory_recycle_context (cpu->context);
+	    }
 
 	    if (ST_UNLIKELY (sender == st_nil)) {
 		STACK_PUSH (cpu->context);
 		STACK_PUSH (value);
 		SEND_SELECTOR (st_selector_cannotReturn, 1);
 		NEXT ();
+	    }		
+
+	    if (ST_OBJECT_CLASS (sender) == st_block_context_class) {
+		home = ST_BLOCK_CONTEXT_HOME (sender);
+		cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
+		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
+		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+		cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
+		cpu->stack    = ST_BLOCK_CONTEXT_STACK (sender);
+	    } else {
+		cpu->method   = ST_METHOD_CONTEXT_METHOD (sender);
+		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (sender);
+		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+		cpu->temps    = ST_METHOD_CONTEXT_STACK (sender);
+		cpu->stack    = ST_METHOD_CONTEXT_STACK (sender);
 	    }
-
-	    if (ST_OBJECT_CLASS (cpu->context) == st_method_context_class)
-		st_memory_recycle_context (cpu->context);
-
-	    cpu->ip = ip - cpu->bytecode;
-	    cpu->sp = sp - cpu->stack;
-	    st_cpu_set_active_context (sender);
+	    
+	    cpu->context  = sender;
+	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (sender));
+	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (sender));
+	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
 	    ip = cpu->bytecode + cpu->ip;
 	    sp = cpu->stack + cpu->sp;
 
@@ -1045,13 +1086,30 @@ st_cpu_main (void)
 	    
 	    st_oop caller;
 	    st_oop value;
+	    st_oop home;
 	    
 	    caller = ST_BLOCK_CONTEXT_CALLER (cpu->context);
 	    value = STACK_PEEK ();
 
-	    cpu->ip = ip - cpu->bytecode;
-	    cpu->sp = sp - cpu->stack;
-	    st_cpu_set_active_context (caller);
+	    if (ST_OBJECT_CLASS (caller) == st_block_context_class) {
+		home = ST_BLOCK_CONTEXT_HOME (caller);
+		cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
+		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
+		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+		cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
+		cpu->stack    = ST_BLOCK_CONTEXT_STACK (caller);
+	    } else {
+		cpu->method   = ST_METHOD_CONTEXT_METHOD (caller);
+		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (caller);
+		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+		cpu->temps    = ST_METHOD_CONTEXT_STACK (caller);
+		cpu->stack    = ST_METHOD_CONTEXT_STACK (caller);
+	    }
+	    
+	    cpu->context  = caller;
+	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (caller));
+	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (caller));
+	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
 	    ip = cpu->bytecode + cpu->ip;
 	    sp = cpu->stack + cpu->sp;
 	    
