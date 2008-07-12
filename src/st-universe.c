@@ -56,8 +56,6 @@ st_global_get (const char *name)
 {
     st_oop sym;
 
-    st_assert (st_symbol_new (name) == st_symbol_new (name));
-
     sym = st_symbol_new (name);
 
     return st_dictionary_at (st_globals, sym);

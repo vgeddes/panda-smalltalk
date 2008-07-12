@@ -34,6 +34,7 @@
 #include "st-method.h"
 #include "st-symbol.h"
 #include "st-character.h"
+#include "st-dictionary.h"
 #include "st-unicode.h"
 
 #include <math.h>
@@ -44,301 +45,301 @@
 #include <unistd.h>
 
 
-#define ST_PRIMITIVE_FAIL(pr)			\
-    pr->success = false
+#define ST_PRIMITIVE_FAIL(cpu)			\
+    cpu->success = false
 
 
 static inline void
-set_success (st_processor *pr, bool success)
+set_success (struct st_cpu *cpu, bool success)
 {
-    pr->success = pr->success && success;
+    cpu->success = cpu->success && success;
 }
 
 static inline st_smi
-pop_integer (st_processor *pr)
+pop_integer (struct st_cpu *cpu)
 {
-    st_oop object = ST_STACK_POP (pr);
+    st_oop object = ST_STACK_POP (cpu);
   
     if (ST_LIKELY (st_object_is_smi (object)))
 	return st_smi_value (object);	
 
-    ST_PRIMITIVE_FAIL (pr);
+    ST_PRIMITIVE_FAIL (cpu);
     return 0;
 }
 
 static inline st_smi
-pop_integer32 (st_processor *pr)
+pop_integer32 (struct st_cpu *cpu)
 {
-    st_oop object = ST_STACK_POP (pr);
+    st_oop object = ST_STACK_POP (cpu);
  
     if (ST_LIKELY (st_object_is_smi (object)))
 	return st_smi_value (object);
     else if (st_object_class (object) == st_large_integer_class)
 	return (st_smi) mp_get_int (st_large_integer_value (object));
 
-    ST_PRIMITIVE_FAIL (pr);
+    ST_PRIMITIVE_FAIL (cpu);
     return 0;
 }
 
 static void
-SmallInteger_add (st_processor *pr)
+SmallInteger_add (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x + y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_sub (st_processor *pr)
+SmallInteger_sub (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x - y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_lt (st_processor *pr)
+SmallInteger_lt (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = (x < y) ? st_true : st_false;
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_gt (st_processor *pr)
+SmallInteger_gt (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = (x > y) ? st_true : st_false;
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_le (st_processor *pr)
+SmallInteger_le (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = (x <= y) ? st_true : st_false;
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_ge (st_processor *pr)
+SmallInteger_ge (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = (x >= y) ? st_true : st_false;
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
    
-   ST_STACK_UNPOP (pr, 2);
+   ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_eq (st_processor *pr)
+SmallInteger_eq (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = (x == y) ? st_true : st_false;
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_ne (st_processor *pr)
+SmallInteger_ne (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = (x != y) ? st_true : st_false;
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_mul (st_processor *pr)
+SmallInteger_mul (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x * y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 /* selector: / */
 static void
-SmallInteger_div (st_processor *pr)
+SmallInteger_div (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
     
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 
 	if (y != 0 && x % y == 0) {
 	    result = st_smi_new (x / y);
-	    ST_STACK_PUSH (pr, result);
+	    ST_STACK_PUSH (cpu, result);
 	    return;
 	} else {
-	    ST_PRIMITIVE_FAIL (pr);
+	    ST_PRIMITIVE_FAIL (cpu);
 	}
     }
     
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_intDiv (st_processor *pr)
+SmallInteger_intDiv (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 
 	if (y != 0) {
 	    result = st_smi_new (x / y);
-	    ST_STACK_PUSH (pr, result);
+	    ST_STACK_PUSH (cpu, result);
 	    return;
 	} else {
-	    ST_PRIMITIVE_FAIL (pr);
+	    ST_PRIMITIVE_FAIL (cpu);
 	}
     }
     
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_mod (st_processor *pr)
+SmallInteger_mod (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
     
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x % y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;	
     }
     
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_bitOr (st_processor *pr)
+SmallInteger_bitOr (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result = st_nil;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x | y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;	
     }
     
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_bitXor (st_processor *pr)
+SmallInteger_bitXor (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x ^ y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;	
     }
     
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_bitAnd (st_processor *pr)
+SmallInteger_bitAnd (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result = st_nil;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x & y);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;	
     }
     
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_bitShift (st_processor *pr)
+SmallInteger_bitShift (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (pr);
-    st_smi x = pop_integer (pr);
+    st_smi y = pop_integer (cpu);
+    st_smi x = pop_integer (cpu);
     st_oop result = st_nil;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	if (y > 0)
 	    result = st_smi_new (x << y);
 	else if (y < 0)
@@ -346,32 +347,32 @@ SmallInteger_bitShift (st_processor *pr)
 	else
 	    result = st_smi_new (x);
 
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;
     }
 
-    ST_STACK_UNPOP (pr, 2);
+    ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-SmallInteger_asFloat (st_processor *pr)
+SmallInteger_asFloat (struct st_cpu *cpu)
 {
-    st_smi x = pop_integer (pr);
+    st_smi x = pop_integer (cpu);
     st_oop result = st_nil;
 
-    if (ST_LIKELY (pr->success)) {
+    if (ST_LIKELY (cpu->success)) {
 	result = st_float_new ((double) x);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	return;	
     }
     
-    ST_STACK_UNPOP (pr, 1);
+    ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-SmallInteger_asLargeInteger (st_processor *pr)
+SmallInteger_asLargeInteger (struct st_cpu *cpu)
 {
-    st_smi receiver = pop_integer (pr);
+    st_smi receiver = pop_integer (cpu);
     mp_int value;
     st_oop result;
 
@@ -381,7 +382,7 @@ SmallInteger_asLargeInteger (st_processor *pr)
 	mp_neg (&value, &value);
     
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 #define VALUE(oop) (&(ST_LARGE_INTEGER(oop)->value))
@@ -407,79 +408,79 @@ OP_PROLOGUE                          \
 
 
 static inline st_oop
-pop_large_integer (st_processor *pr)
+pop_large_integer (struct st_cpu *cpu)
 {
-    st_oop object = ST_STACK_POP (pr);
+    st_oop object = ST_STACK_POP (cpu);
 
-    set_success (pr, st_object_class (object) == st_large_integer_class);
+    set_success (cpu, st_object_class (object) == st_large_integer_class);
     
     return object;
 }
 
 static void
-LargeInteger_add (st_processor *pr)
+LargeInteger_add (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr); 
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu); 
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     BINARY_OP (mp_add, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_sub (st_processor *pr)
+LargeInteger_sub (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_sub, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_mul (st_processor *pr)
+LargeInteger_mul (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_mul, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_div (st_processor *pr)
+LargeInteger_div (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     mp_int quotient, remainder;
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
@@ -495,277 +496,277 @@ LargeInteger_div (st_processor *pr)
 
     if (mp_cmp_d (&remainder, 0) == MP_EQ) {
 	result = st_large_integer_new (&quotient);
-	ST_STACK_PUSH (pr, result);
+	ST_STACK_PUSH (cpu, result);
 	mp_clear (&remainder);
     } else {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	mp_clear_multi (&quotient, &remainder, NULL);
     }
 }
 
 static void
-LargeInteger_intDiv (st_processor *pr)
+LargeInteger_intDiv (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_DIV_OP (mp_div, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_mod (st_processor *pr)
+LargeInteger_mod (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_mod, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_gcd (st_processor *pr)
+LargeInteger_gcd (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_gcd, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_lcm (st_processor *pr)
+LargeInteger_lcm (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_lcm, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_eq (st_processor *pr)
+LargeInteger_eq (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     int    relation;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
     result = (relation == MP_EQ) ? st_true : st_false;
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_ne (st_processor *pr)
+LargeInteger_ne (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     int    relation;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
     result = (relation == MP_EQ) ? st_false : st_true;
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_lt (st_processor *pr)
+LargeInteger_lt (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     int    relation;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     relation = mp_cmp (VALUE (a), VALUE (b));    
     result = (relation == MP_LT) ? st_true : st_false;
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_gt (st_processor *pr)
+LargeInteger_gt (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
 
     st_oop result;
     int    relation;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
     result = (relation == MP_GT) ? st_true : st_false;
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_le (st_processor *pr)
+LargeInteger_le (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     int    relation;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
     result = (relation == MP_LT || relation == MP_EQ) ? st_true : st_false;
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_ge (st_processor *pr)
+LargeInteger_ge (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     int    relation;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
     result = (relation == MP_GT || relation == MP_EQ) ? st_true : st_false;
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_squared (st_processor *pr)
+LargeInteger_squared (struct st_cpu *cpu)
 {
-    st_oop receiver = pop_large_integer (pr);
+    st_oop receiver = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 1);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 1);
 	return;
     }
     
     UNARY_OP (mp_sqr, receiver);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_bitOr (st_processor *pr)
+LargeInteger_bitOr (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_or, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_bitAnd (st_processor *pr)
+LargeInteger_bitAnd (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_and, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_bitXor (st_processor *pr)
+LargeInteger_bitXor (struct st_cpu *cpu)
 {
-    st_oop b = pop_large_integer (pr);
-    st_oop a = pop_large_integer (pr);
+    st_oop b = pop_large_integer (cpu);
+    st_oop a = pop_large_integer (cpu);
     st_oop result;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     BINARY_OP (mp_xor, a, b);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_bitShift (st_processor *pr)
+LargeInteger_bitShift (struct st_cpu *cpu)
 {
-    st_smi displacement = pop_integer32 (pr);
-    st_oop receiver     = pop_large_integer (pr);
+    st_smi displacement = pop_integer32 (cpu);
+    st_oop receiver     = pop_large_integer (cpu);
     st_oop result;
     mp_int value;
     
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
@@ -777,13 +778,13 @@ LargeInteger_bitShift (st_processor *pr)
 	mp_div_2d (VALUE (receiver), abs (displacement), &value, NULL);
 
     result = st_large_integer_new (&value);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-LargeInteger_asFloat (st_processor *pr)
+LargeInteger_asFloat (struct st_cpu *cpu)
 {
-    st_oop receiver = pop_large_integer (pr);
+    st_oop receiver = pop_large_integer (cpu);
     char  *string;
     double dblval;
 
@@ -792,35 +793,35 @@ LargeInteger_asFloat (st_processor *pr)
     dblval = strtod (string, NULL);
     st_free (string);
 
-    ST_STACK_PUSH (pr, st_float_new (dblval));
+    ST_STACK_PUSH (cpu, st_float_new (dblval));
 }
 
 static void
-LargeInteger_printString (st_processor *pr)
+LargeInteger_printString (struct st_cpu *cpu)
 {
-    st_smi radix = pop_integer (pr);
-    st_oop x     = pop_large_integer (pr);
+    st_smi radix = pop_integer (cpu);
+    st_oop x     = pop_large_integer (cpu);
     char   *string;
     st_oop result;
 
     if (radix < 2 || radix > 36)
-	set_success (pr, false);
+	set_success (cpu, false);
 
-    if (pr->success) {
+    if (cpu->success) {
 	string = st_large_integer_to_string (x, radix);
 	result = st_string_new (string);
     }
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-LargeInteger_hash (st_processor *pr)
+LargeInteger_hash (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     mp_int *value;
     st_smi result;
     const char *c;
@@ -841,186 +842,186 @@ LargeInteger_hash (st_processor *pr)
     if (result < 0)
 	result = -result;
 
-    ST_STACK_PUSH (pr, st_smi_new (result));
+    ST_STACK_PUSH (cpu, st_smi_new (result));
 }
 
 
 static inline st_oop
-pop_float (st_processor *pr)
+pop_float (struct st_cpu *cpu)
 {
-    st_oop object = ST_STACK_POP (pr);
+    st_oop object = ST_STACK_POP (cpu);
 
-    set_success (pr, st_object_class (object) == st_float_class);
+    set_success (cpu, st_object_class (object) == st_float_class);
     
     return object;
 }
 
 static void
-Float_add (st_processor *pr)
+Float_add (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = st_float_new (st_float_value (x) + st_float_value (y));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_sub (st_processor *pr)
+Float_sub (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = st_float_new (st_float_value (x) - st_float_value (y));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_lt (st_processor *pr)
+Float_lt (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = isless (st_float_value (x), st_float_value (y)) ? st_true : st_false;
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_gt (st_processor *pr)
+Float_gt (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = isgreater (st_float_value (x), st_float_value (y)) ? st_true : st_false;
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_le (st_processor *pr)
+Float_le (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = islessequal (st_float_value (x), st_float_value (y)) ? st_true : st_false;
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_ge (st_processor *pr)
+Float_ge (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = isgreaterequal (st_float_value (x), st_float_value (y)) ? st_true : st_false;
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_eq (st_processor *pr)
+Float_eq (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = (st_float_value (x) == st_float_value (y)) ? st_true : st_false;
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_ne (st_processor *pr)
+Float_ne (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = (st_float_value (x) != st_float_value (y)) ? st_true : st_false;
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_mul (st_processor *pr)
+Float_mul (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    if (pr->success)
+    if (cpu->success)
 	result = st_float_new (st_float_value (x) * st_float_value (y));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_div (st_processor *pr)
+Float_div (struct st_cpu *cpu)
 {
-    st_oop y = pop_float (pr);
-    st_oop x = pop_float (pr);
+    st_oop y = pop_float (cpu);
+    st_oop x = pop_float (cpu);
     st_oop result = st_nil;
 
-    set_success (pr, y != 0);
+    set_success (cpu, y != 0);
 
-    if (pr->success)
+    if (cpu->success)
 	result = st_float_new (st_float_value (x) / st_float_value (y));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-Float_sin (st_processor *pr)
+Float_sin (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1028,16 +1029,16 @@ Float_sin (st_processor *pr)
 
     result = st_float_new (sin (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_cos (st_processor *pr)
+Float_cos (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1045,16 +1046,16 @@ Float_cos (st_processor *pr)
 
     result = st_float_new (cos (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_tan (st_processor *pr)
+Float_tan (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1062,16 +1063,16 @@ Float_tan (st_processor *pr)
 
     result = st_float_new (tan (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_arcSin (st_processor *pr)
+Float_arcSin (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1079,16 +1080,16 @@ Float_arcSin (st_processor *pr)
 
     result = st_float_new (asin (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_arcCos (st_processor *pr)
+Float_arcCos (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1096,16 +1097,16 @@ Float_arcCos (st_processor *pr)
 
     result = st_float_new (acos (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_arcTan (st_processor *pr)
+Float_arcTan (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1113,16 +1114,16 @@ Float_arcTan (st_processor *pr)
 
     result = st_float_new (atan (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_sqrt (st_processor *pr)
+Float_sqrt (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1130,16 +1131,16 @@ Float_sqrt (st_processor *pr)
 
     result = st_float_new (sqrt (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_log (st_processor *pr)
+Float_log (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1147,16 +1148,16 @@ Float_log (st_processor *pr)
 
     result = st_float_new (log10 (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_ln (st_processor *pr)
+Float_ln (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1164,16 +1165,16 @@ Float_ln (st_processor *pr)
 
     result = st_float_new (log (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_exp (st_processor *pr)
+Float_exp (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
     double value;
 
@@ -1181,27 +1182,27 @@ Float_exp (st_processor *pr)
 
     result = st_float_new (exp (value));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, result);
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, result);
     else
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
 }
 
 static void
-Float_truncated (st_processor *pr)
+Float_truncated (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_smi result;
 
     result = (st_smi) trunc (st_float_value (receiver));
 
-    ST_STACK_PUSH (pr, st_smi_new (result));
+    ST_STACK_PUSH (cpu, st_smi_new (result));
 }
 
 static void
-Float_fractionPart (st_processor *pr)
+Float_fractionPart (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     double frac_part, int_part;
     st_oop result;
 
@@ -1209,26 +1210,26 @@ Float_fractionPart (st_processor *pr)
 
     result = st_float_new (frac_part);
 
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-Float_integerPart (st_processor *pr)
+Float_integerPart (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     double int_part;
     st_oop result;
 
     modf (st_float_value (receiver), &int_part);
 
     result = st_smi_new ((st_smi) int_part);
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-Float_hash (st_processor *pr)
+Float_hash (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     unsigned int hash = 0;
     st_smi result;
     double value;
@@ -1249,15 +1250,15 @@ Float_hash (st_processor *pr)
     if (result < 0)
 	result = -result;
 
-    ST_STACK_PUSH (pr, st_smi_new (result));
+    ST_STACK_PUSH (cpu, st_smi_new (result));
 }
 
 static void
-print_backtrace (st_processor *pr)
+print_backtrace (struct st_cpu *cpu)
 {
     st_oop context;
     
-    context = pr->context;
+    context = cpu->context;
 
     while (context != st_nil) {
 
@@ -1294,38 +1295,38 @@ print_backtrace (st_processor *pr)
 }
 
 static void
-Object_error (st_processor *pr)
+Object_error (struct st_cpu *cpu)
 {
     st_oop message;
 
-    message = ST_STACK_POP (pr);
+    message = ST_STACK_POP (cpu);
 
     printf ("= An error occurred during program execution\n");
     printf ("= %s\n", st_byte_array_bytes (message));
 
     printf ("\nTraceback:\n");
-    print_backtrace (pr); 
+    print_backtrace (cpu); 
 
     exit (1);
 }
 
 static void
-Object_class (st_processor *pr)
+Object_class (struct st_cpu *cpu)
 {
     st_oop object;
 
-    object = ST_STACK_POP (pr);
+    object = ST_STACK_POP (cpu);
 
-    ST_STACK_PUSH (pr, st_object_class (object));
+    ST_STACK_PUSH (cpu, st_object_class (object));
 }
 
 static void
-Object_identityHash (st_processor *pr)
+Object_identityHash (struct st_cpu *cpu)
 {
     st_oop object;
     st_oop result;
     
-    object = ST_STACK_POP (pr);
+    object = ST_STACK_POP (cpu);
     
     if (st_object_is_heap (object))
 	result = ST_OBJECT_HASH (object);
@@ -1334,78 +1335,78 @@ Object_identityHash (st_processor *pr)
     else
 	result = st_smi_new (st_character_hash (object));
     
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-Object_copy (st_processor *pr)
+Object_copy (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_oop copy;
     st_oop class;
     st_smi size;
 
-    (void) ST_STACK_POP (pr);
+    (void) ST_STACK_POP (cpu);
 
-    if (!st_object_is_heap (pr->message_receiver)) {
-	ST_STACK_PUSH (pr, pr->message_receiver);
+    if (!st_object_is_heap (cpu->message_receiver)) {
+	ST_STACK_PUSH (cpu, cpu->message_receiver);
 	return;
     }
 
-    switch (st_object_format (pr->message_receiver)) {
+    switch (st_object_format (cpu->message_receiver)) {
 
     case ST_FORMAT_OBJECT:
     {
-	class = ST_OBJECT_CLASS (pr->message_receiver);
+	class = ST_OBJECT_CLASS (cpu->message_receiver);
 	size = st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class));
 	copy = st_object_new (class);
 	st_oops_copy (ST_OBJECT_FIELDS (copy),
-		      ST_OBJECT_FIELDS (pr->message_receiver),
+		      ST_OBJECT_FIELDS (cpu->message_receiver),
 		      size);
 	break;
 
     }
     case ST_FORMAT_ARRAY:
     {
-	size = st_smi_value (ST_ARRAYED_OBJECT (pr->message_receiver)->size);
-	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
+	size = st_smi_value (ST_ARRAYED_OBJECT (cpu->message_receiver)->size);
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (cpu->message_receiver), size);
 	st_oops_copy (ST_ARRAY (copy)->elements,
-		      ST_ARRAY (pr->message_receiver)->elements,
+		      ST_ARRAY (cpu->message_receiver)->elements,
 		      size);
 	break;
     }
     case ST_FORMAT_BYTE_ARRAY:
     {
-	size = st_smi_value (ST_ARRAYED_OBJECT (pr->message_receiver)->size);
-	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
+	size = st_smi_value (ST_ARRAYED_OBJECT (cpu->message_receiver)->size);
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (cpu->message_receiver), size);
 	memcpy (st_byte_array_bytes (copy),
-		st_byte_array_bytes (pr->message_receiver),
+		st_byte_array_bytes (cpu->message_receiver),
 		size);
 	break;
     }
     case ST_FORMAT_FLOAT_ARRAY:
     {
-	size = st_smi_value (st_arrayed_object_size (pr->message_receiver));
-	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
+	size = st_smi_value (st_arrayed_object_size (cpu->message_receiver));
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (cpu->message_receiver), size);
 	memcpy (st_float_array_elements (copy),
-		st_float_array_elements (pr->message_receiver),
+		st_float_array_elements (cpu->message_receiver),
 		sizeof (double) * size);
 
 	break;
     }
     case ST_FORMAT_WORD_ARRAY:
     {
-	size = st_smi_value (st_arrayed_object_size (pr->message_receiver));
-	copy = st_object_new_arrayed (ST_OBJECT_CLASS (pr->message_receiver), size);
+	size = st_smi_value (st_arrayed_object_size (cpu->message_receiver));
+	copy = st_object_new_arrayed (ST_OBJECT_CLASS (cpu->message_receiver), size);
 	memcpy (st_word_array_elements (copy),
-		st_word_array_elements (pr->message_receiver),
+		st_word_array_elements (cpu->message_receiver),
 		sizeof (st_uint) * size);
 	break;
     }
     case ST_FORMAT_FLOAT:
     {
 	copy = st_object_new (st_float_class);
-	st_float_set_value (copy, st_float_value (pr->message_receiver));
+	st_float_set_value (copy, st_float_value (cpu->message_receiver));
 	break;
     }
     case ST_FORMAT_LARGE_INTEGER:
@@ -1416,7 +1417,7 @@ Object_copy (st_processor *pr)
 	copy = st_large_integer_new (NULL);
 	
 	result = mp_init_copy (st_large_integer_value (copy),
-			       st_large_integer_value (pr->message_receiver));
+			       st_large_integer_value (cpu->message_receiver));
 	if (result != MP_OKAY)
 	    st_assert_not_reached ();
 	break;
@@ -1428,52 +1429,70 @@ Object_copy (st_processor *pr)
 	st_assert_not_reached ();
     }
 
-    ST_STACK_PUSH (pr, copy);
+    ST_STACK_PUSH (cpu, copy);
 }
 
 static void
-Object_equivalent (st_processor *pr)
+Object_equivalent (struct st_cpu *cpu)
 {
-    st_oop y = ST_STACK_POP (pr);
-    st_oop x = ST_STACK_POP (pr);
+    st_oop y = ST_STACK_POP (cpu);
+    st_oop x = ST_STACK_POP (cpu);
     
-    ST_STACK_PUSH (pr, ((x == y) ? st_true : st_false));
+    ST_STACK_PUSH (cpu, ((x == y) ? st_true : st_false));
+}
+
+static st_oop
+lookup_method (st_oop class, st_oop selector)
+{
+    st_oop method;
+    st_oop parent = class;
+    st_uint index;
+
+    while (parent != st_nil) {
+	method = st_dictionary_at (ST_BEHAVIOR_METHOD_DICTIONARY (parent), selector);
+	if (method != st_nil)
+	    return method;
+	parent = ST_BEHAVIOR_SUPERCLASS (parent);
+    }
+
+    return 0;
 }
 
 static void
-Object_perform (st_processor *pr)
+Object_perform (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_oop selector;
     st_oop method;
     st_uint selector_index;
 
-    selector = pr->message_selector;
-    pr->message_selector = pr->stack[pr_sp - pr->message_argcount];
-    receiver = pr->message_receiver;
+    selector = cpu->message_selector;
+    cpu->message_selector = cpu->stack[cpu->sp - cpu->message_argcount];
+    receiver = cpu->message_receiver;
 
-    set_success (pr, st_object_is_symbol (pr->message_selector));
-    pr->new_method = st_processor_lookup_method (pr, st_object_class (receiver));
-    set_success (pr, st_method_get_arg_count (method) == (pr->message_argcount - 1));
+    set_success (cpu, st_object_is_symbol (cpu->message_selector));
+    method = lookup_method (st_object_class (receiver), cpu->message_selector);
+    set_success (cpu, st_method_get_arg_count (method) == (cpu->message_argcount - 1));
 
-    if (pr->success) {
-	selector_index = pr_sp - pr->message_argcount;
+    if (cpu->success) {
+	selector_index = cpu->sp - cpu->message_argcount;
 
-	st_oops_move (pr->stack + selector_index,
-		      pr->stack + selector_index + 1,
-		      pr->message_argcount - 1);
+	st_oops_move (cpu->stack + selector_index,
+		      cpu->stack + selector_index + 1,
+		      cpu->message_argcount - 1);
 
-	pr_sp -= 1;
-	pr->message_argcount -= 1;
-	st_processor_execute_method (pr);
+	cpu->sp -= 1;
+	cpu->message_argcount -= 1;
+	cpu->new_method = method;
+	st_cpu_execute_method ();
 
     } else {
-	pr->message_selector = selector;
+	cpu->message_selector = selector;
     }
 }
 
 static void
-Object_perform_withArguments (st_processor *pr)
+Object_perform_withArguments (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_oop selector;
@@ -1481,89 +1500,93 @@ Object_perform_withArguments (st_processor *pr)
     st_oop array;
     st_smi array_size;
 
-    array = ST_STACK_POP (pr);
+    array = ST_STACK_POP (cpu);
 
-    set_success (pr, st_object_class (array) == st_array_class);
+    set_success (cpu, st_object_format (array) == ST_FORMAT_ARRAY);
 
-    if (st_object_class (pr->context) == st_block_context_class)
-	method = ST_METHOD_CONTEXT_METHOD (ST_BLOCK_CONTEXT_HOME (pr->context));
+    if (ST_OBJECT_CLASS (cpu->context) == st_block_context_class)
+	method = ST_METHOD_CONTEXT_METHOD (ST_BLOCK_CONTEXT_HOME (cpu->context));
     else
-	method = ST_METHOD_CONTEXT_METHOD (pr->context);
+	method = ST_METHOD_CONTEXT_METHOD (cpu->context);
 
     array_size = st_smi_value (st_arrayed_object_size (array));
-    set_success (pr, (pr_sp + array_size - 1) < (st_method_get_large_context (method) ? 32 : 12));
+    set_success (cpu, (cpu->sp + array_size - 1) < (st_method_get_large_context (method) ? 32 : 12));
 
-    if (pr->success) {
+    if (cpu->success) {
 	
-	selector = pr->message_selector;
-	pr->message_selector = ST_STACK_POP (pr);
-	receiver = ST_STACK_PEEK (pr);
-	pr->message_argcount = array_size;
+	selector = cpu->message_selector;
+	cpu->message_selector = ST_STACK_POP (cpu);
+	receiver = ST_STACK_PEEK (cpu);
+	cpu->message_argcount = array_size;
 
-	set_success (pr, st_object_is_symbol (pr->message_selector));
+	set_success (cpu, st_object_is_symbol (cpu->message_selector));
     
-	st_oops_copy (pr->stack + pr_sp,
+	st_oops_copy (cpu->stack + cpu->sp,
 		      st_array_elements (array),
 		      array_size);
 
-	pr_sp += array_size;
+	cpu->sp += array_size;
 
-	pr->new_method = st_processor_lookup_method (pr, st_object_class (receiver));
-	set_success (pr, st_method_get_arg_count (pr->new_method) == array_size);
+	method = lookup_method (st_object_class (receiver), cpu->message_selector);
+	set_success (cpu, st_method_get_arg_count (method) == array_size);
     
-	if (pr->success) {
-	    st_processor_execute_method (pr);
+	if (cpu->success) {
+	    cpu->new_method = method;
+	    st_cpu_execute_method ();
 	} else {
-	    pr_sp -= pr->message_argcount;
-	    ST_STACK_PUSH (pr, pr->message_selector);
-	    ST_STACK_PUSH (pr, array);
-	    pr->message_argcount = 2;
-	    pr->message_selector = selector;
+	    cpu->sp -= cpu->message_argcount;
+	    ST_STACK_PUSH (cpu, cpu->message_selector);
+	    ST_STACK_PUSH (cpu, array);
+	    cpu->message_argcount = 2;
+	    cpu->message_selector = selector;
 	}
 
     } else {
-	ST_STACK_UNPOP (pr, 1);
+	ST_STACK_UNPOP (cpu, 1);
     }
 }
 
 static void
-Behavior_new (st_processor *pr)
+Behavior_new (struct st_cpu *cpu)
 {
     st_oop class;
     st_oop instance;
     st_smi format;
 
-    class = ST_STACK_POP (pr);
+    class = ST_STACK_POP (cpu);
 
     switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
     case ST_FORMAT_OBJECT:
 	instance =  st_object_allocate (class);
+	break;
     case ST_FORMAT_CONTEXT:
 	/* not implemented */
 	abort ();
 	break;
     case ST_FORMAT_FLOAT:
 	instance =  st_float_allocate (class);
+	break;
     case ST_FORMAT_LARGE_INTEGER:
 	instance = st_large_integer_allocate (class, NULL);
+	break;
     default:
 	/* should not reach */
 	abort ();
     }
 
-    ST_STACK_PUSH (pr, instance);
+    ST_STACK_PUSH (cpu, instance);
 }
 
 static void
-Behavior_newSize (st_processor *pr)
+Behavior_newSize (struct st_cpu *cpu)
 {
     st_oop class;
     st_smi size;
     st_smi format;
     st_oop instance;
 
-    size = pop_integer32 (pr);
-    class = ST_STACK_POP (pr);
+    size = pop_integer32 (cpu);
+    class = ST_STACK_POP (cpu);
 
     switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
     case ST_FORMAT_ARRAY:
@@ -1587,382 +1610,382 @@ Behavior_newSize (st_processor *pr)
 	abort ();
     }
 
-    ST_STACK_PUSH (pr, instance);
+    ST_STACK_PUSH (cpu, instance);
 }
 
 static void
-SequenceableCollection_size (st_processor *pr)
+SequenceableCollection_size (struct st_cpu *cpu)
 {
     st_oop object;
 
-    object = ST_STACK_POP (pr);
+    object = ST_STACK_POP (cpu);
 
-    ST_STACK_PUSH (pr, st_arrayed_object_size (object));
+    ST_STACK_PUSH (cpu, st_arrayed_object_size (object));
 }
 
 static void
-Array_at (st_processor *pr)
+Array_at (struct st_cpu *cpu)
 {
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
     
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
-    ST_STACK_PUSH (pr, st_array_at (receiver, index));
+    ST_STACK_PUSH (cpu, st_array_at (receiver, index));
 }
 
 static void
-Array_at_put (st_processor *pr)
+Array_at_put (struct st_cpu *cpu)
 {
-    st_oop object   = ST_STACK_POP (pr);
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop object   = ST_STACK_POP (cpu);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 3);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
     
     st_array_at_put (receiver, index, object);	    
-    ST_STACK_PUSH (pr, object);
+    ST_STACK_PUSH (cpu, object);
 }
 
 static void
-ByteArray_at (st_processor *pr)
+ByteArray_at (struct st_cpu *cpu)
 {
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
 	
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     result = st_smi_new (st_byte_array_at (receiver, index));  
     
-    ST_STACK_PUSH (pr, result);
+    ST_STACK_PUSH (cpu, result);
 }
 
 static void
-ByteArray_at_put (st_processor *pr)
+ByteArray_at_put (struct st_cpu *cpu)
 {
-    st_smi byte     = pop_integer (pr);
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_smi byte     = pop_integer (cpu);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
 
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 3);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 3);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
     
     st_byte_array_at_put (receiver, index, byte);	    
     
-    ST_STACK_PUSH (pr, st_smi_new (byte));
+    ST_STACK_PUSH (cpu, st_smi_new (byte));
 }
 
 static void
-ByteArray_hash (st_processor *pr)
+ByteArray_hash (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_uint  hash;
 
     hash = st_byte_array_hash (receiver);
 
-    ST_STACK_PUSH (pr, st_smi_new (hash));   
+    ST_STACK_PUSH (cpu, st_smi_new (hash));   
 }
 
 static void
-ByteString_at (st_processor *pr)
+ByteString_at (struct st_cpu *cpu)
 {
-    st_smi  index    = pop_integer32 (pr);
-    st_oop  receiver = ST_STACK_POP (pr);
+    st_smi  index    = pop_integer32 (cpu);
+    st_oop  receiver = ST_STACK_POP (cpu);
     st_oop  character;
     char   *charptr;
 
-    if (ST_UNLIKELY (!pr->success)) {
-	ST_STACK_UNPOP (pr, 2);
+    if (ST_UNLIKELY (!cpu->success)) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     character = st_character_new (st_byte_array_at (receiver, index));
 
-    ST_STACK_PUSH (pr, character);
+    ST_STACK_PUSH (cpu, character);
 }
 
 static void
-ByteString_at_put (st_processor *pr)
+ByteString_at_put (struct st_cpu *cpu)
 {
-    st_oop character = ST_STACK_POP (pr);
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop character = ST_STACK_POP (cpu);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
 	
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 3);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
   
-    set_success (pr, st_object_class (character) == st_character_class);
+    set_success (cpu, st_object_class (character) == st_character_class);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 3);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 
     st_byte_array_at_put (receiver, index, (st_uchar) st_character_value (character));
 
-    ST_STACK_PUSH (pr, character);
+    ST_STACK_PUSH (cpu, character);
 }
 
 
 static void
-ByteString_size (st_processor *pr)
+ByteString_size (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_uint size;
 
-    receiver = ST_STACK_POP (pr);
+    receiver = ST_STACK_POP (cpu);
 
     size = st_arrayed_object_size (receiver);
 
     /* TODO: allow size to go into a LargeInteger on overflow */
-    ST_STACK_PUSH (pr, size);
+    ST_STACK_PUSH (cpu, size);
 }
 
 static void
-ByteString_compare (st_processor *pr)
+ByteString_compare (struct st_cpu *cpu)
 {
-    st_oop argument = ST_STACK_POP (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop argument = ST_STACK_POP (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
     int order;
 
     if (st_object_format (argument) != ST_FORMAT_BYTE_ARRAY)
-	set_success (pr, false);
+	set_success (cpu, false);
 
-    if (pr->success)
+    if (cpu->success)
 	order = strcmp ((const char *) st_byte_array_bytes (receiver),
 			(const char *) st_byte_array_bytes (argument));
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, st_smi_new (order));
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, st_smi_new (order));
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-WideString_at (st_processor *pr)
+WideString_at (struct st_cpu *cpu)
 {
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_uchar *bytes;
     st_unichar c;
 	
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     if (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     c = st_word_array_at (receiver, index);
 
-    ST_STACK_PUSH (pr, st_character_new (c));
+    ST_STACK_PUSH (cpu, st_character_new (c));
 }
 
 static void
-WideString_at_put (st_processor *pr)
+WideString_at_put (struct st_cpu *cpu)
 {
-    st_oop character = ST_STACK_POP (pr);
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop character = ST_STACK_POP (cpu);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
     st_uchar *bytes;
     st_unichar c;	
 
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 3);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
   
-    set_success (pr, st_object_class (character) == st_character_class);
+    set_success (cpu, st_object_class (character) == st_character_class);
 
     if (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 3);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 
     st_word_array_at_put (receiver, index, character);
 
-    ST_STACK_PUSH (pr, character);
+    ST_STACK_PUSH (cpu, character);
 }
 
 static void
-WordArray_at (st_processor *pr)
+WordArray_at (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_smi index;
     st_uint  element;
 
-    index = pop_integer32 (pr);
-    receiver = ST_STACK_POP (pr);
+    index = pop_integer32 (cpu);
+    receiver = ST_STACK_POP (cpu);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
     
     element = st_word_array_at (receiver, index);
 
-    ST_STACK_PUSH (pr, st_smi_new (element));
+    ST_STACK_PUSH (cpu, st_smi_new (element));
 }
 
 static void
-WordArray_at_put (st_processor *pr)
+WordArray_at_put (struct st_cpu *cpu)
 {
-    st_smi value    = pop_integer (pr);
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_smi value    = pop_integer (cpu);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
 	
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 3);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 3);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 
     st_word_array_at_put (receiver, index, value);
 
-    ST_STACK_PUSH (pr, st_smi_new (value));
+    ST_STACK_PUSH (cpu, st_smi_new (value));
 }
 
 static void
-FloatArray_at (st_processor *pr)
+FloatArray_at (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_smi index;
     double  element;
 
-    index = pop_integer32 (pr);
-    receiver = ST_STACK_POP (pr);
+    index = pop_integer32 (cpu);
+    receiver = ST_STACK_POP (cpu);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 2);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     element = st_float_array_at (receiver, index);
-    ST_STACK_PUSH (pr, st_float_new (element));
+    ST_STACK_PUSH (cpu, st_float_new (element));
 }
 
 static void
-FloatArray_at_put (st_processor *pr)
+FloatArray_at_put (struct st_cpu *cpu)
 {
-    st_oop flt      = ST_STACK_POP (pr);
-    st_smi index    = pop_integer32 (pr);
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop flt      = ST_STACK_POP (cpu);
+    st_smi index    = pop_integer32 (cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
 
-    set_success (pr, st_object_is_heap (flt) &&
+    set_success (cpu, st_object_is_heap (flt) &&
 		 st_object_format (flt) == ST_FORMAT_FLOAT);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
-	set_success (pr, false);
-	ST_STACK_UNPOP (pr, 3);
+	set_success (cpu, false);
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 	
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 3);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 3);
 	return;
     }
 
     st_float_array_at_put (receiver, index, st_float_value (flt));
-    ST_STACK_PUSH (pr, flt);
+    ST_STACK_PUSH (cpu, flt);
 }
 
 static inline void
-activate_block_context (st_processor *pr)
+activate_block_context (struct st_cpu *cpu)
 {
     st_oop  block;
     st_smi  argcount;
 
-    block = pr->message_receiver;
+    block = cpu->message_receiver;
     argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
-    if (argcount != pr->message_argcount) {
-	pr->success = false;
+    if (argcount != cpu->message_argcount) {
+	cpu->success = false;
 	return;
     }
 
     st_oops_copy (ST_BLOCK_CONTEXT_STACK (block),
-		  pr->stack + pr_sp - argcount,
+		  cpu->stack + cpu->sp - argcount,
 		  argcount);
 
-    pr_sp -= pr->message_argcount + 1;
+    cpu->sp -= cpu->message_argcount + 1;
     
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (block) = pr->context;
+    ST_BLOCK_CONTEXT_CALLER (block) = cpu->context;
 
-    st_processor_set_active_context (pr, block);
+    st_cpu_set_active_context (block);
 }
 
 static void
-BlockContext_value (st_processor *pr)
+BlockContext_value (struct st_cpu *cpu)
 {
-    activate_block_context (pr);
+    activate_block_context (cpu);
 }
 
 static void
-BlockContext_valueWithArguments (st_processor *pr)
+BlockContext_valueWithArguments (struct st_cpu *cpu)
 {
     st_oop block;
     st_oop values;
     st_smi argcount;
 
-    block  = pr->message_receiver;
-    values = ST_STACK_PEEK (pr);
+    block  = cpu->message_receiver;
+    values = ST_STACK_PEEK (cpu);
 
     if (st_object_class (values) != st_array_class) {
-	set_success (pr, false);
+	set_success (cpu, false);
 	return;
     }
 
     argcount = st_smi_value (ST_BLOCK_CONTEXT_ARGCOUNT (block));
     if (argcount != st_smi_value (st_arrayed_object_size (values))) {
-	set_success (pr, false);
+	set_success (cpu, false);
 	return;
     }
     
@@ -1970,46 +1993,46 @@ BlockContext_valueWithArguments (st_processor *pr)
 		  ST_ARRAY (values)->elements,
 		  argcount);
     
-    pr_sp -= pr->message_argcount + 1;
+    cpu->sp -= cpu->message_argcount + 1;
 
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (block) = pr->context;
+    ST_BLOCK_CONTEXT_CALLER (block) = cpu->context;
 
-    st_processor_set_active_context (pr, block);
+    st_cpu_set_active_context (block);
 }
 
 static void
-UndefinedObject_exitWithResult (st_processor *pr)
+UndefinedObject_exitWithResult (struct st_cpu *cpu)
 {
-    longjmp (pr->main_loop, 0);
+    longjmp (cpu->main_loop, 0);
 }
 
 static void
-Character_value (st_processor *pr)
+Character_value (struct st_cpu *cpu)
 {
-    st_oop receiver = ST_STACK_POP (pr);
+    st_oop receiver = ST_STACK_POP (cpu);
 
-    ST_STACK_PUSH (pr, st_smi_new (st_character_value (receiver)));
+    ST_STACK_PUSH (cpu, st_smi_new (st_character_value (receiver)));
 }
 
 static void
-Character_characterFor (st_processor *pr)
+Character_characterFor (struct st_cpu *cpu)
 {
     st_oop receiver;
     st_smi value;
 
-    value = pop_integer (pr);
-    receiver = ST_STACK_POP (pr);
+    value = pop_integer (cpu);
+    receiver = ST_STACK_POP (cpu);
 
-    if (pr->success)
-	ST_STACK_PUSH (pr, st_character_new (value));
+    if (cpu->success)
+	ST_STACK_PUSH (cpu, st_character_new (value));
     else
-	ST_STACK_UNPOP (pr, 2);
+	ST_STACK_UNPOP (cpu, 2);
 }
 
 static void
-FileStream_open (st_processor *pr)
+FileStream_open (struct st_cpu *cpu)
 {
     int fd;
     int mode;
@@ -2017,16 +2040,16 @@ FileStream_open (st_processor *pr)
     st_oop mode_oop;
     char *str;
 
-    mode_oop = ST_STACK_POP (pr);
-    name =  ST_STACK_POP (pr);
+    mode_oop = ST_STACK_POP (cpu);
+    name =  ST_STACK_POP (cpu);
 
     if (st_object_class (mode_oop) != st_symbol_class) {
-	ST_PRIMITIVE_FAIL (pr);
+	ST_PRIMITIVE_FAIL (cpu);
 	return;
     }
 
     if (st_object_class (name) != st_string_class) {
-	ST_PRIMITIVE_FAIL (pr);
+	ST_PRIMITIVE_FAIL (cpu);
 	return;
     }
     
@@ -2038,83 +2061,83 @@ FileStream_open (st_processor *pr)
     else if (streq (str, "readWrite"))
 	mode = O_RDWR;
     else {
-	ST_PRIMITIVE_FAIL (pr);
+	ST_PRIMITIVE_FAIL (cpu);
 	return;
     }
 
     str = st_byte_array_bytes (name);
     fd = open (str, O_CREAT | mode, 0644);
-    ST_STACK_PUSH (pr, st_smi_new (fd));
+    ST_STACK_PUSH (cpu, st_smi_new (fd));
 }
 
 static void
-FileStream_close (st_processor *pr)
+FileStream_close (struct st_cpu *cpu)
 {
     int fd;
     int byte;
 
-    fd = pop_integer (pr);
-    (void) ST_STACK_POP (pr);
+    fd = pop_integer (cpu);
+    (void) ST_STACK_POP (cpu);
 
-    if (!pr->success) {
-	ST_STACK_UNPOP (pr, 2);
+    if (!cpu->success) {
+	ST_STACK_UNPOP (cpu, 2);
 	return;
     }
 
     if (close (fd) != 0) {
-	ST_STACK_UNPOP (pr, 2);
-	ST_PRIMITIVE_FAIL (pr);
+	ST_STACK_UNPOP (cpu, 2);
+	ST_PRIMITIVE_FAIL (cpu);
     }
 
-    ST_STACK_PUSH (pr, pr->message_receiver);
+    ST_STACK_PUSH (cpu, cpu->message_receiver);
 }
 
 static void
-FileStream_write (st_processor *pr)
+FileStream_write (struct st_cpu *cpu)
 {
     int fd;
     int byte;
 
-    byte = pop_integer (pr);
-    fd = pop_integer (pr);
-    (void) ST_STACK_POP (pr);
+    byte = pop_integer (cpu);
+    fd = pop_integer (cpu);
+    (void) ST_STACK_POP (cpu);
 
-    if (!pr->success) {
-	ST_PRIMITIVE_FAIL (pr);
-	ST_STACK_UNPOP (pr, 3);	
+    if (!cpu->success) {
+	ST_PRIMITIVE_FAIL (cpu);
+	ST_STACK_UNPOP (cpu, 3);	
     }
 
     if (write (fd, &byte, 1) < 0) {
-	ST_PRIMITIVE_FAIL (pr);
-	ST_STACK_UNPOP (pr, 3);	
+	ST_PRIMITIVE_FAIL (cpu);
+	ST_STACK_UNPOP (cpu, 3);	
     }
 
-    ST_STACK_PUSH (pr, pr->message_receiver);
+    ST_STACK_PUSH (cpu, cpu->message_receiver);
 }
 
 static void
-FileStream_read (st_processor *pr)
+FileStream_read (struct st_cpu *cpu)
 {
 
 }
 
 static void
-FileStream_writeN (st_processor *pr)
+FileStream_writeN (struct st_cpu *cpu)
 {
     st_oop array;
     int fd;
     st_uint size;
     char *buf;
 
-    array = ST_STACK_POP (pr);
-    fd = pop_integer (pr);
+    array = ST_STACK_POP (cpu);
+    fd = pop_integer (cpu);
 
     if (st_object_format (array) != ST_FORMAT_BYTE_ARRAY) {
-	ST_PRIMITIVE_FAIL (pr);
+	ST_PRIMITIVE_FAIL (cpu);
 	return;
     }
 
-    if (!pr->success)
+    if (!cpu->success)
 	return;
 
     size = st_smi_value (st_arrayed_object_size (array));
@@ -2122,23 +2145,23 @@ FileStream_writeN (st_processor *pr)
 
     write (fd, buf, size);
 
-    ST_STACK_PUSH (pr, st_true);
+    ST_STACK_PUSH (cpu, st_true);
 }
 
 static void
-FileStream_readN (st_processor *pr)
+FileStream_readN (struct st_cpu *cpu)
 {
 
 }
 
 static void
-FileStream_position (st_processor *pr)
+FileStream_position (struct st_cpu *cpu)
 {
 
 }
 
 static void
-FileStream_setPosition (st_processor *pr)
+FileStream_setPosition (struct st_cpu *cpu)
 {
 
 }

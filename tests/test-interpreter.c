@@ -23,7 +23,6 @@ main (int argc, char *argv[])
     char buffer[BUF_SIZE];
     char *string;
     st_oop value;
-    st_processor processor;
     char c;
     int i = 0;
 
@@ -43,14 +42,14 @@ main (int argc, char *argv[])
 	return 1;
     }
 
-    st_processor_initialize (&processor);
+    st_cpu_initialize ();
 
     struct timeval before, after;
     double elapsed;
 
     gettimeofday (&before, NULL);
 
-    st_processor_main (&processor);
+    st_cpu_main ();
 
     gettimeofday (&after, NULL);
 
@@ -58,7 +57,7 @@ main (int argc, char *argv[])
 	(after.tv_usec - before.tv_usec) / 1.e6;
     
     /* inspect the returned value on top of the stack */
-    value = ST_STACK_PEEK ((&processor));
+    value = ST_STACK_PEEK ((&__cpu));
 
     printf ("result: %s\n", st_object_printString (value));
     printf ("time %.9f seconds\n", elapsed);

@@ -21,7 +21,7 @@ typedef struct st_method_cache
 
 } st_method_cache;
 
-typedef struct st_processor {
+struct st_cpu {
 
     st_oop  context;
     st_oop  receiver;
@@ -34,35 +34,35 @@ typedef struct st_processor {
 
     st_oop *stack;
 
+    st_oop  lookup_class;
+
     st_oop  message_receiver;
     st_oop  message_selector;
     int     message_argcount;
     
     st_oop  new_method;
-
     bool    success;
+
+    st_uint ip;
+    st_uint sp;
 
     jmp_buf main_loop;
 
     st_method_cache method_cache[ST_METHOD_CACHE_SIZE];
 
-} st_processor;
+} __cpu;
 
-extern const st_uchar *pr_ip;
-extern       st_uint   pr_sp;
+#define ST_STACK_POP(cpu)          (cpu->stack[--cpu->sp])
+#define ST_STACK_PUSH(cpu, oop)    (cpu->stack[cpu->sp++] = oop)
+#define ST_STACK_PEEK(cpu)         (cpu->stack[cpu->sp-1])
+#define ST_STACK_UNPOP(cpu, count) (cpu->sp += count)
 
-#define ST_STACK_POP(processor)          ((processor)->stack[--pr_sp])
-#define ST_STACK_PUSH(processor, oop)    ((processor)->stack[pr_sp++] = oop)
-#define ST_STACK_PEEK(processor)         ((processor)->stack[pr_sp-1])
-#define ST_STACK_UNPOP(processor, count) (pr_sp += count)
+void   st_cpu_main               (void);
+void   st_cpu_initialize         (void);
+void   st_cpu_set_active_context (st_oop context);
+void   st_cpu_execute_method     (void);
+st_oop st_cpu_lookup_method      (st_oop class);
 
-void   st_processor_main               (st_processor *processor);
-void   st_processor_initialize         (st_processor *processor);
-void   st_processor_set_active_context (st_processor *processor, st_oop context);
-void   st_processor_send_selector      (st_processor *processor, st_oop selector, st_uint argcount);
-void   st_processor_execute_method     (st_processor *processor);
-st_oop st_processor_lookup_method      (st_processor *processor, st_oop class);
-
-void   st_processor_clear_caches (st_processor *processor);
+void   st_cpu_clear_caches (void);
 
 #endif /* __ST_INTERPRETER_H__ */

@@ -1588,20 +1588,20 @@ print_bytecodes (st_oop literals, st_uchar *codes, int len)
 	case JUMP:
 	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
 
-	    short offset = ((ip[1] << 8) | ip[2]);
+	    short offset = *((short *) (ip + 1));
 	    printf ("jump: %li", (offset >= 0 ? 3 : 0) + (ip - codes) + offset);
 
 	    NEXT (ip);
 
 	case JUMP_TRUE:
 	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
-	    printf ("jumpTrue: %li", 3 + (ip - codes) + ((ip[1] << 8) | ip[2]));
+	    printf ("jumpTrue: %li", 3 + (ip - codes) + *((short *) (ip + 1)));
 
 	    NEXT (ip);
 
 	case JUMP_FALSE:
 	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
-	    printf ("jumpFalse: %li", 3 + (ip - codes) + ((ip[1] << 8) | ip[2]));
+	    printf ("jumpFalse: %li", 3 + (ip - codes) + *((short *) (ip + 1)));
 
 	    NEXT (ip);
 

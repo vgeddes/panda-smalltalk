@@ -522,7 +522,7 @@ mark (void)
    
     for (st_uint i = 0; i < memory->roots->length; i++)
 	stack[sp++] = (st_oop) ptr_array_get_index (memory->roots, i);
-    stack[sp++] = proc->context;
+    stack[sp++] = __cpu.context;
 
     while (sp > 0) {
 
@@ -550,31 +550,31 @@ out:
 }
 
 static void
-remap_processor (st_processor *pr)
+remap_cpu (struct st_cpu *cpu)
 {
     st_oop context, home;
 
-    context = remap_oop (pr->context);
+    context = remap_oop (cpu->context);
     if (ST_OBJECT_CLASS (context) == st_block_context_class) {
 	home = ST_BLOCK_CONTEXT_HOME (context);
-	pr->method   = ST_METHOD_CONTEXT_METHOD (home);
-	pr->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-	pr->literals = st_array_elements (ST_METHOD_LITERALS (pr->method));
-	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
-	pr->stack    = ST_BLOCK_CONTEXT_STACK (context);
+	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
+	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
+	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+	cpu->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (home);
+	cpu->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
-	pr->method   = ST_METHOD_CONTEXT_METHOD (context);
-	pr->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
-	pr->literals = st_array_elements (ST_METHOD_LITERALS (pr->method));
-	pr->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
-	pr->stack    = ST_METHOD_CONTEXT_STACK (context);
+	cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
+	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
+	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
+	cpu->temps    = ST_METHOD_CONTEXT_TEMPORARY_FRAME (context);
+	cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
 
-    pr->context  = context;
-    pr->bytecode = st_method_bytecode_bytes (pr->method);
-    pr->message_receiver = remap_oop (pr->message_receiver);
-    pr->message_selector = remap_oop (pr->message_selector);
-    pr->new_method = remap_oop (pr->new_method);
+    cpu->context  = context;
+    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+    cpu->message_receiver = remap_oop (cpu->message_receiver);
+    cpu->message_selector = remap_oop (cpu->message_selector);
+    cpu->new_method = remap_oop (cpu->new_method);
 }
 
 static void
@@ -615,8 +615,6 @@ garbage_collect (void)
 
     clear_metadata ();
 
-    st_uint ip = pr_ip - st_method_bytecode_bytes (proc->method);
-
     /* marking */
     timer_start (&tm);
     mark ();
@@ -637,16 +635,14 @@ garbage_collect (void)
     timer_start (&tm);
     remap ();
     remap_globals ();
-    remap_processor (proc);
+    remap_cpu (&__cpu);
     timer_stop (&tm);
 
     times[2] = st_timespec_to_double_seconds (&tm);
     st_timespec_add (&memory->total_pause_time, &tm, &memory->total_pause_time);
 
-    st_processor_clear_caches (proc);
+    st_cpu_clear_caches ();
     memory->counter = 0;
-
-    pr_ip = st_method_bytecode_bytes (proc->method) + ip;
 
     if (st_verbose_mode ()) {
 	fprintf (stderr, "** gc: collected:       %uK\n"

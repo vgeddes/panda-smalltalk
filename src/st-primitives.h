@@ -27,7 +27,7 @@
 
 #include <st-processor.h>
 
-typedef void (*st_primitive_func) (st_processor *processor);
+typedef void (*st_primitive_func) (struct st_cpu *cpu);
 
 struct st_primitive
 {

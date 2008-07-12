@@ -97,27 +97,37 @@ ifNotNil: alternativeBlock
 Object method!
 perform: aSymbol
 	<primitive: 'Object_perform'>
-	self primitiveFailed!
+	(self respondsTo: aSymbol)
+		ifFalse: [ self doesNotUnderstand: (Message selector: aSymbol) ]
+		ifTrue: [ self error: 'wrong number of arguments' ]!
 
 Object method!
 perform: aSymbol with: anObject
 	<primitive: 'Object_perform'>
-	self primitiveFailed!
+	(self respondsTo: aSymbol)
+		ifFalse: [ self doesNotUnderstand: (Message selector: aSymbol argument: anObject) ]
+		ifTrue: [ self error: 'wrong number of arguments' ]!
 
 Object method!
 perform: aSymbol with: firstObject with: secondObject
 	<primitive: 'Object_perform'>
-	self primitiveFailed!
+	(self respondsTo: aSymbol)
+		ifFalse: [ self doesNotUnderstand: (Message selector: aSymbol argument: firstObject argument: secondObject) ]
+		ifTrue: [ self error: 'wrong number of arguments' ]!
 
 Object method!
 perform: aSymbol with: firstObject with: secondObject with: thirdObject
 	<primitive: 'Object_perform'>
-	self primitiveFailed!
+	(self respondsTo: aSymbol)
+		ifFalse: [ self doesNotUnderstand: (Message selector: aSymbol argument: firstObject argument: secondObject argument: thirdObject) ]
+		ifTrue: [ self error: 'wrong number of arguments' ]!
 
 Object method!
 perform: aSymbol withArguments: anArray
 	<primitive: 'Object_perform_withArguments'>
-	self primitiveFailed!
+	(self respondsTo: aSymbol)
+		ifFalse: [ self doesNotUnderstand: (Message selector: aSymbol arguments: anArray) ]
+		ifTrue: [ self error: 'wrong number of arguments' ]!
 
 
 "testing"

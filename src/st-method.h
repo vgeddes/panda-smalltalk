@@ -139,7 +139,7 @@ enum
     st_instvar_shift    = ST_TAG_SIZE,
     st_literal_shift    = ST_TAG_SIZE,
     st_large_shift      = st_primitive_bits + st_primitive_shift,
-    st_method_unused_shift      = st_large_bits + st_large_shift,
+    st_method_unused_shift  = st_large_bits + st_large_shift,
     st_temp_shift       = st_method_unused_bits + st_method_unused_shift,
     st_arg_shift        = st_temp_bits + st_temp_shift,
     st_flag_shift       = st_arg_bits + st_arg_shift,

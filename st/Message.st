@@ -3,22 +3,22 @@
 
 Message classMethod!
 selector: aSymbol
-	^ self basicNew selector: aSymbol arguments: (Array new: 0)!
+	^ self basicNew selector: aSymbol arguments: (Array new)!
 
 Message classMethod!
 selector: aSymbol argument: anObject
-	^ self basicNew selector: aSymbol arguments: anObject!
+	^ self basicNew selector: aSymbol
+					arguments: (Array with: anObject)!
 
 Message classMethod!
 selector: aSymbol argument: firstArgument argument: secondArgument
-	 | arguments |
-
-	arguments := Array new: 2.
-	arguments at: 1 put: firstArgument.
-	arguments at: 2 put: secondArgument.
-
 	^ self basicNew selector: aSymbol
-					arguments: arguments!
+					arguments: (Array with: firstArgument with: secondArgument)!
+
+Message classMethod!
+selector: aSymbol argument: firstArgument argument: secondArgument argument: thirdArgument
+	^ self basicNew selector: aSymbol
+					arguments: (Array with: firstArgument with: secondArgument with: thirdArgument)!
 
 Message classMethod!
 selector: aSymbol arguments: anArray
@@ -40,4 +40,4 @@ arguments
 Message method!
 selector: aSymbol arguments: anArray
 	selector := aSymbol.
-	arguments := anArray !
+	arguments := anArray!

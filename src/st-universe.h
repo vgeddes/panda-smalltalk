@@ -107,6 +107,4 @@ st_oop st_global_get (const char *name);
 
 bool   st_verbose_mode (void) ST_GNUC_PURE;
 
-st_processor *proc;
-
 #endif /* __ST_UNIVERSE_H__ */

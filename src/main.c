@@ -33,7 +33,7 @@ struct opt_spec options[] = {
 
 
 static void
-compile_input (void)
+read_compile_stdin (void)
 {
     st_compiler_error error;
     char buffer[BUF_SIZE];
@@ -65,26 +65,22 @@ get_elapsed_time (struct timeval before, struct timeval after)
 int
 main (int argc, char *argv[])
 {
-    st_processor processor;
     st_oop value;
 
     opt_basename (argv[0], '/');
-    opt_message ("Read Smalltalk expressions from standard input and evaluate them.");
+//    opt_message ("Read Smalltalk expressions from standard input and evaluate them.");
     opt_parse ("Usage: %s [options]", options, argv);
     
     st_set_verbosity (verbose);
 
     st_bootstrap_universe ();
-    compile_input ();
+    read_compile_stdin ();
 
-    st_processor_initialize (&processor);
-
-    proc = &processor;
-
-    st_processor_main (&processor);
+    st_cpu_initialize ();
+    st_cpu_main ();
     
     /* inspect the returned value on top of the stack */
-    value = ST_STACK_PEEK ((&processor));
+    value = ST_STACK_PEEK ((&__cpu));
 
     fprintf (stdout, "\n");
     fprintf (stdout, "result: %s\n", st_object_printString (value));
