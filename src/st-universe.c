@@ -53,7 +53,7 @@ st_global_get (const char *name)
 
     sym = st_symbol_new (name);
 
-    return st_dictionary_at (st_globals, sym);
+    return st_dictionary_at (ST_GLOBALS, sym);
 }
 
 enum
@@ -76,17 +76,17 @@ class_new (st_format format, st_uint instance_size)
 
     ST_OBJECT_MARK (class)  = 0 | ST_MARK_TAG;
     ST_OBJECT_HASH (class)  = st_smi_new (st_current_hash++);
-    ST_OBJECT_CLASS (class) = st_nil;
+    ST_OBJECT_CLASS (class) = ST_NIL;
     st_object_set_format (class, ST_FORMAT_OBJECT);
     st_object_set_instance_size (class, INSTANCE_SIZE_CLASS);
     
     ST_BEHAVIOR_FORMAT (class)             = st_smi_new (format);
     ST_BEHAVIOR_INSTANCE_SIZE (class)      = st_smi_new (instance_size);
-    ST_BEHAVIOR_SUPERCLASS (class)         = st_nil;
-    ST_BEHAVIOR_METHOD_DICTIONARY (class)  = st_nil;
-    ST_BEHAVIOR_INSTANCE_VARIABLES (class) = st_nil;
+    ST_BEHAVIOR_SUPERCLASS (class)         = ST_NIL;
+    ST_BEHAVIOR_METHOD_DICTIONARY (class)  = ST_NIL;
+    ST_BEHAVIOR_INSTANCE_VARIABLES (class) = ST_NIL;
 
-    ST_CLASS (class)->name = st_nil;
+    ST_CLASS (class)->name = ST_NIL;
 
     return class;
 }
@@ -100,10 +100,10 @@ add_global (const char *name, st_oop object)
     st_assert (st_symbol_new (name) == st_symbol_new (name));
 
     symbol = st_symbol_new (name);
-    st_dictionary_at_put (st_globals, symbol, object);
+    st_dictionary_at_put (ST_GLOBALS, symbol, object);
 
     // sanity check for dictionary
-    st_assert (st_dictionary_at (st_globals, symbol) == object);
+    st_assert (st_dictionary_at (ST_GLOBALS, symbol) == object);
 }
 
 static void
@@ -125,31 +125,31 @@ initialize_class  (const char *name,
 
     if (streq (name, "Object") && streq (super_name, "nil")) {
 
-	class = st_dictionary_at (st_globals, st_symbol_new ("Object"));
-	st_assert (class != st_nil);
+	class = st_dictionary_at (ST_GLOBALS, st_symbol_new ("Object"));
+	st_assert (class != ST_NIL);
 
 	metaclass = st_object_class (class);
-	if (metaclass == st_nil) {
-	    metaclass = st_object_new (st_metaclass_class);
+	if (metaclass == ST_NIL) {
+	    metaclass = st_object_new (ST_METACLASS_CLASS);
 	    ST_OBJECT_CLASS (class) = metaclass;
 	}
 
-	ST_BEHAVIOR_SUPERCLASS (class)     = st_nil;
+	ST_BEHAVIOR_SUPERCLASS (class)     = ST_NIL;
 	ST_BEHAVIOR_INSTANCE_SIZE (class)  = st_smi_new (0);
-	ST_BEHAVIOR_SUPERCLASS (metaclass) = st_dictionary_at (st_globals, st_symbol_new ("Class"));
+	ST_BEHAVIOR_SUPERCLASS (metaclass) = st_dictionary_at (ST_GLOBALS, st_symbol_new ("Class"));
 
     } else {
        	superclass = st_global_get (super_name);
-	if (superclass == st_nil)
-	    st_assert (superclass != st_nil);
+	if (superclass == ST_NIL)
+	    st_assert (superclass != ST_NIL);
 
 	class = st_global_get (name);
-	if (class == st_nil)
+	if (class == ST_NIL)
 	    class = class_new (st_smi_value (ST_BEHAVIOR_FORMAT (superclass)), 0);
 
 	metaclass = ST_HEADER (class)->class;
-	if (metaclass == st_nil) {
-	    metaclass = st_object_new (st_metaclass_class);
+	if (metaclass == ST_NIL) {
+	    metaclass = st_object_new (ST_METACLASS_CLASS);
 	    ST_OBJECT_CLASS (class) = metaclass;
 	}
 
@@ -159,9 +159,9 @@ initialize_class  (const char *name,
 							st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (superclass)));	
     }
 
-    names = st_nil;
+    names = ST_NIL;
     if (st_list_length (ivarnames) != 0) {
-	names = st_object_new_arrayed (st_array_class, st_list_length (ivarnames));
+	names = st_object_new_arrayed (ST_ARRAY_CLASS, st_list_length (ivarnames));
 	for (st_list *l = ivarnames; l; l = l->next)
 	    st_array_at_put (names, i++, st_symbol_new (l->data));
 	ST_BEHAVIOR_INSTANCE_VARIABLES (class) = names;
@@ -169,14 +169,14 @@ initialize_class  (const char *name,
 
     ST_BEHAVIOR_FORMAT (metaclass)             = st_smi_new (ST_FORMAT_OBJECT);
     ST_BEHAVIOR_METHOD_DICTIONARY (metaclass)  = st_dictionary_new ();
-    ST_BEHAVIOR_INSTANCE_VARIABLES (metaclass) = st_nil;
+    ST_BEHAVIOR_INSTANCE_VARIABLES (metaclass) = ST_NIL;
     ST_BEHAVIOR_INSTANCE_SIZE (metaclass)      = st_smi_new (INSTANCE_SIZE_CLASS);
     ST_METACLASS_INSTANCE_CLASS (metaclass)    = class;
     ST_BEHAVIOR_INSTANCE_VARIABLES (class)     = names;
     ST_BEHAVIOR_METHOD_DICTIONARY (class)      = st_dictionary_new ();
     ST_CLASS_NAME (class)                      = st_symbol_new (name);
 
-    st_dictionary_at_put (st_globals, st_symbol_new (name), class);
+    st_dictionary_at_put (ST_GLOBALS, st_symbol_new (name), class);
 }
 
 
@@ -405,11 +405,11 @@ init_specials (void)
     ST_SELECTOR_NEW       = st_symbol_new ("new");
     ST_SELECTOR_NEW_ARG   = st_symbol_new ("new:");
 
-    st_selector_doesNotUnderstand   = st_symbol_new ("doesNotUnderstand:");
-    st_selector_mustBeBoolean       = st_symbol_new ("mustBeBoolean");
-    st_selector_startupSystem       = st_symbol_new ("startupSystem");
-    st_selector_cannotReturn        = st_symbol_new ("cannotReturn");
-    st_selector_outOfMemory         = st_symbol_new ("outOfMemory");
+    ST_SELECTOR_DOESNOTUNDERSTAND   = st_symbol_new ("doesNotUnderstand:");
+    ST_SELECTOR_MUSTBEBOOLEAN       = st_symbol_new ("mustBeBoolean");
+    ST_SELECTOR_STARTUPSYSTEM       = st_symbol_new ("startupSystem");
+    ST_SELECTOR_CANNOTRETURN        = st_symbol_new ("cannotReturn");
+    ST_SELECTOR_OUTOFMEMORY         = st_symbol_new ("outOfMemory");
 }
 
 st_memory *memory;
@@ -422,80 +422,80 @@ st_bootstrap_universe (void)
 
     st_memory_new ();
 
-    st_nil = create_nil_object ();
+    ST_NIL = create_nil_object ();
 
     st_object_class_          = class_new (ST_FORMAT_OBJECT, 0); 
-    st_undefined_object_class = class_new (ST_FORMAT_OBJECT, 0);
-    st_metaclass_class        = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_METACLASS);
-    st_behavior_class         = class_new (ST_FORMAT_OBJECT, 0);
+    ST_UNDEFINED_OBJECT_CLASS = class_new (ST_FORMAT_OBJECT, 0);
+    ST_METACLASS_CLASS        = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_METACLASS);
+    ST_BEHAVIOR_CLASS         = class_new (ST_FORMAT_OBJECT, 0);
     st_class_class_           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_CLASS);
-    st_smi_class              = class_new (ST_FORMAT_OBJECT, 0);
-    st_large_integer_class    = class_new (ST_FORMAT_LARGE_INTEGER, 0);
-    st_character_class        = class_new (ST_FORMAT_OBJECT, 0);
-    st_true_class             = class_new (ST_FORMAT_OBJECT, 0);
-    st_false_class            = class_new (ST_FORMAT_OBJECT, 0);
-    st_float_class            = class_new (ST_FORMAT_FLOAT, 0);
-    st_array_class            = class_new (ST_FORMAT_ARRAY, 0);
-    st_word_array_class       = class_new (ST_FORMAT_WORD_ARRAY, 0);
-    st_float_array_class      = class_new (ST_FORMAT_FLOAT_ARRAY, 0);
-    st_dictionary_class       = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_DICTIONARY);
-    st_set_class              = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SET);
-    st_byte_array_class       = class_new (ST_FORMAT_BYTE_ARRAY, 0);
-    st_symbol_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
-    st_string_class           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
-    st_wide_string_class      = class_new (ST_FORMAT_WORD_ARRAY, 0);
-    st_association_class      = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_ASSOCIATION);
-    st_compiled_method_class  = class_new (ST_FORMAT_OBJECT, 0);
-    st_method_context_class   = class_new (ST_FORMAT_CONTEXT, 5);
-    st_block_context_class    = class_new (ST_FORMAT_CONTEXT, 7);
-    st_system_class           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SYSTEM);
+    ST_SMI_CLASS              = class_new (ST_FORMAT_OBJECT, 0);
+    ST_LARGE_INTEGER_CLASS    = class_new (ST_FORMAT_LARGE_INTEGER, 0);
+    ST_CHARACTER_CLASS        = class_new (ST_FORMAT_OBJECT, 0);
+    ST_TRUE_CLASS             = class_new (ST_FORMAT_OBJECT, 0);
+    ST_FALSE_CLASS            = class_new (ST_FORMAT_OBJECT, 0);
+    ST_FLOAT_CLASS            = class_new (ST_FORMAT_FLOAT, 0);
+    ST_ARRAY_CLASS            = class_new (ST_FORMAT_ARRAY, 0);
+    ST_WORD_ARRAY_CLASS       = class_new (ST_FORMAT_WORD_ARRAY, 0);
+    ST_FLOAT_ARRAY_CLASS      = class_new (ST_FORMAT_FLOAT_ARRAY, 0);
+    ST_DICTIONARY_CLASS       = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_DICTIONARY);
+    ST_SET_CLASS              = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SET);
+    ST_BYTE_ARRAY_CLASS       = class_new (ST_FORMAT_BYTE_ARRAY, 0);
+    ST_SYMBOL_CLASS           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
+    ST_STRING_CLASS           = class_new (ST_FORMAT_BYTE_ARRAY, 0);
+    ST_WIDE_STRING_CLASS      = class_new (ST_FORMAT_WORD_ARRAY, 0);
+    ST_ASSOCIATION_CLASS      = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_ASSOCIATION);
+    ST_COMPILED_METHOD_CLASS  = class_new (ST_FORMAT_OBJECT, 0);
+    ST_METHOD_CONTEXT_CLASS   = class_new (ST_FORMAT_CONTEXT, 5);
+    ST_BLOCK_CONTEXT_CLASS    = class_new (ST_FORMAT_CONTEXT, 7);
+    ST_SYSTEM_CLASS           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SYSTEM);
 
-    ST_OBJECT_CLASS (st_nil)  = st_undefined_object_class;
+    ST_OBJECT_CLASS (ST_NIL)  = ST_UNDEFINED_OBJECT_CLASS;
 
     /* special objects */
-    st_true         = st_object_new (st_true_class);
-    st_false        = st_object_new (st_false_class);
-    st_symbols      = st_set_new_with_capacity (256);
-    st_globals      = st_dictionary_new_with_capacity (256);
-    st_smalltalk    = st_object_new (st_system_class);
-    ST_OBJECT_FIELDS (st_smalltalk)[0] = st_globals;
-    ST_OBJECT_FIELDS (st_smalltalk)[1] = st_symbols;
+    ST_TRUE         = st_object_new (ST_TRUE_CLASS);
+    ST_FALSE        = st_object_new (ST_FALSE_CLASS);
+    ST_SYMBOLS      = st_set_new_with_capacity (256);
+    ST_GLOBALS      = st_dictionary_new_with_capacity (256);
+    ST_SMALLTALK    = st_object_new (ST_SYSTEM_CLASS);
+    ST_OBJECT_FIELDS (ST_SMALLTALK)[0] = ST_GLOBALS;
+    ST_OBJECT_FIELDS (ST_SMALLTALK)[1] = ST_SYMBOLS;
 
     /* add class names to symbol table */
     add_global ("Object", st_object_class_);
-    add_global ("UndefinedObject", st_undefined_object_class);
-    add_global ("Behavior", st_behavior_class);
+    add_global ("UndefinedObject", ST_UNDEFINED_OBJECT_CLASS);
+    add_global ("Behavior", ST_BEHAVIOR_CLASS);
     add_global ("Class", st_class_class_);
-    add_global ("Metaclass", st_metaclass_class);
-    add_global ("SmallInteger", st_smi_class);
-    add_global ("LargeInteger", st_large_integer_class);
-    add_global ("Character", st_character_class);
-    add_global ("True", st_true_class);
-    add_global ("False", st_false_class);
-    add_global ("Float", st_float_class);
-    add_global ("Array", st_array_class);
-    add_global ("ByteArray", st_byte_array_class);
-    add_global ("WordArray", st_word_array_class);
-    add_global ("FloatArray", st_float_array_class);
-    add_global ("ByteString", st_string_class);
-    add_global ("ByteSymbol", st_symbol_class);
-    add_global ("WideString", st_wide_string_class);
-    add_global ("IdentitySet", st_set_class);
-    add_global ("IdentityDictionary", st_dictionary_class);
-    add_global ("Association", st_association_class);
-    add_global ("CompiledMethod", st_compiled_method_class);
-    add_global ("MethodContext", st_method_context_class);
-    add_global ("BlockContext", st_block_context_class);
-    add_global ("System", st_system_class);
-    add_global ("Smalltalk", st_smalltalk);
+    add_global ("Metaclass", ST_METACLASS_CLASS);
+    add_global ("SmallInteger", ST_SMI_CLASS);
+    add_global ("LargeInteger", ST_LARGE_INTEGER_CLASS);
+    add_global ("Character", ST_CHARACTER_CLASS);
+    add_global ("True", ST_TRUE_CLASS);
+    add_global ("False", ST_FALSE_CLASS);
+    add_global ("Float", ST_FLOAT_CLASS);
+    add_global ("Array", ST_ARRAY_CLASS);
+    add_global ("ByteArray", ST_BYTE_ARRAY_CLASS);
+    add_global ("WordArray", ST_WORD_ARRAY_CLASS);
+    add_global ("FloatArray", ST_FLOAT_ARRAY_CLASS);
+    add_global ("ByteString", ST_STRING_CLASS);
+    add_global ("ByteSymbol", ST_SYMBOL_CLASS);
+    add_global ("WideString", ST_WIDE_STRING_CLASS);
+    add_global ("IdentitySet", ST_SET_CLASS);
+    add_global ("IdentityDictionary", ST_DICTIONARY_CLASS);
+    add_global ("Association", ST_ASSOCIATION_CLASS);
+    add_global ("CompiledMethod", ST_COMPILED_METHOD_CLASS);
+    add_global ("MethodContext", ST_METHOD_CONTEXT_CLASS);
+    add_global ("BlockContext", ST_BLOCK_CONTEXT_CLASS);
+    add_global ("System", ST_SYSTEM_CLASS);
+    add_global ("Smalltalk", ST_SMALLTALK);
 
     init_specials ();
     file_in_classes ();
 
-    st_memory_add_root (st_nil);
-    st_memory_add_root (st_true);
-    st_memory_add_root (st_false);
-    st_memory_add_root (st_smalltalk);
+    st_memory_add_root (ST_NIL);
+    st_memory_add_root (ST_TRUE);
+    st_memory_add_root (ST_FALSE);
+    st_memory_add_root (ST_SMALLTALK);
 }
 
 static bool verbosity;

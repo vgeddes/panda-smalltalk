@@ -74,7 +74,7 @@ pop_integer32 (struct st_cpu *cpu)
  
     if (ST_LIKELY (st_object_is_smi (object)))
 	return st_smi_value (object);
-    else if (st_object_class (object) == st_large_integer_class)
+    else if (st_object_class (object) == ST_LARGE_INTEGER_CLASS)
 	return (st_smi) mp_get_int (st_large_integer_value (object));
 
     ST_PRIMITIVE_FAIL (cpu);
@@ -121,7 +121,7 @@ SmallInteger_lt (struct st_cpu *cpu)
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = (x < y) ? st_true : st_false;
+	result = (x < y) ? ST_TRUE : ST_FALSE;
 	ST_STACK_PUSH (cpu, result);
 	return;
     }
@@ -137,7 +137,7 @@ SmallInteger_gt (struct st_cpu *cpu)
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = (x > y) ? st_true : st_false;
+	result = (x > y) ? ST_TRUE : ST_FALSE;
 	ST_STACK_PUSH (cpu, result);
 	return;
     }
@@ -153,7 +153,7 @@ SmallInteger_le (struct st_cpu *cpu)
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = (x <= y) ? st_true : st_false;
+	result = (x <= y) ? ST_TRUE : ST_FALSE;
 	ST_STACK_PUSH (cpu, result);
 	return;
     }
@@ -169,7 +169,7 @@ SmallInteger_ge (struct st_cpu *cpu)
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = (x >= y) ? st_true : st_false;
+	result = (x >= y) ? ST_TRUE : ST_FALSE;
 	ST_STACK_PUSH (cpu, result);
 	return;
     }
@@ -185,7 +185,7 @@ SmallInteger_eq (struct st_cpu *cpu)
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = (x == y) ? st_true : st_false;
+	result = (x == y) ? ST_TRUE : ST_FALSE;
 	ST_STACK_PUSH (cpu, result);
 	return;
     }
@@ -201,7 +201,7 @@ SmallInteger_ne (struct st_cpu *cpu)
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = (x != y) ? st_true : st_false;
+	result = (x != y) ? ST_TRUE : ST_FALSE;
 	ST_STACK_PUSH (cpu, result);
 	return;
     }
@@ -289,7 +289,7 @@ SmallInteger_bitOr (struct st_cpu *cpu)
 {
     st_smi y = pop_integer (cpu);
     st_smi x = pop_integer (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x | y);
@@ -321,7 +321,7 @@ SmallInteger_bitAnd (struct st_cpu *cpu)
 {
     st_smi y = pop_integer (cpu);
     st_smi x = pop_integer (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
 	result = st_smi_new (x & y);
@@ -337,7 +337,7 @@ SmallInteger_bitShift (struct st_cpu *cpu)
 {
     st_smi y = pop_integer (cpu);
     st_smi x = pop_integer (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
 	if (y > 0)
@@ -358,7 +358,7 @@ static void
 SmallInteger_asFloat (struct st_cpu *cpu)
 {
     st_smi x = pop_integer (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
 	result = st_float_new ((double) x);
@@ -412,7 +412,7 @@ pop_large_integer (struct st_cpu *cpu)
 {
     st_oop object = ST_STACK_POP (cpu);
 
-    set_success (cpu, st_object_class (object) == st_large_integer_class);
+    set_success (cpu, st_object_class (object) == ST_LARGE_INTEGER_CLASS);
     
    return object;
 }
@@ -591,7 +591,7 @@ LargeInteger_eq (struct st_cpu *cpu)
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
-    result = (relation == MP_EQ) ? st_true : st_false;
+    result = (relation == MP_EQ) ? ST_TRUE : ST_FALSE;
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -609,7 +609,7 @@ LargeInteger_ne (struct st_cpu *cpu)
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
-    result = (relation == MP_EQ) ? st_false : st_true;
+    result = (relation == MP_EQ) ? ST_FALSE : ST_TRUE;
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -627,7 +627,7 @@ LargeInteger_lt (struct st_cpu *cpu)
     }
 
     relation = mp_cmp (VALUE (a), VALUE (b));    
-    result = (relation == MP_LT) ? st_true : st_false;
+    result = (relation == MP_LT) ? ST_TRUE : ST_FALSE;
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -646,7 +646,7 @@ LargeInteger_gt (struct st_cpu *cpu)
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
-    result = (relation == MP_GT) ? st_true : st_false;
+    result = (relation == MP_GT) ? ST_TRUE : ST_FALSE;
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -664,7 +664,7 @@ LargeInteger_le (struct st_cpu *cpu)
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
-    result = (relation == MP_LT || relation == MP_EQ) ? st_true : st_false;
+    result = (relation == MP_LT || relation == MP_EQ) ? ST_TRUE : ST_FALSE;
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -682,7 +682,7 @@ LargeInteger_ge (struct st_cpu *cpu)
     }
     
     relation = mp_cmp (VALUE (a), VALUE (b));
-    result = (relation == MP_GT || relation == MP_EQ) ? st_true : st_false;
+    result = (relation == MP_GT || relation == MP_EQ) ? ST_TRUE : ST_FALSE;
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -851,7 +851,7 @@ pop_float (struct st_cpu *cpu)
 {
     st_oop object = ST_STACK_POP (cpu);
 
-    set_success (cpu, st_object_class (object) == st_float_class);
+    set_success (cpu, st_object_class (object) == ST_FLOAT_CLASS);
     
     return object;
 }
@@ -861,7 +861,7 @@ Float_add (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
 	result = st_float_new (st_float_value (x) + st_float_value (y));
@@ -877,7 +877,7 @@ Float_sub (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
 	result = st_float_new (st_float_value (x) - st_float_value (y));
@@ -893,10 +893,10 @@ Float_lt (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
-	result = isless (st_float_value (x), st_float_value (y)) ? st_true : st_false;
+	result = isless (st_float_value (x), st_float_value (y)) ? ST_TRUE : ST_FALSE;
 
     if (cpu->success)
 	ST_STACK_PUSH (cpu, result);
@@ -909,10 +909,10 @@ Float_gt (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
-	result = isgreater (st_float_value (x), st_float_value (y)) ? st_true : st_false;
+	result = isgreater (st_float_value (x), st_float_value (y)) ? ST_TRUE : ST_FALSE;
 
     if (cpu->success)
 	ST_STACK_PUSH (cpu, result);
@@ -925,10 +925,10 @@ Float_le (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
-	result = islessequal (st_float_value (x), st_float_value (y)) ? st_true : st_false;
+	result = islessequal (st_float_value (x), st_float_value (y)) ? ST_TRUE : ST_FALSE;
 
     if (cpu->success)
 	ST_STACK_PUSH (cpu, result);
@@ -941,10 +941,10 @@ Float_ge (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
-	result = isgreaterequal (st_float_value (x), st_float_value (y)) ? st_true : st_false;
+	result = isgreaterequal (st_float_value (x), st_float_value (y)) ? ST_TRUE : ST_FALSE;
 
     if (cpu->success)
 	ST_STACK_PUSH (cpu, result);
@@ -957,10 +957,10 @@ Float_eq (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
-	result = (st_float_value (x) == st_float_value (y)) ? st_true : st_false;
+	result = (st_float_value (x) == st_float_value (y)) ? ST_TRUE : ST_FALSE;
 
     if (cpu->success)
 	ST_STACK_PUSH (cpu, result);
@@ -973,10 +973,10 @@ Float_ne (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
-	result = (st_float_value (x) != st_float_value (y)) ? st_true : st_false;
+	result = (st_float_value (x) != st_float_value (y)) ? ST_TRUE : ST_FALSE;
 
     if (cpu->success)
 	ST_STACK_PUSH (cpu, result);
@@ -989,7 +989,7 @@ Float_mul (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     if (cpu->success)
 	result = st_float_new (st_float_value (x) * st_float_value (y));
@@ -1005,7 +1005,7 @@ Float_div (struct st_cpu *cpu)
 {
     st_oop y = pop_float (cpu);
     st_oop x = pop_float (cpu);
-    st_oop result = st_nil;
+    st_oop result = ST_NIL;
 
     set_success (cpu, y != 0);
 
@@ -1260,14 +1260,14 @@ print_backtrace (struct st_cpu *cpu)
     
     context = cpu->context;
 
-    while (context != st_nil) {
+    while (context != ST_NIL) {
 
 	char *selector;
 	char *class;
 	st_oop home;
 	st_oop receiver;
 
-	if (st_object_class (context) == st_block_context_class)
+	if (st_object_class (context) == ST_BLOCK_CONTEXT_CLASS)
 	    home = ST_BLOCK_CONTEXT_HOME (context);
 	else
 	    home = context;
@@ -1276,18 +1276,18 @@ print_backtrace (struct st_cpu *cpu)
 
 	selector = (char*) st_byte_array_bytes (ST_METHOD_SELECTOR (ST_METHOD_CONTEXT_METHOD (home)));
   
-	if (st_object_class (st_object_class (receiver)) == st_metaclass_class)
+	if (st_object_class (st_object_class (receiver)) == ST_METACLASS_CLASS)
 	    class = st_strdup_printf ("%s class", (char *) st_byte_array_bytes (ST_CLASS (receiver)->name));
 	else
 	    class = (char*) st_byte_array_bytes (ST_CLASS (st_object_class (receiver))->name);    
 
 	printf ("%s>>#%s", class, selector);
-	if (st_object_class (context) == st_block_context_class)
+	if (st_object_class (context) == ST_BLOCK_CONTEXT_CLASS)
 	    printf ("[]\n");
 	else
 	    printf ("\n");
 
-	if (st_object_class (context) == st_block_context_class)
+	if (st_object_class (context) == ST_BLOCK_CONTEXT_CLASS)
 	    context = ST_BLOCK_CONTEXT_CALLER (context);
 	else
 	    context = ST_CONTEXT_PART_SENDER (context);
@@ -1405,7 +1405,7 @@ Object_copy (struct st_cpu *cpu)
     }
     case ST_FORMAT_FLOAT:
     {
-	copy = st_object_new (st_float_class);
+	copy = st_object_new (ST_FLOAT_CLASS);
 	st_float_set_value (copy, st_float_value (cpu->message_receiver));
 	break;
     }
@@ -1438,7 +1438,7 @@ Object_equivalent (struct st_cpu *cpu)
     st_oop y = ST_STACK_POP (cpu);
     st_oop x = ST_STACK_POP (cpu);
     
-    ST_STACK_PUSH (cpu, ((x == y) ? st_true : st_false));
+    ST_STACK_PUSH (cpu, ((x == y) ? ST_TRUE : ST_FALSE));
 }
 
 static st_oop
@@ -1448,9 +1448,9 @@ lookup_method (st_oop class, st_oop selector)
     st_oop parent = class;
     st_uint index;
 
-    while (parent != st_nil) {
+    while (parent != ST_NIL) {
 	method = st_dictionary_at (ST_BEHAVIOR_METHOD_DICTIONARY (parent), selector);
-	if (method != st_nil)
+	if (method != ST_NIL)
 	    return method;
 	parent = ST_BEHAVIOR_SUPERCLASS (parent);
     }
@@ -1504,7 +1504,7 @@ Object_perform_withArguments (struct st_cpu *cpu)
 
     set_success (cpu, st_object_format (array) == ST_FORMAT_ARRAY);
 
-    if (ST_OBJECT_CLASS (cpu->context) == st_block_context_class)
+    if (ST_OBJECT_CLASS (cpu->context) == ST_BLOCK_CONTEXT_CLASS)
 	method = ST_METHOD_CONTEXT_METHOD (ST_BLOCK_CONTEXT_HOME (cpu->context));
     else
 	method = ST_METHOD_CONTEXT_METHOD (cpu->context);
@@ -1748,7 +1748,7 @@ ByteString_at_put (struct st_cpu *cpu)
 	return;
     }
   
-    set_success (cpu, st_object_class (character) == st_character_class);
+    set_success (cpu, st_object_class (character) == ST_CHARACTER_CLASS);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
 	set_success (cpu, false);
@@ -1834,7 +1834,7 @@ WideString_at_put (struct st_cpu *cpu)
 	return;
     }
   
-    set_success (cpu, st_object_class (character) == st_character_class);
+    set_success (cpu, st_object_class (character) == ST_CHARACTER_CLASS);
 
     if (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver))) {
 	set_success (cpu, false);
@@ -1984,7 +1984,7 @@ BlockContext_valueWithArguments (struct st_cpu *cpu)
     block  = cpu->message_receiver;
     values = ST_STACK_PEEK (cpu);
 
-    if (st_object_class (values) != st_array_class) {
+    if (st_object_class (values) != ST_ARRAY_CLASS) {
 	set_success (cpu, false);
 	return;
     }
@@ -2049,12 +2049,12 @@ FileStream_open (struct st_cpu *cpu)
     mode_oop = ST_STACK_POP (cpu);
     name =  ST_STACK_POP (cpu);
 
-    if (st_object_class (mode_oop) != st_symbol_class) {
+    if (st_object_class (mode_oop) != ST_SYMBOL_CLASS) {
 	ST_PRIMITIVE_FAIL (cpu);
 	return;
     }
 
-    if (st_object_class (name) != st_string_class) {
+    if (st_object_class (name) != ST_STRING_CLASS) {
 	ST_PRIMITIVE_FAIL (cpu);
 	return;
     }
@@ -2151,7 +2151,7 @@ FileStream_writeN (struct st_cpu *cpu)
 
     write (fd, buf, size);
 
-    ST_STACK_PUSH (cpu, st_true);
+    ST_STACK_PUSH (cpu, ST_TRUE);
 }
 
 static void

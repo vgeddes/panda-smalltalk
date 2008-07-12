@@ -41,7 +41,7 @@ st_array_allocate (st_oop class, st_smi size)
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = ST_ARRAY (array)->elements;
     for (st_smi i = 0; i < size; i++)
-	elements[i] = st_nil;
+	elements[i] = ST_NIL;
 
     return array;
 }
@@ -74,9 +74,9 @@ st_byte_array_equal (st_oop object, st_oop other)
 {
     st_smi size, size_other;
 
-    if (st_object_class (other) != st_byte_array_class &&
-	st_object_class (other) != st_string_class &&
-	st_object_class (other) != st_symbol_class) 
+    if (st_object_class (other) != ST_BYTE_ARRAY_CLASS &&
+	st_object_class (other) != ST_STRING_CLASS &&
+	st_object_class (other) != ST_SYMBOL_CLASS) 
 	return false;
 
     size = st_smi_value (ST_ARRAYED_OBJECT (object)->size);

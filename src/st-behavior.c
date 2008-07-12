@@ -39,13 +39,13 @@ st_behavior_all_instance_variables (st_oop class)
     st_oop names;
     st_smi size;
     
-    if (class == st_nil)
+    if (class == ST_NIL)
 	return NULL;
     
     a = st_behavior_all_instance_variables (ST_BEHAVIOR (class)->superclass);
 
     names = ST_BEHAVIOR (class)->instance_variables;
-    if (names != st_nil) {
+    if (names != ST_NIL) {
 	size = st_smi_value (st_arrayed_object_size (names));
 	for (st_smi i = 1; i <= size; i++)
 	    b = st_list_prepend (b, (st_pointer) st_strdup (st_byte_array_bytes (st_array_at (names, i))));

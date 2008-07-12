@@ -48,23 +48,23 @@ st_object_initialize_header (st_oop object, st_oop class)
 bool
 st_object_equal (st_oop object, st_oop other)
 {
-    if (st_object_class (object) == st_smi_class)
+    if (st_object_class (object) == ST_SMI_CLASS)
 	return st_smi_equal (object, other);
 
-   if (st_object_class (object) == st_character_class)
+    if (st_object_class (object) == ST_CHARACTER_CLASS)
 	return st_character_equal (object, other);
 
-    if (ST_OBJECT_CLASS (object) == st_float_class)
+    if (ST_OBJECT_CLASS (object) == ST_FLOAT_CLASS)
 	return st_float_equal (object, other);
 
-    if (ST_OBJECT_CLASS (object) == st_association_class)
+    if (ST_OBJECT_CLASS (object) == ST_ASSOCIATION_CLASS)
 	return st_association_equal (object, other);
 
-    if (ST_OBJECT_CLASS (object) == st_symbol_class)
+    if (ST_OBJECT_CLASS (object) == ST_SYMBOL_CLASS)
 	return st_symbol_equal (object, other);
     
-    if (ST_OBJECT_CLASS (object) == st_byte_array_class ||
-	ST_OBJECT_CLASS (object) == st_string_class)
+    if (ST_OBJECT_CLASS (object) == ST_BYTE_ARRAY_CLASS ||
+	ST_OBJECT_CLASS (object) == ST_STRING_CLASS)
 	return st_byte_array_equal (object, other);
     
     return object == other;    
@@ -73,21 +73,21 @@ st_object_equal (st_oop object, st_oop other)
 st_uint
 st_object_hash (st_oop object)
 {
-    if (st_object_class (object) == st_smi_class)
+    if (st_object_class (object) == ST_SMI_CLASS)
 	return st_smi_hash (object);
 
-    if (st_object_class (object) == st_byte_array_class ||
-	st_object_class (object) == st_string_class     ||
-	st_object_class (object) == st_symbol_class)
+    if (st_object_class (object) == ST_BYTE_ARRAY_CLASS ||
+	st_object_class (object) == ST_STRING_CLASS     ||
+	st_object_class (object) == ST_SYMBOL_CLASS)
 	return st_byte_array_hash (object);
 
-    if (st_object_class (object) == st_float_class)
+    if (st_object_class (object) == ST_FLOAT_CLASS)
 	return st_float_hash (object);
 
-    if (st_object_class (object) == st_character_class)
+    if (st_object_class (object) == ST_CHARACTER_CLASS)
 	return st_character_hash (object);
 
-    if (st_object_class (object) == st_association_class)
+    if (st_object_class (object) == ST_ASSOCIATION_CLASS)
 	return st_association_hash (object);
     
     return st_smi_value (ST_HEADER (object)->hash);
@@ -106,7 +106,7 @@ st_object_printString (st_oop object)
 	string = st_strdup_printf ("%li", st_smi_value (object));
 
     // Float
-    else if (st_object_class (object) == st_float_class)
+    else if (st_object_class (object) == ST_FLOAT_CLASS)
 	string = st_strdup_printf ("%g", st_float_value (object));
 
     // ByteString
@@ -118,7 +118,7 @@ st_object_printString (st_oop object)
 	string = st_strdup_printf ("#%s", (char *) st_byte_array_bytes (object));
 
     // Character
-    else if (st_object_class (object) == st_character_class) {
+    else if (st_object_class (object) == ST_CHARACTER_CLASS) {
 	char outbuf[6] = { 0 };
 	st_unichar_to_utf8 (st_character_value (object), outbuf);
 	string = st_strdup_printf ("$%s", outbuf);
@@ -145,7 +145,7 @@ st_object_allocate (st_oop class)
 
     fields = ST_OBJECT_FIELDS (object);
     for (st_uint i = 0; i < instance_size; i++)
-	fields[i] = st_nil;
+	fields[i] = ST_NIL;
 
     return object;
 }

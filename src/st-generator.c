@@ -224,7 +224,7 @@ static st_oop
 create_literals_array (Generator *gt)
 {
     int    count;
-    st_oop literals = st_nil;
+    st_oop literals = ST_NIL;
 
     if (gt->references_super)
 	gt->literals = st_list_append (gt->literals, (st_pointer) gt->class);
@@ -232,7 +232,7 @@ create_literals_array (Generator *gt)
     count = st_list_length (gt->literals);
 
     if (count > 0) {
-	literals = st_object_new_arrayed (st_array_class, count); 
+	literals = st_object_new_arrayed (ST_ARRAY_CLASS, count); 
 
 	int i = 1;
 	for (st_list *l = gt->literals; l; l = l->next) {
@@ -248,12 +248,12 @@ static st_oop
 create_bytecode_array (Generator *gt)
 {
     if (gt->size == 0)
-	return st_nil;
+	return ST_NIL;
 
     st_oop  bytecode;
     st_uchar   *bytes;
 
-    bytecode = st_object_new_arrayed (st_byte_array_class, gt->size);
+    bytecode = st_object_new_arrayed (ST_BYTE_ARRAY_CLASS, gt->size);
     bytes = st_byte_array_bytes (bytecode);
     memcpy (bytes, gt->code, gt->size);
 
@@ -318,8 +318,8 @@ find_literal_var (Generator *gt, char *name)
 {
     st_oop assoc;
 
-    assoc = st_dictionary_association_at (st_globals, st_symbol_new (name));
-    if (assoc == st_nil)
+    assoc = st_dictionary_association_at (ST_GLOBALS, st_symbol_new (name));
+    if (assoc == ST_NIL)
 	return -1;
 
     int i = 0;
@@ -1402,7 +1402,7 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     Generator *gt;
     st_oop     method;
 
-    st_assert (class != st_nil);
+    st_assert (class != ST_NIL);
     st_assert (node != NULL && node->type == ST_METHOD_NODE);
     
     check_init ();
@@ -1423,7 +1423,7 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     // generate bytecode
     generate_method_statements (gt, node->method.statements);
 
-    method = st_object_new (st_compiled_method_class);
+    method = st_object_new (ST_COMPILED_METHOD_CLASS);
 
     ST_METHOD_HEADER (method) = st_smi_new (0);
 
@@ -1457,7 +1457,7 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 
     generator_destroy (gt);    
 
-    return st_nil;
+    return ST_NIL;
 }
 
 #define NEXT(ip)      \
@@ -1704,11 +1704,11 @@ print_literal (st_oop lit)
 
 	printf ("#%s", (char *) st_byte_array_bytes (lit));
 	
-    } else if (st_object_class (lit) == st_string_class) {
+    } else if (st_object_class (lit) == ST_STRING_CLASS) {
 	
 	printf ("'%s'", (char *) st_byte_array_bytes (lit));
 	
-    } else if (st_object_class (lit) == st_character_class) {
+    } else if (st_object_class (lit) == ST_CHARACTER_CLASS) {
 	
 	char outbuf[6] = { 0 };
 	st_unichar_to_utf8 (st_character_value (lit), outbuf);
@@ -1720,7 +1720,7 @@ print_literal (st_oop lit)
 static void
 print_literals (st_oop literals)
 {
-    if (literals == st_nil)
+    if (literals == ST_NIL)
 	return;
 
     printf ("literals: ");

@@ -43,8 +43,8 @@ main (int argc, char *argv[])
 	exit (1);
     }
 
-    method = st_generate_method (st_object_class (st_association_class), node, &error);
-    if (method == st_nil) {
+    method = st_generate_method (st_object_class (ST_ASSOCIATION_CLASS), node, &error);
+    if (method == ST_NIL) {
 	fprintf (stderr, "%s:%i: %s\n", "test-generator",
 		 error.line,
 		 error.message);

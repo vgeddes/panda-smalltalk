@@ -90,7 +90,7 @@ initialize (st_oop collection, st_smi capacity)
 
     SIZE (collection) = st_smi_new (0);
     DELETED (collection) = st_smi_new (0);
-    ARRAY (collection) = st_object_new_arrayed (st_array_class, capacity);
+    ARRAY (collection) = st_object_new_arrayed (ST_ARRAY_CLASS, capacity);
 }
 
 static void
@@ -106,12 +106,12 @@ dict_check_grow (st_oop dict)
 
     size *= 2;
     old = ARRAY (dict);
-    ARRAY (dict)   = st_object_new_arrayed (st_array_class, size);
+    ARRAY (dict)   = st_object_new_arrayed (ST_ARRAY_CLASS, size);
     DELETED (dict) = st_smi_new (0);
 
     for (st_uint i = 1; i <= n; i++) {
 	object = st_array_at (old, i);
-	if (object != st_nil) {
+	if (object != ST_NIL) {
 	    st_array_at_put (ARRAY (dict), dict_find (dict, ST_ASSOCIATION_KEY (object)), object);
 	}
     }
@@ -129,7 +129,7 @@ dict_find (st_oop dict, st_oop key)
 
     while (true) {
 	el = st_array_at (ARRAY (dict), i);
-	if (el == st_nil || key == ST_ASSOCIATION_KEY (el))
+	if (el == ST_NIL || key == ST_ASSOCIATION_KEY (el))
 	    return i;
 	i = ((i + ADVANCE_SIZE) & mask) + 1;
     }
@@ -144,7 +144,7 @@ st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
     index = dict_find (dict, key);
     assoc = st_array_at (ARRAY (dict), index);
 
-    if (assoc == st_nil) {
+    if (assoc == ST_NIL) {
 	st_array_at_put (ARRAY (dict), index, st_association_new (key, value));
 	SIZE (dict) = st_smi_increment (SIZE (dict));
 	dict_check_grow (dict);
@@ -161,10 +161,10 @@ st_dictionary_at (st_oop dict, st_oop key)
 
     assoc = st_array_at (ARRAY (dict), dict_find (dict, key));
 
-    if (assoc != st_nil)
+    if (assoc != ST_NIL)
 	return ST_ASSOCIATION_VALUE (assoc);
 
-    return st_nil;
+    return ST_NIL;
 }
 
 st_oop
@@ -184,7 +184,7 @@ st_dictionary_new_with_capacity (st_smi capacity)
 {
     st_oop dict;
     
-    dict = st_object_new (st_dictionary_class);
+    dict = st_object_new (ST_DICTIONARY_CLASS);
     initialize (dict, capacity);
     
     return dict;
@@ -204,7 +204,7 @@ set_find_cstring (st_oop set, const char *string)
 
     while (true) {
 	el = st_array_at (ARRAY (set), i);
-	if (el == st_nil || (strcmp (st_byte_array_bytes (el), string) == 0))
+	if (el == ST_NIL || (strcmp (st_byte_array_bytes (el), string) == 0))
 	    return i;
 	i = ((i + ADVANCE_SIZE) & mask) + 1;
     }
@@ -221,7 +221,7 @@ set_find (st_oop set, st_oop object)
 
     while (true) {
 	el = st_array_at (ARRAY (set), i);
-	if (el == st_nil || el == object)
+	if (el == ST_NIL || el == object)
 	    return i;
 	i = ((i + ADVANCE_SIZE) & mask) + 1;
     }
@@ -240,12 +240,12 @@ set_check_grow (st_oop set)
 
     size *= 2;
     old = ARRAY (set);
-    ARRAY (set)   = st_object_new_arrayed (st_array_class, size);
+    ARRAY (set)   = st_object_new_arrayed (ST_ARRAY_CLASS, size);
     DELETED (set) = st_smi_new (0);
 
     for (st_uint i = 1; i <= n; i++) {
 	object = st_array_at (old, i);
-	if (object != st_nil)
+	if (object != ST_NIL)
 	    st_array_at_put (ARRAY (set), set_find (set, object), object);
     }
 }
@@ -260,11 +260,11 @@ st_set_intern_cstring (st_oop set, const char *string)
 
     i = set_find_cstring (set, string);
     intern = st_array_at (ARRAY (set), i);
-    if (intern != st_nil)
+    if (intern != ST_NIL)
 	return intern;
 
     len = strlen (string);
-    intern = st_object_new_arrayed (st_symbol_class, len);
+    intern = st_object_new_arrayed (ST_SYMBOL_CLASS, len);
     memcpy (st_byte_array_bytes (intern), string, len);
     st_array_at_put (ARRAY (set), i, intern);
     SIZE (set) = st_smi_increment (SIZE (set));
@@ -284,7 +284,7 @@ st_set_add (st_oop set, st_oop object)
 bool
 st_set_includes (st_oop set, st_oop object)
 {
-    return st_array_at (ARRAY (set), set_find (set, object)) != st_nil;
+    return st_array_at (ARRAY (set), set_find (set, object)) != ST_NIL;
 }
 
 st_oop
@@ -298,7 +298,7 @@ st_set_new_with_capacity (st_smi capacity)
 {
     st_oop set;
 
-    set = st_object_new (st_set_class);
+    set = st_object_new (ST_SET_CLASS);
     initialize (set, capacity);
 
     return set;

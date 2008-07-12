@@ -35,7 +35,7 @@ main (int argc, char *argv[])
 
     string = st_strconcat ("doIt ^ [", buffer, "] value", NULL);
 
-    bool result = st_compile_string (st_undefined_object_class, string, &error);
+    bool result = st_compile_string (ST_UNDEFINED_OBJECT_CLASS, string, &error);
     if (!result) {
 	fprintf (stderr, "test-processor:%i: %s\n",
 		 error.line, error.message);

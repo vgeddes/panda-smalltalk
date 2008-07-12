@@ -55,18 +55,18 @@ print_object (st_oop object)
     } else if (st_object_is_symbol (object)) {
 	
 	printf ("#%s", st_byte_array_bytes (object));
-    } else if (st_object_class (object) == st_string_class) {
+    } else if (st_object_class (object) == ST_STRING_CLASS) {
 
 	printf ("%s", st_byte_array_bytes (object));
     } else if (st_object_is_float (object)) {
 
 	printf ("%f", st_float_value (object));
-    } else if (st_object_class (object) == st_character_class) {
+    } else if (st_object_class (object) == ST_CHARACTER_CLASS) {
 
 	char outbuf[6] = { 0 };
 	st_unichar_to_utf8 (st_character_value (object), outbuf);
 	printf ("$%s", outbuf);
-    } else if (st_object_class (object) == st_array_class) {
+    } else if (st_object_class (object) == ST_ARRAY_CLASS) {
 
 	print_tuple (object);
 

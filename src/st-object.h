@@ -188,10 +188,10 @@ static inline st_oop
 st_object_class (st_oop object)
 {
     if (ST_UNLIKELY (st_object_is_smi (object)))
-	return st_smi_class;
+	return ST_SMI_CLASS;
 
     if (ST_UNLIKELY (st_object_is_character (object)))
-	return st_character_class;
+	return ST_CHARACTER_CLASS;
 
     return ST_OBJECT_CLASS (object);
 }
@@ -199,31 +199,31 @@ st_object_class (st_oop object)
 static inline bool
 st_object_is_symbol (st_oop object)
 {
-    return st_object_class (object) == st_symbol_class;
+    return st_object_class (object) == ST_SYMBOL_CLASS;
 }
 
 static inline bool
 st_object_is_string (st_oop object)
 {
-    return st_object_class (object) == st_string_class;
+    return st_object_class (object) == ST_STRING_CLASS;
 }
 
 static inline bool
 st_object_is_array (st_oop object)
 {
-    return st_object_class (object) == st_array_class;
+    return st_object_class (object) == ST_ARRAY_CLASS;
 }
 
 static inline bool
 st_object_is_byte_array (st_oop object)
 {
-    return st_object_class (object) == st_byte_array_class;
+    return st_object_class (object) == ST_BYTE_ARRAY_CLASS;
 }
 
 static inline bool
 st_object_is_float (st_oop object)
 {
-    return st_object_class (object) == st_float_class;
+    return st_object_class (object) == ST_FLOAT_CLASS;
 }
 
 #endif /* __ST_OBJECT_H__ */

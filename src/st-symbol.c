@@ -63,11 +63,11 @@ string_new (st_oop class, const char *bytes)
 st_oop
 st_string_new (const char *bytes)
 {
-    return string_new (st_string_class, bytes);
+    return string_new (ST_STRING_CLASS, bytes);
 }
 
 st_oop
 st_symbol_new (const char *bytes)
 {
-    return st_set_intern_cstring (st_symbols, bytes);
+    return st_set_intern_cstring (ST_SYMBOLS, bytes);
 }

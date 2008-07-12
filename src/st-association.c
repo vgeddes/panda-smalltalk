@@ -36,7 +36,7 @@ st_association_equal (st_oop object, st_oop other)
 {
     struct st_association *m, *n;
 
-    if (st_object_class (other) != st_association_class)
+    if (st_object_class (other) != ST_ASSOCIATION_CLASS)
 	return false;
 
     m = ST_ASSOCIATION (object);
@@ -48,7 +48,7 @@ st_association_equal (st_oop object, st_oop other)
 st_oop
 st_association_new (st_oop key, st_oop value)
 {
-    st_oop assoc = st_object_new (st_association_class);
+    st_oop assoc = st_object_new (ST_ASSOCIATION_CLASS);
 
     ST_ASSOCIATION_KEY (assoc)   = key;
     ST_ASSOCIATION_VALUE (assoc) = value;

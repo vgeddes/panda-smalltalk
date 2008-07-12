@@ -50,7 +50,7 @@ st_large_integer_new_from_string (const char *string, st_uint radix)
   out:
     mp_clear (&value);
     fprintf (stderr, mp_error_to_string (result));
-    return st_nil;
+    return ST_NIL;
 }
 
 char *
@@ -93,6 +93,6 @@ st_large_integer_allocate (st_oop class, mp_int *value)
 st_oop
 st_large_integer_new (mp_int * value)
 {
-    return st_large_integer_allocate (st_large_integer_class, value);
+    return st_large_integer_allocate (ST_LARGE_INTEGER_CLASS, value);
     
 }

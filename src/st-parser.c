@@ -290,7 +290,7 @@ parse_tuple (st_parser *parser)
 
     items = st_list_reverse (items);
 
-    tuple = st_object_new_arrayed (st_array_class, st_list_length (items));
+    tuple = st_object_new_arrayed (ST_ARRAY_CLASS, st_list_length (items));
 
     int i = 1;
     for (st_list *l = items; l; l = l->next)

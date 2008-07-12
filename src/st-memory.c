@@ -234,7 +234,7 @@ st_memory_allocate_context (bool large)
     }
 
     context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
-    st_object_initialize_header (context, st_method_context_class);
+    st_object_initialize_header (context, ST_METHOD_CONTEXT_CLASS);
     st_object_set_large_context (context, large);
 
     return context;
@@ -402,7 +402,7 @@ remap_oop (st_oop ref)
     st_uint  ordinal;
     st_oop  *offset;
 
-    if (!st_object_is_heap (ref) || ref == st_nil)
+    if (!st_object_is_heap (ref) || ref == ST_NIL)
 	return ref;
 
     ordinal = compute_ordinal_number (memory, ref); 
@@ -534,7 +534,7 @@ mark (void)
 	for (st_uint i = 0; i < size; i++) {
 	    if (ST_UNLIKELY (sp >= MARK_STACK_SIZE_OOPS))
 		goto out;
-	    if (oops[i] != st_nil) {
+	    if (oops[i] != ST_NIL) {
 		stack[sp++] = oops[i];
 	    }
 	}
@@ -553,7 +553,7 @@ remap_cpu (struct st_cpu *cpu)
     st_oop context, home;
 
     context = remap_oop (cpu->context);
-    if (ST_OBJECT_CLASS (context) == st_block_context_class) {
+    if (ST_OBJECT_CLASS (context) == ST_BLOCK_CONTEXT_CLASS) {
 	home = ST_BLOCK_CONTEXT_HOME (context);
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);

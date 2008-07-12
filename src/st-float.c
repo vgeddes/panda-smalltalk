@@ -41,7 +41,7 @@ st_float_allocate (st_oop class)
 st_oop
 st_float_new (double value)
 {
-    st_oop f = st_object_new (st_float_class);
+    st_oop f = st_object_new (ST_FLOAT_CLASS);
 
     st_float_set_value (f, value);
     

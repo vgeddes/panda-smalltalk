@@ -40,7 +40,7 @@ st_compile_string (st_oop class, const char *string, st_compiler_error *error)
     st_oop   method;
     st_lexer *lexer;
     
-    st_assert (class != st_nil);
+    st_assert (class != ST_NIL);
     
     lexer = st_lexer_new (string);
     if (!lexer)
@@ -53,7 +53,7 @@ st_compile_string (st_oop class, const char *string, st_compiler_error *error)
 	return false;
 
     method = st_generate_method (class, node, error);
-    if (method == st_nil) {
+    if (method == ST_NIL) {
 	st_node_destroy (node);
 	return false;
     }
@@ -119,7 +119,7 @@ parse_method (FileInParser *parser,
 
     /* get class or metaclass */
     class = st_global_get (class_name);
-    if (class == st_nil)
+    if (class == ST_NIL)
 	filein_error (parser, token, "undefined class");
 
     if (class_method)
@@ -140,7 +140,7 @@ parse_method (FileInParser *parser,
 	printf ("%i\n", node->type);
     
     method = st_generate_method (class, node, &error);
-    if (method == st_nil)
+    if (method == ST_NIL)
 	goto error;
 	
     st_dictionary_at_put (ST_BEHAVIOR (class)->method_dictionary,

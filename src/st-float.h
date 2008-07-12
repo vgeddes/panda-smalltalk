@@ -58,7 +58,7 @@ st_float_set_value (st_oop f, double value)
 static inline bool
 st_float_equal (st_oop object, st_oop other)
 {
-    if (st_object_class (other) != st_float_class)
+    if (st_object_class (other) != ST_FLOAT_CLASS)
 	return false;
 
     return st_float_value (object) == st_float_value (other);
