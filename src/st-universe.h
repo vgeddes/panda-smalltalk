@@ -66,38 +66,33 @@
 #define    st_selector_cannotReturn      __cpu.globals[32]
 #define    st_selector_outOfMemory       __cpu.globals[33]
 
-enum {
-    ST_SPECIAL_PLUS,
-    ST_SPECIAL_MINUS,
-    ST_SPECIAL_LT,
-    ST_SPECIAL_GT,
-    ST_SPECIAL_LE,
-    ST_SPECIAL_GE,
-    ST_SPECIAL_EQ,
-    ST_SPECIAL_NE,
-    ST_SPECIAL_MUL,
-    ST_SPECIAL_DIV,
-    ST_SPECIAL_MOD,
-    ST_SPECIAL_BITSHIFT,
-    ST_SPECIAL_BITAND,
-    ST_SPECIAL_BITOR,
-    ST_SPECIAL_BITXOR,
-    ST_SPECIAL_AT,
-    ST_SPECIAL_ATPUT,
-    ST_SPECIAL_SIZE,
-    ST_SPECIAL_VALUE,
-    ST_SPECIAL_VALUE_ARG,
-    ST_SPECIAL_IDEQ,
-    ST_SPECIAL_CLASS,
-    ST_SPECIAL_NEW,
-    ST_SPECIAL_NEW_ARG,
-
-    ST_NUM_SPECIALS,
-};
+#define ST_SELECTOR_PLUS       __cpu.selectors[0]
+#define ST_SELECTOR_MINUS      __cpu.selectors[1]
+#define ST_SELECTOR_LT         __cpu.selectors[2]
+#define ST_SELECTOR_GT         __cpu.selectors[3]
+#define ST_SELECTOR_LE         __cpu.selectors[4]
+#define ST_SELECTOR_GE         __cpu.selectors[5]
+#define ST_SELECTOR_EQ         __cpu.selectors[6]
+#define ST_SELECTOR_NE         __cpu.selectors[7]
+#define ST_SELECTOR_MUL        __cpu.selectors[8]
+#define ST_SELECTOR_DIV        __cpu.selectors[9]
+#define ST_SELECTOR_MOD        __cpu.selectors[10]
+#define ST_SELECTOR_BITSHIFT   __cpu.selectors[11]
+#define ST_SELECTOR_BITAND     __cpu.selectors[12]
+#define ST_SELECTOR_BITOR      __cpu.selectors[13]
+#define ST_SELECTOR_BITXOR     __cpu.selectors[14]
+#define ST_SELECTOR_AT         __cpu.selectors[15]
+#define ST_SELECTOR_ATPUT      __cpu.selectors[16]
+#define ST_SELECTOR_SIZE       __cpu.selectors[17]
+#define ST_SELECTOR_VALUE      __cpu.selectors[18]
+#define ST_SELECTOR_VALUE_ARG  __cpu.selectors[19]
+#define ST_SELECTOR_IDEQ       __cpu.selectors[20]
+#define ST_SELECTOR_CLASS      __cpu.selectors[21]
+#define ST_SELECTOR_NEW        __cpu.selectors[22]
+#define ST_SELECTOR_NEW_ARG    __cpu.selectors[23]
 
 extern st_memory *memory;
 
-extern st_oop st_specials[ST_NUM_SPECIALS];
 
 void   st_bootstrap_universe (void);
 

@@ -526,7 +526,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_PLUS];	    
+	    cpu->message_selector = ST_SELECTOR_PLUS;	    
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 
 	    SEND_TEMPLATE ();
@@ -548,7 +548,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_MINUS];
+	    cpu->message_selector = ST_SELECTOR_MINUS;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 
 	    SEND_TEMPLATE ();
@@ -570,7 +570,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_MUL];
+	    cpu->message_selector = ST_SELECTOR_MUL;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -593,7 +593,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_MOD];
+	    cpu->message_selector = ST_SELECTOR_MOD;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -605,7 +605,7 @@ st_cpu_main (void)
 	CASE (SEND_DIV) {
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_DIV];
+	    cpu->message_selector = ST_SELECTOR_DIV;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -630,7 +630,7 @@ st_cpu_main (void)
 	    }
     
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_BITSHIFT];
+	    cpu->message_selector = ST_SELECTOR_BITSHIFT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -652,7 +652,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_BITAND];
+	    cpu->message_selector = ST_SELECTOR_BITAND;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -674,7 +674,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_BITOR];
+	    cpu->message_selector = ST_SELECTOR_BITOR;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	
 	    SEND_TEMPLATE ();
@@ -696,7 +696,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_BITXOR];
+	    cpu->message_selector = ST_SELECTOR_BITXOR;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -718,7 +718,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_LT];
+	    cpu->message_selector = ST_SELECTOR_LT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -740,7 +740,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_GT];
+	    cpu->message_selector = ST_SELECTOR_GT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -762,7 +762,7 @@ st_cpu_main (void)
 	    }
 	    
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_LE];
+	    cpu->message_selector = ST_SELECTOR_LE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -784,7 +784,7 @@ st_cpu_main (void)
 	    }
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_GE];
+	    cpu->message_selector = ST_SELECTOR_GE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -795,7 +795,7 @@ st_cpu_main (void)
 	CASE (SEND_CLASS) {
 
 	    cpu->message_argcount = 0;
-	    cpu->message_selector = st_specials[ST_SPECIAL_CLASS];
+	    cpu->message_selector = ST_SELECTOR_CLASS;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -806,7 +806,7 @@ st_cpu_main (void)
 	CASE (SEND_SIZE) {
 	    
 	    cpu->message_argcount = 0;
-	    cpu->message_selector = st_specials[ST_SPECIAL_SIZE];
+	    cpu->message_selector = ST_SELECTOR_SIZE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -854,7 +854,7 @@ st_cpu_main (void)
 	common_at:
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_AT];
+	    cpu->message_selector = ST_SELECTOR_AT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -905,7 +905,7 @@ st_cpu_main (void)
 	common_atput:
 	    
 	    cpu->message_argcount = 2;
-	    cpu->message_selector = st_specials[ST_SPECIAL_ATPUT];
+	    cpu->message_selector = ST_SELECTOR_ATPUT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -916,7 +916,7 @@ st_cpu_main (void)
 	CASE (SEND_EQ) {
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_EQ];
+	    cpu->message_selector = ST_SELECTOR_EQ;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -927,7 +927,7 @@ st_cpu_main (void)
 	CASE (SEND_NE) {
 
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_NE];
+	    cpu->message_selector = ST_SELECTOR_NE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -950,7 +950,7 @@ st_cpu_main (void)
 	CASE (SEND_VALUE) {
 
 	    cpu->message_argcount = 0;
-	    cpu->message_selector = st_specials[ST_SPECIAL_VALUE];
+	    cpu->message_selector = ST_SELECTOR_VALUE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 
 	    SEND_TEMPLATE ();
@@ -961,7 +961,7 @@ st_cpu_main (void)
 	CASE (SEND_VALUE_ARG) {
 	    
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
+	    cpu->message_selector = ST_SELECTOR_VALUE_ARG;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 
 	    SEND_TEMPLATE ();
@@ -972,7 +972,7 @@ st_cpu_main (void)
 	CASE (SEND_NEW) {
     
 	    cpu->message_argcount = 0;
-	    cpu->message_selector = st_specials[ST_SPECIAL_NEW];
+	    cpu->message_selector = ST_SELECTOR_NEW;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();
@@ -983,7 +983,7 @@ st_cpu_main (void)
 	CASE (SEND_NEW_ARG) {
 	    
 	    cpu->message_argcount = 1;
-	    cpu->message_selector = st_specials[ST_SPECIAL_NEW_ARG];
+	    cpu->message_selector = ST_SELECTOR_NEW_ARG;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    
 	    SEND_TEMPLATE ();

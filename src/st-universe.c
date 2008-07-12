@@ -46,9 +46,6 @@
 #include <string.h>
 #include <stdio.h>
 
-st_oop st_specials[ST_NUM_SPECIALS];
-
-
 st_oop
 st_global_get (const char *name)
 {
@@ -382,31 +379,31 @@ create_nil_object (void)
 static void
 init_specials (void)
 {
-    st_specials[ST_SPECIAL_PLUS]      = st_symbol_new ("+");
-    st_specials[ST_SPECIAL_MINUS]     = st_symbol_new ("-");
-    st_specials[ST_SPECIAL_LT]        = st_symbol_new ("<");
-    st_specials[ST_SPECIAL_GT]        = st_symbol_new (">");
-    st_specials[ST_SPECIAL_LE]        = st_symbol_new ("<=");
-    st_specials[ST_SPECIAL_GE]        = st_symbol_new (">=");
-    st_specials[ST_SPECIAL_EQ]        = st_symbol_new ("=");
-    st_specials[ST_SPECIAL_NE]        = st_symbol_new ("~=");
-    st_specials[ST_SPECIAL_MUL]       = st_symbol_new ("*");
-    st_specials[ST_SPECIAL_DIV]       = st_symbol_new ("/");
-    st_specials[ST_SPECIAL_MOD]       = st_symbol_new ("\\");
-    st_specials[ST_SPECIAL_BITSHIFT]  = st_symbol_new ("bitShift:");
-    st_specials[ST_SPECIAL_BITAND]    = st_symbol_new ("bitAnd:");
-    st_specials[ST_SPECIAL_BITOR]     = st_symbol_new ("bitOr:");
-    st_specials[ST_SPECIAL_BITXOR]    = st_symbol_new ("bitXor:");
+    ST_SELECTOR_PLUS      = st_symbol_new ("+");
+    ST_SELECTOR_MINUS     = st_symbol_new ("-");
+    ST_SELECTOR_LT        = st_symbol_new ("<");
+    ST_SELECTOR_GT        = st_symbol_new (">");
+    ST_SELECTOR_LE        = st_symbol_new ("<=");
+    ST_SELECTOR_GE        = st_symbol_new (">=");
+    ST_SELECTOR_EQ        = st_symbol_new ("=");
+    ST_SELECTOR_NE        = st_symbol_new ("~=");
+    ST_SELECTOR_MUL       = st_symbol_new ("*");
+    ST_SELECTOR_DIV       = st_symbol_new ("/");
+    ST_SELECTOR_MOD       = st_symbol_new ("\\");
+    ST_SELECTOR_BITSHIFT  = st_symbol_new ("bitShift:");
+    ST_SELECTOR_BITAND    = st_symbol_new ("bitAnd:");
+    ST_SELECTOR_BITOR     = st_symbol_new ("bitOr:");
+    ST_SELECTOR_BITXOR    = st_symbol_new ("bitXor:");
 
-    st_specials[ST_SPECIAL_AT]        = st_symbol_new ("at:");
-    st_specials[ST_SPECIAL_ATPUT]     = st_symbol_new ("at:put:");
-    st_specials[ST_SPECIAL_SIZE]      = st_symbol_new ("size");
-    st_specials[ST_SPECIAL_VALUE]     = st_symbol_new ("value");
-    st_specials[ST_SPECIAL_VALUE_ARG] = st_symbol_new ("value:");
-    st_specials[ST_SPECIAL_IDEQ]      = st_symbol_new ("==");
-    st_specials[ST_SPECIAL_CLASS]     = st_symbol_new ("class");
-    st_specials[ST_SPECIAL_NEW]       = st_symbol_new ("new");
-    st_specials[ST_SPECIAL_NEW_ARG]   = st_symbol_new ("new:");
+    ST_SELECTOR_AT        = st_symbol_new ("at:");
+    ST_SELECTOR_ATPUT     = st_symbol_new ("at:put:");
+    ST_SELECTOR_SIZE      = st_symbol_new ("size");
+    ST_SELECTOR_VALUE     = st_symbol_new ("value");
+    ST_SELECTOR_VALUE_ARG = st_symbol_new ("value:");
+    ST_SELECTOR_IDEQ      = st_symbol_new ("==");
+    ST_SELECTOR_CLASS     = st_symbol_new ("class");
+    ST_SELECTOR_NEW       = st_symbol_new ("new");
+    ST_SELECTOR_NEW_ARG   = st_symbol_new ("new:");
 
     st_selector_doesNotUnderstand   = st_symbol_new ("doesNotUnderstand:");
     st_selector_mustBeBoolean       = st_symbol_new ("mustBeBoolean");

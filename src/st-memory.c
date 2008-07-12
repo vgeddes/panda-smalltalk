@@ -583,8 +583,8 @@ remap_globals (void)
     for (i = 0; i < ST_N_ELEMENTS (__cpu.globals); i++)
 	__cpu.globals[i] = remap_oop (__cpu.globals[i]);
 
-    for (i = 0; i < ST_N_ELEMENTS (st_specials); i++)
-	st_specials[i] = remap_oop (st_specials[i]);
+    for (i = 0; i < ST_N_ELEMENTS (__cpu.selectors); i++)
+	__cpu.selectors[i] = remap_oop (__cpu.selectors[i]);
 
 
     for (i = 0; i < memory->roots->length; i++) {
