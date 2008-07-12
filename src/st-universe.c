@@ -40,13 +40,11 @@
 #include "st-compiler.h"
 #include "st-memory.h"
 #include "st-context.h"
-#include "st-processor.h"
+#include "st-cpu.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-st_oop globals[34];
 
 st_oop st_specials[ST_NUM_SPECIALS];
 

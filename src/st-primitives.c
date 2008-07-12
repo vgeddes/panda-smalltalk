@@ -23,7 +23,7 @@
 */
 
 #include "st-primitives.h"
-#include "st-processor.h"
+#include "st-cpu.h"
 #include "st-array.h"
 #include "st-large-integer.h"
 #include "st-float.h"

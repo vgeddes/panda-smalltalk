@@ -11,8 +11,6 @@
 #define ST_METHOD_CACHE_MASK      (ST_METHOD_CACHE_SIZE - 1)
 #define ST_METHOD_CACHE_HASH(k,s) (((k) ^ (s)) & ST_METHOD_CACHE_MASK)
 
-#define ST_METHOD_IS_CACHED
-
 typedef struct st_method_cache
 {
     st_oop class;
@@ -49,6 +47,8 @@ struct st_cpu {
     jmp_buf main_loop;
 
     st_method_cache method_cache[ST_METHOD_CACHE_SIZE];
+
+    st_oop globals[34];
 
 } __cpu;
 

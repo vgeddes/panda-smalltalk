@@ -117,7 +117,7 @@ lookup_method (st_oop class)
     }
 
     if (cpu->message_selector == st_selector_doesNotUnderstand) {
-	fprintf (stderr, "no method found for #doesNotUnderstand:");
+	fprintf (stderr, "panda: error: no method found for #doesNotUnderstand:\n");
 	exit(1);
     }
 
@@ -1219,10 +1219,9 @@ st_cpu_initialize (void)
     st_oop method;
 
     /* clear contents */
-    memset (&__cpu, 0, sizeof (struct st_cpu));
-    __cpu.context = st_nil;
+    __cpu.context  = st_nil;
     __cpu.receiver = st_nil;
-    __cpu.method = st_nil;
+    __cpu.method   = st_nil;
 
     __cpu.sp = 0;
     __cpu.ip = 0;

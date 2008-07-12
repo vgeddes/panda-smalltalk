@@ -25,7 +25,7 @@
 #ifndef __ST_PRIMITIVES_H__
 #define __ST_PRIMITIVES_H__
 
-#include <st-processor.h>
+#include <st-cpu.h>
 
 typedef void (*st_primitive_func) (struct st_cpu *cpu);
 

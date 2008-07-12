@@ -41,8 +41,8 @@ libpanda_la_SOURCES = \
 	src/st-lexer.h \
 	src/st-input.h \
 	src/st-input.c \
-	src/st-processor.h \
-	src/st-processor.c \
+	src/st-cpu.h \
+	src/st-cpu.c \
 	src/st-memory.h \
 	src/st-memory.c \
 	src/st-system.h \

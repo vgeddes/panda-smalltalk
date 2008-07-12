@@ -2,7 +2,7 @@
 #include <st-types.h>
 #include <st-symbol.h>
 #include <st-compiler.h>
-#include <st-processor.h>
+#include <st-cpu.h>
 #include <st-array.h>
 #include <st-lexer.h>
 #include <st-node.h>
