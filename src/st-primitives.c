@@ -1936,11 +1936,11 @@ FloatArray_at_put (struct st_cpu *cpu)
     ST_STACK_PUSH (cpu, flt);
 }
 
-static inline void
-activate_block_context (struct st_cpu *cpu)
+static void
+BlockContext_value (struct st_cpu *cpu)
 {
     st_oop  block;
-    st_smi  argcount;
+    st_uint  argcount;
     st_oop home;
 
     block = cpu->message_receiver;
@@ -1972,13 +1972,6 @@ activate_block_context (struct st_cpu *cpu)
     cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (block));
     cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (block));
     cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-
-}
-
-static void
-BlockContext_value (struct st_cpu *cpu)
-{
-    activate_block_context (cpu);
 }
 
 static void

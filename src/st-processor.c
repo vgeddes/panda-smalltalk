@@ -320,9 +320,10 @@ lookup_method_in_cache (void)
     return false;
 }
 
-#define STACK_POP(oop)  (*--sp)
-#define STACK_PUSH(oop) (*sp++ = (oop))
-#define STACK_PEEK(oop) (*(sp-1))
+#define STACK_POP(oop)     (*--sp)
+#define STACK_PUSH(oop)    (*sp++ = (oop))
+#define STACK_PEEK(oop)    (*(sp-1))
+#define STACK_UNPOP(count) (sp += count)
 
 void
 st_cpu_main (void)
@@ -815,6 +816,43 @@ st_cpu_main (void)
     
 	CASE (SEND_AT) {
 
+	    st_oop  receiver;
+	    st_oop  integer;
+	    st_uint index;
+
+	    integer = STACK_POP ();
+	    receiver = STACK_POP ();
+	    if (st_object_is_heap (receiver) &&
+		st_object_format (receiver) == ST_FORMAT_ARRAY) {
+
+		if (ST_LIKELY (st_object_is_smi (integer)))
+		    index = st_smi_value (integer);
+		else if (ST_UNLIKELY (st_object_is_character (integer))) {
+		    STACK_UNPOP (2);
+		    goto common_at;
+		} else if (ST_LIKELY (ST_OBJECT_CLASS (integer) == st_large_integer_class))
+		    index = mp_get_int (st_large_integer_value (integer));
+		else {
+		    STACK_UNPOP (2);
+		    goto common_at;
+		}
+
+		if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
+		    STACK_UNPOP (2);
+		    goto common_at;
+		}
+		
+		STACK_PUSH (st_array_at (receiver, index));
+
+		ip += 1;
+		NEXT ();
+	    } else {
+		STACK_UNPOP (2);
+	    }
+
+
+	common_at:
+
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = st_specials[ST_SPECIAL_AT];
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
@@ -825,6 +863,46 @@ st_cpu_main (void)
 	}
     
 	CASE (SEND_AT_PUT) {
+
+	    st_oop  receiver;
+	    st_oop  integer;
+	    st_oop   value;
+	    st_uint index;
+
+	    value   = STACK_POP ();
+	    integer = STACK_POP ();
+	    receiver = STACK_POP ();
+	    if (st_object_is_heap (receiver) &&
+		st_object_format (receiver) == ST_FORMAT_ARRAY) {
+
+		if (ST_LIKELY (st_object_is_smi (integer))) {
+		    index = st_smi_value (integer);
+		} else if (ST_UNLIKELY (st_object_is_character (integer))) {
+		    STACK_UNPOP (3);
+		    goto common_atput;
+		} else if (ST_LIKELY (ST_OBJECT_CLASS (integer) == st_large_integer_class)) {
+		    index = mp_get_int (st_large_integer_value (integer));
+		} else {
+		    STACK_UNPOP (3);
+		    goto common_atput;
+		}
+
+		if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
+		    STACK_UNPOP (3);
+		    goto common_atput;
+		}
+
+		st_array_at_put (receiver, index, value);
+		STACK_PUSH (value);
+
+		ip += 1;
+		NEXT ();
+
+	    } else {
+		STACK_UNPOP (3);
+	    }
+
+	common_atput:
 	    
 	    cpu->message_argcount = 2;
 	    cpu->message_selector = st_specials[ST_SPECIAL_ATPUT];
@@ -870,13 +948,13 @@ st_cpu_main (void)
 	}
 	
 	CASE (SEND_VALUE) {
-    
+
 	    cpu->message_argcount = 0;
 	    cpu->message_selector = st_specials[ST_SPECIAL_VALUE];
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
+
 	    SEND_TEMPLATE ();
-	    
+
 	    NEXT ();
 	}
     
@@ -885,9 +963,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = st_specials[ST_SPECIAL_VALUE_ARG];
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
+
 	    SEND_TEMPLATE ();
-	    
+
 	    NEXT ();
 	}
 	

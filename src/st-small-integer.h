@@ -30,7 +30,7 @@
 static inline st_oop
 st_smi_new (st_smi num)
 {
-    return ((st_oop) num) << ST_TAG_SIZE;
+    return (((st_oop) num) << ST_TAG_SIZE) + ST_SMI_TAG;
 }
 
 static inline st_smi
