@@ -36,6 +36,19 @@ basicNew
 "arithmetic"
 
 SmallInteger method!
+gcd: aNumber
+    "Answer the greatest common divisor"
+    | num tmp remainder |
+    num := self max: aNumber.
+    remainder := self min: aNumber.
+    [ remainder isZero ]
+	whileFalse: [    
+	    tmp := remainder.
+	    remainder := num \\ remainder.
+	    num := tmp ].
+    ^ num abs!
+
+SmallInteger method!
 + aNumber
 	<primitive: 'SmallInteger_add'>
 	^ super + aNumber! 

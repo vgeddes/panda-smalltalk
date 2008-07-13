@@ -26,19 +26,6 @@ DEALINGS IN THE SOFTWARE.
 "mathematics"
 
 Integer method!
-gcd: aNumber
-    "Answer the greatest common divisor"
-    | num tmp remainder |
-    num := self max: aNumber.
-    remainder := self min: aNumber.
-    [ remainder isZero ]
-	whileFalse: [    
-	    tmp := remainder.
-	    remainder := num \\ remainder.
-	    num := tmp ].
-    ^ num abs!
-
-Integer method!
 isEven
 	^ self \\ 2 = self zero!
 

@@ -10,7 +10,7 @@ LargeInteger method!
 LargeInteger method!
 - aNumber
 	<primitive: 'LargeInteger_sub'>
-	^ super + aNumber!
+	^ super - aNumber!
 
 LargeInteger method!
 * aNumber
@@ -34,7 +34,7 @@ LargeInteger method!
 LargeInteger method!
 \\ aNumber
 	<primitive: 'LargeInteger_mod'>
-	^ super / aNumber!
+	^ super \\ aNumber!
 
 
 "mathematics"
@@ -42,7 +42,9 @@ LargeInteger method!
 LargeInteger method!
 gcd: anInteger
 	<primitive: 'LargeInteger_gcd'>
-	^ super gcd: anInteger!
+	(anInteger isMemberOf: SmallInteger)
+		ifTrue: [^ self gcd: (self coerce: anInteger)]
+	    ifFalse: [ self error: 'primitive failed']!
 
 LargeInteger method!
 lcm: anInteger

@@ -27,17 +27,29 @@ Fraction classMethod!
 numerator: numerator denominator: denominator    
 	^ self basicNew numerator: numerator denominator: denominator!
 
+
+"accessing"
+Fraction method!
+numerator
+	^ numerator!
+
+Fraction method!
+denominator
+	^ denominator!
+
 "arithmetic"
 
 Fraction method!
 reduce
     | gcd |
-    gcd := numerator gcd: denominator.
+
     numerator = 0
 		ifTrue: [ ^ 0 ].
 
-    numerator := numerator / gcd.
-    denominator := denominator / gcd.
+    gcd := numerator gcd: denominator.
+
+    numerator := numerator // gcd.
+    denominator := denominator // gcd.
 
     denominator = 1
 		ifTrue: [ ^ numerator ].
@@ -139,6 +151,9 @@ compare: aNumber
 			a compare: b ]
 		ifFalse: [ numerator compare: denominator * aNumber ]!
 
+Fraction method!
+hash
+	^ numerator bitXor: denominator!
 
 "testing"
 
