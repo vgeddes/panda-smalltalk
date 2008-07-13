@@ -9,12 +9,19 @@ System method!
 at: key
 	^ globals at: key!
 
+System method!
+globals
+	^ globals!
+
+System method!
+symbols
+	^ symbols!
 
 "system control"
 
 System method!
 startupSystem
-	self exitWithResult: nil doIt!
+	self exitWithResult: nil doIt printString!
 
 System method!
 exitWithResult: anObject

@@ -20,14 +20,12 @@ method_context_new (void)
 {
     register struct st_cpu *cpu = &__cpu;
     st_oop  context;
-    int     stack_size;
     st_uint temp_count;
     st_oop *stack;
     bool    large;
 
     large = st_method_get_large_context (cpu->new_method);
     temp_count = st_method_get_arg_count (cpu->new_method) + st_method_get_temp_count (cpu->new_method);
-    stack_size = large ? 32 : 12;
 
     context = st_memory_allocate_context (large);
 
@@ -223,7 +221,7 @@ st_cpu_prologue (void)
     cpu->message_argcount = argcount;				\
     cpu->message_receiver = sp[- argcount - 1];			\
     cpu->message_selector = selector;				\
-    goto common;
+    goto send_common;
 
 #define ACTIVATE_CONTEXT(context)		\
     st_cpu_set_active_context (context);
@@ -297,24 +295,24 @@ static inline void
 install_method_in_cache (void)
 {
     register struct st_cpu  *cpu = &__cpu;
-    st_uint probe;
+    st_uint index;
 
-    probe = ST_METHOD_CACHE_HASH (cpu->lookup_class, cpu->message_selector);
-    cpu->method_cache[probe].class    = cpu->lookup_class;
-    cpu->method_cache[probe].selector = cpu->message_selector;
-    cpu->method_cache[probe].method   = cpu->new_method;
+    index = ST_METHOD_CACHE_HASH (cpu->lookup_class, cpu->message_selector) & ST_METHOD_CACHE_MASK;
+    cpu->method_cache[index].class    = cpu->lookup_class;
+    cpu->method_cache[index].selector = cpu->message_selector;
+    cpu->method_cache[index].method   = cpu->new_method;
 }
 
 static inline bool
 lookup_method_in_cache (void)
 {
     register struct st_cpu  *cpu = &__cpu;
-    st_uint probe;
+    st_uint index;
 
-    probe = ST_METHOD_CACHE_HASH (cpu->lookup_class, cpu->message_selector);
-    if (cpu->method_cache[probe].class    == cpu->lookup_class && 
-	cpu->method_cache[probe].selector == cpu->message_selector) {
-	cpu->new_method = cpu->method_cache[probe].method;
+    index = ST_METHOD_CACHE_HASH (cpu->lookup_class, cpu->message_selector) & ST_METHOD_CACHE_MASK;
+    if (cpu->method_cache[index].class    == cpu->lookup_class && 
+	cpu->method_cache[index].selector == cpu->message_selector) {
+	cpu->new_method = cpu->method_cache[index].method;
 	return true;
     }
     return false;
@@ -324,6 +322,12 @@ lookup_method_in_cache (void)
 #define STACK_PUSH(oop)    (*sp++ = (oop))
 #define STACK_PEEK(oop)    (*(sp-1))
 #define STACK_UNPOP(count) (sp += count)
+#define STORE_IPSP()				\
+    cpu->ip = ip - cpu->bytecode;		\
+    cpu->sp = sp - cpu->stack;
+#define LOAD_IPSP()				\
+    ip = cpu->bytecode + cpu->ip;		\
+    sp = cpu->stack + cpu->sp;
 
 void
 st_cpu_main (void)
@@ -528,10 +532,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_PLUS;	    
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_MINUS) {
@@ -550,10 +553,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_MINUS;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
     
 	CASE (SEND_MUL) {
@@ -572,10 +574,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_MUL;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	
 	}
     
@@ -595,11 +596,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_MOD;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
-	    
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
     
 	CASE (SEND_DIV) {
@@ -607,10 +606,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_DIV;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_BITSHIFT) {
@@ -632,10 +630,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_BITSHIFT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();	    
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;	    
 	}
 	
 	CASE (SEND_BITAND) {
@@ -654,10 +651,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_BITAND;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();	    
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;  
 	}
 	
 	CASE (SEND_BITOR) {
@@ -676,10 +672,10 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_BITOR;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	
-	    SEND_TEMPLATE ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	    
-	    NEXT ();	    
 	}
 	
 	CASE (SEND_BITXOR) {
@@ -698,10 +694,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_BITXOR;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_LT) {
@@ -720,10 +715,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_LT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_GT) {
@@ -742,10 +736,10 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_GT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
+
 	}
 	
 	CASE (SEND_LE) {
@@ -764,10 +758,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_LE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();	    
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;    
 	}
 	
 	CASE (SEND_GE) {
@@ -786,10 +779,10 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_GE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common; 
+
 	}
 	
 	CASE (SEND_CLASS) {
@@ -797,10 +790,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 0;
 	    cpu->message_selector = ST_SELECTOR_CLASS;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common; 
 	}
 	
 	CASE (SEND_SIZE) {
@@ -808,10 +800,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 0;
 	    cpu->message_selector = ST_SELECTOR_SIZE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
     
 	CASE (SEND_AT) {
@@ -856,10 +847,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_AT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
     
 	CASE (SEND_AT_PUT) {
@@ -907,10 +897,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 2;
 	    cpu->message_selector = ST_SELECTOR_ATPUT;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_EQ) {
@@ -918,10 +907,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_EQ;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_NE) {
@@ -929,10 +917,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_NE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_IDENTITY_EQ) {
@@ -952,10 +939,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 0;
 	    cpu->message_selector = ST_SELECTOR_VALUE;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-
-	    SEND_TEMPLATE ();
-
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
     
 	CASE (SEND_VALUE_ARG) {
@@ -963,10 +949,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_VALUE_ARG;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-
-	    SEND_TEMPLATE ();
-
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_NEW) {
@@ -974,10 +959,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 0;
 	    cpu->message_selector = ST_SELECTOR_NEW;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND_NEW_ARG) {
@@ -985,10 +969,9 @@ st_cpu_main (void)
 	    cpu->message_argcount = 1;
 	    cpu->message_selector = ST_SELECTOR_NEW_ARG;
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
-	    
-	    SEND_TEMPLATE ();
-	    
-	    NEXT ();
+	    cpu->lookup_class = st_object_class (cpu->message_receiver);
+	    ip += 1;
+	    goto send_common;
 	}
 	
 	CASE (SEND) {
@@ -1002,17 +985,14 @@ st_cpu_main (void)
 	    cpu->message_selector = cpu->literals[ip[2]];
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    cpu->lookup_class = st_object_class (cpu->message_receiver);
-
 	    ip += 3;
 	    
-	common:
+	send_common:
 
 	    if (!lookup_method_in_cache ()) {
-		cpu->ip = ip - cpu->bytecode;
-		cpu->sp = sp - cpu->stack;
+		STORE_IPSP ();
 		cpu->new_method = lookup_method (cpu->lookup_class);
-		ip = cpu->bytecode + cpu->ip;
-		sp = cpu->stack + cpu->sp;
+		LOAD_IPSP ();
 		install_method_in_cache ();
 	    }
 	    
@@ -1021,11 +1001,9 @@ st_cpu_main (void)
 		primitive_index = st_method_get_primitive_index (cpu->new_method);
 
 		cpu->success = true;
-		cpu->ip = ip - cpu->bytecode;
-		cpu->sp = sp - cpu->stack;
+		STORE_IPSP ();
 		st_primitives[primitive_index].func (cpu);
-		ip = cpu->bytecode + cpu->ip;
-		sp = cpu->stack + cpu->sp;
+		LOAD_IPSP ();
 
 		if (ST_LIKELY (cpu->success))
 		    NEXT ();
@@ -1048,8 +1026,7 @@ st_cpu_main (void)
 	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (context));
 	    cpu->ip       = st_smi_value (0);
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-	    ip = cpu->bytecode;
-	    sp = cpu->stack + cpu->sp;
+	    LOAD_IPSP ();
 
 	    NEXT ();
 	}
@@ -1067,7 +1044,7 @@ st_cpu_main (void)
 
 	    ip += 3;
 
-	    goto common;
+	    goto send_common;
 	}
 	
 	CASE (POP_STACK_TOP) {
@@ -1097,14 +1074,9 @@ st_cpu_main (void)
 	    
 	    initial_ip = ip - cpu->bytecode + 3;
 	    
-	    cpu->ip = ip - cpu->bytecode;
-	    cpu->sp = sp - cpu->stack;
-
+	    STORE_IPSP ();
 	    block = block_context_new (initial_ip, argcount);
-
-	    /* update ip in case bytecodes moved during gc */ 
-	    ip = cpu->bytecode + cpu->ip;
-	    sp = cpu->stack + cpu->sp;
+	    LOAD_IPSP ();
 
 	    STACK_PUSH (block);
 	    
@@ -1152,8 +1124,7 @@ st_cpu_main (void)
 	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (sender));
 	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (sender));
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-	    ip = cpu->bytecode + cpu->ip;
-	    sp = cpu->stack + cpu->sp;
+	    LOAD_IPSP ();
 
 	    STACK_PUSH (value);
 
@@ -1188,8 +1159,7 @@ st_cpu_main (void)
 	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (caller));
 	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (caller));
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-	    ip = cpu->bytecode + cpu->ip;
-	    sp = cpu->stack + cpu->sp;
+	    LOAD_IPSP ();
 	    
 	    /* push returned value onto caller's stack */
 	    STACK_PUSH (value);
@@ -1205,11 +1175,7 @@ out:
 void
 st_cpu_clear_caches (void)
 {
-    for (st_uint i = 0; i < ST_METHOD_CACHE_SIZE; i++) {
-	__cpu.method_cache[i].class    = ST_NIL;
-	__cpu.method_cache[i].selector = ST_NIL;
-	__cpu.method_cache[i].method   = ST_NIL;
-    }
+    memset (__cpu.method_cache, 0, ST_METHOD_CACHE_SIZE * 3 * sizeof (st_oop));
 }
 
 void

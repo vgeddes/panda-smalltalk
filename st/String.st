@@ -45,6 +45,12 @@ String method!
 hash
 	self subclassResponsibility!
 
+"printing"
+String method!
+printOn: aStream
+	aStream nextPut: $'.
+	aStream nextPutAll: self.
+	aStream nextPut: $'!
 
 "testing"
 

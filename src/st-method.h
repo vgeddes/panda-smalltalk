@@ -39,7 +39,6 @@ struct st_method
     st_oop bytecode;
     st_oop literals;
     st_oop selector;
-
 };
 
 typedef enum

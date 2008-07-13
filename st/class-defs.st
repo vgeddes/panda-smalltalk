@@ -176,7 +176,7 @@ Class named: 'ByteString'
 	  instanceVariableNames: ''!
 
 Class named: 'ByteSymbol'
-	  superclass: 'ByteString'
+	  superclass: 'Symbol'
 	  instanceVariableNames: ''!
 
 Class named: 'WideString'

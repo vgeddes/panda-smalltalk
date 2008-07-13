@@ -81,9 +81,11 @@ main (int argc, char *argv[])
     
     /* inspect the returned value on top of the stack */
     value = ST_STACK_PEEK ((&__cpu));
+    if (st_object_format (value) != ST_FORMAT_BYTE_ARRAY)
+	abort ();
 
-    fprintf (stdout, "\n");
-    fprintf (stdout, "result: %s\n", st_object_printString (value));
+    putchar ('\n');
+    printf ("result: %s\n", (char *) st_byte_array_bytes (value));
 
     return 0;
 }

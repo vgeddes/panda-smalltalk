@@ -69,7 +69,7 @@ printOn: aStream
 
 	name := self class name.
 
-    aStream nextPutAll: ((self isVowel: name first) ifTrue: [ 'an' ] ifFalse: [ 'a' ])
+    aStream nextPutAll: ((self isVowel: name first) ifTrue: [ 'an' ] ifFalse: [ 'a' ]).
 	aStream nextPut: Character space.
     aStream nextPutAll: self class name!
 

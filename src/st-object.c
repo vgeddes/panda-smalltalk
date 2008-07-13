@@ -93,43 +93,6 @@ st_object_hash (st_oop object)
     return st_smi_value (ST_HEADER (object)->hash);
 }
 
-char *
-st_object_printString (st_oop object)
-{
-    char *class_name;
-    char *string;
-
-    class_name = (char *) st_byte_array_bytes (ST_CLASS (st_object_class (object))->name);
-    
-    // SmallInteger
-    if (st_object_is_smi (object))
-	string = st_strdup_printf ("%li", st_smi_value (object));
-
-    // Float
-    else if (st_object_class (object) == ST_FLOAT_CLASS)
-	string = st_strdup_printf ("%g", st_float_value (object));
-
-    // ByteString
-    else if (st_object_is_string (object))
-	string = st_strdup_printf ("'%s'", (char *) st_byte_array_bytes (object));
-
-    // ByteSymbol
-    else if (st_object_is_symbol (object))
-	string = st_strdup_printf ("#%s", (char *) st_byte_array_bytes (object));
-
-    // Character
-    else if (st_object_class (object) == ST_CHARACTER_CLASS) {
-	char outbuf[6] = { 0 };
-	st_unichar_to_utf8 (st_character_value (object), outbuf);
-	string = st_strdup_printf ("$%s", outbuf);
-
-    // Other
-    } else
-	string = st_strdup_printf ("%s", class_name);
-
-    return string;
-}
-
 int st_current_hash = 1;
 
 st_oop

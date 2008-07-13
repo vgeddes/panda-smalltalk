@@ -9,7 +9,7 @@
 /* cache size must be a power of 2 */
 #define ST_METHOD_CACHE_SIZE      1024
 #define ST_METHOD_CACHE_MASK      (ST_METHOD_CACHE_SIZE - 1)
-#define ST_METHOD_CACHE_HASH(k,s) (((k) ^ (s)) & ST_METHOD_CACHE_MASK)
+#define ST_METHOD_CACHE_HASH(k,s) ((k) ^ (s))
 
 typedef struct st_method_cache
 {

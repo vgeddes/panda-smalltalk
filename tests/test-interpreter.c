@@ -44,24 +44,10 @@ main (int argc, char *argv[])
 
     st_cpu_initialize ();
 
-    struct timeval before, after;
-    double elapsed;
-
-    gettimeofday (&before, NULL);
-
     st_cpu_main ();
 
-    gettimeofday (&after, NULL);
-
-    elapsed = after.tv_sec - before.tv_sec +
-	(after.tv_usec - before.tv_usec) / 1.e6;
-    
     /* inspect the returned value on top of the stack */
     value = ST_STACK_PEEK ((&__cpu));
-
-    printf ("result: %s\n", st_object_printString (value));
-    printf ("time %.9f seconds\n", elapsed);
-
 
     return 0;
 }

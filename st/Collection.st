@@ -86,6 +86,9 @@ size
 	self do: [ :each | tally := tally + 1].
 	^ tally!
 
+Collection method!
+anyOne
+	self do: [ :el | ^ el]!
 
 "enumerating"
 
@@ -111,26 +114,23 @@ select: aBlock
 	self do: [ :each | (aBlock value: each) ifTrue: [newCollection add: each ]].
 	^ newCollection!
 
-"printing" 
+"printing"
 Collection method!
 printOn: aStream
-    | tooMany |
-    tooMany := aStream position + 50.
-    aStream
-        nextPutAll: self class name;
-        nextPutAll: ' ('.
+    | size i |
+	aStream nextPutAll: self class name.
+    aStream nextPutAll: ' ('.
 
-    self do: [ :ea |
-        aStream position > tooMany
-            ifTrue: [
-                aStream nextPutAll: '...etc...)'.
-                ^self ].
-        ea == self
-            ifTrue: [ '...' printOn: aStream ]
-            ifFalse: [ ea printOn: aStream ].
-        aStream nextPutAll: ' ' ].
-    aStream nextPut: $)
-!
+	i := 0.
+	size := self size.
+    self do:
+		[ :el |
+         el == self
+            ifTrue: ['...' printOn: aStream]
+            ifFalse: [el printOn: aStream].
+		 (i := i + 1) < size
+			 ifTrue: [aStream nextPutAll: ' ']].
+    aStream nextPut: $)!
 
 "private"
 

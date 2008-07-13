@@ -101,7 +101,6 @@ typedef enum st_format
 
 bool           st_object_equal       (st_oop object, st_oop other);
 st_uint        st_object_hash        (st_oop object);
-char          *st_object_printString (st_oop object);
 
 #define ST_OBJECT_MARK(oop)   (ST_HEADER (oop)->mark)
 #define ST_OBJECT_HASH(oop)   (ST_HEADER (oop)->hash)

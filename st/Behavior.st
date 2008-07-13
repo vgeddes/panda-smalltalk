@@ -110,5 +110,9 @@ inheritsFrom: aClass
 
 	^ false!
 
+Behavior method!
+printOn: aStream
+	aStream nextPutAll: self name!
+
 
 	

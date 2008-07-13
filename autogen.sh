@@ -1,21 +1,25 @@
 #!/bin/sh
-# Run this to generate all the initial makefiles, etc.
 
-srcdir=`dirname $0`
+PROJECT=panda
+
+srcdir=$(dirname $0)
 test -z "$srcdir" && srcdir=.
 
-PKG_NAME="panda"
-
-(test -f $srcdir/configure.ac \
-  && test -f $srcdir/src/st-lexer.c) || {
-    echo -n "**Error**: Directory "\`$srcdir\'" does not look like the"
-    echo " top-level $PKG_NAME directory"
-    exit 1
+(test -f $srcdir/configure.ac) || {
+	echo "Directory \"$srcdir\" does not look like the top-level $PROJECT directory" 1>&2
+	exit 1
 }
 
-which gnome-autogen.sh || {
-    echo "You need to install gnome-common from the GNOME SVN"
-    exit 1
-}
+libtoolize --force --copy
+aclocal $ACLOCAL_FLAGS
+autoconf
+autoheader
+test -f config.h.in && touch config.h.in
+automake --foreign --add-missing --force --copy
 
-REQUIRED_AUTOMAKE_VERSION=1.10 USE_GNOME2_MACROS=1 . gnome-autogen.sh
+if [ $# = 0 ]; then
+	echo "WARNING: I am going to run configure without any arguments."
+fi
+
+./configure $@
+
