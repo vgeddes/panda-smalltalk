@@ -173,6 +173,15 @@ Fraction method!
 truncated
 	^ numerator // denominator!
 
+"printing"
+
+Fraction method!
+printOn: aStream base: anInteger
+	aStream nextPut: $(.
+	aStream nextPutAll: (numerator printStringBase: anInteger).
+	aStream nextPut: $/.
+	aStream nextPutAll: (denominator printStringBase: anInteger).
+	aStream nextPut: $)!
 
 "private"
 
@@ -180,3 +189,4 @@ Fraction method!
 numerator: numeratorInteger denominator: denominatorInteger    
 	numerator := numeratorInteger.
 	denominator := denominatorInteger!
+

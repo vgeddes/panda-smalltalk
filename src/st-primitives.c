@@ -414,7 +414,7 @@ pop_large_integer (struct st_cpu *cpu)
 
     set_success (cpu, st_object_class (object) == ST_LARGE_INTEGER_CLASS);
     
-   return object;
+    return object;
 }
 
 static void
@@ -781,28 +781,42 @@ LargeInteger_bitShift (struct st_cpu *cpu)
     ST_STACK_PUSH (cpu, result);
 }
 
+#define ST_DIGIT_RADIX (1L << DIGIT_BIT)
+
+
 static void
 LargeInteger_asFloat (struct st_cpu *cpu)
 {
-    st_oop receiver = pop_large_integer (cpu);
-    char  *string;
-    double dblval;
+    st_oop  receiver = pop_large_integer (cpu);
+    char   *string;
+    double  result;
+    mp_int *m;
+    int i;
 
-    string = st_large_integer_to_string (receiver, 10);
+    m = st_large_integer_value (receiver);
+    if (m->used == 0) {
+	ST_STACK_PUSH (cpu, st_float_new (0));
+	return;
+    }
 
-    dblval = strtod (string, NULL);
-    st_free (string);
+    i = m->used;
+    result = DIGIT (m, i);    
+    while (--i >= 0)
+	result = (result * ST_DIGIT_RADIX) + DIGIT (m, i);
 
-    ST_STACK_PUSH (cpu, st_float_new (dblval));
+    if (m->sign == MP_NEG)
+	result = -result;
+
+    ST_STACK_PUSH (cpu, st_float_new (result));
 }
 
 static void
-LargeInteger_printString (struct st_cpu *cpu)
+LargeInteger_printStringBase (struct st_cpu *cpu)
 {
-    st_smi radix = pop_integer (cpu);
-    st_oop x     = pop_large_integer (cpu);
+    int     radix = pop_integer (cpu);
+    st_oop  x     = pop_large_integer (cpu);
     char   *string;
-    st_oop result;
+    st_oop  result;
 
     if (radix < 2 || radix > 36)
 	set_success (cpu, false);
@@ -1251,6 +1265,30 @@ Float_hash (struct st_cpu *cpu)
 	result = -result;
 
     ST_STACK_PUSH (cpu, st_smi_new (result));
+}
+
+static void
+Float_printStringBase (struct st_cpu *cpu)
+{
+    int base     = pop_integer(cpu);
+    st_oop receiver = ST_STACK_POP (cpu);
+    char  *tmp;
+    st_oop string;
+
+    if (!cpu->success ||
+	!st_object_is_heap (receiver) ||
+	st_object_format (receiver) != ST_FORMAT_FLOAT) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+
+    /* ignore base for the time being */
+    tmp = st_strdup_printf ("%g", st_float_value (receiver));
+    string = st_string_new (tmp);
+    st_free (tmp);
+
+    ST_STACK_PUSH (cpu, string);
 }
 
 static void
@@ -2037,141 +2075,6 @@ Character_characterFor (struct st_cpu *cpu)
 	ST_STACK_UNPOP (cpu, 2);
 }
 
-static void
-FileStream_open (struct st_cpu *cpu)
-{
-    int fd;
-    int mode;
-    st_oop name;
-    st_oop mode_oop;
-    char *str;
-
-    mode_oop = ST_STACK_POP (cpu);
-    name =  ST_STACK_POP (cpu);
-
-    if (st_object_class (mode_oop) != ST_SYMBOL_CLASS) {
-	ST_PRIMITIVE_FAIL (cpu);
-	return;
-    }
-
-    if (st_object_class (name) != ST_STRING_CLASS) {
-	ST_PRIMITIVE_FAIL (cpu);
-	return;
-    }
-    
-    str = st_byte_array_bytes (mode_oop);
-    if (streq (str, "read"))
-	mode = O_RDONLY;
-    else if (streq (str, "write"))
-	mode = O_WRONLY;
-    else if (streq (str, "readWrite"))
-	mode = O_RDWR;
-    else {
-	ST_PRIMITIVE_FAIL (cpu);
-	return;
-    }
-
-    str = st_byte_array_bytes (name);
-    fd = open (str, O_CREAT | mode, 0644);
-    ST_STACK_PUSH (cpu, st_smi_new (fd));
-}
-
-static void
-FileStream_close (struct st_cpu *cpu)
-{
-    int fd;
-    int byte;
-
-    fd = pop_integer (cpu);
-    (void) ST_STACK_POP (cpu);
-
-    if (!cpu->success) {
-	ST_STACK_UNPOP (cpu, 2);
-	return;
-    }
-
-    if (close (fd) != 0) {
-	ST_STACK_UNPOP (cpu, 2);
-	ST_PRIMITIVE_FAIL (cpu);
-    }
-
-    ST_STACK_PUSH (cpu, cpu->message_receiver);
-}
-
-static void
-FileStream_write (struct st_cpu *cpu)
-{
-    int fd;
-    int byte;
-
-    byte = pop_integer (cpu);
-    fd = pop_integer (cpu);
-    (void) ST_STACK_POP (cpu);
-
-    if (!cpu->success) {
-	ST_PRIMITIVE_FAIL (cpu);
-	ST_STACK_UNPOP (cpu, 3);	
-    }
-
-    if (write (fd, &byte, 1) < 0) {
-	ST_PRIMITIVE_FAIL (cpu);
-	ST_STACK_UNPOP (cpu, 3);	
-    }
-
-    ST_STACK_PUSH (cpu, cpu->message_receiver);
-}
-
-static void
-FileStream_read (struct st_cpu *cpu)
-{
-
-}
-
-static void
-FileStream_writeN (struct st_cpu *cpu)
-{
-    st_oop array;
-    int fd;
-    st_uint size;
-    char *buf;
-
-    array = ST_STACK_POP (cpu);
-    fd = pop_integer (cpu);
-
-    if (st_object_format (array) != ST_FORMAT_BYTE_ARRAY) {
-	ST_PRIMITIVE_FAIL (cpu);
-	return;
-    }
-
-    if (!cpu->success)
-	return;
-
-    size = st_smi_value (st_arrayed_object_size (array));
-    buf = st_byte_array_bytes (array);
-
-    write (fd, buf, size);
-
-    ST_STACK_PUSH (cpu, ST_TRUE);
-}
-
-static void
-FileStream_readN (struct st_cpu *cpu)
-{
-
-}
-
-static void
-FileStream_position (struct st_cpu *cpu)
-{
-
-}
-
-static void
-FileStream_setPosition (struct st_cpu *cpu)
-{
-
-}
-
 const struct st_primitive st_primitives[] = {
     { "SmallInteger_add",      SmallInteger_add      },
     { "SmallInteger_sub",      SmallInteger_sub      },
@@ -2211,7 +2114,7 @@ const struct st_primitive st_primitives[] = {
     { "LargeInteger_bitXor",   LargeInteger_bitXor   },
     { "LargeInteger_bitAnd",   LargeInteger_bitAnd   },
     { "LargeInteger_bitShift", LargeInteger_bitShift },
-    { "LargeInteger_printString", LargeInteger_printString   },
+    { "LargeInteger_printStringBase", LargeInteger_printStringBase   },
     { "LargeInteger_asFloat",     LargeInteger_asFloat   },
     { "LargeInteger_hash",     LargeInteger_hash   },
 
@@ -2239,6 +2142,7 @@ const struct st_primitive st_primitives[] = {
     { "Float_fractionPart",    Float_fractionPart  },
     { "Float_integerPart",     Float_integerPart   },
     { "Float_hash",            Float_hash          },
+    { "Float_printStringBase",     Float_printStringBase   },
 
     { "Object_error",                  Object_error                },
     { "Object_class",                  Object_class                },
@@ -2282,15 +2186,6 @@ const struct st_primitive st_primitives[] = {
 
     { "BlockContext_value",               BlockContext_value               },
     { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
-
-    { "FileStream_open", FileStream_open },
-    { "FileStream_close", FileStream_close },
-    { "FileStream_write", FileStream_write },
-    { "FileStream_read", FileStream_read },
-    { "FileStream_writeN", FileStream_writeN },
-    { "FileStream_readN", FileStream_readN },
-    { "FileStream_position", FileStream_position },
-    { "FileStream_setPosition", FileStream_setPosition },
 };
 
 /* returns 0 if there no primitive function corresponding

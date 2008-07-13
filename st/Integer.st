@@ -118,11 +118,13 @@ Integer method!
 "printing"
 
 Integer method!
-radix: base
+printStringBase: anInteger
     "Returns a string representing the integer with the given base.
      The base must be between 2 and 16"
 
-    | stream num |
+    | stream num base |
+
+	base := anInteger.
 
     base isInteger & (base >= 2 ) & (base <= 16)
 		ifFalse: [ self error: 'Argument must be an integer between 2 and 16' ].
@@ -148,27 +150,8 @@ radix: base
 
 
 Integer method!
-printStringRadix: base
-    | stream |
-    stream := WriteStream on: (String new: 20).
-    self printOn: stream base: base.
-    ^ stream contents!
-
-Integer method!
-printOn: aStream
-    self storeOn: aStream base: 10!
-
-Integer method!
-storeOn: aStream
-    self storeOn: aStream base: 10!
-
-Integer method!
-printOn: aStream base: base
-    aStream nextPutAll: (self radix: base)!
-
-Integer method!
-storeOn: aStream base: base
-    aStream nextPutAll: (self radix: base)!
+printOn: aStream base: anInteger
+    aStream nextPutAll: (self printStringBase: anInteger)!
 
 
 "rounding"

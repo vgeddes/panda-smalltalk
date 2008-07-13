@@ -345,7 +345,6 @@ file_in_classes (void)
 	    "BlockContext.st",
 	    "Message.st",
 	    "OrderedCollection.st",
-	    "FileStream.st",
 	    "List.st",
 	    "System.st",
 	    "CompiledMethod.st"

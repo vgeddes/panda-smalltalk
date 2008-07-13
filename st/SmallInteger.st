@@ -55,7 +55,7 @@ SmallInteger method!
 	<primitive: 'SmallInteger_div'>
 	aNumber = 0
 		ifTrue: [ self error: 'cannot divide by 0' ].
-	aNumber isInteger
+	(aNumber isMemberOf: SmallInteger)
 		ifTrue: [ ^ Fraction numerator: self denominator: aNumber ]
 		ifFalse: [ ^ super / aNumber ]!
 
@@ -178,7 +178,6 @@ zero
 SmallInteger method!
 unity    
 	^ 1!
-
 
 "benchmark"
 SmallInteger method!

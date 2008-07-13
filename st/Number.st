@@ -395,5 +395,17 @@ raisedTo: aNumber
 "printing"
 
 Number method!
-printString
-	^ self printStringRadix: 10!
+printStringBase: anInteger
+    "Answer a String representation of the receiver"
+    | stream |
+    stream := WriteStream on: (String new: 20).
+    self printOn: stream base: anInteger.
+    ^ stream contents!
+
+Number method!
+printOn: aStream base: anInteger
+	self subclassResponsibility!
+
+Number method!
+printOn: aStream
+	self printOn: aStream base: 10!

@@ -127,6 +127,17 @@ hash
 	self primitiveFailed!
 
 
+"printing"
+
+Float method!
+printStringBase: anInteger
+	<primitive: 'Float_printStringBase'>
+	self primitiveFailed!
+
+Float method!
+printOn: aStream base: anInteger
+	aStream nextPutAll: (self printStringBase: anInteger)!
+
 "rounding & truncation"
 
 Float method!

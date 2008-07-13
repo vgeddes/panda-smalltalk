@@ -22,7 +22,7 @@ LargeInteger method!
 	<primitive: 'LargeInteger_div'>
 	aNumber = 0
 		ifTrue: [ self error: 'cannot divide by 0' ].
-	aNumber isInteger
+	(aNumber isMemberOf: LargeInteger)
 		ifTrue: [ ^ Fraction numerator: self denominator: aNumber ]
 		ifFalse: [ ^ super / aNumber ]!
 
@@ -144,9 +144,12 @@ coerce: aNumber
 
 
 "printing"
+LargeInteger method!
+printStringBase: anInteger
+	<primitive: 'LargeInteger_printStringBase'>
+	anInteger isSmallInteger
+		ifTrue: [ self error: 'expected a large integer' ]!
 
 LargeInteger method!
-printStringRadix: anInteger
-	<primitive: 'LargeInteger_printString'>
-	anInteger isSmallInteger
-		ifFalse: [ self error: 'expected a small integer' ]!
+printOn: aStream base: anInteger
+	aStream nextPutAll: (self printStringBase: anInteger)!
