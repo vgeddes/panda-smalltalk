@@ -110,6 +110,16 @@ inheritsFrom: aClass
 
 	^ false!
 
+
+"compilation"
+
+Behavior method!
+compile: aString
+	<primitive: 'Behavior_compile'>
+	self error: 'could not compile code'!
+
+"printing"
+
 Behavior method!
 printOn: aStream
 	aStream nextPutAll: self name!

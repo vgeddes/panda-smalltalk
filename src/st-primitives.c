@@ -36,6 +36,7 @@
 #include "st-character.h"
 #include "st-dictionary.h"
 #include "st-unicode.h"
+#include "st-compiler.h"
 
 #include <math.h>
 #include <string.h>
@@ -1652,6 +1653,33 @@ Behavior_newSize (struct st_cpu *cpu)
 }
 
 static void
+Behavior_compile (struct st_cpu *cpu)
+{
+    st_compiler_error error;
+    st_oop receiver;
+    st_oop string;
+    
+    string = ST_STACK_POP (cpu);
+    receiver = ST_STACK_POP (cpu);
+    if (!st_object_is_heap (string) ||
+	st_object_format (string) != ST_FORMAT_BYTE_ARRAY) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+   
+    if (!st_compile_string (receiver,
+			   (char *) st_byte_array_bytes (string),
+			   &error)) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+
+    ST_STACK_PUSH (cpu, receiver);
+}
+
+static void
 SequenceableCollection_size (struct st_cpu *cpu)
 {
     st_oop object;
@@ -2154,6 +2182,7 @@ const struct st_primitive st_primitives[] = {
     
     { "Behavior_new",                 Behavior_new                },
     { "Behavior_newSize",             Behavior_newSize            },
+    { "Behavior_compile",             Behavior_compile            },
 
 
     { "SequenceableCollection_size",   SequenceableCollection_size },           
