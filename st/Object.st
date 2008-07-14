@@ -199,9 +199,14 @@ Object method!
 assertNotReached
 	self error: 'assert not reached' !
 
+
 Object method!
-error: aString 
+basicError: aString backTrace: aString
 	<primitive: 'Object_error'>!
+
+Object method!
+error: aString
+	self basicError: aString backTrace: (thisContext printTraceBack)!
 
 Object method!
 doesNotUnderstand: aMessage

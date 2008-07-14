@@ -20,6 +20,12 @@ selector
 "header"
 
 CompiledMethod method!
+methodClass
+	literals == nil
+		ifFalse: [^ literals last]
+		ifTrue: [^ nil]! 
+
+CompiledMethod method!
 flags
 	^ (header bitShift: -27) bitAnd: 16r7!
 

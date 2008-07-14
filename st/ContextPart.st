@@ -33,3 +33,74 @@ ip
 ContextPart method!
 sp
 	^ sp!
+
+ContextPart method!
+printTraceBack
+	| parent stream |
+	
+	stream := WriteStream on: (String new: 20).
+
+	parent := self.
+	[parent == nil]
+		whileFalse:
+			[parent printOn: stream.
+			 (parent isMemberOf: BlockContext)
+				ifTrue: [parent := parent caller]
+				ifFalse: [parent := parent sender].
+			  parent ifNotNil: [ stream nextPut: Character cr]].
+
+	^ stream contents!
+
+
+MethodContext method!
+receiver
+	^ receiver!
+
+MethodContext method!
+method
+	^ method!
+
+
+MethodContext method!
+selector
+	^ method selector!
+
+MethodContext method!
+printOn: aStream
+	| mclass class selector |
+	
+	class := self receiver class.
+	mclass := self method methodClass.
+	selector := self selector.
+
+	aStream nextPutAll: class name.
+	(class == mclass) 	
+		ifTrue: [ aStream nextPut: $(.
+				 aStream nextPutAll: mclass name.
+				 aStream nextPut: $)].
+
+	aStream nextPutAll: '>>'.
+	aStream nextPutAll: selector!
+
+BlockContext method!
+argumentCount
+	^ argcount!
+
+BlockContext method!
+caller
+	^ caller!
+
+BlockContext method!
+home
+	^ home!
+
+BlockContext method!
+method
+	^ home method!
+
+BlockContext method!
+printOn: aStream
+	aStream nextPutAll: home receiver class name.
+	aStream nextPutAll: '>>'.
+	aStream nextPutAll: home method selector.
+	aStream nextPutAll: '[]'!

@@ -31,9 +31,12 @@ add: anObject
 
 Set method!
 include: anObject
+	| index |
 	anObject ifNil: [ self error: 'Sets cannot meaningfully contain nil'].
 
-	self at: (self find: anObject) include: anObject.
+	index := self find: anObject.
+	(array at: index) ifNotNil: [^ anObject].
+	self at: index include: anObject.
 	^ anObject!
 
 

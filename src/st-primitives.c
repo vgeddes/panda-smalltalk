@@ -1293,60 +1293,37 @@ Float_printStringBase (struct st_cpu *cpu)
 }
 
 static void
-print_backtrace (struct st_cpu *cpu)
-{
-    st_oop context;
-    
-    context = cpu->context;
-
-    while (context != ST_NIL) {
-
-	char *selector;
-	char *class;
-	st_oop home;
-	st_oop receiver;
-
-	if (st_object_class (context) == ST_BLOCK_CONTEXT_CLASS)
-	    home = ST_BLOCK_CONTEXT_HOME (context);
-	else
-	    home = context;
-
-	receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-
-	selector = (char*) st_byte_array_bytes (ST_METHOD_SELECTOR (ST_METHOD_CONTEXT_METHOD (home)));
-  
-	if (st_object_class (st_object_class (receiver)) == ST_METACLASS_CLASS)
-	    class = st_strdup_printf ("%s class", (char *) st_byte_array_bytes (ST_CLASS (receiver)->name));
-	else
-	    class = (char*) st_byte_array_bytes (ST_CLASS (st_object_class (receiver))->name);    
-
-	printf ("%s>>#%s", class, selector);
-	if (st_object_class (context) == ST_BLOCK_CONTEXT_CLASS)
-	    printf ("[]\n");
-	else
-	    printf ("\n");
-
-	if (st_object_class (context) == ST_BLOCK_CONTEXT_CLASS)
-	    context = ST_BLOCK_CONTEXT_CALLER (context);
-	else
-	    context = ST_CONTEXT_PART_SENDER (context);
-    }
-}
-
-static void
 Object_error (struct st_cpu *cpu)
 {
     st_oop message;
+    st_oop traceback;
+    st_oop receiver;
 
+    traceback = ST_STACK_POP (cpu);
     message = ST_STACK_POP (cpu);
+    receiver = ST_STACK_POP (cpu);
+    
+    if (!st_object_is_heap (traceback) ||
+	st_object_format (traceback) != ST_FORMAT_BYTE_ARRAY) {
+	/* can't resume execution in this prim */
+	abort();
+    }
 
-    printf ("= An error occurred during program execution\n");
-    printf ("= %s\n", st_byte_array_bytes (message));
+    if (!st_object_is_heap (message) ||
+	st_object_format (message) != ST_FORMAT_BYTE_ARRAY) {
+	/* can't resume execution in this prim */
+	abort();
+    }
 
-    printf ("\nTraceback:\n");
-    print_backtrace (cpu); 
+    printf ("An error occurred during program execution\n");
+    printf ("message: %s\n\n", st_byte_array_bytes (message));
 
-    exit (1);
+    printf ("Traceback:\n");
+    puts (st_byte_array_bytes (traceback));
+
+    /* set success to false to signal error */
+    cpu->success = false;
+    longjmp (cpu->main_loop, 0);
 }
 
 static void
@@ -2075,8 +2052,10 @@ BlockContext_valueWithArguments (struct st_cpu *cpu)
 }
 
 static void
-UndefinedObject_exitWithResult (struct st_cpu *cpu)
+System_exitWithResult (struct st_cpu *cpu)
 {
+    /* set success to true to signal that everything was alright */
+    cpu->success = true;
     longjmp (cpu->main_loop, 0);
 }
 
@@ -2208,7 +2187,7 @@ const struct st_primitive st_primitives[] = {
     { "FloatArray_at",                 FloatArray_at               },
     { "FloatArray_at_put",             FloatArray_at_put           },
 
-    { "UndefinedObject_exitWithResult", UndefinedObject_exitWithResult },
+    { "System_exitWithResult",          System_exitWithResult },
 
     { "Character_value",                Character_value },
     { "Character_characterFor",         Character_characterFor },

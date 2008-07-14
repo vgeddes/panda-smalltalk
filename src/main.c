@@ -68,7 +68,7 @@ main (int argc, char *argv[])
     st_oop value;
 
     opt_basename (argv[0], '/');
-//    opt_message ("Read Smalltalk expressions from standard input and evaluate them.");
+    opt_message ("Read Smalltalk expressions from standard input and evaluate them.");
     opt_parse ("Usage: %s [options]", options, argv);
     
     st_set_verbosity (verbose);
@@ -84,8 +84,10 @@ main (int argc, char *argv[])
     if (st_object_format (value) != ST_FORMAT_BYTE_ARRAY)
 	abort ();
 
-    putchar ('\n');
-    printf ("result: %s\n", (char *) st_byte_array_bytes (value));
+    if (__cpu.success) {
+	putchar ('\n');
+	printf ("result: %s\n", (char *) st_byte_array_bytes (value));
+    }
 
     return 0;
 }

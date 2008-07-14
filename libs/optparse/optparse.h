@@ -15,7 +15,7 @@ void opt_err(const char *msg);
 struct opt_str {
     char *s, s0;
 };
-
+void opt_message(char *message);
 int opt_text(char *, void *);
 int opt_help(char *, void *);
 int opt_version(char *, void *);
