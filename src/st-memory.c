@@ -277,37 +277,37 @@ set_bit (st_uchar *bits, st_uint index)
 }
 
 static inline st_uint
-bit_index (st_memory *memory, st_oop object)
+bit_index (st_oop object)
 {
     return detag (object) - memory->start;
 }
 
 static inline bool
-ismarked (st_memory *memory, st_oop object)
+ismarked (st_oop object)
 {
-    return get_bit (memory->mark_bits,  bit_index (memory, object));
+    return get_bit (memory->mark_bits,  bit_index (object));
 }
 
 static inline void
-set_marked (st_memory *memory, st_oop object)
+set_marked (st_oop object)
 {
-    set_bit (memory->mark_bits,  bit_index (memory, object));
+    set_bit (memory->mark_bits,  bit_index (object));
 }
 
 static inline bool
-get_alloc_bit (st_memory *memory, st_oop object)
+get_alloc_bit (st_oop object)
 {
-    return get_bit (memory->alloc_bits,  bit_index (memory, object));
+    return get_bit (memory->alloc_bits,  bit_index (object));
 }
 
 static inline void
-set_alloc_bit (st_memory *memory, st_oop object)
+set_alloc_bit (st_oop object)
 {
-    set_bit (memory->alloc_bits, bit_index (memory, object));
+    set_bit (memory->alloc_bits, bit_index (object));
 }
 
 static inline st_uint
-get_block_index (st_memory *memory, st_oop *object)
+get_block_index (st_oop *object)
 {
     return (object - memory->start) / BLOCK_SIZE_OOPS;
 }
@@ -380,8 +380,8 @@ compute_ordinal_number (st_memory *memory, st_oop ref)
     st_uint i, ordinal = 0;
     st_ulong b, k;
 
-    b = bit_index (memory, ref) & ~(BLOCK_SIZE_OOPS - 1);
-    k = bit_index (memory, ref);
+    b = bit_index (ref) & ~(BLOCK_SIZE_OOPS - 1);
+    k = bit_index (ref);
     
     for (i = 0; i < BLOCK_SIZE_OOPS; i++) {
 	if (get_bit (memory->mark_bits, b + i)) {
@@ -406,8 +406,8 @@ remap_oop (st_oop ref)
 	return ref;
 
     ordinal = compute_ordinal_number (memory, ref); 
-    offset  = memory->offsets[get_block_index (memory, detag (ref))];
-    b = bit_index (memory, tag (offset));
+    offset  = memory->offsets[get_block_index (detag (ref))];
+    b = bit_index (tag (offset));
 
     while (true) {
 	if (get_bit (memory->alloc_bits, b + i)) {
@@ -459,10 +459,10 @@ compact (void)
 
     p = memory->start;
     
-    while (ismarked (memory, tag (p)) && p < memory->p) {
-	set_alloc_bit (memory, tag (p));
-	if (block < (get_block_index (memory, p) + 1)) {
-	    block = get_block_index (memory, p);
+    while (ismarked (tag (p)) && p < memory->p) {
+	set_alloc_bit (tag (p));
+	if (block < (get_block_index (p) + 1)) {
+	    block = get_block_index (p);
 	    memory->offsets[block] = p;
 	    block += 1;
 	}
@@ -470,7 +470,7 @@ compact (void)
     }
     to = p;
 
-    while (!ismarked (memory, tag (p)) && p < memory->p) {
+    while (!ismarked (tag (p)) && p < memory->p) {
 	basic_finalize (tag (p));
 	p += object_size (tag (p));
     }
@@ -481,14 +481,14 @@ compact (void)
 
     while (from < memory->p) {
 
-	if (ismarked (memory, tag (from))) {
+	if (ismarked (tag (from))) {
 
-	    set_alloc_bit (memory, tag (to));
+	    set_alloc_bit (tag (to));
 	    size = object_size (tag (from));
 	    st_oops_move (to, from, size);
 	    
-	    if (block < (get_block_index (memory, from) + 1)) {
-		block = get_block_index (memory, from);
+	    if (block < (get_block_index (from) + 1)) {
+		block = get_block_index (from);
 		memory->offsets[block] = to;
 		block += 1;
 	    }
@@ -525,10 +525,10 @@ mark (void)
     while (sp > 0) {
 
 	object = stack[--sp];
-	if (!st_object_is_heap (object) || ismarked (memory, object)) 
+	if (!st_object_is_heap (object) || ismarked (object)) 
 	    continue;
 
-	set_marked (memory, object);
+	set_marked (object);
 	stack[sp++] = ST_OBJECT_CLASS (object);
 	object_contents (object, &oops, &size);
 	for (st_uint i = 0; i < size; i++) {

@@ -1359,9 +1359,10 @@ collect_temporaries (Generator *gt, st_node *node)
     if (node == NULL)
 	return NULL;
 
-    if (node->type == ST_BLOCK_NODE)
+    if (node->type == ST_BLOCK_NODE) {
 	temps = st_list_concat (get_block_temporaries (gt, node->block.arguments),
-			       get_block_temporaries (gt, node->block.temporaries));
+				get_block_temporaries (gt, node->block.temporaries));
+    }    
 
     switch (node->type) {
     case ST_BLOCK_NODE:
