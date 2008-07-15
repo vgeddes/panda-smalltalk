@@ -654,6 +654,23 @@ garbage_collect (void)
     }
 }
 
+/* 
+ * returns true if a compaction was performed since the
+ * last allocation
+ */
+bool
+st_memory_compaction_occurred (void)
+{
+    return memory->counter == 0;
+}
+
+st_oop
+st_memory_remap_reference (st_oop reference)
+{
+    st_assert (st_memory_compaction_occurred ());
+    return remap_oop (reference);
+}
+
 st_heap *
 st_heap_new (st_uint reserved_size)
 {

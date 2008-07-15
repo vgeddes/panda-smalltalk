@@ -87,12 +87,17 @@ create_actual_message (void)
     st_oop array;
 
     array = st_object_new_arrayed (ST_ARRAY_CLASS, cpu->message_argcount);
+
     elements = st_array_elements (array);
     for (st_uint i = 0; i < cpu->message_argcount; i++)
 	elements[i] = cpu->stack[cpu->sp - cpu->message_argcount + i];
 
     cpu->sp -= cpu->message_argcount;
     message = st_message_new (cpu->message_selector, array);
+    if (st_memory_compaction_occurred ()) {
+	array = st_memory_remap_reference (array);
+    }
+
     ST_STACK_PUSH (cpu, message);
 
     cpu->message_selector = ST_SELECTOR_DOESNOTUNDERSTAND;
@@ -1027,6 +1032,14 @@ st_cpu_main (void)
 	    cpu->ip       = st_smi_value (0);
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
 	    LOAD_REGISTERS ();
+
+	    /* We have to nil these fields here. Its possible that
+               that the objects they reference may be zapped by the gc.
+               Another GC invocation may try to remap these fields not knowing that
+               the references are invalid. 	       
+	       FIXME: move this nilling out of such a critical execution path */
+	    cpu->message_receiver = ST_NIL;
+	    cpu->message_selector = ST_NIL;
 
 	    NEXT ();
 	}

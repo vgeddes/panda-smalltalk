@@ -82,6 +82,9 @@ st_oop     st_memory_allocate        (st_uint size);
 st_oop     st_memory_allocate_context (bool large);
 void       st_memory_recycle_context  (st_oop context);
 
+bool       st_memory_compaction_occured (void);
+st_oop     st_memory_remap_reference    (st_oop reference);
+
 st_heap  *st_heap_new       (st_uint reserved_size);
 bool      st_heap_grow      (st_heap *heap, st_uint grow_size);
 bool      st_heap_shrink    (st_heap *heap, st_uint shrink_size);
