@@ -42,3 +42,22 @@ do: aBlock
 Stream method!
 atEnd
 	self subclassResponsibility!
+
+
+"print stream"
+
+PrintStream classMethod!
+new
+	^ self on: (String new: 50)!
+
+PrintStream method!
+print: anObject
+	self nextPutAll: anObject printString!
+
+PrintStream method!
+printString
+	^ self contents!
+
+PrintStream method!
+cr
+	self nextPut: Character cr!

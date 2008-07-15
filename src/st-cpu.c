@@ -322,10 +322,10 @@ lookup_method_in_cache (void)
 #define STACK_PUSH(oop)    (*sp++ = (oop))
 #define STACK_PEEK(oop)    (*(sp-1))
 #define STACK_UNPOP(count) (sp += count)
-#define STORE_IPSP()				\
+#define STORE_REGISTERS()				\
     cpu->ip = ip - cpu->bytecode;		\
     cpu->sp = sp - cpu->stack;
-#define LOAD_IPSP()				\
+#define LOAD_REGISTERS()				\
     ip = cpu->bytecode + cpu->ip;		\
     sp = cpu->stack + cpu->sp;
 
@@ -927,7 +927,7 @@ st_cpu_main (void)
 	    st_oop a, b;
 	    a = STACK_POP ();
 	    b = STACK_POP ();
-	    
+
 	    STACK_PUSH ((a == b) ? ST_TRUE : ST_FALSE);
 
 	    ip += 1;
@@ -990,9 +990,9 @@ st_cpu_main (void)
 	send_common:
 
 	    if (!lookup_method_in_cache ()) {
-		STORE_IPSP ();
+		STORE_REGISTERS ();
 		cpu->new_method = lookup_method (cpu->lookup_class);
-		LOAD_IPSP ();
+		LOAD_REGISTERS ();
 		install_method_in_cache ();
 	    }
 	    
@@ -1001,9 +1001,9 @@ st_cpu_main (void)
 		primitive_index = st_method_get_primitive_index (cpu->new_method);
 
 		cpu->success = true;
-		STORE_IPSP ();
+		STORE_REGISTERS ();
 		st_primitives[primitive_index].func (cpu);
-		LOAD_IPSP ();
+		LOAD_REGISTERS ();
 
 		if (ST_LIKELY (cpu->success))
 		    NEXT ();
@@ -1026,7 +1026,7 @@ st_cpu_main (void)
 	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (context));
 	    cpu->ip       = st_smi_value (0);
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-	    LOAD_IPSP ();
+	    LOAD_REGISTERS ();
 
 	    NEXT ();
 	}
@@ -1074,9 +1074,9 @@ st_cpu_main (void)
 	    
 	    initial_ip = ip - cpu->bytecode + 3;
 	    
-	    STORE_IPSP ();
+	    STORE_REGISTERS ();
 	    block = block_context_new (initial_ip, argcount);
-	    LOAD_IPSP ();
+	    LOAD_REGISTERS ();
 
 	    STACK_PUSH (block);
 	    
@@ -1124,7 +1124,7 @@ st_cpu_main (void)
 	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (sender));
 	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (sender));
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-	    LOAD_IPSP ();
+	    LOAD_REGISTERS ();
 
 	    STACK_PUSH (value);
 
@@ -1159,7 +1159,7 @@ st_cpu_main (void)
 	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (caller));
 	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (caller));
 	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-	    LOAD_IPSP ();
+	    LOAD_REGISTERS ();
 	    
 	    /* push returned value onto caller's stack */
 	    STACK_PUSH (value);

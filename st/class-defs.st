@@ -133,6 +133,10 @@ Class named: 'WriteStream'
 	  superclass: 'PositionableStream'
 	  instanceVariableNames: 'writeLimit'!
 
+Class named: 'PrintStream'
+	  superclass: 'WriteStream'
+	  instanceVariableNames: ''!
+
 
 "Execution"
 
