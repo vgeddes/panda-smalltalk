@@ -484,7 +484,7 @@ st_cpu_main (void)
 	    
 	    if (STACK_PEEK () == ST_TRUE) {
 		(void) STACK_POP ();
-		ip += 3 + *((short *) (ip + 1));
+		ip += *((unsigned short *) (ip + 1)) + 3;
 	    } else if (ST_LIKELY (STACK_PEEK () == ST_FALSE)) {
 		(void) STACK_POP ();
 		ip += 3;
@@ -492,15 +492,16 @@ st_cpu_main (void)
 		ip += 3;
 		SEND_SELECTOR (ST_SELECTOR_MUSTBEBOOLEAN, 0);
 	    }
-	    
+
 	    NEXT ();
+	    
 	}
 
 	CASE (JUMP_FALSE) {
 	    
 	    if (STACK_PEEK () == ST_FALSE) {
 		(void) STACK_POP ();
-		ip += 3 + *((short *) (ip + 1));
+		ip += *((unsigned short *) (ip + 1)) + 3;
 	    } else if (ST_LIKELY (STACK_PEEK () == ST_TRUE)) {
 		(void) STACK_POP ();
 		ip += 3;
@@ -508,16 +509,13 @@ st_cpu_main (void)
 		ip += 3;
 		SEND_SELECTOR (ST_SELECTOR_MUSTBEBOOLEAN, 0);
 	    }
-	    
+	   
 	    NEXT ();
 	}
     
 	CASE (JUMP) {
 	    
-	    short offset = *((short *) (ip + 1));
-	    
-	    ip += ((offset >= 0) ? 3 : 0) + offset;
-	    
+	    ip += *((short *) (ip + 1)) + 3;
 	    NEXT ();    
 	}
 	

@@ -689,7 +689,7 @@ generation_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
     size = size_statements (gt, block->block.statements);
     size += sizes[JUMP_FALSE];
     // we jump backwards
-    size = - size;
+    size = -(size + 3);
 	
     emit (gt, JUMP);
     emit (gt, size & 0xFF);
@@ -754,7 +754,7 @@ generation_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
     generate_statements (gt, node->message.arguments->block.statements);
 	
     size += size_statements (gt, node->message.receiver->block.statements);
-    size = - size;
+    size = -(size + 3);
 
     emit (gt, POP_STACK_TOP);
 
