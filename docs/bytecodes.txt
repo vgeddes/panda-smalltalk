@@ -6,191 +6,37 @@ BBB  (byte, byte, byte)
 
 Codes:
 
-push_temp_0		B
-push_temp_1		B
-push_temp_2		B
-push_temp_3     	B
-push_temp_4		B
-push_temp_5		B
-push_temp_6		B
-push_temp_7		B
-push_temp_8		B
-push_temp_9		B
-push_temp_10		B
-push_temp_11		B
-push_temp_12		B
-push_temp_13		B
-push_temp_14		B
-push_temp_15		B
-
-push_temp_n		BB
-
-store_pop_temp_0	B
-store_pop_temp_1	B
-store_pop_temp_2	B
-store_pop_temp_3   	B
-store_pop_temp_4	B
-store_pop_temp_5	B
-store_pop_temp_6	B
-store_pop_temp_7	B
-store_pop_temp_8	B
-store_pop_temp_9	B
-store_pop_temp_10	B
-store_pop_temp_11	B
-store_pop_temp_12	B
-store_pop_temp_13	B
-store_pop_temp_14	B
-store_pop_temp_15	B
-
-store_pop_temp_n	BB
-
-push_instvar_0		B
-push_instvar_1		B
-push_instvar_2		B
-push_instvar_3		B
-push_instvar_4		B
-push_instvar_5		B
-push_instvar_6		B
-push_instvar_7		B
-push_instvar_8		B
-push_instvar_9		B
-push_instvar_10		B
-push_instvar_11		B
-push_instvar_12		B
-push_instvar_13		B
-push_instvar_14		B
-push_instvar_15		B
-
-push_instvar_n		BB
-
-store_pop_instvar_0	B
-store_pop_instvar_1	B
-store_pop_instvar_2	B
-store_pop_instvar_3	B
-store_pop_instvar_4	B
-store_pop_instvar_5	B
-store_pop_instvar_6	B
-store_pop_instvar_7	B
-store_pop_instvar_8	B
-store_pop_instvar_9	B
-store_pop_instvar_10	B
-store_pop_instvar_11	B
-store_pop_instvar_12	B
-store_pop_instvar_13	B
-store_pop_instvar_14	B
-store_pop_instvar_15	B
-
-store_pop_instvar_n	BB
-
-push_literal_const_0	B
-push_literal_const_1	B
-push_literal_const_2	B
-push_literal_const_3	B
-push_literal_const_4	B
-push_literal_const_5	B
-push_literal_const_6	B
-push_literal_const_7	B
-push_literal_const_8	B
-push_literal_const_9	B
-push_literal_const_10	B
-push_literal_const_11	B
-push_literal_const_12	B
-push_literal_const_13	B
-push_literal_const_14	B
-push_literal_const_15	B
-push_literal_const_16	B
-push_literal_const_17	B
-push_literal_const_18	B
-push_literal_const_19	B
-push_literal_const_20	B
-push_literal_const_21	B
-push_literal_const_22	B
-push_literal_const_23	B
-push_literal_const_24	B
-push_literal_const_25	B
-push_literal_const_26	B
-push_literal_const_27	B
-push_literal_const_28	B
-push_literal_const_29	B
-push_literal_const_30	B
-push_literal_const_31	B
-
-push_literal_const_n	BB
-
-push_literal_var_0	B
-push_literal_var_1	B
-push_literal_var_2	B
-push_literal_var_3	B
-push_literal_var_4	B
-push_literal_var_5	B
-push_literal_var_6	B
-push_literal_var_7	B
-push_literal_var_8	B
-push_literal_var_9	B
-push_literal_var_10	B
-push_literal_var_11	B
-push_literal_var_12	B
-push_literal_var_13	B
-push_literal_var_14	B
-push_literal_var_15	B
-push_literal_var_16	B
-push_literal_var_17	B
-push_literal_var_18	B
-push_literal_var_19	B
-push_literal_var_20	B
-push_literal_var_21	B
-push_literal_var_22	B
-push_literal_var_23	B
-push_literal_var_24	B
-push_literal_var_25	B
-push_literal_var_26	B
-push_literal_var_27	B
-push_literal_var_28	B
-push_literal_var_29	B
-push_literal_var_30	B
-push_literal_var_31	B
-
-push_literal_var_n	BB
-
-store_literal_var_n	BB
-store_temp_n		BB
-store_instvar_n		BB
+push_temp		BB
+store_pop_temp	        BB
+push_instvar		BB
+store_pop_instvar	BB     
+push_literal_const	BB
+push_literal_var	BB
+store_literal_var	BB
+store_temp		BB
+store_instvar		BB
 
 push_self		B
 push_nil		B
 push_true		B
 push_false		B
-push_minus_one		B
-push_zero		B
-push_one		B
-push_two		B
+push_integer            BB  
 
 return_stack_top	B
-return_self		B
-return_nil		B
-return_true		B
-return_false		B
 
 pop_stack_top		B
 duplicate_stack_top	B
 
 push_active_context	B
 
-create_block            B
+block_copy              BB
 
-jump_true		BB
-jump_false		BB
-jump			BB
-jump_far_true		BBB
-jump_far_false		BBB
-jump_far		BBB
+jump_true		BBB
+jump_false		BBB
+jump	        	BBB
 
-send_0args		BB
-send_1args		BB
-send_2args		BB
-send_nargs		BBB
-send_nargs_self 	BBB
-send_nargs_super	BBB
+send         		BBB
+send_super              BBB
 
 send_plus		B
 send_minus		B
@@ -207,7 +53,6 @@ send_bitshift		B
 send_bitand		B
 send_bitor		B
 send_bitxor		B
-
 send_at			B
 send_at_put		B
 send_size		B

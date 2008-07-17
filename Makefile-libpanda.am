@@ -60,7 +60,6 @@ libpanda_la_CPPFLAGS =          \
 
 libpanda_la_CFLAGS = $(WARN_CFLAGS)
 
-
 libpanda_la_LIBADD = libtommath.la libgdtoa.la liboptparse.la libmpa.la -lm -lrt
 
 
