@@ -3,58 +3,48 @@ Object Memory Layout
 
 Legend
 -------
-mark: GC book-keeping (12 bits), Readonly (1 bit) Hash (20 bits), Tag (2 bits)
-class oop: Oop to class of instance
+mark: isLargeContext (1 bit), instanceSize (8 bits), format (8 bits), tag (2 bits)
+class oop: reference to instance class
 
 Normal Object
 
 [ mark             ]
 [ class            ]
-[ instance vars    ] *
-
+[ instance vars    ] 0...N
 
 Array Object
 
 [ mark               ]
 [ class              ]
 [ size               ]
-[ elements           ] *
-
+[ elements           ] 0...N
 
 ByteArray Object
 
 [ mark                ]
 [ class               ]
 [ size                ]
-[ bytes               ] * (padded to oop size)
+[ bytes               ] 0...N (padded to a multiple of oop size)
 
 FloatArray Object
 
 [ mark                ]
 [ class               ]
 [ size                ]
-[ C `double'          ] *
+[ C `double'          ] 0...N
+
+WordArray Object
+
+[ mark                ]
+[ class               ]
+[ size                ]
+[ unsigned int        ] 0...N (padded to a multiple of oop size)
 
 LargeInteger Object
 
 [ mark                ]
 [ class               ]
 [ size                ]
-[ C `mp_int' struct   ]
-
-Class/Metaclass Object
-
-[ mark                ]
-[ class               ]
-[ vtable              ]
-[ instance size       ]
-[ instance variables  ]
-[ class pool          ]
-[ name                ]
-[ superclass          ]
-[ method dictionary   ]
-
-
-
+[ `mp_int' struct     ]
 
 
