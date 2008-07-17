@@ -51,18 +51,19 @@ libgdtoa_la_SOURCES =    \
 BUILT_SOURCES += libs/libgdtoa/arith.h libs/libgdtoa/gd_qnan.h
 CLEANFILES += libs/libgdtoa/arith.h libs/libgdtoa/gd_qnan.h
 
-libs/libgdtoa/arith.h: libs/libgdtoa/arithchk.c
-	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa libs/libgdtoa/arithchk.c -o libs/libgdtoa/a.out || $(CC) -I$(top_srcdir)/libs/libgdtoa -DNO_LONG_LONG $(GDTOA_CFLAGS) libs/libgdtoa/arithchk.c -o libs/libgdtoa/a.out
-	libs/libgdtoa/a.out > libs/libgdtoa/arith.h
-	rm -f libs/libgdtoa/a.out libs/libgdtoa/arithchk.o
 
-libs/libgdtoa/gd_qnan.h: libs/libgdtoa/arith.h libs/libgdtoa/qnan.c
-	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa libs/libgdtoa/qnan.c -o libs/libgdtoa/a.out
-	libs/libgdtoa/a.out > libs/libgdtoa/gd_qnan.h
-	rm -f libs/libgdtoa/a.out libs/libgdtoa/qnan.o
+libs/libgdtoa/arith.h: $(top_srcdir)/libs/libgdtoa/arithchk.c
+	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa $(top_srcdir)/libs/libgdtoa/arithchk.c -o $(top_builddir)/libs/libgdtoa/a.out || $(CC) -I$(top_srcdir)/libs/libgdtoa -DNO_LONG_LONG $(GDTOA_CFLAGS) $(top_srcdir)/libs/libgdtoa/arithchk.c -o libs/libgdtoa/a.out
+	$(top_builddir)/libs/libgdtoa/a.out > $(top_builddir)/libs/libgdtoa/arith.h
+	rm -f $(top_builddir)/libs/libgdtoa/a.out $(top_builddir)/libs/libgdtoa/arithchk.o
+
+libs/libgdtoa/gd_qnan.h: $(top_builddir)/libs/libgdtoa/arith.h $(top_srcdir)/libs/libgdtoa/qnan.c
+	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa -I$(top_builddir)/libs/libgdtoa $(top_srcdir)/libs/libgdtoa/qnan.c -o $(top_builddir)/libs/libgdtoa/a.out
+	$(top_builddir)/libs/libgdtoa/a.out > $(top_builddir)/libs/libgdtoa/gd_qnan.h
+	rm -f $(top_builddir)/libs/libgdtoa/a.out $(top_builddir)/libs/libgdtoa/qnan.o
 
 libgdtoa_la_CFLAGS = -fPIC $(GDTOA_CFLAGS)
-libgdtoa_la_CPPFLAGS = -I$(top_srcdir)/libs/libgdtoa
+libgdtoa_la_CPPFLAGS = -I$(top_srcdir)/libs/libgdtoa -I$(top_builddir)/libs/libgdtoa
 
-EXTRA_DIST += libs/libgdtoa/test
+EXTRA_DIST += libs/libgdtoa/test libs/libgdtoa/arithchk.c libs/libgdtoa/qnan.c
 

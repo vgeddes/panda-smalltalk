@@ -72,6 +72,6 @@ src_panda_CFLAGS =   $(WARN_CFLAGS)
 src_panda_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/libs/libmpa -I$(top_srcdir)/libs/optparse
 
 
-smalltalk_files = st/*.st
+smalltalk_files = $(top_srcdir)/st/*.st
 
 EXTRA_DIST += $(smalltalk_files) src/Makefile
