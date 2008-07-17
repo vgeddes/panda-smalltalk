@@ -11,6 +11,7 @@
 #include "st-method.h"
 #include "st-array.h"
 #include "st-association.h"
+#include "st-memory.h"
 
 #include <stdlib.h>
 #include <setjmp.h>

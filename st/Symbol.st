@@ -48,3 +48,7 @@ Symbol method!
 printOn: aStream
 	aStream nextPut: $#.
 	aStream nextPutAll: self!
+
+Symbol method!
+species
+	^ String!
