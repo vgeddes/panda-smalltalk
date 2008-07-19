@@ -16,13 +16,6 @@ EXTRA_DIST = \
 	docs/bytecodes.txt \
 	docs/object-memory.txt
 
-include Makefile-libtommath.am
-include Makefile-libpanda.am
-include Makefile-libgdtoa.am
-include Makefile-libmpa.am
-include Makefile-optparse.am
+include Makefile-panda.am
+include Makefile-libs.am
 include Makefile-tests.am
-
-dist-hook:
-	@echo Generating ChangeLog
-	bzr log --short > $(distdir)/ChangeLog

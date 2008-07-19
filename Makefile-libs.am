@@ -1,0 +1,122 @@
+
+# libtool convenience library for libmpa
+
+noinst_LTLIBRARIES += libmpa.la
+
+libmpa_la_SOURCES = libs/libmpa/ptr_array.h libs/libmpa/ptr_array.c
+libmpa_la_CPPFLAGS = -I$(top_srcdir)/libs/libmpa
+
+EXTRA_DIST += libs/libmpa/LICENSE libs/libmpa/tester.c
+
+
+# libtool convenience library for libtommath
+
+noinst_LTLIBRARIES += libtommath.la
+
+headers = libs/libtommath/tommath.h \
+	  libs/libtommath/tommath_class.h \
+	  libs/libtommath/tommath_superclass.h
+
+libtommath_la_SOURCES = libs/libtommath/mpi.c $(headers)
+
+libtommath_la_CFLAGS = $(TOMMATH_CFLAGS)
+libtommath_la_CPPFLAGS = $(TOMMATH_CFLAGS) -I$(top_srcdir)/libs/libtommath
+
+
+noinst_PROGRAMS += libs/libtommath/test
+
+libs_libtommath_test_SOURCES  = libs/libtommath/tests/test.c
+libs_libtommath_test_CFLAGS   = $(TOMMATH_CFLAGS)
+libs_libtommath_test_CPPFLAGS = $(TOMMATH_CFLAGS) -I$(top_srcdir)/libs/libtommath
+libs_libtommath_test_LDADD    = libtommath.la
+
+EXTRA_DIST += libs/libtommath/tests/timing.c
+
+
+# libtool convenience library for optparse
+
+
+noinst_LTLIBRARIES += liboptparse.la
+
+liboptparse_la_SOURCES  = libs/optparse/optparse.c libs/optparse/optparse.h
+liboptparse_la_CPPFLAGS = -I$(top_srcdir)/libs/optparse
+liboptparse_la_CFLAGS   = $(WARN_CFLAGS)
+
+EXTRA_DIST += $(top_srcdir)/libs/optparse/fudd.c \
+	$(top_srcdir)/libs/optparse/notpython.c  \
+	$(top_srcdir)/libs/optparse/optparse.tex \
+	$(top_srcdir)/libs/optparse/Makefile.bak
+
+
+# libtool convenience library for libgdtoa
+
+noinst_LTLIBRARIES += libgdtoa.la
+
+libgdtoa_la_SOURCES =    \
+	libs/libgdtoa/dmisc.c \
+	libs/libgdtoa/dtoa.c             \
+	libs/libgdtoa/g_Qfmt.c           \
+	libs/libgdtoa/g__fmt.c           \
+	libs/libgdtoa/g_ddfmt.c          \
+	libs/libgdtoa/g_dfmt.c \
+	libs/libgdtoa/g_ffmt.c \
+        libs/libgdtoa/g_xLfmt.c \
+	libs/libgdtoa/g_xfmt.c \
+	libs/libgdtoa/gdtoa.c \
+	libs/libgdtoa/gethex.c \
+	libs/libgdtoa/gmisc.c \
+	libs/libgdtoa/hd_init.c \
+	libs/libgdtoa/hexnan.c \
+	libs/libgdtoa/misc.c \
+	libs/libgdtoa/smisc.c \
+	libs/libgdtoa/strtoIQ.c \
+	libs/libgdtoa/strtoId.c \
+	libs/libgdtoa/strtoIdd.c \
+	libs/libgdtoa/strtoIf.c \
+	libs/libgdtoa/strtoIg.c \
+	libs/libgdtoa/strtoIx.c \
+	libs/libgdtoa/strtoIxL.c \
+	libs/libgdtoa/strtod.c \
+	libs/libgdtoa/strtodI.c \
+	libs/libgdtoa/strtodg.c \
+	libs/libgdtoa/strtof.c \
+	libs/libgdtoa/strtopQ.c \
+        libs/libgdtoa/strtopd.c \
+	libs/libgdtoa/strtopdd.c \
+	libs/libgdtoa/strtopf.c \
+	libs/libgdtoa/strtopx.c \
+	libs/libgdtoa/strtopxL.c \
+	libs/libgdtoa/strtorQ.c \
+        libs/libgdtoa/strtord.c \
+	libs/libgdtoa/strtordd.c \
+	libs/libgdtoa/strtorf.c \
+	libs/libgdtoa/strtorx.c \
+	libs/libgdtoa/strtorxL.c \
+	libs/libgdtoa/sum.c \
+	libs/libgdtoa/ulp.c \
+	libs/libgdtoa/gdtoa.h \
+	libs/libgdtoa/gdtoaimp.h
+
+
+BUILT_SOURCES += gd_arith gd_qnan
+CLEANFILES += $(top_builddir)/libs/libgdtoa/arith.h $(top_builddir)/libs/libgdtoa/gd_qnan.h
+
+gd_builddir = $(top_builddir)/libs/libgdtoa
+gd_srcdir   = $(top_srcdir)/libs/libgdtoa
+
+gd_arith: $(gd_srcdir)/arithchk.c
+	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa $(gd_srcdir)/arithchk.c -o $(gd_builddir)/a.out \
+        || $(CC) -I$(top_srcdir)/libs/libgdtoa -DNO_LONG_LONG $(GDTOA_CFLAGS) $(gd_srcdir)/arithchk.c -o libs/libgdtoa/a.out
+	$(gd_builddir)/a.out > $(gd_builddir)/arith.h
+	rm -f $(gd_builddir)/a.out $(gd_builddir)/arithchk.o
+
+gd_qnan: $(gd_builddir)/arith.h $(gd_srcdir)/qnan.c
+	$(CC) $(GDTOA_CFLAGS) -I$(top_srcdir)/libs/libgdtoa -I$(top_builddir)/libs/libgdtoa $(gd_srcdir)/qnan.c \
+        -o $(gd_builddir)/a.out
+	$(gd_builddir)/a.out > $(gd_builddir)/gd_qnan.h
+	rm -f $(gd_builddir)/a.out $(gd_builddir)/qnan.o
+
+libgdtoa_la_CFLAGS = -fPIC $(GDTOA_CFLAGS)
+libgdtoa_la_CPPFLAGS = -I$(top_srcdir)/libs/libgdtoa -I$(top_builddir)/libs/libgdtoa
+
+EXTRA_DIST += libs/libgdtoa/test libs/libgdtoa/arithchk.c libs/libgdtoa/qnan.c
