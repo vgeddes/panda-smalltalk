@@ -98,6 +98,8 @@ void   st_bootstrap_universe (void);
 
 st_oop st_global_get (const char *name);
 
-bool   st_verbose_mode (void) ST_GNUC_PURE;
+void st_set_verbosity (bool verbose);
+
+bool st_verbose_mode (void) ST_GNUC_PURE;
 
 #endif /* __ST_UNIVERSE_H__ */
