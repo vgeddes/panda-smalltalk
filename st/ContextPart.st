@@ -1,7 +1,5 @@
 "
-Copyright (c) 2007 Luca Bruno
-
-This file is part of Smalltalk YX.
+Copyright (c) 2008 Vincent Geddes
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the 'Software'), to deal
@@ -67,18 +65,12 @@ selector
 
 MethodContext method!
 printOn: aStream
-	| mclass class selector |
+	| class selector |
 	
 	class := self receiver class.
-	mclass := self method methodClass.
 	selector := self selector.
 
 	aStream nextPutAll: class name.
-	(class == mclass) 	
-		ifTrue: [ aStream nextPut: $(.
-				 aStream nextPutAll: mclass name.
-				 aStream nextPut: $)].
-
 	aStream nextPutAll: '>>'.
 	aStream nextPutAll: selector!
 

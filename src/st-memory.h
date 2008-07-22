@@ -82,7 +82,7 @@ st_oop     st_memory_allocate        (st_uint size);
 st_oop     st_memory_allocate_context (bool large);
 void       st_memory_recycle_context  (st_oop context);
 
-bool       st_memory_compaction_occured (void);
+bool       st_memory_compaction_occurred (void);
 st_oop     st_memory_remap_reference    (st_oop reference);
 
 st_heap  *st_heap_new       (st_uint reserved_size);
