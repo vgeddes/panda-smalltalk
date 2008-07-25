@@ -3,16 +3,23 @@
 
 
 FileStream classMethod!
-primOpen: fileName mode: aSymbol
+primOpen: fileName mode: anInteger
 	<primitive: 'FileStream_open'>
 	self primitiveFailed!
 
 FileStream classMethod!
 open: fileName mode: aSymbol
-	| fd |
-	fd := self primOpen: fileName mode: aSymbol.
+	| fd mode |
+	
+	aSymbol == #read
+		ifTrue: [mode := 0]
+		ifFalse:
+			[aSymbol == #write
+				ifTrue: [mode := 1]
+				ifFalse: [self error: 'mode not supported']].
+	
+	fd := self primOpen: fileName mode: mode.
 	^ self basicNew on: fd!
-
 
 FileStream method!
 primRead: fd count: anInteger
@@ -35,21 +42,6 @@ primClose: fd
 	self primitiveFailed!
 
 FileStream method!
-primOpen: fileName
-	<primitive: 'FileStream_open'>
-	self primitiveFailed!
-
-FileStream method!
-primPosition: fd
-	<primitive: 'FileStream_position'>
-	self primitiveFailed!
-
-FileStream method!
-primSetPosition: fd
-	<primitive: 'FileStream_setPosition'>
-	self primitiveFailed!
-
-FileStream method!
 next
 	"Read the next byte from the receiver"
 	^ self primRead: fdesc count: 1!
@@ -62,21 +54,12 @@ next: anInteger
 FileStream method!
 nextPut: anInteger
 	"write anInteger to the receiver."
-	^ self primWrite: fdesc byte: anInteger!
+	^ self primWrite: fdesc byteArray: (ByteArray with: anInteger)!
 
 FileStream method!
 nextPutAll: aByteArray
 	^ self primWrite: fdesc byteArray: aByteArray!
 
-
-
-FileStream method!
-position: anInteger
-	^ self primSetPosition: fdesc!
-
-FileStream method!
-position
-	^ self primPosition: fdesc!
 
 FileStream method!
 close

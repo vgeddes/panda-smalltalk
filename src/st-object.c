@@ -39,7 +39,6 @@ void
 st_object_initialize_header (st_oop object, st_oop class)
 {
     ST_OBJECT_MARK (object)  = 0 | ST_MARK_TAG;
-    ST_OBJECT_HASH (object)  = st_smi_new (st_current_hash++);
     ST_OBJECT_CLASS (object) = class;
     st_object_set_format (object, st_smi_value (ST_BEHAVIOR_FORMAT (class)));
     st_object_set_instance_size (object, st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class)));
@@ -90,10 +89,8 @@ st_object_hash (st_oop object)
     if (st_object_class (object) == ST_ASSOCIATION_CLASS)
 	return st_association_hash (object);
     
-    return st_smi_value (ST_HEADER (object)->hash);
+    return st_identity_ht_hash (memory->ht, object);
 }
-
-int st_current_hash = 1;
 
 st_oop
 st_object_allocate (st_oop class)
@@ -109,6 +106,18 @@ st_object_allocate (st_oop class)
     fields = ST_OBJECT_FIELDS (object);
     for (st_uint i = 0; i < instance_size; i++)
 	fields[i] = ST_NIL;
+
+    return object;
+}
+
+st_oop
+st_handle_allocate (st_oop class)
+{
+    st_oop *fields;
+    st_oop  object;
+
+    object = st_memory_allocate (ST_SIZE_OOPS (struct st_handle));
+    st_object_initialize_header (object, class);
 
     return object;
 }

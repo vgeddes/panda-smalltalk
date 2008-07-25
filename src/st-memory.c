@@ -170,6 +170,8 @@ st_memory_new (void)
     memory->free_context = 0;
     memory->free_context_large = 0;
 
+    memory->ht = st_identity_ht_new ();
+
     ensure_metadata ();
 
     return memory;
@@ -322,6 +324,8 @@ object_size (st_oop object)
 	return ST_SIZE_OOPS (struct st_float);
     case ST_FORMAT_LARGE_INTEGER:
 	return ST_SIZE_OOPS (struct st_large_integer);
+    case ST_FORMAT_HANDLE:
+	return ST_SIZE_OOPS (struct st_handle);
     case ST_FORMAT_ARRAY:
 	return ST_SIZE_OOPS (struct st_arrayed_object) + st_smi_value (st_arrayed_object_size (object));
     case ST_FORMAT_BYTE_ARRAY:
@@ -361,6 +365,7 @@ object_contents (st_oop object, st_oop **oops, st_uint *size)
 	break;
     case ST_FORMAT_FLOAT:
     case ST_FORMAT_LARGE_INTEGER:
+    case ST_FORMAT_HANDLE:
     case ST_FORMAT_BYTE_ARRAY:
     case ST_FORMAT_WORD_ARRAY:
     case ST_FORMAT_FLOAT_ARRAY:
@@ -432,7 +437,7 @@ remap (void)
     while (p < memory->p) {
 
 	/* remap class field */
-	p[2] = remap_oop (p[2]);
+	p[1] = remap_oop (p[1]);
 	/* remap ivars */
 	object_contents (tag (p), &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
@@ -483,10 +488,13 @@ compact (void)
 
 	if (ismarked (tag (from))) {
 
+	    if (st_object_is_hashed (tag (from)))
+		st_identity_ht_rehash_object (memory->ht, tag (from), tag (to));
+
 	    set_alloc_bit (tag (to));
 	    size = object_size (tag (from));
 	    st_oops_move (to, from, size);
-	    
+
 	    if (block < (get_block_index (from) + 1)) {
 		block = get_block_index (from);
 		memory->offsets[block] = to;
@@ -497,6 +505,8 @@ compact (void)
 	    from += size;
 	} else {
 	    basic_finalize (tag (from));
+	    if (st_object_is_hashed (tag (from)))
+	    	st_identity_ht_remove (memory->ht, tag (from));
 	    from += object_size (tag (from));
 	}
     }
@@ -750,4 +760,143 @@ st_heap_destroy (st_heap *heap)
 {
     st_system_release_memory (heap->start, heap->end - heap->start);
     st_free (heap);
+}
+
+
+// power of 2
+#define IDENTITY_HT_INITIAL_CAPACITY 256
+
+// prime number - 1
+#define ADVANCE_SIZE  10672
+
+identity_ht *
+st_identity_ht_new (void)
+{
+    identity_ht *ht;
+
+    ht = st_new (identity_ht);
+
+    ht->table = st_malloc0 (sizeof (struct cell) * IDENTITY_HT_INITIAL_CAPACITY);
+    ht->alloc = IDENTITY_HT_INITIAL_CAPACITY;
+    ht->size = 0;
+    ht->deleted = 0;
+    ht->current_hash = 0;
+
+    return ht;
+}
+
+static st_uint
+identity_ht_find (identity_ht *ht, st_oop object)
+{
+    /* use this probing function to find an object which may already be stored somewhere in table
+     */
+    st_uint mask, i;
+
+    mask = ht->alloc - 1;
+    i = (detag (object) - memory->start) & mask;
+
+    while (true) {
+	if (ht->table[i].object == 0 || object == ht->table[i].object)
+	    return i;
+	i = (i + ADVANCE_SIZE) & mask;
+    }
+}
+
+
+static st_uint
+identity_ht_find_available_cell (identity_ht *ht, st_oop object)
+{
+    /* use this probing function to find a place to insert object
+     */
+    st_uint mask, i;
+
+    mask = ht->alloc - 1;
+    i = (detag (object) - memory->start) & mask;
+
+    while (true) {
+	if (ht->table[i].object == 0 || ht->table[i].object == (st_oop) ht)
+	    return i;
+	i = (i + ADVANCE_SIZE) & mask;
+    }
+}
+
+static void
+identity_ht_check_grow (identity_ht *ht)
+{
+    st_uint alloc, index;
+    struct cell *table; 
+
+    /* ensure table is at least half-full */
+    if ((ht->size + ht->deleted) * 2 <= ht->alloc)
+	return;
+
+    alloc = ht->alloc;
+    table = ht->table;
+    ht->alloc *= 2;
+    ht->deleted = 0;
+    ht->table = st_malloc0 (sizeof (struct cell) * ht->alloc);
+
+    for (st_uint i = 0; i <= alloc; i++) {
+	if (table[i].object != 0 && (table[i].object != (st_oop) ht)) {
+	    index = identity_ht_find_available_cell (ht, table[i].object);
+	    ht->table[index].object = table[i].object;
+	    ht->table[index].hash   = table[i].hash;
+	}
+    }
+
+    st_free (table);
+}
+
+void
+st_identity_ht_remove (identity_ht *ht, st_oop object)
+{
+    st_uint index;
+
+    index = identity_ht_find (ht, object);
+
+    if (ht->table[index].object != 0) {
+	ht->table[index].object = (st_oop) ht;
+	ht->table[index].hash   = 0;
+	ht->size--;
+	ht->deleted++;
+    } else {
+	st_assert_not_reached ();
+    }
+}
+
+st_uint
+st_identity_ht_hash (identity_ht *ht, st_oop object)
+{
+    /* assigns an identity hash for an object
+     */
+    st_uint index;
+
+    index = identity_ht_find (ht, object);
+    if (ht->table[index].object == 0) {
+	ht->size++;
+	ht->table[index].object = object;
+	ht->table[index].hash   = ht->current_hash++;
+	identity_ht_check_grow (ht);
+    }    
+    return ht->table[index].hash;
+}
+
+void
+st_identity_ht_rehash_object (identity_ht *ht, st_oop old, st_oop new)
+{
+    st_uint hash, index;
+
+    index = identity_ht_find (ht, old);
+    st_assert (ht->table[index].object != 0);
+    
+    hash = ht->table[index].hash;
+    ht->table[index].object = (st_oop) ht;
+    ht->table[index].hash   = 0;	
+    ht->deleted++;
+    
+    index = identity_ht_find_available_cell (ht, new);
+    if (ht->table[index].object == (st_oop) ht)
+	ht->deleted--;
+    ht->table[index].object = new;
+    ht->table[index].hash   = hash;
 }

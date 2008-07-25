@@ -35,6 +35,23 @@
 #define RESERVED_SIZE        (1000 * 1024 * 1024)
 #define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
 
+typedef struct
+{
+    struct cell *table;
+    st_uint  alloc;
+    st_uint  size;
+    st_uint  deleted;
+    
+    st_uint current_hash;
+
+} identity_ht;
+
+struct cell
+{
+    st_oop  object;
+    st_uint hash;
+};
+
 typedef struct st_heap
 {
     st_uchar *start; /* start of reserved address space */
@@ -71,6 +88,8 @@ typedef struct st_memory
     st_ulong bytes_allocated;             /* current number of allocated bytes */
     st_ulong bytes_collected;             /* number of bytes collected in last compaction */
 
+    identity_ht *ht;
+
 } st_memory;
 
 st_memory *st_memory_new             (void);
@@ -89,5 +108,10 @@ st_heap  *st_heap_new       (st_uint reserved_size);
 bool      st_heap_grow      (st_heap *heap, st_uint grow_size);
 bool      st_heap_shrink    (st_heap *heap, st_uint shrink_size);
 void      st_heap_destroy   (st_heap *heap);
+
+st_uint      st_identity_ht_hash (identity_ht *ht, st_oop object);
+identity_ht *st_identity_ht_new (void);
+void         st_identity_ht_remove (identity_ht *ht, st_oop object);
+void         st_identity_ht_rehash_object (identity_ht *ht, st_oop old, st_oop new);
 
 #endif /* __ST_MEMORY__ */

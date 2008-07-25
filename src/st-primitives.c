@@ -42,8 +42,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 
 #define ST_PRIMITIVE_FAIL(cpu)			\
@@ -1339,19 +1341,20 @@ Object_class (struct st_cpu *cpu)
 static void
 Object_identityHash (struct st_cpu *cpu)
 {
-    st_oop object;
-    st_oop result;
+    st_oop  object;
+    st_uint hash;
     
     object = ST_STACK_POP (cpu);
     
-    if (st_object_is_heap (object))
-	result = ST_OBJECT_HASH (object);
-    else if (st_object_is_smi (object))
-	result = st_smi_new (st_smi_hash (object));
-    else
-	result = st_smi_new (st_character_hash (object));
-    
-    ST_STACK_PUSH (cpu, result);
+    if (st_object_is_smi (object))
+	hash = st_smi_hash (object);
+    else if (st_object_is_character (object))
+	hash = st_character_hash (object);
+    else {
+	st_object_set_hashed (object, true);
+	hash = st_identity_ht_hash (memory->ht, object);
+    }
+    ST_STACK_PUSH (cpu, st_smi_new (hash));
 }
 
 static void
@@ -1430,19 +1433,24 @@ Object_copy (struct st_cpu *cpu)
 	mp_int value;
 	int    result;
 
-	copy = st_large_integer_new (NULL);
+	copy = st_object_new (ST_LARGE_INTEGER_CLASS);
 	
 	result = mp_init_copy (st_large_integer_value (copy),
 			       st_large_integer_value (cpu->message_receiver));
 	if (result != MP_OKAY)
-	    st_assert_not_reached ();
+	    abort ();
 	break;
     }
+    case ST_FORMAT_HANDLE:
+	
+	copy = st_object_new (ST_HANDLE_CLASS);
+	ST_HANDLE_VALUE (copy) = ST_HANDLE_VALUE (cpu->message_receiver);
+	break;
     case ST_FORMAT_CONTEXT:
     case ST_FORMAT_INTEGER_ARRAY:
     default:
 	/* not implemented yet */
-	st_assert_not_reached ();
+	abort ();
     }
 
     ST_STACK_PUSH (cpu, copy);
@@ -1584,6 +1592,9 @@ Behavior_new (struct st_cpu *cpu)
 	break;
     case ST_FORMAT_LARGE_INTEGER:
 	instance = st_large_integer_allocate (class, NULL);
+	break;
+    case ST_FORMAT_HANDLE:
+	instance = st_handle_allocate (class);
 	break;
     default:
 	/* should not reach */
@@ -2082,6 +2093,128 @@ Character_characterFor (struct st_cpu *cpu)
 	ST_STACK_UNPOP (cpu, 2);
 }
 
+static void
+FileStream_open (struct st_cpu *cpu)
+{
+    st_oop filename;
+    st_oop handle;
+    char  *str;
+    int flags, mode;
+    int fd;
+
+    mode     = pop_integer32 (cpu);
+    filename = ST_STACK_POP (cpu);
+    if (st_object_format (filename) != ST_FORMAT_BYTE_ARRAY) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+
+    if (mode == 0)
+	flags = O_RDONLY;
+    else if (mode == 1)
+	flags = O_WRONLY;
+    else {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+
+    str = st_byte_array_bytes (filename);
+
+    fd = open (str, O_WRONLY | O_CREAT, 0644);
+    if (fd < 0) {
+	fprintf (stderr, strerror (errno));
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+
+    ftruncate (fd, 0);
+
+    /* pop receiver */
+    (void) ST_STACK_POP (cpu);
+
+    handle = st_object_new (ST_HANDLE_CLASS);
+    ST_HANDLE_VALUE (handle) = fd;
+
+    ST_STACK_PUSH (cpu, handle);
+}
+
+static void
+FileStream_close (struct st_cpu *cpu)
+{
+    st_oop handle;
+    int    fd;
+
+    handle = ST_STACK_POP (cpu);
+    fd = ST_HANDLE_VALUE (handle);
+
+    if (close (fd) < 0) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 1);
+	return;
+    }
+
+    /* leave receiver on stack */
+
+}
+
+static void
+FileStream_write (struct st_cpu *cpu)
+{
+    st_oop handle;
+    st_oop array;
+    int fd;
+    char *buffer;
+    size_t total, size;
+    ssize_t count;
+
+    array = ST_STACK_POP (cpu);
+    handle = ST_STACK_POP (cpu);
+    if (st_object_format (array) != ST_FORMAT_BYTE_ARRAY) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 1);
+	return;
+    }
+    if (st_object_format (handle) != ST_FORMAT_HANDLE) {
+	cpu->success = false;
+	ST_STACK_UNPOP (cpu, 2);
+	return;
+    }
+
+    fd = ST_HANDLE_VALUE (handle);
+    buffer = st_byte_array_bytes (array);
+    size = st_smi_value (st_arrayed_object_size (array));
+    
+    total = 0;
+    while (total < size) {
+	count = write (fd, buffer + total, size - total);
+	if (count < 0) {
+	    cpu->success = false;
+	    ST_STACK_UNPOP (cpu, 2);
+	    return;
+	}
+	total += count;
+    }
+
+    /* leave receiver on stack */
+}
+
+static void
+FileStream_seek (struct st_cpu *cpu)
+{
+    /* not implemented yet */
+    abort ();
+}
+
+static void
+FileStream_read (struct st_cpu *cpu)
+{
+    /* not implemented yet */
+    abort (); 
+}
+
 const struct st_primitive st_primitives[] = {
     { "SmallInteger_add",      SmallInteger_add      },
     { "SmallInteger_sub",      SmallInteger_sub      },
@@ -2189,11 +2322,18 @@ const struct st_primitive st_primitives[] = {
 
     { "System_exitWithResult",          System_exitWithResult },
 
-    { "Character_value",                Character_value },
-    { "Character_characterFor",         Character_characterFor },
+    { "Character_value",                 Character_value },
+    { "Character_characterFor",          Character_characterFor },
 
-    { "BlockContext_value",               BlockContext_value               },
-    { "BlockContext_valueWithArguments",  BlockContext_valueWithArguments  },
+    { "BlockContext_value",              BlockContext_value               },
+    { "BlockContext_valueWithArguments", BlockContext_valueWithArguments  },
+
+    { "FileStream_open",        FileStream_open      },
+    { "FileStream_close",       FileStream_close     },
+    { "FileStream_read",        FileStream_read      },
+    { "FileStream_write",       FileStream_write     },
+    { "FileStream_seek",        FileStream_seek      },
+
 };
 
 /* returns 0 if there no primitive function corresponding

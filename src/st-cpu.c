@@ -916,6 +916,8 @@ st_cpu_main (void)
 	    
 	send_common:
 
+	    //printf ("%s\n", st_byte_array_bytes (cpu->message_selector));
+
 	    if (!lookup_method_in_cache ()) {
 		STORE_REGISTERS ();
 		cpu->new_method = lookup_method (cpu->lookup_class);

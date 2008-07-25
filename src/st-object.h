@@ -32,6 +32,7 @@
 
 #define  ST_HEADER(oop)           ((struct st_header *) ST_POINTER (oop))
 #define  ST_ARRAYED_OBJECT(oop)   ((struct st_arrayed_object *) ST_POINTER (oop))
+#define  ST_HANDLE(oop)           ((struct st_handle *) ST_POINTER (oop))
 
 /* Every heap-allocated object starts with this header word */
 /* format of mark oop
@@ -46,7 +47,6 @@
 struct st_header
 {
     st_oop mark;
-    st_oop hash;
     st_oop class;
     st_oop fields[];
 };
@@ -57,11 +57,17 @@ struct st_arrayed_object
     st_oop           size;
 };
 
-extern int st_current_hash;
+struct st_handle
+{
+    struct st_header header;
+
+    uintptr_t value;
+};
 
 enum
 {
-    st_unused_bits     = 16,
+    st_unused_bits     = 15,
+    st_hash_bits       = 1,
     st_object_large_bits = 1,
     st_size_bits       = 8,
     st_format_bits     = 6,
@@ -71,7 +77,8 @@ enum
     st_format_shift    = st_tag_bits + st_tag_shift,
     st_size_shift      = st_format_bits + st_format_shift,
     st_object_large_shift     = st_size_bits + st_size_shift,
-    st_unused_shift    = st_object_large_bits + st_object_large_shift,
+    st_hash_shift      = st_object_large_bits + st_object_large_shift,
+    st_unused_shift    = st_hash_bits + st_hash_shift,
 
     st_format_mask          = ST_NTH_MASK (st_format_bits),
     st_format_mask_in_place = st_format_mask << st_format_shift,
@@ -79,15 +86,19 @@ enum
     st_size_mask_in_place   = st_size_mask << st_size_shift,
     st_object_large_mask    = ST_NTH_MASK (st_object_large_bits),
     st_object_large_mask_in_place  = st_object_large_mask << st_object_large_shift,
+    st_hash_mask            = ST_NTH_MASK (st_hash_bits),
+    st_hash_mask_in_place   = st_hash_mask << st_hash_shift,
     st_unused_mask          = ST_NTH_MASK (st_unused_bits),
     st_unused_mask_in_place = st_unused_mask << st_unused_shift,
 };
 
+/* Make sure to update all cased code in VM when adding a new format */
 typedef enum st_format
 {
     ST_FORMAT_OBJECT,
     ST_FORMAT_FLOAT,
     ST_FORMAT_LARGE_INTEGER,
+    ST_FORMAT_HANDLE,
     ST_FORMAT_ARRAY,
     ST_FORMAT_BYTE_ARRAY,
     ST_FORMAT_FLOAT_ARRAY,
@@ -103,11 +114,13 @@ bool           st_object_equal       (st_oop object, st_oop other);
 st_uint        st_object_hash        (st_oop object);
 
 #define ST_OBJECT_MARK(oop)   (ST_HEADER (oop)->mark)
-#define ST_OBJECT_HASH(oop)   (ST_HEADER (oop)->hash)
 #define ST_OBJECT_CLASS(oop)  (ST_HEADER (oop)->class)
 #define ST_OBJECT_FIELDS(oop) (ST_HEADER (oop)->fields)
 
 st_oop st_object_allocate (st_oop class);
+st_oop st_handle_allocate (st_oop class);
+
+#define ST_HANDLE_VALUE(oop) (ST_HANDLE (oop)->value)
 
 static inline void
 st_object_set_format (st_oop object, st_format format)
@@ -127,11 +140,24 @@ st_object_set_large_context (st_oop object, bool is_large)
     ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_object_large_mask_in_place) | (is_large << st_object_large_shift); 
 }
 
-static inline st_format
+static inline bool
 st_object_large_context (st_oop object)
 {
     return (ST_OBJECT_MARK (object) >> st_object_large_shift) & st_object_large_mask;
 }
+
+static inline void
+st_object_set_hashed (st_oop object, bool hashed)
+{
+    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_hash_mask_in_place) | (hashed << st_hash_shift); 
+}
+
+static inline bool
+st_object_is_hashed (st_oop object)
+{
+    return (ST_OBJECT_MARK (object) >> st_hash_shift) & st_hash_mask;
+}
+
 
 static inline st_uint
 st_object_instance_size (st_oop object)

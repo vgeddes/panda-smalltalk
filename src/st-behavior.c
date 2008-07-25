@@ -69,6 +69,8 @@ st_object_new (st_oop class)
 	return st_float_allocate (class);
     case ST_FORMAT_LARGE_INTEGER:
 	return st_large_integer_allocate (class, NULL);
+    case ST_FORMAT_HANDLE:
+	return st_handle_allocate (class);
     default:
 	/* should not reach */
 	abort ();

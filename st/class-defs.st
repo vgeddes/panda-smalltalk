@@ -239,3 +239,24 @@ Class named: 'False'
 Class named: 'System'
 	  superclass: 'Object'
 	  instanceVariableNames: 'globals symbols'!
+
+
+"Pi Digits"
+
+Class named: 'PiDigitSpigot'
+	  superclass: 'Object'
+	  instanceVariableNames: 'z x inverse'!
+
+Class named: 'Transformation'
+	  superclass: 'Object'
+	  instanceVariableNames: 'q r s t k'!
+
+"File Streams"
+
+Class named: 'Handle'
+	  superclass: 'Object'
+	  instanceVariableNames: ''!
+
+Class named: 'FileStream'
+	  superclass: 'Object'
+	  instanceVariableNames: 'fdesc'!

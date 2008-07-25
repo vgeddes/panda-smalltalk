@@ -48,7 +48,7 @@ struct st_cpu {
 
     st_method_cache method_cache[ST_METHOD_CACHE_SIZE];
 
-    st_oop globals[34];
+    st_oop globals[35];
     st_oop selectors[24];
 
 } __cpu;

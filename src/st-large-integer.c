@@ -27,7 +27,7 @@
 #include "st-types.h"
 #include "math.h"
 
-#define VALUE(oop)             (&(ST_LARGE_INTEGER(oop)->value))
+#define VALUE(oop)  (&(ST_LARGE_INTEGER(oop)->value))
 
 st_oop
 st_large_integer_new_from_string (const char *string, st_uint radix)

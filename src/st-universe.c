@@ -75,7 +75,6 @@ class_new (st_format format, st_uint instance_size)
     class = st_memory_allocate (ST_SIZE_OOPS (struct st_class));
 
     ST_OBJECT_MARK (class)  = 0 | ST_MARK_TAG;
-    ST_OBJECT_HASH (class)  = st_smi_new (st_current_hash++);
     ST_OBJECT_CLASS (class) = ST_NIL;
     st_object_set_format (class, ST_FORMAT_OBJECT);
     st_object_set_instance_size (class, INSTANCE_SIZE_CLASS);
@@ -347,7 +346,9 @@ file_in_classes (void)
 	    "OrderedCollection.st",
 	    "List.st",
 	    "System.st",
-	    "CompiledMethod.st"
+	    "CompiledMethod.st",
+	    "FileStream.st",
+	    "pidigits.st"
 	};
 
     for (st_uint i = 0; i < ST_N_ELEMENTS (files); i++) {
@@ -367,7 +368,6 @@ create_nil_object (void)
     nil = st_memory_allocate (NIL_SIZE_OOPS);
 
     ST_OBJECT_MARK (nil)  = 0 | ST_MARK_TAG;
-    ST_OBJECT_HASH (nil)  = st_smi_new (st_current_hash++);
     ST_OBJECT_CLASS (nil) = nil;
     st_object_set_format (nil, ST_FORMAT_OBJECT);
     st_object_set_instance_size (nil, 0);
@@ -448,6 +448,7 @@ st_bootstrap_universe (void)
     ST_METHOD_CONTEXT_CLASS   = class_new (ST_FORMAT_CONTEXT, 5);
     ST_BLOCK_CONTEXT_CLASS    = class_new (ST_FORMAT_CONTEXT, 7);
     ST_SYSTEM_CLASS           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SYSTEM);
+    ST_HANDLE_CLASS           = class_new (ST_FORMAT_HANDLE, 0);
 
     ST_OBJECT_CLASS (ST_NIL)  = ST_UNDEFINED_OBJECT_CLASS;
 
@@ -485,6 +486,7 @@ st_bootstrap_universe (void)
     add_global ("CompiledMethod", ST_COMPILED_METHOD_CLASS);
     add_global ("MethodContext", ST_METHOD_CONTEXT_CLASS);
     add_global ("BlockContext", ST_BLOCK_CONTEXT_CLASS);
+    add_global ("Handle", ST_HANDLE_CLASS);
     add_global ("System", ST_SYSTEM_CLASS);
     add_global ("Smalltalk", ST_SMALLTALK);
 

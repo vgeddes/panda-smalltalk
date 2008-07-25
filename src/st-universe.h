@@ -59,12 +59,13 @@
 #define    ST_METHOD_CONTEXT_CLASS       __cpu.globals[26]
 #define    ST_BLOCK_CONTEXT_CLASS        __cpu.globals[27]
 #define    ST_SYSTEM_CLASS               __cpu.globals[28]
+#define    ST_HANDLE_CLASS               __cpu.globals[29]
 
-#define    ST_SELECTOR_DOESNOTUNDERSTAND __cpu.globals[29]
-#define    ST_SELECTOR_MUSTBEBOOLEAN     __cpu.globals[30]
-#define    ST_SELECTOR_STARTUPSYSTEM     __cpu.globals[31]
-#define    ST_SELECTOR_CANNOTRETURN      __cpu.globals[32]
-#define    ST_SELECTOR_OUTOFMEMORY       __cpu.globals[33]
+#define    ST_SELECTOR_DOESNOTUNDERSTAND __cpu.globals[30]
+#define    ST_SELECTOR_MUSTBEBOOLEAN     __cpu.globals[31]
+#define    ST_SELECTOR_STARTUPSYSTEM     __cpu.globals[32]
+#define    ST_SELECTOR_CANNOTRETURN      __cpu.globals[33]
+#define    ST_SELECTOR_OUTOFMEMORY       __cpu.globals[34]
 
 #define ST_SELECTOR_PLUS       __cpu.selectors[0]
 #define ST_SELECTOR_MINUS      __cpu.selectors[1]
