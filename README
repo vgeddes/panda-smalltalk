@@ -19,3 +19,7 @@ Usage:
 The main executable `panda', reads Smalltalk statements from stdin, interprets
 them and outputs the result of the last statement. Variables can be declared
 in the usual Smalltalk way.
+
+Panda isn't installable right now. The `panda' executable can only run in the
+directory in which it was built ("src/"), and expects the kernel library files
+to be in "../st". Don't try separate build dirs.
