@@ -551,9 +551,7 @@ mark (void)
 	if (ST_UNLIKELY (sp >= stack_size)) {
 	    stack_size = grow_marking_stack ();
 	    stack = memory->mark_stack;
-	    if (st_verbose_mode ()) {
-		fprintf (stderr, "** gc: increased size of marking stack\n"); 
-	    }
+	    st_message ("gc: increased size of marking stack"); 
 	}
 	stack[sp++] = ST_OBJECT_CLASS (object);
 	object_contents (object, &oops, &size);
@@ -561,9 +559,7 @@ mark (void)
 	    if (ST_UNLIKELY (sp >= stack_size)) {
 		stack_size = grow_marking_stack ();
 		stack = memory->mark_stack; 
-		if (st_verbose_mode ()) {
-		    fprintf (stderr, "** gc: increased size of marking stack\n"); 
-		}
+		st_message ("gc: increased size of marking stack"); 
 	    }
 	    if (oops[i] != ST_NIL) {
 		stack[sp++] = oops[i];
@@ -666,16 +662,14 @@ garbage_collect (void)
     st_cpu_clear_caches ();
     memory->counter = 0;
 
-    if (st_verbose_mode ()) {
-	fprintf (stderr, "** gc: collected:       %uK\n"
-                         "       heapSize:        %uK\n"
-                         "       marking time:    %.6fs\n"
-                         "       compaction time: %.6fs\n"
-                         "       remapping time:  %.6fs\n\n",
-		 memory->bytes_collected / 1024,
-		 (memory->bytes_collected + memory->bytes_allocated) / 1024,
-		 times[0], times[1], times[2]);
-    }
+    st_message ("gc: collected:       %uK\n"
+		"       heapSize:        %uK\n"
+		"       marking time:    %.6fs\n"
+		"       compaction time: %.6fs\n"
+		"       remapping time:  %.6fs\n",
+		memory->bytes_collected / 1024,
+		(memory->bytes_collected + memory->bytes_allocated) / 1024,
+		times[0], times[1], times[2]);
 }
 
 bool

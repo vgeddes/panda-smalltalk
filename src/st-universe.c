@@ -512,3 +512,22 @@ st_verbose_mode (void)
 {
     return verbosity;
 }
+
+
+void
+st_message (const char *format, ...)
+{
+    char *new_format;
+    va_list args;
+
+    if (!st_verbose_mode ())
+	return;
+
+    new_format = st_strconcat ("** ", format, NULL);
+
+    va_start (args, format);
+    vfprintf (stderr, new_format, args);
+    fputc ('\n', stderr);
+    va_end (args);
+    st_free (new_format);
+}
