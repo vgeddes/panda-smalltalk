@@ -539,6 +539,8 @@ mark (void)
 	    continue;
 
 	set_marked (object);
+	if (ST_UNLIKELY (sp >= MARK_STACK_SIZE_OOPS))
+	    goto out;
 	stack[sp++] = ST_OBJECT_CLASS (object);
 	object_contents (object, &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
@@ -877,7 +879,8 @@ st_identity_ht_hash (identity_ht *ht, st_oop object)
 	ht->table[index].object = object;
 	ht->table[index].hash   = ht->current_hash++;
 	identity_ht_check_grow (ht);
-    }    
+    }
+
     return ht->table[index].hash;
 }
 
