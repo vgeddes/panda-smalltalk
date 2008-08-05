@@ -11,6 +11,7 @@ BUILT_SOURCES =
 
 EXTRA_DIST = \
 	COPYING    \
+        README     \
 	st-mode.el \
 	autogen.sh \
 	docs/bytecodes.txt \
