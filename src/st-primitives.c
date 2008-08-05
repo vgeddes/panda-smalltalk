@@ -89,14 +89,18 @@ SmallInteger_add (struct st_cpu *cpu)
 {
     st_smi y = pop_integer (cpu);
     st_smi x = pop_integer (cpu);
-    st_oop result;
+    int result;
 
     if (ST_LIKELY (cpu->success)) {
-	result = st_smi_new (x + y);
-	ST_STACK_PUSH (cpu, result);
-	return;
+	result = x + y; 
+	if (((result << 1) ^ (result << 2)) >= 0) {
+	    ST_STACK_PUSH (cpu, st_smi_new (result));
+	    return;
+	} else {
+	    ST_PRIMITIVE_FAIL (cpu);
+	}
     }
-
+    
     ST_STACK_UNPOP (cpu, 2);
 }
 
@@ -105,12 +109,17 @@ SmallInteger_sub (struct st_cpu *cpu)
 {
     st_smi y = pop_integer (cpu);
     st_smi x = pop_integer (cpu);
-    st_oop result;
+    int result;
+
 
     if (ST_LIKELY (cpu->success)) {
-	result = st_smi_new (x - y);
-	ST_STACK_PUSH (cpu, result);
-	return;
+	result = x + y; 
+	if (((result << 1) ^ (result << 2)) >= 0) {
+	    ST_STACK_PUSH (cpu, st_smi_new (result));
+	    return;
+	} else {
+	    ST_PRIMITIVE_FAIL (cpu);
+	}
     }
 
     ST_STACK_UNPOP (cpu, 2);
@@ -217,12 +226,16 @@ SmallInteger_mul (struct st_cpu *cpu)
 {
     st_smi y = pop_integer (cpu);
     st_smi x = pop_integer (cpu);
-    st_oop result;
+    int64_t result;
 
-    if (ST_LIKELY (cpu->success)) {
-	result = st_smi_new (x * y);
-	ST_STACK_PUSH (cpu, result);
-	return;
+    if (cpu->success) {
+	result = x * y;
+	if (result >= ST_SMALL_INTEGER_MIN && result <= ST_SMALL_INTEGER_MAX) {
+	    ST_STACK_PUSH (cpu, st_smi_new ((int) result));
+	    return;
+	} else {
+	    ST_PRIMITIVE_FAIL (cpu);
+	}
     }
 
     ST_STACK_UNPOP (cpu, 2);

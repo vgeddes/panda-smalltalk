@@ -51,17 +51,23 @@ gcd: aNumber
 SmallInteger method!
 + aNumber
 	<primitive: 'SmallInteger_add'>
-	^ super + aNumber! 
+	aNumber isSmallInteger
+		ifTrue: [^ self asLargeInteger + aNumber asLargeInteger]
+	    ifFalse: [^ super + aNumber]! 
 
 SmallInteger method!
 - aNumber
 	<primitive: 'SmallInteger_sub'>
-	^ super - aNumber!
+	aNumber isSmallInteger
+		ifTrue: [^ self asLargeInteger - aNumber asLargeInteger]
+	    ifFalse: [^ super - aNumber]!
 	
 SmallInteger method!
 * aNumber
 	<primitive: 'SmallInteger_mul'>
-	^ super * aNumber!
+	aNumber isSmallInteger
+		ifTrue: [^ self asLargeInteger * aNumber asLargeInteger]
+	    ifFalse: [^ super * aNumber]!
 
 SmallInteger method!
 / aNumber

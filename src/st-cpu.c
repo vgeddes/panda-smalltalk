@@ -522,15 +522,19 @@ st_cpu_main (void)
 	
 	CASE (SEND_PLUS) {
 	    
-	    st_oop a, b;
+	    int a, b, result;
 	    
 	    if (ST_LIKELY (st_object_is_smi (sp[-1]) &&
 			   st_object_is_smi (sp[-2]))) {
-		b = STACK_POP ();
-		a = STACK_POP ();
-		STACK_PUSH (st_smi_new (st_smi_value (a) + st_smi_value (b)));
-		ip++;
-		NEXT ();
+		b = st_smi_value (sp[-1]);
+		a = st_smi_value (sp[-2]);
+		result = a + b;
+		if (((result << 1) ^ (result << 2)) >= 0) {
+		    sp -= 2;
+		    STACK_PUSH (st_smi_new (result));
+		    ip++;
+		    NEXT ();
+		}
 	    }
 
 	    cpu->message_argcount = 1;
@@ -543,15 +547,21 @@ st_cpu_main (void)
 	
 	CASE (SEND_MINUS) {
 
-	    st_oop a, b;
+	    int a, b, result;
 
 	    if (ST_LIKELY (st_object_is_smi (sp[-1]) &&
 			   st_object_is_smi (sp[-2]))) {
-		b = STACK_POP ();
-		a = STACK_POP ();
-		STACK_PUSH (st_smi_new (st_smi_value (a) - st_smi_value (b)));
-		ip++;
-		NEXT ();
+		b = st_smi_value (sp[-1]);
+		a = st_smi_value (sp[-2]);
+		result = a - b;
+		if (((result << 1) ^ (result << 2)) >= 0) {
+		    sp -= 2;
+		    STACK_PUSH (st_smi_new (result));
+		    ip++;
+		    NEXT ();
+		} else {
+		    STACK_UNPOP (2);
+		}
 	    }
 
 	    cpu->message_argcount = 1;
@@ -564,15 +574,20 @@ st_cpu_main (void)
     
 	CASE (SEND_MUL) {
 
-	    st_oop a, b;
+	    int a, b;
+	    int64_t result;
 
 	    if (ST_LIKELY (st_object_is_smi (sp[-1]) &&
 			   st_object_is_smi (sp[-2]))) {
-		b = STACK_POP ();
-		a = STACK_POP ();
-		STACK_PUSH (st_smi_new (st_smi_value (a) * st_smi_value (b)));
-		ip++;
-		NEXT ();
+		b = st_smi_value (sp[-1]);
+		a = st_smi_value (sp[-2]);
+		result = a * b;
+		if (result >= ST_SMALL_INTEGER_MIN && result <= ST_SMALL_INTEGER_MAX) {
+		    sp -= 2;
+		    STACK_PUSH (st_smi_new ((int)result));
+		    ip++;
+		    NEXT ();
+		}
 	    }
 
 	    cpu->message_argcount = 1;
