@@ -233,6 +233,9 @@ parse_chunks (FileInParser *parser)
     }
 }
 
+/* isn't declared in glibc string.h */
+char * basename (const char *FILENAME);
+
 void
 st_compile_file_in (const char *filename)
 {

@@ -32,9 +32,6 @@
 /* threshold is 8 Mb or 16 Mb depending on whether system is 32 or 64 bits */
 #define ST_COLLECTION_THRESHOLD (sizeof (st_oop) * 2 * 1024 * 1024)
 
-#define RESERVED_SIZE        (1000 * 1024 * 1024)
-#define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
-
 typedef struct
 {
     struct cell *table;
@@ -68,6 +65,7 @@ typedef struct st_memory
     st_oop    *p;
 
     st_oop    *mark_stack;
+    st_uint    mark_stack_size;
 
     st_uchar  *mark_bits;
     st_uchar  *alloc_bits;

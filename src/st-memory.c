@@ -47,8 +47,6 @@
 static inline st_oop    remap_oop  (st_oop ref);
 static void      garbage_collect   ();
 
-
-
 static void
 timer_start (struct timespec *spec)
 {
@@ -64,12 +62,11 @@ timer_stop (struct timespec *spec)
 }
 
 
-// RESERVE 256 MB worth of virtual address space
+// RESERVE 1000 MB worth of virtual address space
 #define RESERVED_SIZE        (1000 * 1024 * 1024)
-#define INITIAL_COMMIT_SIZE  (64 * 1024 * 1024)
+#define INITIAL_COMMIT_SIZE  (1 * 1024 * 1024)
 
-// 1 MB for mark stack 
-#define MARK_STACK_SIZE      (10 * 1024 * 1024)
+#define MARK_STACK_SIZE      (256 * 1024)
 #define MARK_STACK_SIZE_OOPS (MARK_STACK_SIZE / sizeof (st_oop))
 
 #define BLOCK_SIZE       256
@@ -81,10 +78,12 @@ verify (st_oop object)
     st_assert (st_object_is_mark (ST_OBJECT_MARK (object)));
 }
 
+#define PAGE_SIZE (st_system_pagesize ())
+
 static inline st_uint
 round_pagesize (st_uint size)
 {
-    return ((size + st_system_pagesize () - 1) / st_system_pagesize ()) * st_system_pagesize ();
+    return ((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 }
 
 static void
@@ -162,6 +161,7 @@ st_memory_new (void)
     memory->counter = 0;
 
     memory->mark_stack = st_malloc (MARK_STACK_SIZE);
+    memory->mark_stack_size = MARK_STACK_SIZE;
 
     memory->mark_bits   = NULL;
     memory->alloc_bits  = NULL;
@@ -518,45 +518,58 @@ out:
     memory->p = to; 
 }
 
+static st_uint
+grow_marking_stack (void)
+{
+    memory->mark_stack_size *= 2;
+    memory->mark_stack = st_realloc (memory->mark_stack, memory->mark_stack_size); 
+
+    return memory->mark_stack_size / sizeof (st_oop);
+}
+
 static void
 mark (void)
 {
     st_oop   object;
     st_oop  *oops, *stack;
-    st_uint  size, sp;
+    st_uint  size, stack_size, sp;
 
     sp = 0;
     stack = memory->mark_stack;
-   
+    stack_size = memory->mark_stack_size / sizeof (st_oop);
+
     for (st_uint i = 0; i < memory->roots->length; i++)
 	stack[sp++] = (st_oop) ptr_array_get_index (memory->roots, i);
     stack[sp++] = __cpu.context;
 
     while (sp > 0) {
-
 	object = stack[--sp];
 	if (!st_object_is_heap (object) || ismarked (object)) 
 	    continue;
 
 	set_marked (object);
-	if (ST_UNLIKELY (sp >= MARK_STACK_SIZE_OOPS))
-	    goto out;
+	if (ST_UNLIKELY (sp >= stack_size)) {
+	    stack_size = grow_marking_stack ();
+	    stack = memory->mark_stack;
+	    if (st_verbose_mode ()) {
+		fprintf (stderr, "** gc: increased size of marking stack\n"); 
+	    }
+	}
 	stack[sp++] = ST_OBJECT_CLASS (object);
 	object_contents (object, &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
-	    if (ST_UNLIKELY (sp >= MARK_STACK_SIZE_OOPS))
-		goto out;
+	    if (ST_UNLIKELY (sp >= stack_size)) {
+		stack_size = grow_marking_stack ();
+		stack = memory->mark_stack; 
+		if (st_verbose_mode ()) {
+		    fprintf (stderr, "** gc: increased size of marking stack\n"); 
+		}
+	    }
 	    if (oops[i] != ST_NIL) {
 		stack[sp++] = oops[i];
 	    }
 	}
     }
-
-    return;
-out:
-    /* !!! FIX */
-    fprintf (stderr, "panda: error: marking stack overflowed\n");
-    abort ();
 }
 
 static void
@@ -597,7 +610,6 @@ remap_globals (void)
 
     for (i = 0; i < ST_N_ELEMENTS (__cpu.selectors); i++)
 	__cpu.selectors[i] = remap_oop (__cpu.selectors[i]);
-
 
     for (i = 0; i < memory->roots->length; i++) {
 	ptr_array_set_index (memory->roots, i,
@@ -666,13 +678,12 @@ garbage_collect (void)
     }
 }
 
-/* 
- * returns true if a compaction was performed since the
- * last allocation
- */
 bool
 st_memory_compaction_occurred (void)
 {
+    /* Returns true if a compaction was performed since the
+     * last allocation
+     */
     return memory->counter == 0;
 }
 
