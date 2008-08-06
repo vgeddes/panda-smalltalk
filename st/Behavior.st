@@ -102,7 +102,7 @@ Behavior method!
 inheritsFrom: aClass
 	| class |
 
-	class := superclass.
+	class := self.
 	[class ~~ nil]
 		whileTrue:
 			[class == aClass ifTrue: [^ true].
