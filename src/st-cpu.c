@@ -351,9 +351,10 @@ switch (*ip)
 #endif
 
 #ifdef HAVE_COMPUTED_GOTO
+#define INVALID() INVALID:
 #define CASE(OP) OP:              
 #else
-#define INVALID default:
+#define INVALID() default:
 #define CASE(OP) case OP:
 #endif
 
@@ -1187,8 +1188,8 @@ st_cpu_main (void)
 	    
 	    NEXT ();
 	}
-
-    INVALID: {
+	
+	INVALID () {
 	    abort ();
 	}
 
