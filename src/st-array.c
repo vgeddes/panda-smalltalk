@@ -28,7 +28,7 @@
 #include <string.h>
 
 st_oop
-st_array_allocate (st_oop class, st_smi size)
+st_array_allocate (st_oop class, st_uint size)
 {
     st_oop  array;
     st_oop *elements;
@@ -36,11 +36,18 @@ st_array_allocate (st_oop class, st_smi size)
     st_assert (size >= 0);
 
     array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size);
+    if (array == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size);
+	st_assert (array != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
     st_object_initialize_header (array, class);
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = ST_ARRAY (array)->elements;
-    for (st_smi i = 0; i < size; i++)
+    for (st_uint i = 0; i < size; i++)
 	elements[i] = ST_NIL;
 
     return array;
@@ -61,6 +68,14 @@ st_byte_array_allocate (st_oop class, st_smi size)
     size_oops = ST_ROUNDED_UP_OOPS (size + 1);
     
     array = st_memory_allocate (ST_SIZE_OOPS (struct st_byte_array) + size_oops);
+    if (array == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size_oops);
+	st_assert (array != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
+
     st_object_initialize_header (array, class);
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
@@ -108,6 +123,13 @@ st_word_array_allocate (st_oop class, st_smi size)
     size_oops = size / (sizeof (st_oop) / sizeof (st_uint));
 
     array = st_memory_allocate (ST_SIZE_OOPS (struct st_word_array) + size_oops);
+    if (array == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size_oops);
+	st_assert (array != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
     st_object_initialize_header (array, class);
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
@@ -133,6 +155,13 @@ st_float_array_allocate (st_oop class, st_smi size)
     size_oops = size * (sizeof (double) / sizeof (st_oop));
 
     object = st_memory_allocate (ST_SIZE_OOPS (struct st_float_array) + size_oops);
+    if (object == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	object = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size_oops);
+	st_assert (object != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
     st_object_initialize_header (object, class);
 
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);

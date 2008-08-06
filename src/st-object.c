@@ -96,11 +96,20 @@ st_oop
 st_object_allocate (st_oop class)
 {
     st_oop *fields;
-    st_uint instance_size;
+    st_uint size, instance_size;
     st_oop  object;
 
     instance_size = st_smi_value (ST_BEHAVIOR_INSTANCE_SIZE (class));
-    object = st_memory_allocate (ST_SIZE_OOPS (struct st_header) + instance_size);
+    size = ST_SIZE_OOPS (struct st_header) + instance_size; 
+    object = st_memory_allocate (size);
+    if (object == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	object = st_memory_allocate (size);
+	st_assert (object != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
+
     st_object_initialize_header (object, class);
 
     fields = ST_OBJECT_FIELDS (object);
@@ -115,8 +124,17 @@ st_handle_allocate (st_oop class)
 {
     st_oop *fields;
     st_oop  object;
+    st_uint size;
 
-    object = st_memory_allocate (ST_SIZE_OOPS (struct st_handle));
+    size = ST_SIZE_OOPS (struct st_handle);
+    object = st_memory_allocate (size);
+    if (object == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	object = st_memory_allocate (size);
+	st_assert (object != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
     st_object_initialize_header (object, class);
 
     return object;

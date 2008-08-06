@@ -203,15 +203,13 @@ st_memory_allocate (st_uint size)
     st_assert (size >= 2);
 
     if (memory->counter > ST_COLLECTION_THRESHOLD)
-	garbage_collect ();
+	return 0;
     if ((memory->p + size) >= memory->end)
 	grow_heap (size);
     
     chunk = memory->p;
     memory->p += size;
-    
     memory->counter += (size * sizeof (st_oop));
-    memory->bytes_allocated += (size * sizeof (st_oop));
 
     return ST_OOP (chunk);
 }
@@ -236,6 +234,11 @@ st_memory_allocate_context (bool large)
     }
 
     context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+    if (context == 0) {
+	st_memory_perform_gc ();
+	context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+	st_assert (context != 0);
+    }
     st_object_initialize_header (context, ST_METHOD_CONTEXT_CLASS);
     st_object_set_large_context (context, large);
 
@@ -621,6 +624,13 @@ clear_metadata (void)
     memset (memory->offsets, 0, memory->offsets_size);
 }
 
+
+void
+st_memory_perform_gc (void)
+{
+    garbage_collect ();
+}
+
 static void
 garbage_collect (void)
 {
@@ -630,6 +640,8 @@ garbage_collect (void)
     /* clear context pool */
     memory->free_context = 0;
     memory->free_context_large = 0;
+
+    memory->bytes_allocated += memory->counter;
 
     clear_metadata ();
 
@@ -672,19 +684,9 @@ garbage_collect (void)
 		times[0], times[1], times[2]);
 }
 
-bool
-st_memory_compaction_occurred (void)
-{
-    /* Returns true if a compaction was performed since the
-     * last allocation
-     */
-    return memory->counter == 0;
-}
-
 st_oop
 st_memory_remap_reference (st_oop reference)
 {
-    st_assert (st_memory_compaction_occurred ());
     return remap_oop (reference);
 }
 

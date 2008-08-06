@@ -58,13 +58,6 @@ struct st_block_context
     st_oop stack[];
 };
 
-
-st_oop  st_method_context_new (st_oop sender, st_oop receiver, st_oop method);
-
-st_oop  st_block_context_new              (st_oop home,
-					   st_uint initial_ip,
-					   st_uint argcount);
-
 st_oop  st_message_new (st_oop selector, st_oop arguments);
 
 #define ST_CONTEXT_PART(oop)       ((struct st_context_part *)   ST_POINTER (oop))

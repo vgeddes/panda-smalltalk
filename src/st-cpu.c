@@ -57,6 +57,12 @@ block_context_new (st_uint initial_ip, st_uint argcount)
     stack_size = 32;
     
     context = st_memory_allocate (ST_SIZE_OOPS (struct st_block_context) + stack_size);
+    if (context == 0) {
+	st_memory_perform_gc ();
+	context = st_memory_allocate (ST_SIZE_OOPS (struct st_block_context) + stack_size);
+	st_assert (context != 0);
+    }
+
     st_object_initialize_header (context, ST_BLOCK_CONTEXT_CLASS);
     st_object_set_large_context (context, true);
     
@@ -94,10 +100,9 @@ create_actual_message (void)
 	elements[i] = cpu->stack[cpu->sp - cpu->message_argcount + i];
 
     cpu->sp -= cpu->message_argcount;
+
+    /* FIXME: remap ! */
     message = st_message_new (cpu->message_selector, array);
-    if (st_memory_compaction_occurred ()) {
-	array = st_memory_remap_reference (array);
-    }
 
     ST_STACK_PUSH (cpu, message);
 
@@ -238,7 +243,7 @@ st_cpu_prologue (void)
     goto common;
 
 #ifdef __GNUC__
-#define HAVE_COMPUTED_GOTO
+//#define HAVE_COMPUTED_GOTO
 #endif
 
 #ifdef HAVE_COMPUTED_GOTO
@@ -953,7 +958,10 @@ st_cpu_main (void)
 		    NEXT ();
 	    }
 	    
+	    /* store registers as a gc could occur */
+	    STORE_REGISTERS ();
 	    context = method_context_new ();
+	    LOAD_REGISTERS ();
 	    arguments = ST_METHOD_CONTEXT_STACK (context);
 	    for (int i = 0; i < cpu->message_argcount; i++)
 		arguments[i] =  sp[- cpu->message_argcount + i];

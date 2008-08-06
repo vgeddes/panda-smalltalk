@@ -79,9 +79,19 @@ st_large_integer_to_string (st_oop integer, st_uint radix)
 st_oop
 st_large_integer_allocate (st_oop class, mp_int *value)
 {
-    st_oop object;
+    st_oop  object;
+    st_uint size;
 
-    object = st_memory_allocate (ST_SIZE_OOPS (struct st_large_integer));
+    size = ST_SIZE_OOPS (struct st_large_integer);
+    object = st_memory_allocate (size);
+    if (object == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	object = st_memory_allocate (size);
+	st_assert (object != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
+
     st_object_initialize_header (object, class);
 
     if (value)

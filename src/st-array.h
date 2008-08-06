@@ -64,7 +64,7 @@ struct st_byte_array
 bool      st_byte_array_equal   (st_oop object, st_oop other);
 st_uint   st_byte_array_hash    (st_oop object);
 
-st_oop  st_array_allocate (st_oop class, st_smi size);
+st_oop  st_array_allocate (st_oop class, st_uint size);
 st_oop  st_float_array_allocate (st_oop class, st_smi size);
 st_oop  st_word_array_allocate (st_oop class, st_smi size);
 st_oop  st_byte_array_allocate (st_oop class, st_smi size);

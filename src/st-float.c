@@ -29,21 +29,33 @@
 st_oop
 st_float_allocate (st_oop class)
 {
-    st_oop f;
+    st_uint size;
+    st_oop object;
 
-    f = st_memory_allocate (ST_SIZE_OOPS (struct st_float));
-    st_object_initialize_header (f, class);
-    st_float_set_value (f, 0.0);
+    size = ST_SIZE_OOPS (struct st_float);
+    object = st_memory_allocate (size);
+    if (object == 0) {
+	st_memory_perform_gc ();
+	class = st_memory_remap_reference (class);
+	object = st_memory_allocate (size);
+	st_assert (object != 0);
+	st_message ("gc: remapping class field after compaction");
+    }
 
-    return f;
+    st_object_initialize_header (object, class);
+    st_float_set_value (object, 0.0);
+
+    return object;
 }
 
 st_oop
 st_float_new (double value)
 {
-    st_oop f = st_object_new (ST_FLOAT_CLASS);
+    st_oop object;
 
-    st_float_set_value (f, value);
+    object = st_object_new (ST_FLOAT_CLASS);
+
+    st_float_set_value (object, value);
     
-    return f;
+    return object;
 }
