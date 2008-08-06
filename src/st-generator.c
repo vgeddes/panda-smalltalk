@@ -1590,7 +1590,7 @@ print_bytecodes (st_oop literals, st_uchar *codes, int len)
 	    printf (FORMAT (ip), ip[0], ip[1], ip[2]);
 
 	    short offset = *((short *) (ip + 1));
-	    printf ("jump: %li", (offset >= 0 ? 3 : 0) + (ip - codes) + offset);
+	    printf ("jump: %li", 3 + (ip - codes) + offset);
 
 	    NEXT (ip);
 
