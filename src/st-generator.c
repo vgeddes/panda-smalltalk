@@ -1447,15 +1447,16 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 static void
 print_bytecodes (st_oop literals, st_uchar *codes, int len) 
 {
+    st_uchar *ip;
+
     static const char * const formats[] = {
 	"<%02x>       ",
 	"<%02x %02x>    ",
 	"<%02x %02x %02x> ",
     };
 
-    st_uchar *ip = codes;
-
-    while (*ip) {
+    ip = codes;
+    while ((ip - codes) < len) {
 
 	printf ("%3li ", ip - codes);
 
@@ -1732,7 +1733,7 @@ st_print_method (st_oop method)
 
     literals  = ST_METHOD_LITERALS (method);
     bytecodes = st_method_bytecode_bytes (method);
-    size      = ST_ARRAYED_OBJECT (ST_METHOD_BYTECODE (method))->size;
+    size      = st_smi_value (st_arrayed_object_size (ST_METHOD_BYTECODE (method)));
 
     print_bytecodes (literals, bytecodes, size);
     

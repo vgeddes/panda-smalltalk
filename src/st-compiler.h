@@ -35,7 +35,7 @@ void    st_print_method     (st_oop method);
 /* bytecodes */ 
 typedef enum
 {
-    PUSH_TEMP = 1,
+    PUSH_TEMP = 0,
     PUSH_INSTVAR,
     PUSH_LITERAL_CONST,
     PUSH_LITERAL_VAR,

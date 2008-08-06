@@ -243,46 +243,106 @@ st_cpu_prologue (void)
     goto common;
 
 #ifdef __GNUC__
-//#define HAVE_COMPUTED_GOTO
+#define HAVE_COMPUTED_GOTO
 #endif
 
 #ifdef HAVE_COMPUTED_GOTO
-#define SWITCH(ip)                              \
-static const st_pointer labels[] =		\
-{						\
-    NULL,					\
-    && PUSH_TEMP,          && PUSH_INSTVAR,     \
-    && PUSH_LITERAL_CONST, && PUSH_LITERAL_VAR,			\
-    								\
-    && STORE_LITERAL_VAR, && STORE_TEMP, && STORE_INSTVAR,	       \
-    && STORE_POP_LITERAL_VAR, && STORE_POP_TEMP, && STORE_POP_INSTVAR, \
-    								       \
-    && PUSH_SELF, && PUSH_NIL, && PUSH_TRUE, && PUSH_FALSE, && PUSH_INTEGER, \
-                                                                       \
-    && RETURN_STACK_TOP, && BLOCK_RETURN,       \
-    && POP_STACK_TOP, && DUPLICATE_STACK_TOP,   \
-                                                \
-    && PUSH_ACTIVE_CONTEXT, && BLOCK_COPY,      \
-                                                \
-    && JUMP_TRUE, && JUMP_FALSE, && JUMP,       \
-                                                \
-    && SEND, && SEND_SUPER,                     \
-                                                \
-    && SEND_PLUS,	&& SEND_MINUS,          \
-    && SEND_LT,     && SEND_GT,                 \
-    && SEND_LE,     && SEND_GE,                 \
-    && SEND_EQ,     && SEND_NE,                 \
-    && SEND_MUL,    && SEND_DIV,                \
-    && SEND_MOD, 	&& SEND_BITSHIFT,       \
-    && SEND_BITAND,	&& SEND_BITOR,          \
-    && SEND_BITXOR,                             \
-                                                \
-    && SEND_AT,        && SEND_AT_PUT,          \
-    && SEND_SIZE,      && SEND_VALUE,           \
-    && SEND_VALUE_ARG, && SEND_IDENTITY_EQ,     \
-    && SEND_CLASS,     && SEND_NEW,             \
-    && SEND_NEW_ARG,                            \
-};                                              \
+#define SWITCH(ip)							\
+static const st_pointer labels[] =					\
+{									\
+    && PUSH_TEMP,							\
+    && PUSH_INSTVAR,							\
+    && PUSH_LITERAL_CONST,						\
+    && PUSH_LITERAL_VAR,						\
+    && STORE_LITERAL_VAR,						\
+    && STORE_TEMP,							\
+    && STORE_INSTVAR,							\
+    && STORE_POP_LITERAL_VAR,						\
+    && STORE_POP_TEMP,							\
+    && STORE_POP_INSTVAR,						\
+    && PUSH_SELF,							\
+    && PUSH_NIL,							\
+    && PUSH_TRUE,							\
+    && PUSH_FALSE,							\
+    && PUSH_INTEGER,							\
+    && RETURN_STACK_TOP,						\
+    && BLOCK_RETURN,							\
+    && POP_STACK_TOP,							\
+    && DUPLICATE_STACK_TOP,						\
+    && PUSH_ACTIVE_CONTEXT,						\
+    && BLOCK_COPY,							\
+    && JUMP_TRUE,							\
+    && JUMP_FALSE,							\
+    && JUMP,								\
+    && SEND,								\
+    && SEND_SUPER,							\
+    && SEND_PLUS,							\
+    && SEND_MINUS,							\
+    && SEND_LT,								\
+    && SEND_GT,								\
+    && SEND_LE,								\
+    && SEND_GE,								\
+    && SEND_EQ,								\
+    && SEND_NE,								\
+    && SEND_MUL,							\
+    && SEND_DIV,							\
+    && SEND_MOD,							\
+    && SEND_BITSHIFT,							\
+    && SEND_BITAND,							\
+    && SEND_BITOR,							\
+    && SEND_BITXOR,							\
+    && SEND_AT,								\
+    && SEND_AT_PUT,							\
+    && SEND_SIZE,							\
+    && SEND_VALUE,							\
+    && SEND_VALUE_ARG,							\
+    && SEND_IDENTITY_EQ,						\
+    && SEND_CLASS,							\
+    && SEND_NEW,							\
+    && SEND_NEW_ARG,							\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,    	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,	        \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,   	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID, 	\
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,         \
+    && INVALID, && INVALID, && INVALID, && INVALID, && INVALID,		\
+    && INVALID,								\
+};									\
 goto *labels[*ip];
 #else
 #define SWITCH(ip) \
@@ -293,6 +353,7 @@ switch (*ip)
 #ifdef HAVE_COMPUTED_GOTO
 #define CASE(OP) OP:              
 #else
+#define INVALID default:
 #define CASE(OP) case OP:
 #endif
 
@@ -334,10 +395,10 @@ lookup_method_in_cache (void)
 #define STACK_PEEK(oop)    (*(sp-1))
 #define STACK_UNPOP(count) (sp += count)
 #define STORE_REGISTERS()				\
-    cpu->ip = ip - cpu->bytecode;		\
+    cpu->ip = ip - cpu->bytecode;			\
     cpu->sp = sp - cpu->stack;
 #define LOAD_REGISTERS()				\
-    ip = cpu->bytecode + cpu->ip;		\
+    ip = cpu->bytecode + cpu->ip;			\
     sp = cpu->stack + cpu->sp;
 
 void
@@ -1126,6 +1187,11 @@ st_cpu_main (void)
 	    
 	    NEXT ();
 	}
+
+    INVALID: {
+	    abort ();
+	}
+
     }
 
 out:
