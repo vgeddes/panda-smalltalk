@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-#define DEFAULT_CODE_SIZE 50
+#define DEFAULT_CODE_SIZE 20
 
 #define CSTRING(string) ((char *) st_byte_array_bytes (string))
 
@@ -54,8 +54,6 @@ typedef struct
 
     st_compiler_error *error;
 
-    st_uint    max_stack_depth;
-
     bool     references_super;
  
     /* names of temporaries, in order of appearance */
@@ -64,12 +62,16 @@ typedef struct
     st_list   *instvars;
     /* literal frame for the compiled code */
     st_list   *literals;
-
-    st_uchar  *code;
-    st_uint    size;
-    st_uint    alloc;
     
 } Generator;
+
+typedef struct
+{
+    st_uchar  *buffer;
+    st_uint    size;
+    st_uint    alloc;
+    st_uint    max_stack_depth;
+} st_bytecode;
 
 static st_uint sizes[255] = {  0, };
 
@@ -143,8 +145,8 @@ static int size_expression (Generator *gt, st_node *node);
 static int size_statements (Generator *gt, st_node *node);
 
 
-static void generate_expression (Generator *gt, st_node *node);
-static void generate_statements (Generator *gt, st_node *statements);
+static void generate_expression (Generator *gt, st_bytecode *code, st_node *node);
+static void generate_statements (Generator *gt, st_bytecode *code, st_node *statements);
 
 static void
 generation_error (Generator *gt, const char *message, st_node *node)
@@ -158,6 +160,22 @@ generation_error (Generator *gt, const char *message, st_node *node)
     longjmp (gt->jmploc, 0);
 }
 
+static void
+bytecode_init (st_bytecode *code)
+{
+    code->buffer = st_malloc (DEFAULT_CODE_SIZE);
+    code->alloc  = DEFAULT_CODE_SIZE;
+    code->size   = 0;
+    code->max_stack_depth = 0;
+}
+
+static void
+bytecode_destroy (st_bytecode *code)
+{
+    st_free (code->buffer);
+}
+
+
 static st_list *
 get_temporaries (Generator *gt,
 		 st_list  *instvars,
@@ -167,7 +185,6 @@ get_temporaries (Generator *gt,
     st_list *temps = NULL; 
         
     for (st_node *n = arguments; n; n = n->next) {
-	
 	for (st_list *l = instvars; l; l = l->next) {
 	    if (streq (n->variable.name, (char *) l->data))
 		generation_error (gt, "name is already defined", arguments);
@@ -175,8 +192,7 @@ get_temporaries (Generator *gt,
 	temps = st_list_prepend (temps, (st_pointer) n->variable.name);
     }
 
-    for (st_node *n = temporaries; n; n = n->next) {
-	
+    for (st_node *n = temporaries; n; n = n->next) {	
 	for (st_list *l = instvars; l; l = l->next) {
 	    if (streq (n->variable.name, (char *) l->data))
 		generation_error (gt, "name is already defined", temporaries);
@@ -199,12 +215,7 @@ generator_new (void)
     gt->literals    = NULL;
     gt->temporaries = NULL;
 
-    gt->max_stack_depth = 0;
     gt->references_super = false;
-
-    gt->code  = st_malloc (DEFAULT_CODE_SIZE);
-    gt->alloc = DEFAULT_CODE_SIZE;
-    gt->size  = 0;
    
     return gt;
 }
@@ -216,7 +227,6 @@ generator_destroy (Generator *gt)
     st_list_destroy (gt->temporaries);
     st_list_destroy (gt->literals);
 
-    st_free (gt->code);
     st_free (gt);
 }
 
@@ -245,32 +255,29 @@ create_literals_array (Generator *gt)
 }
 
 static st_oop
-create_bytecode_array (Generator *gt)
+create_bytecode_array (st_bytecode *code)
 {
-    if (gt->size == 0)
+    st_oop array;
+
+    if (code->size == 0)
 	return ST_NIL;
 
-    st_oop  bytecode;
-    st_uchar   *bytes;
+    array = st_object_new_arrayed (ST_BYTE_ARRAY_CLASS, code->size);
+    memcpy (st_byte_array_bytes (array), code->buffer, code->size);
 
-    bytecode = st_object_new_arrayed (ST_BYTE_ARRAY_CLASS, gt->size);
-    bytes = st_byte_array_bytes (bytecode);
-    memcpy (bytes, gt->code, gt->size);
-
-    return bytecode;
+    return array;
 }
 
 static void
-emit (Generator *gt, st_uchar code)
+emit (st_bytecode *code, st_uchar value)
 {
-    if (++gt->size > gt->alloc) {
-	gt->alloc += gt->alloc;
-	gt->code = st_realloc (gt->code, gt->alloc);
+    if (++code->size > code->alloc) {
+	code->alloc += code->alloc;
+	code->buffer = st_realloc (code->buffer, code->alloc);
     }
 
-    gt->code[gt->size - 1] = code;
+    code->buffer[code->size - 1] = value;
 }
-
 
 static int
 find_instvar (Generator *gt, char *name)
@@ -333,124 +340,131 @@ find_literal_var (Generator *gt, char *name)
 }
 
 static void
-jump_offset (Generator *gt, int offset)
+jump_offset (Generator *gt, st_bytecode *code, int offset)
 {
     st_assert (offset <= INT16_MAX);
     
-    emit (gt, JUMP);
+    emit (code, JUMP);
 
     /* push low byte */
-    emit (gt, offset & 0xFF);
+    emit (code, offset & 0xFF);
     /* push high byte */
-    emit (gt, (offset >> 8) & 0xFF);
+    emit (code, (offset >> 8) & 0xFF);
 }
 
 
 static void
-assign_temp (Generator *gt, int index, bool pop)
+assign_temp (Generator *gt, st_bytecode *code, int index, bool pop)
 {
     st_assert (index <= 255);
 
     if (pop)
-	emit (gt, STORE_POP_TEMP);
+	emit (code, STORE_POP_TEMP);
     else
-	emit (gt, STORE_TEMP);
-    emit (gt, (st_uchar) index);
+	emit (code, STORE_TEMP);
+    emit (code, (st_uchar) index);
 }
 
 static void
-assign_instvar (Generator *gt, int index, bool pop)
+assign_instvar (Generator *gt, st_bytecode *code, int index, bool pop)
 {
     st_assert (index <= 255);
 
     if (pop)
-	emit (gt, STORE_POP_INSTVAR);
+	emit (code, STORE_POP_INSTVAR);
     else
-	emit (gt, STORE_INSTVAR);
-    emit (gt, (st_uchar) index); 
+	emit (code, STORE_INSTVAR);
+    emit (code, (st_uchar) index); 
 }
 
 static void
-assign_literal_var (Generator *gt, int index, bool pop)
+assign_literal_var (Generator *gt, st_bytecode *code, int index, bool pop)
 {
     st_assert (index <= 255);
     
     if (pop)
-	emit (gt, STORE_POP_LITERAL_VAR);
+	emit (code, STORE_POP_LITERAL_VAR);
     else
-	emit (gt, STORE_LITERAL_VAR);
-    emit (gt, (st_uchar) index); 
+	emit (code, STORE_LITERAL_VAR);
+    emit (code, (st_uchar) index); 
 }
 
 static void
-push (Generator *gt, st_uchar code, st_uchar index)
+push (Generator *gt, st_bytecode *code, st_uchar value, st_uchar index)
 {
-    emit (gt, code);
-    emit (gt, index);
+    emit (code, value);
+    emit (code, index);
     
-    gt->max_stack_depth++;
+    code->max_stack_depth++;
 }
 
 
 static void
-push_special (Generator *gt, st_uchar code)
+push_special (Generator *gt, st_bytecode *code, st_uchar value)
 {
-    emit (gt, code);
-    gt->max_stack_depth++;
-}
-
-static int
-size_assign (Generator *gt, st_node *node)
-{
-    return size_expression (gt, node->assign.expression) + 2;
+    emit (code, value);
+    code->max_stack_depth++;
 }
 
 static void
-generate_assign (Generator *gt, st_node *node, bool pop)
+generate_assign (Generator *gt, st_bytecode *code, st_node *node, bool pop)
 {
     int index;
     
-    generate_expression (gt, node->assign.expression);
+    generate_expression (gt, code, node->assign.expression);
     
     index = find_temporary (gt, node->assign.assignee->variable.name);
     if (index >= 0) {
-	assign_temp (gt, index, pop); 
+	assign_temp (gt, code, index, pop); 
 	return;
     }
 
     index = find_instvar (gt, node->assign.assignee->variable.name);
     if (index >= 0) {
-	assign_instvar (gt, index, pop);
+	assign_instvar (gt, code, index, pop);
 	return;
     }
  
     index = find_literal_var (gt, node->assign.assignee->variable.name);
     if (index >= 0) {
-	assign_literal_var (gt, index, pop);
+	assign_literal_var (gt, code, index, pop);
 	return;
     }
     
     generation_error (gt, "unknown variable", node);
 }
 
+
 static int
-size_return (Generator *gt, st_node *node)
+size_assign (Generator *gt, st_node *node)
 {
-    int size = 0;
+    st_bytecode code;
 
-    size += size_expression (gt, node->retrn.expression);
+    bytecode_init (&code);
+    generate_assign (gt, &code, node, true);
+    bytecode_destroy (&code);
 
-    size += sizes[RETURN_STACK_TOP];
-
-    return size;
+    return code.size;
 }
 
 static void
-generate_return (Generator *gt, st_node *node)
+generate_return (Generator *gt, st_bytecode *code, st_node *node)
 {
-    generate_expression (gt, node->retrn.expression);
+    generate_expression (gt, code, node->retrn.expression);
 
-    emit (gt, RETURN_STACK_TOP);
+    emit (code, RETURN_STACK_TOP);
+}
+
+static int
+size_return (Generator *gt, st_node *node)
+{
+    st_bytecode code;
+
+    bytecode_init (&code);
+    generate_return (gt, &code, node);
+    bytecode_destroy (&code);
+
+    return code.size;
 }
 
 static st_list *
@@ -477,23 +491,8 @@ get_block_temporaries (Generator *gt, st_node *temporaries)
     return st_list_reverse (temps);
 }
 
-
-static int
-size_block (Generator *gt, st_node *node)
-{
-    int size = 0;
-    
-    size += sizes[BLOCK_COPY];
-    size += sizes[JUMP];
-    size += sizes[STORE_POP_TEMP] * st_node_list_length (node->block.arguments);
-    size += size_statements (gt, node->block.statements);
-    size += sizes[BLOCK_RETURN];
-
-    return size;
-}
-
 static void
-generate_block (Generator *gt, st_node *node)
+generate_block (Generator *gt, st_bytecode *code, st_node *node)
 {
     bool  in_block;
     int   index, size = 0;
@@ -501,14 +500,14 @@ generate_block (Generator *gt, st_node *node)
     in_block = gt->in_block;
     gt->in_block = true;
 
-    emit (gt, BLOCK_COPY);
-    emit (gt, st_node_list_length (node->block.arguments));
+    emit (code, BLOCK_COPY);
+    emit (code, st_node_list_length (node->block.arguments));
 
     // get size of block code and then jump around that code
     size = 2 * st_node_list_length (node->block.arguments);
     size += size_statements (gt, node->block.statements);
     size += sizes[BLOCK_RETURN];
-    jump_offset (gt, size);
+    jump_offset (gt, code, size);
 
     /* Store all block arguments into the temporary frame.
        Note that upon a block activation, the stack pointer sits
@@ -519,600 +518,606 @@ generate_block (Generator *gt, st_node *node)
 	l = st_node_list_at (node->block.arguments, i - 1);
 	index = find_temporary (gt, l->variable.name);
 	st_assert (index >= 0);
-	assign_temp (gt, index, true);
+	assign_temp (gt, code, index, true);
     }
 
-    generate_statements (gt, node->block.statements);
+    generate_statements (gt, code, node->block.statements);
 
-    emit (gt, BLOCK_RETURN);
+    emit (code, BLOCK_RETURN);
 
     if (in_block == false)
 	gt->in_block = false;
 } 
 
-static void
-generation_func_1 (Generator *gt, st_node *node, st_uint subpattern_index)
+static int
+size_block (Generator *gt, st_node *node)
+{
+    st_bytecode code;
+
+    bytecode_init (&code);
+    generate_block (gt, &code, node);
+    bytecode_destroy (&code);
+
+    return code.size;
+}
+
+/* #ifTrue:
+ */
+static bool
+match_ifTrue (Generator *gt, st_node *node)
 {
     st_node *block;
-    int     size;
+
+    if (strcmp (CSTRING (node->message.selector), "ifTrue:") != 0)
+	return false;
 
     block = node->message.arguments;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, "argument of ifTrue: message must be a 0-argument block", block);  
+	return false;
+
+    return true;
+}
+
+static void
+generate_ifTrue (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *block;
+    int      size;
+
+    block = node->message.arguments;
 	
-    generate_expression (gt, node->message.receiver);
-	
+    generate_expression (gt, code, node->message.receiver);
     size = size_statements (gt, block->block.statements);
+    size += node->message.is_statement ? sizes[POP_STACK_TOP] : sizes[JUMP];
+    emit (code, JUMP_FALSE);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+    generate_statements (gt, code, block->block.statements);
 	
-    if (!node->message.is_statement)
-	size += sizes[JUMP];
-    else
-	size += sizes[POP_STACK_TOP];
-
-    if (subpattern_index == 0)
-	emit (gt, JUMP_FALSE);
-    else
-	emit (gt, JUMP_TRUE);
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);
-	
-    generate_statements (gt, block->block.statements);
-	
-    if (!node->message.is_statement) {
-	emit (gt, JUMP);
-	emit (gt, 1);
-	emit (gt, 0);
-	emit (gt, PUSH_NIL);
+    if (node->message.is_statement) {
+	emit (code, POP_STACK_TOP);
     } else {
-	emit (gt, POP_STACK_TOP);
+	emit (code, JUMP);
+	emit (code, 1);
+	emit (code, 0);
+	emit (code, PUSH_NIL);
     }
-
 }
 
-static int
-size_func_1 (Generator *gt, st_node *node, st_uint subpattern_index)
+/* #ifFalse:
+ */
+static bool
+match_ifFalse (Generator *gt, st_node *node)
 {
     st_node *block;
-    int size = 0;
+
+    if (strcmp (CSTRING (node->message.selector), "ifFalse:") != 0)
+	return false;
 
     block = node->message.arguments;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, "argument of ifTrue: message must be a 0-argument block", block);
+	return false;
 
-
-    size += size_expression (gt, node->message.receiver);
-    size += sizes[JUMP_TRUE];
-    size += size_statements (gt, node->message.arguments->block.statements);
-    
-    if (!node->message.is_statement) {
-	size += sizes[JUMP];
-	size += sizes[PUSH_NIL];
-    } else {
-	size += sizes[POP_STACK_TOP];
-    }
-
-    return size;
+    return true;
 }
 
+static void
+generate_ifFalse (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *block;
+    int      size;
+
+    block = node->message.arguments;
+	
+    generate_expression (gt, code, node->message.receiver);
+    size = size_statements (gt, block->block.statements);
+    size += node->message.is_statement ? sizes[POP_STACK_TOP] : sizes[JUMP];
+    emit (code, JUMP_TRUE);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+    generate_statements (gt, code, block->block.statements);
+	
+    if (node->message.is_statement) {
+	emit (code, POP_STACK_TOP);
+    } else {
+	emit (code, JUMP);
+	emit (code, 1);
+	emit (code, 0);
+	emit (code, PUSH_NIL);	
+    }
+}
+
+/* #ifTrueifFalse:
+ */
+static bool
+match_ifTrueifFalse (Generator *gt, st_node *node)
+{
+    st_node *true_block, *false_block;
+
+    if (strcmp (CSTRING (node->message.selector), "ifTrue:ifFalse:") != 0)
+	return false;
+
+    true_block = node->message.arguments;
+    if (true_block->type != ST_BLOCK_NODE || true_block->block.arguments != NULL)
+	return false;
+
+    false_block = node->message.arguments->next;
+    if (false_block->type != ST_BLOCK_NODE || false_block->block.arguments != NULL)
+	return false;
+
+    return true;
+}
 
 static void
-generation_func_2 (Generator *gt, st_node *node, st_uint subpattern_index)
+generate_ifTrueifFalse (Generator *gt, st_bytecode *code, st_node *node)
 {
     int     size;
 
     st_node *true_block, *false_block;
 	
-    true_block = node->message.arguments;
-    if (true_block->type != ST_BLOCK_NODE || true_block->block.arguments != NULL)
-	generation_error (gt, "first argument of ifTrue:ifFalse message must be a 0-argument block", true_block);
+    true_block  = node->message.arguments;
     false_block = node->message.arguments->next;
-    if (false_block->type != ST_BLOCK_NODE || false_block->block.arguments != NULL)
-	generation_error (gt, "second argument of ifTrue:ifFalse message must be a 0-argument block", false_block);
 
-    generate_expression (gt, node->message.receiver);
-
-    // add 3 for size of jump instr at end of true block
-    size = size_statements (gt, true_block->block.statements);
-    size += sizes[JUMP]; 
-	
-    if (subpattern_index == 0)
-	emit (gt, JUMP_FALSE);
-    else
-	emit (gt, JUMP_TRUE);
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);
-
-
-    generate_statements (gt, true_block->block.statements);
-
+    generate_expression (gt, code, node->message.receiver);
+    size = size_statements (gt, true_block->block.statements) + sizes[JUMP];
+    emit (code, JUMP_FALSE);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+    generate_statements (gt, code, true_block->block.statements);
     size = size_statements (gt, false_block->block.statements);
-    emit (gt, JUMP);
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);
-
-    generate_statements (gt, false_block->block.statements);
+    emit (code, JUMP);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+    generate_statements (gt, code, false_block->block.statements);
 
     if (node->message.is_statement)
-	emit (gt, POP_STACK_TOP);
+	emit (code, POP_STACK_TOP);
 }
 
-static int
-size_func_2 (Generator *gt, st_node *node, st_uint subpattern_index)
+/* #ifFalseifTrue:
+ */
+static bool
+match_ifFalseifTrue (Generator *gt, st_node *node)
 {
-    int size= 0;
-
     st_node *true_block, *false_block;
-	
+
+    if (strcmp (CSTRING (node->message.selector), "ifFalse:ifTrue:") != 0)
+	return false;
+
     true_block = node->message.arguments;
     if (true_block->type != ST_BLOCK_NODE || true_block->block.arguments != NULL)
-	generation_error (gt, "first argument of ifTrue:ifFalse message must be a 0-argument block", true_block);
+	return false;
+
     false_block = node->message.arguments->next;
     if (false_block->type != ST_BLOCK_NODE || false_block->block.arguments != NULL)
-	generation_error (gt, "second argument of ifTrue:ifFalse message must be a 0-argument block", false_block);
+	return false;
 
-    size += size_expression (gt, node->message.receiver);
-    size += sizes[JUMP_TRUE];
-    
-    // true block
-    size += size_statements (gt, node->message.arguments->block.statements);
-    size += sizes[JUMP];
-    size += size_statements (gt, node->message.arguments->next->block.statements);
-    
-    if (node->message.is_statement)
-	size += sizes[POP_STACK_TOP];
-
-    return size;
+    return true;
 }
 
 static void
-generation_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
+generate_ifFalseifTrue (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *true_block, *false_block;
+    int size;
+	
+    true_block  = node->message.arguments;
+    false_block = node->message.arguments->next;
+
+    generate_expression (gt, code, node->message.receiver);
+    size = size_statements (gt, true_block->block.statements) + sizes[JUMP];
+    emit (code, JUMP_TRUE);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+    generate_statements (gt, code, true_block->block.statements);
+    size = size_statements (gt, false_block->block.statements);
+    emit (code, JUMP);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+    generate_statements (gt, code, false_block->block.statements);
+
+    if (node->message.is_statement)
+	emit (code, POP_STACK_TOP);
+}
+
+/* #whileTrue
+ */
+static bool
+match_whileTrue (Generator *gt, st_node *node)
 {
     st_node *block;
-    int size;
+
+    if (strcmp (CSTRING (node->message.selector), "whileTrue") != 0)
+	return false;
 
     block = node->message.receiver;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("receiver of %s message must be a zero argument block",
-					       subpattern_index == 0 ? "#whileTrue" : "#whileFalse"), block);
+	return false;
+    
+    return true;
+}
 
-    generate_statements (gt, block->block.statements);
+static void
+generate_whileTrue (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *block;
+    int      size;
+
+    block = node->message.receiver;
+
+    generate_statements (gt, code, block->block.statements);
 	
-    // jump around jump statement
-    if (subpattern_index == 0)
-	emit (gt, JUMP_FALSE);
-    else
-	emit (gt, JUMP_TRUE);
-    emit (gt, 3);
-    emit (gt, 0);
-
-
+    emit (code, JUMP_FALSE);
+    emit (code, 3);
+    emit (code, 0);
     size = size_statements (gt, block->block.statements);
     size += sizes[JUMP_FALSE];
-    // we jump backwards
     size = -(size + 3);
-	
-    emit (gt, JUMP);
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);	
+    emit (code, JUMP);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);	
 
     if (!node->message.is_statement)
-	emit (gt, PUSH_NIL);
+	emit (code, PUSH_NIL);
 }
 
-static int
-size_func_3 (Generator *gt, st_node *node, st_uint subpattern_index)
+/* #whileFalse
+ */
+static bool
+match_whileFalse (Generator *gt, st_node *node)
 {
     st_node *block;
-    int size = 0;
+
+    if (strcmp (CSTRING (node->message.selector), "whileFalse") != 0)
+	return false;
 
     block = node->message.receiver;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("receiver of %s message must be a zero argument block",
-					       subpattern_index == 0 ? "#whileTrue" : "#whileFalse"), block);
-
-    size += size_statements (gt, node->message.receiver->block.statements);
-    size += sizes[JUMP_TRUE];	
-    size += sizes[JUMP];
+	return false;
     
-    if (!node->message.is_statement)
-	size += sizes[PUSH_NIL];
-
-    return size;
+    return true;
 }
 
 static void
-generation_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
+generate_whileFalse (Generator *gt, st_bytecode *code, st_node *node)
 {
     st_node *block;
-    int size;
+    int      size;
+
+    block = node->message.receiver;
+    generate_statements (gt, code, block->block.statements);
+	
+    emit (code, JUMP_TRUE);
+    emit (code, 3);
+    emit (code, 0);
+    size = size_statements (gt, block->block.statements);
+    size += sizes[JUMP_FALSE];
+    size = -(size + 3);
+    emit (code, JUMP);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);	
+
+    if (!node->message.is_statement)
+	emit (code, PUSH_NIL);
+}
+
+/* #whileTrueArg
+ */
+static bool
+match_whileTrueArg (Generator *gt, st_node *node)
+{
+    st_node *block;
+ 
+    if (strcmp (CSTRING (node->message.selector), "whileTrue:") != 0)
+	return false;
 
     block = node->message.receiver;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("receiver of %s message must be a zero argument block",
-					       subpattern_index == 0 ? "#whileTrue:" : "#whileFalse:"), block);
+	return false;
 
     block = node->message.arguments;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("argument of %s message must be a zero argument block",
-					       subpattern_index == 0 ? "#whileTrue:" : "#whileFalse:"), block);
-	
-    generate_statements (gt, node->message.receiver->block.statements);
-	
-    if (subpattern_index == 0)
-	emit (gt, JUMP_FALSE);
-    else
-	emit (gt, JUMP_TRUE);
+	return false;
 
+    return true;
+}
+
+static void
+generate_whileTrueArg (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *block;
+    int size;
+	
+    generate_statements (gt, code, node->message.receiver->block.statements);	
+    emit (code, JUMP_FALSE);
     size = size_statements (gt, node->message.arguments->block.statements);
-    // include size of POP and JUMP statement
     size += sizes[POP_STACK_TOP] + sizes[JUMP];
 
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
 
+    generate_statements (gt, code, node->message.arguments->block.statements);
+	
+    size += size_statements (gt, node->message.receiver->block.statements);
+    size = -(size + 3);
+    emit (code, POP_STACK_TOP);
+    emit (code, JUMP);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
 
-    generate_statements (gt, node->message.arguments->block.statements);
+    if (!node->message.is_statement)
+	emit (code, PUSH_NIL);
+}
+
+/* #whileFalseArg
+ */
+static bool
+match_whileFalseArg (Generator *gt, st_node *node)
+{
+    st_node *block;
+
+    if (strcmp (CSTRING (node->message.selector), "whileFalse:") != 0)
+	return false;
+
+    block = node->message.receiver;
+    if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
+	return false;
+
+    block = node->message.arguments;
+    if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
+	return false;
+
+    return true;
+}
+
+static void
+generate_whileFalseArg (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *block;
+    int size;
+	
+    generate_statements (gt, code, node->message.receiver->block.statements);
+    emit (code, JUMP_TRUE);
+    size = size_statements (gt, node->message.arguments->block.statements);
+    size += sizes[POP_STACK_TOP] + sizes[JUMP];
+
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+
+    generate_statements (gt, code, node->message.arguments->block.statements);
 	
     size += size_statements (gt, node->message.receiver->block.statements);
     size = -(size + 3);
 
-    emit (gt, POP_STACK_TOP);
-
-    emit (gt, JUMP);
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);
+    emit (code, POP_STACK_TOP);
+    emit (code, JUMP);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
 
     if (!node->message.is_statement)
-	emit (gt, PUSH_NIL);
-
+	emit (code, PUSH_NIL);
 }
 
-static int
-size_func_4 (Generator *gt, st_node *node, st_uint subpattern_index)
+/* #and:
+ */
+static bool
+match_and (Generator *gt, st_node *node)
 {
     st_node *block;
-    int size = 0;
-
-    block = node->message.receiver;
-    if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("receiver of %s message must be a zero argument block",
-					       subpattern_index == 0 ? "#whileTrue:" : "#whileFalse:"), block);
+ 
+    if (strcmp (CSTRING (node->message.selector), "and:") != 0)
+	return false;
 
     block = node->message.arguments;
     if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("argument of %s message must be a zero argument block",
-					       subpattern_index == 0 ? "#whileTrue:" : "#whileFalse:"), block);
+	return false;
 
-    size += size_statements (gt, node->message.receiver->block.statements);
-    size += sizes[JUMP_TRUE];
-    size += size_statements (gt, node->message.arguments->block.statements);
-    size += sizes[POP_STACK_TOP] + sizes[JUMP];
-    
-    if (!node->message.is_statement)
-	size += sizes[PUSH_NIL];
-    
-    return size;
+    return true;
 }
 
 static void
-generation_func_5 (Generator *gt, st_node *node, st_uint subpattern_index)
+generate_and (Generator *gt, st_bytecode *code, st_node *node)
 {
     st_node *block;
     int size;
 
     block = node->message.arguments;
-    if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
-	generation_error (gt, st_strdup_printf ("argument of %s message must be a zero argument block",
-					subpattern_index == 0 ? "#and:" : "#or:"), block);
-
-    generate_expression (gt, node->message.receiver);
-
+    generate_expression (gt, code, node->message.receiver);
     size = size_statements (gt, block->block.statements);
     // size of JUMP instr after block statements
     size += 3;
 
-    if (subpattern_index == 0)
-	emit (gt, JUMP_FALSE);
-    else
-	emit (gt, JUMP_TRUE);
-    emit (gt, size & 0xFF);
-    emit (gt, (size >> 8) & 0xFF);
+    emit (code, JUMP_FALSE);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
 
-    generate_statements (gt, block->block.statements);
+    generate_statements (gt, code, block->block.statements);
 
-    emit (gt, JUMP);
-    emit (gt, 1);
-    emit (gt, 0);
-
-    if (subpattern_index == 0)
-	emit (gt, PUSH_FALSE);
-    else
-	emit (gt, PUSH_TRUE);
+    emit (code, JUMP);
+    emit (code, 1);
+    emit (code, 0);
+    emit (code, PUSH_FALSE);
 
     if (node->message.is_statement)
-	emit (gt, POP_STACK_TOP);
-
+	emit (code, POP_STACK_TOP);
 }
 
-static int
-size_func_5 (Generator *gt, st_node *node, st_uint subpattern_index)
+/* #or:
+ */
+static bool
+match_or (Generator *gt, st_node *node)
 {
-    int size = 0;
+    st_node *block;
+ 
+    if (strcmp (CSTRING (node->message.selector), "or:") != 0)
+	return false;
 
-    size += size_expression (gt, node->message.receiver);
-    size += sizes[JUMP_TRUE];   
-    size += size_statements (gt, node->message.arguments->block.statements);
-    size += sizes[JUMP];	
-    size += sizes[PUSH_TRUE];
-    
-    if (node->message.is_statement)
-	size += sizes[POP_STACK_TOP];
-    
-    return size;
-}
+    block = node->message.arguments;
+    if (block->type != ST_BLOCK_NODE || block->block.arguments != NULL)
+	return false;
 
-typedef void (* CodeGenerationFunc) (Generator *gt, st_node *message, st_uint subpattern_index);
-typedef int  (* CodeSizeFunc)       (Generator *gt, st_node *message, st_uint subpattern_index);
-
-static const struct generators {
-    
-    const char *const pattern[3];
-    CodeGenerationFunc generation_func;
-    CodeSizeFunc       size_func;
-
-} generators[] =
-{
-    { { "ifTrue:", "ifFalse", NULL },
-      generation_func_1, size_func_1 },
-    { { "ifTrue:ifFalse:", "ifFalse:ifTrue:", NULL },
-      generation_func_2, size_func_2 },
-    { { "whileTrue", "whileFalse", NULL },
-      generation_func_3, size_func_3 },
-    { { "whileTrue:", "whileFalse:", NULL },
-      generation_func_4, size_func_4 },
-    { { "and:", "or:", NULL },
-      generation_func_5, size_func_5 },
-};
-
-static int
-size_message_send (Generator *gt, st_node *node)
-{
-    st_node *args;
-    int size = 0;
-
-    args = node->message.arguments;
-    for (; args; args = args->next)
-	size += size_expression (gt, args);
-
-    /* check if message is a special */
-    for (int i = 0; i < ST_N_ELEMENTS (__cpu.selectors); i++) {
-	if (!node->message.super_send && node->message.selector == __cpu.selectors[i]) {
-	    size += 1;
-	    goto out;
-	}
-    }
-
-    size += sizes[SEND];
-
-out:
-
-    if (node->message.is_statement)
-	size += sizes[POP_STACK_TOP];
-    
-    return size;
+    return true;
 }
 
 static void
-generate_message_send (Generator *gt, st_node *node)
+generate_or (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_node *block;
+    int size;
+
+    block = node->message.arguments;
+    generate_expression (gt, code, node->message.receiver);
+    size = size_statements (gt, block->block.statements);
+    // size of JUMP instr after block statements
+    size += 3;
+
+    emit (code, JUMP_TRUE);
+    emit (code, size & 0xFF);
+    emit (code, (size >> 8) & 0xFF);
+
+    generate_statements (gt, code, block->block.statements);
+
+    emit (code, JUMP);
+    emit (code, 1);
+    emit (code, 0);
+    emit (code, PUSH_TRUE);
+    if (node->message.is_statement)
+	emit (code, POP_STACK_TOP);
+}
+
+typedef void (* CodeGenerationFunc)    (Generator *gt, st_bytecode *code, st_node *node);
+typedef bool (* OptimisationMatchFunc) (Generator *gt, st_node *node);
+
+static const struct optimisers {
+    
+    CodeGenerationFunc    generation_func;
+    OptimisationMatchFunc match_func;
+
+} optimisers[] =
+{
+    { generate_ifTrue,             match_ifTrue },
+    { generate_ifFalse,            match_ifFalse },
+    { generate_ifTrueifFalse,      match_ifTrueifFalse  },
+    { generate_ifFalseifTrue,      match_ifFalseifTrue  },
+    { generate_whileTrue,          match_whileTrue  },
+    { generate_whileFalse,         match_whileFalse  },
+    { generate_whileTrueArg,       match_whileTrueArg },
+    { generate_whileFalseArg,      match_whileFalseArg },
+    { generate_and,                match_and },
+    { generate_or,                 match_or  }
+};
+
+static void
+generate_message_send (Generator *gt, st_bytecode *code, st_node *node)
 {
     st_node *args;
-    st_uint   argcount = 0;
+    st_uint  argcount = 0;
+    int      index;
 
     /* generate arguments */
     args = node->message.arguments;
     for (; args; args = args->next) {
-	generate_expression (gt, args);
+	generate_expression (gt, code, args);
 	argcount++;
     }
 
     /* check if message is a special */
     for (int i = 0; i < ST_N_ELEMENTS (__cpu.selectors); i++) {
 	if (!node->message.super_send && node->message.selector == __cpu.selectors[i]) {
-	    emit (gt, SEND_PLUS + i);
+	    emit (code, SEND_PLUS + i);
 	    goto out;
 	}
     }
 
     if (node->message.super_send)
-	emit (gt, SEND_SUPER);
+	emit (code, SEND_SUPER);
     else
-	emit (gt, SEND);
+	emit (code, SEND);
 
-    emit (gt, (st_uchar) argcount);
-	
-    int index = find_literal_const (gt, node->message.selector);
-    emit (gt, (st_uchar) index);
+    index = find_literal_const (gt, node->message.selector);
+
+    emit (code, (st_uchar) argcount);
+    emit (code, (st_uchar) index);
 
 out:
-
     if (node->message.is_statement)
-	emit (gt, POP_STACK_TOP);
+	emit (code, POP_STACK_TOP);
+}
 
+static int
+size_message_send (Generator *gt, st_node *node)
+{
+    st_bytecode code;
+
+    bytecode_init (&code);
+    generate_message_send (gt, &code, node);
+    bytecode_destroy (&code);
+
+    return code.size;
+}
+
+static void
+generate_cascade (Generator *gt, st_bytecode *code, st_node *node)
+{
+    st_uint i, j;
+
+    generate_expression (gt, code, node->cascade.receiver);
+    emit (code, DUPLICATE_STACK_TOP);
+
+    for (st_list *l = node->cascade.messages; l; l = l->next) {
+
+	generate_message_send (gt, code, (st_node*) l->data); 
+
+	if (l->next || node->cascade.is_statement)
+	    emit (code, POP_STACK_TOP);
+
+	if (l->next && l->next->next)
+	    emit (code, DUPLICATE_STACK_TOP);
+    }
 }
 
 static int
 size_cascade (Generator *gt, st_node *node)
 {
-    st_uint i, j;
-    st_uint size = 0;
+    st_bytecode code;
 
-    size += size_expression (gt, node->cascade.receiver);
-    size += sizes[DUPLICATE_STACK_TOP];
+    bytecode_init (&code);
+    generate_cascade (gt, &code, node);
+    bytecode_destroy (&code);
 
-    for (st_list *l = node->cascade.messages; l; l = l->next) {
-
-	size += size_message_send (gt, (st_node *) l->data); 
-
-	if (l->next || node->cascade.is_statement)
-	    size += sizes[POP_STACK_TOP];
-
-	if (l->next && l->next->next)
-	    size += sizes[DUPLICATE_STACK_TOP];
-    }
-
-    return size;
+    return code.size;
 }
 
 static void
-generate_cascade (Generator *gt, st_node *node)
+generate_message (Generator *gt, st_bytecode *code, st_node *node)
 {
     st_uint i, j;
 
-    generate_expression (gt, node->cascade.receiver);
-    emit (gt, DUPLICATE_STACK_TOP);
-
-    for (st_list *l = node->cascade.messages; l; l = l->next) {
-
-	generate_message_send (gt, (st_node*) l->data); 
-
-	if (l->next || node->cascade.is_statement)
-	    emit (gt, POP_STACK_TOP);
-
-	if (l->next && l->next->next)
-	    emit (gt, DUPLICATE_STACK_TOP);
+    for (i = 0; i < ST_N_ELEMENTS (optimisers); i++) {
+	if (optimisers[i].match_func (gt, node)) {
+	    optimisers[i].generation_func (gt, code, node);
+	    return;
+	}
     }
+
+    generate_expression (gt, code, node->message.receiver);
+    generate_message_send (gt, code, node);
 }
 
 static int
 size_message (Generator *gt, st_node *node)
 {
-    const char *selector;
-    st_uint i, j;
-    st_uint size = 0;
+    st_bytecode code;
 
-    selector = CSTRING (node->message.selector);
+    bytecode_init (&code);
+    generate_message (gt, &code, node);
+    bytecode_destroy (&code);
 
-    for (i = 0; i < ST_N_ELEMENTS (generators); i++) {
-	for (j = 0; j < ST_N_ELEMENTS (generators[i].pattern); j++) {
-	    if (generators[i].pattern[j] && strcmp (generators[i].pattern[j], selector) == 0) {
-		size += generators[i].size_func (gt, node, j);
-		return size;
-	    }
-	}
-    }
-
-    size += size_expression (gt, node->message.receiver);
-    size += size_message_send (gt, node);
-
-    return size;
+    return code.size;
 }
 
 static void
-generate_message (Generator *gt, st_node *node)
-{
-    const char *selector;
-    st_uint i, j;
-
-    selector = CSTRING (node->message.selector);
-
-    for (i = 0; i < ST_N_ELEMENTS (generators); i++) {
-	for (j = 0; j < ST_N_ELEMENTS (generators[i].pattern); j++) {
-	    if (generators[i].pattern[j] && strcmp (generators[i].pattern[j], selector) == 0) {
-		generators[i].generation_func (gt, node, j);
-		return;
-	    }
-	}
-    }
-
-    generate_expression (gt, node->message.receiver);
-    generate_message_send (gt, node);
-}
-
-static int
-size_expression (Generator *gt, st_node *node)
-{
-    int index;
-    int size = 0;
-
-    switch (node->type) {
-    case ST_VARIABLE_NODE:
-    {
-	const char *name = node->variable.name;
-
-	if (streq (name, "self") || streq (name, "super")) {
-	    size += sizes[PUSH_SELF];
-	    break;
-	} else if (streq (name, "true")) {
-	    size += sizes[PUSH_TRUE];
-	    break;
-	} else if (streq (name, "false")) {
-	    size += sizes[PUSH_FALSE];
-	    break;
-	} else if (streq (name, "nil")) {
-	    size += sizes[PUSH_NIL];
-	    break;
-	} else if (streq (name, "thisContext")) {
-	    size += sizes[PUSH_ACTIVE_CONTEXT];
-	    break;
-	}
-	
-	index = find_temporary (gt, node->variable.name);
-	if (index >= 0) {
-	    size += 2;
-	    break;
-	}
-	index = find_instvar (gt, node->variable.name);
-	if (index >= 0) {
-	    size += 2;
-	    break;
-	}
-	index = find_literal_var (gt, node->variable.name);
-	if (index >= 0) {
-	    size += 2;
-	    break;
-	}
-	generation_error (gt, "unknown variable", node);
-    }
-    case ST_LITERAL_NODE:
-
-	/* use optimized PUSH_INTEGER for smis in the range of -127..127 */
-	if (st_object_is_smi (node->literal.value) &&
-	    ((st_smi_value (node->literal.value) >= -127) && 
-	     (st_smi_value (node->literal.value) <= 127))) {
-	    size += sizes[PUSH_INTEGER];
-	} else {
-	    size += sizes[PUSH_LITERAL_CONST];
-	}
-
-	break;
-
-    case ST_ASSIGN_NODE:
-	size += size_assign (gt, node);
-	break;
-
-    case ST_BLOCK_NODE:	
-	size += size_block (gt, node);
-	break;
-
-    case ST_MESSAGE_NODE:
-
-	size += size_message (gt, node);
-	break;
-
-    case ST_CASCADE_NODE:
-
-	size += size_cascade (gt, node);
-	break;
-
-    default:
-	st_assert_not_reached ();
-    }
-
-    return size;
-}
-
-static void
-generate_expression (Generator *gt, st_node *node)
+generate_expression (Generator *gt, st_bytecode *code, st_node *node)
 {   
     int index;
 
@@ -1122,39 +1127,39 @@ generate_expression (Generator *gt, st_node *node)
 	const char *name = node->variable.name;
 	
 	if (streq (name, "self")) {
-	    push_special (gt, PUSH_SELF);
+	    push_special (gt, code, PUSH_SELF);
 	    break;
 	} else if (streq (name, "super")) {
 	    gt->references_super = true;
-	    push_special (gt, PUSH_SELF);
+	    push_special (gt, code, PUSH_SELF);
 	    break;
 	} else if (streq (name, "true")) {
-	    push_special (gt, PUSH_TRUE);
+	    push_special (gt, code, PUSH_TRUE);
 	    break;
 	} else if (streq (name, "false")) {
-	    push_special (gt, PUSH_FALSE);
+	    push_special (gt, code, PUSH_FALSE);
 	    break;
 	} else if (streq (name, "nil")) {
-	    push_special (gt, PUSH_NIL);
+	    push_special (gt, code, PUSH_NIL);
 	    break;
 	} else if (streq (name, "thisContext")) {
-	    push_special (gt, PUSH_ACTIVE_CONTEXT);
+	    push_special (gt, code, PUSH_ACTIVE_CONTEXT);
 	    break;
 	}
 
 	index = find_temporary (gt, node->variable.name);
 	if (index >= 0) {
-	    push (gt, PUSH_TEMP, index);
+	    push (gt, code, PUSH_TEMP, index);
 	    break;
 	}
 	index = find_instvar (gt, node->variable.name);
 	if (index >= 0) {
-	    push (gt, PUSH_INSTVAR, index);
+	    push (gt, code, PUSH_INSTVAR, index);
 	    break;
 	}
 	index = find_literal_var (gt, node->variable.name);
 	if (index >= 0) {
-	    push (gt, PUSH_LITERAL_VAR, index);
+	    push (gt, code, PUSH_LITERAL_VAR, index);
 	    break;
 	}
 	generation_error (gt, "unknown variable", node);
@@ -1166,28 +1171,28 @@ generate_expression (Generator *gt, st_node *node)
 	if (st_object_is_smi (node->literal.value) &&
 	    ((st_smi_value (node->literal.value) >= -127) && 
 	     (st_smi_value (node->literal.value) <= 127))) {
-	    emit (gt, PUSH_INTEGER);
-	    emit (gt, st_smi_value (node->literal.value));
+	    emit (code, PUSH_INTEGER);
+	    emit (code, st_smi_value (node->literal.value));
 	} else {
 	    index = find_literal_const (gt, node->literal.value);
-	    push (gt, PUSH_LITERAL_CONST, index);
+	    push (gt, code, PUSH_LITERAL_CONST, index);
 	}
 	break;
 
     case ST_ASSIGN_NODE:
-	generate_assign (gt, node, false);
+	generate_assign (gt, code, node, false);
 	break;
 
     case ST_BLOCK_NODE:	
-	generate_block (gt, node);
+	generate_block (gt, code, node);
 	break;
 
     case ST_MESSAGE_NODE:
-	generate_message (gt, node);
+	generate_message (gt, code, node);
 	break;
 
     case ST_CASCADE_NODE:
-	generate_cascade (gt, node);
+	generate_cascade (gt, code, node);
 	break;
 
     default:
@@ -1196,67 +1201,22 @@ generate_expression (Generator *gt, st_node *node)
 }
 
 static int
-size_statements (Generator *gt, st_node *statements)
+size_expression (Generator *gt, st_node *node)
 {
-    int size = 0;
+    st_bytecode code;
 
-    if (statements == NULL)
-	size += sizes[PUSH_NIL];
+    bytecode_init (&code);
+    generate_expression (gt, &code, node);
+    bytecode_destroy (&code);
 
-    for (st_node *node = statements; node; node = node->next) {
-
-	switch (node->type) {
-
-	case ST_VARIABLE_NODE:
-	case ST_LITERAL_NODE:
-	case ST_BLOCK_NODE:
-	    /*
-	     * don't generate anything since we would end up with a constant
-	     * expression with no side-effects.
-             * 
-             * However, in a block with no explicit return, the value of the last statement is the implicit
-             * value of the block.   
-	     */
-	    if (node->next == NULL)
-		size += size_expression (gt, node);
-
-	    break;
-
-	case ST_ASSIGN_NODE:
-	    
-	    size += size_assign (gt, node);
-
-	    break;
-	    
-	case ST_RETURN_NODE:
-
-	    st_assert (node->next == NULL);	    
-	    size += size_return (gt, node);
-	    return size;
-	    
-	case ST_MESSAGE_NODE:
-
-	    size += size_message (gt, node);
-	    break;
-
-	case ST_CASCADE_NODE:
-
-	    size += size_cascade (gt, node);
-	    break;
-	    
-	default:
-	    st_assert_not_reached ();
-	}
-    }
-
-    return size;
+    return code.size;
 }
 
 static void
-generate_statements (Generator *gt, st_node *statements)
+generate_statements (Generator *gt, st_bytecode *code, st_node *statements)
 {
     if (statements == NULL) {
-	emit (gt, PUSH_NIL);
+	emit (code, PUSH_NIL);
     }
 
     for (st_node *node = statements; node; node = node->next) {
@@ -1274,32 +1234,32 @@ generate_statements (Generator *gt, st_node *statements)
              * value of the block.   
 	     */
 	    if (node->next == NULL)
-		generate_expression (gt, node);
+		generate_expression (gt, code, node);
 	    break;
 
 	case ST_ASSIGN_NODE:
 
 	    /* don't use STORE_POP if this is the last statement */
 	    if (node->next == NULL)
-		generate_assign (gt, node, false);
+		generate_assign (gt, code, node, false);
 	    else
-		generate_assign (gt, node, true);		
+		generate_assign (gt, code, node, true);		
 	    break;
 	    
 	case ST_RETURN_NODE:
 	    
 	    st_assert (node->next == NULL);
-	    generate_return (gt, node);
+	    generate_return (gt, code, node);
 	    return;
 	    
 	case ST_MESSAGE_NODE:
 
-	    generate_message (gt, node);
+	    generate_message (gt, code, node);
 	    break;
 	    
 	case ST_CASCADE_NODE:
 
-	    generate_cascade (gt, node);
+	    generate_cascade (gt, code, node);
 	    break;
 
 	default:
@@ -1308,9 +1268,20 @@ generate_statements (Generator *gt, st_node *statements)
     }
 }
 
+static int
+size_statements (Generator *gt, st_node *statements)
+{
+    st_bytecode code;
+
+    bytecode_init (&code);
+    generate_statements (gt, &code, statements);
+    bytecode_destroy (&code);
+
+    return code.size;
+}
 
 static void
-generate_method_statements (Generator *gt, st_node *statements)
+generate_method_statements (Generator *gt, st_bytecode *code, st_node *statements)
 {
    for (st_node *node = statements; node; node = node->next) {
 
@@ -1323,32 +1294,32 @@ generate_method_statements (Generator *gt, st_node *statements)
 	    
        case ST_ASSIGN_NODE:
 	   
-	    generate_assign (gt, node, true);		
-	    break;
+	   generate_assign (gt, code, node, true);		
+	   break;
+	   
+       case ST_RETURN_NODE:
+
+	   st_assert (node->next == NULL);	    
+	   generate_return (gt, code, node);
+	   return;
 	    
-	case ST_RETURN_NODE:
-
-	    st_assert (node->next == NULL);	    
-	    generate_return (gt, node);
-	    return;
-	    
-	case ST_MESSAGE_NODE:
-
-	    generate_message (gt, node);
-	    break;
-
-	case ST_CASCADE_NODE:
-
-	    generate_cascade (gt, node);
-	    break;
-	    
+       case ST_MESSAGE_NODE:
+	   
+	   generate_message (gt, code, node);
+	   break;
+	   
+       case ST_CASCADE_NODE:
+	   
+	   generate_cascade (gt, code, node);
+	   break;
+	   
        default:
 	   st_assert_not_reached ();
        }
     }
    
-   emit (gt, PUSH_SELF);
-   emit (gt, RETURN_STACK_TOP);
+   emit (code, PUSH_SELF);
+   emit (code, RETURN_STACK_TOP);
 }
 
 static st_list *
@@ -1422,7 +1393,12 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     gt->temporaries = st_list_concat (gt->temporaries, collect_temporaries (gt, node->method.statements));
 
     // generate bytecode
-    generate_method_statements (gt, node->method.statements);
+
+    st_bytecode code;
+
+    bytecode_init (&code);
+
+    generate_method_statements (gt, &code, node->method.statements);
 
     method = st_object_new (ST_COMPILED_METHOD_CLASS);
 
@@ -1436,7 +1412,7 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 
     st_method_set_arg_count    (method, argcount);
     st_method_set_temp_count   (method, tempcount);
-    st_method_set_large_context (method, (gt->max_stack_depth + argcount + tempcount) > 12);
+    st_method_set_large_context (method, (code.max_stack_depth + argcount + tempcount) > 12);
 
     if (node->method.primitive >= 0) {
 	st_method_set_flags (method, ST_METHOD_PRIMITIVE);	
@@ -1447,10 +1423,11 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     st_method_set_primitive_index (method, node->method.primitive);
 
     ST_METHOD_LITERALS (method) = create_literals_array (gt);
-    ST_METHOD_BYTECODE (method) = create_bytecode_array (gt); 
+    ST_METHOD_BYTECODE (method) = create_bytecode_array (&code); 
     ST_METHOD_SELECTOR (method) = node->method.selector;
 
     generator_destroy (gt);
+    bytecode_destroy (&code);
 
     return method;
     
