@@ -46,8 +46,6 @@
 
 typedef struct 
 {
-    bool     in_block;
-
     st_oop   class;
 
     jmp_buf  jmploc;
@@ -494,26 +492,23 @@ get_block_temporaries (Generator *gt, st_node *temporaries)
 static void
 generate_block (Generator *gt, st_bytecode *code, st_node *node)
 {
-    bool  in_block;
     int   index, size = 0;
+    st_uint  i, argcount;
+    st_node *l;
 
-    in_block = gt->in_block;
-    gt->in_block = true;
+    argcount = st_node_list_length (node->block.arguments);
 
     emit (code, BLOCK_COPY);
-    emit (code, st_node_list_length (node->block.arguments));
+    emit (code, argcount);
 
     // get size of block code and then jump around that code
-    size = 2 * st_node_list_length (node->block.arguments);
-    size += size_statements (gt, node->block.statements);
-    size += sizes[BLOCK_RETURN];
+    size = 2 * argcount + size_statements (gt, node->block.statements) + sizes[BLOCK_RETURN];
     jump_offset (gt, code, size);
 
     /* Store all block arguments into the temporary frame.
        Note that upon a block activation, the stack pointer sits
        above the last argument to to the block */
-    st_node *l;
-    st_uint i = st_node_list_length (node->block.arguments);
+    i = st_node_list_length (node->block.arguments);
     for (; i > 0; --i) {
 	l = st_node_list_at (node->block.arguments, i - 1);
 	index = find_temporary (gt, l->variable.name);
@@ -522,11 +517,7 @@ generate_block (Generator *gt, st_bytecode *code, st_node *node)
     }
 
     generate_statements (gt, code, node->block.statements);
-
     emit (code, BLOCK_RETURN);
-
-    if (in_block == false)
-	gt->in_block = false;
 } 
 
 static int
@@ -923,9 +914,7 @@ generate_and (Generator *gt, st_bytecode *code, st_node *node)
 
     block = node->message.arguments;
     generate_expression (gt, code, node->message.receiver);
-    size = size_statements (gt, block->block.statements);
-    // size of JUMP instr after block statements
-    size += 3;
+    size = size_statements (gt, block->block.statements) + sizes[JUMP];
 
     emit (code, JUMP_FALSE);
     emit (code, size & 0xFF);
@@ -967,9 +956,7 @@ generate_or (Generator *gt, st_bytecode *code, st_node *node)
 
     block = node->message.arguments;
     generate_expression (gt, code, node->message.receiver);
-    size = size_statements (gt, block->block.statements);
-    // size of JUMP instr after block statements
-    size += 3;
+    size = size_statements (gt, block->block.statements) + sizes[JUMP];
 
     emit (code, JUMP_TRUE);
     emit (code, size & 0xFF);
