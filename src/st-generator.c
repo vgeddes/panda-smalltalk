@@ -51,8 +51,6 @@ typedef struct
     jmp_buf  jmploc;
 
     st_compiler_error *error;
-
-    bool     references_super;
  
     /* names of temporaries, in order of appearance */
     st_list   *temporaries;
@@ -212,8 +210,6 @@ generator_new (void)
     gt->instvars    = NULL;
     gt->literals    = NULL;
     gt->temporaries = NULL;
-
-    gt->references_super = false;
    
     return gt;
 }
@@ -231,24 +227,18 @@ generator_destroy (Generator *gt)
 static st_oop
 create_literals_array (Generator *gt)
 {
-    int    count;
-    st_oop literals = ST_NIL;
+    st_oop  literals;
+    st_uint i;
 
-    if (gt->references_super)
-	gt->literals = st_list_append (gt->literals, (st_pointer) gt->class);
-
-    count = st_list_length (gt->literals);
-
-    if (count > 0) {
-	literals = st_object_new_arrayed (ST_ARRAY_CLASS, count); 
-
-	int i = 1;
-	for (st_list *l = gt->literals; l; l = l->next) {
-	    st_array_at_put (literals, i, (st_oop) l->data);
-	    i++;
-	}
+    gt->literals = st_list_append (gt->literals, (st_pointer) gt->class);
+    literals = st_object_new_arrayed (ST_ARRAY_CLASS, st_list_length (gt->literals)); 
+    
+    i = 1;
+    for (st_list *l = gt->literals; l; l = l->next) {
+	st_array_at_put (literals, i, (st_oop) l->data);
+	i++;
     }
-
+       
     return literals;
 }
 
@@ -1117,7 +1107,6 @@ generate_expression (Generator *gt, st_bytecode *code, st_node *node)
 	    push_special (gt, code, PUSH_SELF);
 	    break;
 	} else if (streq (name, "super")) {
-	    gt->references_super = true;
 	    push_special (gt, code, PUSH_SELF);
 	    break;
 	} else if (streq (name, "true")) {
@@ -1358,8 +1347,11 @@ collect_temporaries (Generator *gt, st_node *node)
 st_oop
 st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
 {
-    Generator *gt;
-    st_oop     method;
+    Generator  *gt;
+    st_oop      method;
+    st_uint     argcount;
+    st_uint     tempcount;
+    st_bytecode code;
 
     st_assert (class != ST_NIL);
     st_assert (node != NULL && node->type == ST_METHOD_NODE);
@@ -1369,8 +1361,10 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     gt = generator_new ();
     gt->error = error;
 
-    if (setjmp (gt->jmploc))
-	goto error;
+    if (setjmp (gt->jmploc)) {
+	generator_destroy (gt);
+	return ST_NIL;
+    }
 
     gt->class = class;
     gt->instvars = st_behavior_all_instance_variables (class);
@@ -1379,35 +1373,24 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     /* collect all block-level temporaries */
     gt->temporaries = st_list_concat (gt->temporaries, collect_temporaries (gt, node->method.statements));
 
-    // generate bytecode
-
-    st_bytecode code;
-
     bytecode_init (&code);
-
     generate_method_statements (gt, &code, node->method.statements);
-
     method = st_object_new (ST_COMPILED_METHOD_CLASS);
 
-    ST_METHOD_HEADER (method) = st_smi_new (0);
-
-    st_uint argcount;
-    st_uint tempcount;
-
-    argcount = st_node_list_length (node->method.arguments);
+    argcount  = st_node_list_length (node->method.arguments);
     tempcount = st_list_length (gt->temporaries) - st_node_list_length (node->method.arguments);
 
+    ST_METHOD_HEADER (method) = st_smi_new (0);
     st_method_set_arg_count    (method, argcount);
     st_method_set_temp_count   (method, tempcount);
     st_method_set_large_context (method, (code.max_stack_depth + argcount + tempcount) > 12);
+    st_method_set_primitive_index (method, node->method.primitive);
 
     if (node->method.primitive >= 0) {
 	st_method_set_flags (method, ST_METHOD_PRIMITIVE);	
     } else {
 	st_method_set_flags (method, ST_METHOD_NORMAL);
     }
-
-    st_method_set_primitive_index (method, node->method.primitive);
 
     ST_METHOD_LITERALS (method) = create_literals_array (gt);
     ST_METHOD_BYTECODE (method) = create_bytecode_array (&code); 
@@ -1417,12 +1400,6 @@ st_generate_method (st_oop class, st_node *node, st_compiler_error *error)
     bytecode_destroy (&code);
 
     return method;
-    
- error:
-
-    generator_destroy (gt);    
-
-    return ST_NIL;
 }
 
 #define NEXT(ip)      \

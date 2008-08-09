@@ -86,10 +86,10 @@ struct st_lexer
     jmp_buf main_loop;
     
     /* last error information */
-    ErrorCode    error_code;
-    st_uint        error_line;
-    st_uint        error_column;
-    char     error_char;
+    ErrorCode error_code;
+    st_uint   error_line;
+    st_uint   error_column;
+    char      error_char;
 
     /* delayed deallocation */
     st_list *allocated_tokens;

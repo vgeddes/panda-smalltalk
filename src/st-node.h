@@ -70,7 +70,6 @@ struct st_node
 	} method;
 
 	struct {
-
 	    STMessagePrecedence precedence;
 	    bool    is_statement;
 	    st_oop  selector;
@@ -82,32 +81,27 @@ struct st_node
 	} message;
 
 	struct {
-
 	    char *name;
 
 	} variable;
 
 	struct {
-
 	    st_oop value;
 
 	} literal;
 
 	struct {
-
 	    st_node *assignee;
 	    st_node *expression;
 
 	} assign;
 
 	struct {
-
 	    st_node *expression;
 
 	} retrn;
 
 	struct {
-
 	    st_node *statements;
 	    st_node *temporaries;
 	    st_node *arguments;
@@ -115,7 +109,6 @@ struct st_node
 	} block;
 
 	struct {
-
 	    st_node *receiver;
 	    st_list *messages;
 	    bool is_statement;

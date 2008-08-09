@@ -14,13 +14,13 @@ at: anInteger
 ByteString method!
 at: anInteger put: aCharacter
 	<primitive: 'ByteString_at_put'>
+	aCharacter isCharacter
+		ifFalse: [self error: 'object is not a character'].
 	anInteger isInteger
 		ifTrue: [self error: 'index out of bounds'].
 	anInteger isNumber
 		ifTrue: [^ self at: anInteger asInteger]
-		ifFalse: [self error: 'index is not an integer'].
-	aCharacter isCharacter
-		ifFalse: [self error: 'object is not a character']!
+		ifFalse: [self error: 'index is not an integer']!
 
 
 ByteString method!
