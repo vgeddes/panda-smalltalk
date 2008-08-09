@@ -58,7 +58,7 @@ set_success (struct st_cpu *cpu, bool success)
     cpu->success = cpu->success && success;
 }
 
-static inline st_smi
+static inline int
 pop_integer (struct st_cpu *cpu)
 {
     st_oop object = ST_STACK_POP (cpu);
@@ -70,7 +70,7 @@ pop_integer (struct st_cpu *cpu)
     return 0;
 }
 
-static inline st_smi
+static inline int
 pop_integer32 (struct st_cpu *cpu)
 {
     st_oop object = ST_STACK_POP (cpu);
@@ -78,7 +78,7 @@ pop_integer32 (struct st_cpu *cpu)
     if (ST_LIKELY (st_object_is_smi (object)))
 	return st_smi_value (object);
     else if (st_object_class (object) == ST_LARGE_INTEGER_CLASS)
-	return (st_smi) mp_get_int (st_large_integer_value (object));
+	return (int) mp_get_int (st_large_integer_value (object));
 
     ST_PRIMITIVE_FAIL (cpu);
     return 0;
@@ -87,8 +87,8 @@ pop_integer32 (struct st_cpu *cpu)
 static void
 SmallInteger_add (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     int result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -107,8 +107,8 @@ SmallInteger_add (struct st_cpu *cpu)
 static void
 SmallInteger_sub (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     int result;
 
 
@@ -128,8 +128,8 @@ SmallInteger_sub (struct st_cpu *cpu)
 static void
 SmallInteger_lt (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -144,8 +144,8 @@ SmallInteger_lt (struct st_cpu *cpu)
 static void
 SmallInteger_gt (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -160,8 +160,8 @@ SmallInteger_gt (struct st_cpu *cpu)
 static void
 SmallInteger_le (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -176,8 +176,8 @@ SmallInteger_le (struct st_cpu *cpu)
 static void
 SmallInteger_ge (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -192,8 +192,8 @@ SmallInteger_ge (struct st_cpu *cpu)
 static void
 SmallInteger_eq (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -208,8 +208,8 @@ SmallInteger_eq (struct st_cpu *cpu)
 static void
 SmallInteger_ne (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -224,8 +224,8 @@ SmallInteger_ne (struct st_cpu *cpu)
 static void
 SmallInteger_mul (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     int64_t result;
 
     if (cpu->success) {
@@ -245,8 +245,8 @@ SmallInteger_mul (struct st_cpu *cpu)
 static void
 SmallInteger_div (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
     
     if (ST_LIKELY (cpu->success)) {
@@ -266,8 +266,8 @@ SmallInteger_div (struct st_cpu *cpu)
 static void
 SmallInteger_intDiv (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -287,8 +287,8 @@ SmallInteger_intDiv (struct st_cpu *cpu)
 static void
 SmallInteger_mod (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
     
     if (ST_LIKELY (cpu->success)) {
@@ -303,8 +303,8 @@ SmallInteger_mod (struct st_cpu *cpu)
 static void
 SmallInteger_bitOr (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
@@ -319,8 +319,8 @@ SmallInteger_bitOr (struct st_cpu *cpu)
 static void
 SmallInteger_bitXor (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result;
 
     if (ST_LIKELY (cpu->success)) {
@@ -335,8 +335,8 @@ SmallInteger_bitXor (struct st_cpu *cpu)
 static void
 SmallInteger_bitAnd (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
@@ -351,8 +351,8 @@ SmallInteger_bitAnd (struct st_cpu *cpu)
 static void
 SmallInteger_bitShift (struct st_cpu *cpu)
 {
-    st_smi y = pop_integer (cpu);
-    st_smi x = pop_integer (cpu);
+    int y = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
@@ -373,7 +373,7 @@ SmallInteger_bitShift (struct st_cpu *cpu)
 static void
 SmallInteger_asFloat (struct st_cpu *cpu)
 {
-    st_smi x = pop_integer (cpu);
+    int x = pop_integer (cpu);
     st_oop result = ST_NIL;
 
     if (ST_LIKELY (cpu->success)) {
@@ -388,7 +388,7 @@ SmallInteger_asFloat (struct st_cpu *cpu)
 static void
 SmallInteger_asLargeInteger (struct st_cpu *cpu)
 {
-    st_smi receiver = pop_integer (cpu);
+    int receiver = pop_integer (cpu);
     mp_int value;
     st_oop result;
 
@@ -776,7 +776,7 @@ LargeInteger_bitXor (struct st_cpu *cpu)
 static void
 LargeInteger_bitShift (struct st_cpu *cpu)
 {
-    st_smi displacement = pop_integer32 (cpu);
+    int displacement = pop_integer32 (cpu);
     st_oop receiver     = pop_large_integer (cpu);
     st_oop result;
     mp_int value;
@@ -853,7 +853,7 @@ LargeInteger_hash (struct st_cpu *cpu)
 {
     st_oop receiver = ST_STACK_POP (cpu);
     mp_int *value;
-    st_smi result;
+    int result;
     const char *c;
     unsigned int hash;
     int len;
@@ -1222,9 +1222,9 @@ static void
 Float_truncated (struct st_cpu *cpu)
 {
     st_oop receiver = ST_STACK_POP (cpu);
-    st_smi result;
+    int result;
 
-    result = (st_smi) trunc (st_float_value (receiver));
+    result = (int) trunc (st_float_value (receiver));
 
     ST_STACK_PUSH (cpu, st_smi_new (result));
 }
@@ -1252,7 +1252,7 @@ Float_integerPart (struct st_cpu *cpu)
 
     modf (st_float_value (receiver), &int_part);
 
-    result = st_smi_new ((st_smi) int_part);
+    result = st_smi_new ((int) int_part);
     ST_STACK_PUSH (cpu, result);
 }
 
@@ -1261,7 +1261,7 @@ Float_hash (struct st_cpu *cpu)
 {
     st_oop receiver = ST_STACK_POP (cpu);
     unsigned int hash = 0;
-    st_smi result;
+    int result;
     double value;
     unsigned char *c;
     
@@ -1376,7 +1376,7 @@ Object_copy (struct st_cpu *cpu)
     st_oop receiver;
     st_oop copy;
     st_oop class;
-    st_smi size;
+    int size;
 
     (void) ST_STACK_POP (cpu);
 
@@ -1535,7 +1535,7 @@ Object_perform_withArguments (struct st_cpu *cpu)
     st_oop selector;
     st_oop method;
     st_oop array;
-    st_smi array_size;
+    int array_size;
 
     array = ST_STACK_POP (cpu);
 
@@ -1588,7 +1588,7 @@ Behavior_new (struct st_cpu *cpu)
 {
     st_oop class;
     st_oop instance;
-    st_smi format;
+    int format;
 
     class = ST_STACK_POP (cpu);
 
@@ -1621,8 +1621,8 @@ static void
 Behavior_newSize (struct st_cpu *cpu)
 {
     st_oop class;
-    st_smi size;
-    st_smi format;
+    int size;
+    int format;
     st_oop instance;
 
     size = pop_integer32 (cpu);
@@ -1693,7 +1693,7 @@ SequenceableCollection_size (struct st_cpu *cpu)
 static void
 Array_at (struct st_cpu *cpu)
 {
-    st_smi index    = pop_integer32 (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
     
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
@@ -1709,7 +1709,7 @@ static void
 Array_at_put (struct st_cpu *cpu)
 {
     st_oop object   = ST_STACK_POP (cpu);
-    st_smi index    = pop_integer32 (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
 
     if (ST_UNLIKELY (index < 1 || index > st_smi_value (st_arrayed_object_size (receiver)))) {
@@ -1725,7 +1725,7 @@ Array_at_put (struct st_cpu *cpu)
 static void
 ByteArray_at (struct st_cpu *cpu)
 {
-    st_smi index    = pop_integer32 (cpu);
+    int    index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
     st_oop result;
 	
@@ -1748,8 +1748,8 @@ ByteArray_at (struct st_cpu *cpu)
 static void
 ByteArray_at_put (struct st_cpu *cpu)
 {
-    st_smi byte     = pop_integer (cpu);
-    st_smi index    = pop_integer32 (cpu);
+    int byte     = pop_integer (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
 
     if (!cpu->success) {
@@ -1782,7 +1782,7 @@ ByteArray_hash (struct st_cpu *cpu)
 static void
 ByteString_at (struct st_cpu *cpu)
 {
-    st_smi  index    = pop_integer32 (cpu);
+    int  index    = pop_integer32 (cpu);
     st_oop  receiver = ST_STACK_POP (cpu);
     st_oop  character;
     char   *charptr;
@@ -1807,7 +1807,7 @@ static void
 ByteString_at_put (struct st_cpu *cpu)
 {
     st_oop character = ST_STACK_POP (cpu);
-    st_smi index    = pop_integer32 (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
 	
     if (!cpu->success) {
@@ -1866,7 +1866,7 @@ ByteString_compare (struct st_cpu *cpu)
 static void
 WideString_at (struct st_cpu *cpu)
 {
-    st_smi index    = pop_integer32 (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
     st_uchar *bytes;
     st_unichar c;
@@ -1891,7 +1891,7 @@ static void
 WideString_at_put (struct st_cpu *cpu)
 {
     st_oop character = ST_STACK_POP (cpu);
-    st_smi index    = pop_integer32 (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
     st_uchar *bytes;
     st_unichar c;	
@@ -1918,7 +1918,7 @@ static void
 WordArray_at (struct st_cpu *cpu)
 {
     st_oop receiver;
-    st_smi index;
+    int index;
     st_uint  element;
 
     index = pop_integer32 (cpu);
@@ -1938,8 +1938,8 @@ WordArray_at (struct st_cpu *cpu)
 static void
 WordArray_at_put (struct st_cpu *cpu)
 {
-    st_smi value    = pop_integer (cpu);
-    st_smi index    = pop_integer32 (cpu);
+    int value    = pop_integer (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
 	
     if (!cpu->success) {
@@ -1962,7 +1962,7 @@ static void
 FloatArray_at (struct st_cpu *cpu)
 {
     st_oop receiver;
-    st_smi index;
+    int index;
     double  element;
 
     index = pop_integer32 (cpu);
@@ -1982,7 +1982,7 @@ static void
 FloatArray_at_put (struct st_cpu *cpu)
 {
     st_oop flt      = ST_STACK_POP (cpu);
-    st_smi index    = pop_integer32 (cpu);
+    int index    = pop_integer32 (cpu);
     st_oop receiver = ST_STACK_POP (cpu);
 
     set_success (cpu, st_object_is_heap (flt) &&
@@ -2046,7 +2046,7 @@ BlockContext_valueWithArguments (struct st_cpu *cpu)
 {
     st_oop block;
     st_oop values;
-    st_smi argcount;
+    int argcount;
 
     block  = cpu->message_receiver;
     values = ST_STACK_PEEK (cpu);
@@ -2095,7 +2095,7 @@ static void
 Character_characterFor (struct st_cpu *cpu)
 {
     st_oop receiver;
-    st_smi value;
+    int value;
 
     value = pop_integer (cpu);
     receiver = ST_STACK_POP (cpu);

@@ -82,7 +82,7 @@ size_for_capacity (st_uint capacity)
 }
 
 static void
-initialize (st_oop collection, st_smi capacity)
+initialize (st_oop collection, int capacity)
 {
     st_assert (capacity > 0);
 
@@ -156,7 +156,7 @@ st_dictionary_at_put (st_oop dict, st_oop key, st_oop value)
 st_oop
 st_dictionary_at (st_oop dict, st_oop key)
 {
-    st_smi index;
+    int index;
     st_oop assoc;
 
     assoc = st_array_at (ARRAY (dict), dict_find (dict, key));
@@ -180,7 +180,7 @@ st_dictionary_new (void)
 }
 
 st_oop
-st_dictionary_new_with_capacity (st_smi capacity)
+st_dictionary_new_with_capacity (int capacity)
 {
     st_oop dict;
     
@@ -294,7 +294,7 @@ st_set_like (st_oop set, st_oop object)
 }
 
 st_oop
-st_set_new_with_capacity (st_smi capacity)
+st_set_new_with_capacity (int capacity)
 {
     st_oop set;
 

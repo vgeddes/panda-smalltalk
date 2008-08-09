@@ -28,15 +28,15 @@
 #include <st-types.h>
 
 static inline st_oop
-st_smi_new (st_smi num)
+st_smi_new (int num)
 {
     return (((st_oop) num) << ST_TAG_SIZE) + ST_SMI_TAG;
 }
 
-static inline st_smi
+static inline int
 st_smi_value (st_oop smi)
 {
-    return ((st_smi) smi) >> ST_TAG_SIZE;
+    return ((int) smi) >> ST_TAG_SIZE;
 }
 
 static inline st_oop
@@ -57,7 +57,7 @@ st_smi_equal (st_oop m, st_oop n)
     return m == n;
 }
 
-static inline st_smi
+static inline int
 st_smi_hash (st_oop smi)
 {
     return st_smi_value (smi);

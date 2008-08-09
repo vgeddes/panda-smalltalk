@@ -35,23 +35,22 @@
 st_list *
 st_behavior_all_instance_variables (st_oop class)
 {
-    st_list *a = NULL, *b = NULL;
+    st_list *list = NULL;
     st_oop names;
-    st_smi size;
+    int    size;
     
     if (class == ST_NIL)
 	return NULL;
-    
-    a = st_behavior_all_instance_variables (ST_BEHAVIOR (class)->superclass);
 
-    names = ST_BEHAVIOR (class)->instance_variables;
+    names = ST_BEHAVIOR_INSTANCE_VARIABLES (class);
     if (names != ST_NIL) {
 	size = st_smi_value (st_arrayed_object_size (names));
-	for (st_smi i = 1; i <= size; i++)
-	    b = st_list_prepend (b, (st_pointer) st_strdup (st_byte_array_bytes (st_array_at (names, i))));
+	for (int i = 1; i <= size; i++)
+	    list = st_list_prepend (list, (st_pointer) st_strdup (st_byte_array_bytes (st_array_at (names, i))));
     }
 
-    return st_list_concat (a, st_list_reverse (b));
+    return st_list_concat (st_behavior_all_instance_variables (ST_BEHAVIOR_SUPERCLASS (class)),
+			   st_list_reverse (list));
 }
 
 
@@ -78,7 +77,7 @@ st_object_new (st_oop class)
 }
 
 st_oop
-st_object_new_arrayed (st_oop class, st_smi size)
+st_object_new_arrayed (st_oop class, int size)
 {
     switch (st_smi_value (ST_BEHAVIOR_FORMAT (class))) {
     case ST_FORMAT_ARRAY:

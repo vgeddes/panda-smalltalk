@@ -57,7 +57,7 @@ st_array_allocate (st_oop class, st_uint size)
 /* ByteArray */
 
 st_oop
-st_byte_array_allocate (st_oop class, st_smi size)
+st_byte_array_allocate (st_oop class, int size)
 {
     st_uint size_oops;
     st_oop  array;
@@ -87,7 +87,7 @@ st_byte_array_allocate (st_oop class, st_smi size)
 bool
 st_byte_array_equal (st_oop object, st_oop other)
 {
-    st_smi size, size_other;
+    int size, size_other;
 
     if (st_object_class (other) != ST_BYTE_ARRAY_CLASS &&
 	st_object_class (other) != ST_STRING_CLASS &&
@@ -112,10 +112,10 @@ st_byte_array_hash (st_oop object)
 /* WordArray */
 
 st_oop
-st_word_array_allocate (st_oop class, st_smi size)
+st_word_array_allocate (st_oop class, int size)
 {
     st_oop   array;
-    st_smi   size_oops;
+    int   size_oops;
     st_uint *elements;
 
     st_assert (size >= 0);
@@ -134,7 +134,7 @@ st_word_array_allocate (st_oop class, st_smi size)
 
     ST_ARRAYED_OBJECT (array)->size = st_smi_new (size);
     elements = st_word_array_elements (array);
-    for (st_smi i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
 	elements[i] = 0;
 
     return array;
@@ -143,11 +143,11 @@ st_word_array_allocate (st_oop class, st_smi size)
 /* FloatArray */
 
 st_oop
-st_float_array_allocate (st_oop class, st_smi size)
+st_float_array_allocate (st_oop class, int size)
 {
     st_oop  object;
     double *elements;
-    st_smi  size_oops;
+    int  size_oops;
 
     st_assert (size >= 0);
     
@@ -167,7 +167,7 @@ st_float_array_allocate (st_oop class, st_smi size)
     ST_ARRAYED_OBJECT (object)->size = st_smi_new (size);
 
     elements = ST_FLOAT_ARRAY (object)->elements;
-    for (st_smi i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
 	elements[i] = (double) 0;
 
     return object;

@@ -40,7 +40,7 @@ struct st_large_integer
 
 st_oop  st_large_integer_new             (mp_int * value);
 
-st_oop  st_large_integer_new_from_smi    (st_smi integer);
+st_oop  st_large_integer_new_from_smi    (int integer);
 
 st_oop  st_large_integer_new_from_string (const char *string, st_uint radix);
 

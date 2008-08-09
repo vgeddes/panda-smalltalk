@@ -65,9 +65,9 @@ bool      st_byte_array_equal   (st_oop object, st_oop other);
 st_uint   st_byte_array_hash    (st_oop object);
 
 st_oop  st_array_allocate (st_oop class, st_uint size);
-st_oop  st_float_array_allocate (st_oop class, st_smi size);
-st_oop  st_word_array_allocate (st_oop class, st_smi size);
-st_oop  st_byte_array_allocate (st_oop class, st_smi size);
+st_oop  st_float_array_allocate (st_oop class, int size);
+st_oop  st_word_array_allocate (st_oop class, int size);
+st_oop  st_byte_array_allocate (st_oop class, int size);
 
 static inline st_oop *
 st_array_elements (st_oop object)
@@ -76,7 +76,7 @@ st_array_elements (st_oop object)
 }
 
 static inline st_oop
-st_array_at (st_oop object, st_smi i)
+st_array_at (st_oop object, int i)
 {
     st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
     
@@ -84,7 +84,7 @@ st_array_at (st_oop object, st_smi i)
 }
 
 static inline void
-st_array_at_put (st_oop object, st_smi i, st_oop value)
+st_array_at_put (st_oop object, int i, st_oop value)
 {
     st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
     
@@ -98,7 +98,7 @@ st_word_array_elements (st_oop object)
 }
 
 static inline st_uint
-st_word_array_at (st_oop object, st_smi i)
+st_word_array_at (st_oop object, int i)
 {
     st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
 
@@ -106,7 +106,7 @@ st_word_array_at (st_oop object, st_smi i)
 }
 
 static inline void
-st_word_array_at_put (st_oop object, st_smi i, st_uint value)
+st_word_array_at_put (st_oop object, int i, st_uint value)
 {
     st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
 
@@ -120,7 +120,7 @@ st_byte_array_bytes (st_oop object)
 }
 
 static inline st_uchar
-st_byte_array_at (st_oop object, st_smi i)
+st_byte_array_at (st_oop object, int i)
 {
     st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
 
@@ -128,7 +128,7 @@ st_byte_array_at (st_oop object, st_smi i)
 }
 
 static inline void
-st_byte_array_at_put (st_oop object, st_smi i, st_uchar value)
+st_byte_array_at_put (st_oop object, int i, st_uchar value)
 {
     st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
 
@@ -142,13 +142,13 @@ st_float_array_elements (st_oop array)
 }
 
 static inline double
-st_float_array_at (st_oop array, st_smi i)
+st_float_array_at (st_oop array, int i)
 {
     return ST_FLOAT_ARRAY (array)->elements[i - 1];
 }
 
 static inline void
-st_float_array_at_put (st_oop array, st_smi i, double value)
+st_float_array_at_put (st_oop array, int i, double value)
 {
     ST_FLOAT_ARRAY (array)->elements[i - 1] = value;
 }

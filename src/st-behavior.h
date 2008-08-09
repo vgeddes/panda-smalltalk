@@ -72,7 +72,7 @@ struct st_metaclass
 
 
 st_oop st_object_new (st_oop class);
-st_oop st_object_new_arrayed (st_oop class, st_smi size);
+st_oop st_object_new_arrayed (st_oop class, int size);
 
 st_list *st_behavior_all_instance_variables (st_oop class);
 

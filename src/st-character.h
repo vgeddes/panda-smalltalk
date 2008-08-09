@@ -30,7 +30,7 @@
 static inline st_oop  st_character_new   (wchar_t wc);
 static inline wchar_t st_character_value (st_oop character);
 static inline bool    st_character_equal (st_oop m, st_oop n);
-static inline st_smi  st_character_hash  (st_oop character);
+static inline int     st_character_hash  (st_oop character);
 
 /* inline definitions */
 
@@ -52,10 +52,10 @@ st_character_equal (st_oop m, st_oop n)
     return m == n;
 }
 
-static inline st_smi
+static inline int
 st_character_hash (st_oop character)
 {
-    return (st_smi) st_character_value (character);
+    return (int) st_character_value (character);
 }
 
 #endif /* __ST_CHARACTER_H__ */

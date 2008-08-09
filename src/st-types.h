@@ -64,14 +64,6 @@ enum {
  */
 typedef uintptr_t st_oop;
 
-/* smallest signed integral type large enough to hold the value of a smi
- */
-#if ST_HOST32 == 1
-typedef int st_smi;
-#else
-typedef int64_t st_smi;
-#endif
-
 typedef unsigned char    st_uchar;
 typedef unsigned short   st_ushort;
 typedef unsigned long    st_ulong;

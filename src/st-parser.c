@@ -70,18 +70,18 @@ parse_error (st_parser   *parser,
 /* adaptor for st_lexer_next_token(). Catches lexer errors and filters out comments
  */
 static st_token *
-next (st_parser *parser, st_lexer *lexer)
+next (st_parser *parser)
 {
     st_token     *token;
     st_token_type type;
 
-    token = st_lexer_next_token (lexer);
+    token = st_lexer_next_token (parser->lexer);
     type  = st_token_get_type (token);
 
     if (type == ST_TOKEN_COMMENT)
-	return next (parser, lexer);
+	return next (parser);
     else if (type == ST_TOKEN_INVALID)
-	parse_error (parser, st_lexer_error_message (lexer), token);	
+	parse_error (parser, st_lexer_error_message (parser->lexer), token);	
 	
     return token;
 }
@@ -96,7 +96,7 @@ static st_node *parse_statements     (st_parser *parser);
 static st_node *parse_temporaries    (st_parser *parser);
 static st_node *parse_subexpression  (st_parser *parser);
 static st_node *parse_expression     (st_parser *parser);
-static int     parse_primitive      (st_parser *parser);
+static int      parse_primitive      (st_parser *parser);
 
 static st_node *
 parse_block_arguments (st_parser *parser)
@@ -108,7 +108,7 @@ parse_block_arguments (st_parser *parser)
 
     while (st_token_get_type (token) == ST_TOKEN_COLON) {
 	
-	token = next (parser, parser->lexer);
+	token = next (parser);
 	if (st_token_get_type (token) != ST_TOKEN_IDENTIFIER)
 	    parse_error (parser,"expected identifier", token);
 
@@ -117,14 +117,14 @@ parse_block_arguments (st_parser *parser)
 	node->variable.name = st_strdup (st_token_get_text (token));
 	arguments = st_node_list_append (arguments, node);
 
-	token = next (parser, parser->lexer);
+	token = next (parser);
     }
     
     if (st_token_get_type (token) != ST_TOKEN_BINARY_SELECTOR ||
 	!streq (st_token_get_text (token), "|"))
 	parse_error (parser,"expected ':' or '|'", token);
 
-    next (parser, parser->lexer);
+    next (parser);
 
     return arguments;
 }
@@ -140,7 +140,7 @@ parse_block (st_parser *parser)
     node = st_node_new (ST_BLOCK_NODE);
     
     // parse block arguments
-    token = next (parser, parser->lexer);
+    token = next (parser);
 
     node->line = st_token_get_line (token);
     
@@ -163,7 +163,7 @@ parse_block (st_parser *parser)
     token = current (parser->lexer);
     if (st_token_get_type (token) != ST_TOKEN_BLOCK_END)
 	parse_error (parser,"expected ']'", token);
-    next (parser, parser->lexer);
+    next (parser);
 
     return node;
 }
@@ -208,20 +208,15 @@ parse_number (st_parser *parser)
 
     } else {
 
-	/* we use strtoll() when smi's are 64-bits wide.
-	 */
 	errno = 0;
-#if ST_HOST32 == 1
 	long int integer = sign * strtol (number, NULL, radix);
-#else
-	long long int integer = sign * strtoll (number, NULL, radix);
-#endif
+
 	/* check for overflow */
 	if (errno == ERANGE
 	    || integer < ST_SMALL_INTEGER_MIN || integer > ST_SMALL_INTEGER_MAX) {
 	
 	    mp_int value;
-	    int result;
+	    int    result;
 	    
 	    result = mp_init (&value);
 	    if (result != MP_OKAY)
@@ -241,7 +236,7 @@ parse_number (st_parser *parser)
 	}
     }
 
-    next (parser, parser->lexer);
+    next (parser);
 
     return node;
 }
@@ -255,7 +250,7 @@ parse_tuple (st_parser *parser)
     st_node *node;
     st_list *items = NULL;
 
-    token = next (parser, parser->lexer);
+    token = next (parser);
     while (true) {
 	
 	switch (st_token_get_type (token)) {
@@ -285,7 +280,7 @@ parse_tuple (st_parser *parser)
     }
 
  out:
-    token = next (parser, parser->lexer);
+    token = next (parser);
     st_oop tuple;
 
     items = st_list_reverse (items);
@@ -321,7 +316,7 @@ parse_primary (st_parser *parser)
 	node->line = st_token_get_line (token);
 	node->variable.name = st_strdup (st_token_get_text (token));
 
-	next (parser, parser->lexer);
+	next (parser);
 	break;
 
     case ST_TOKEN_NUMBER_CONST:
@@ -335,7 +330,7 @@ parse_primary (st_parser *parser)
 	node->line = st_token_get_line (token);
 	node->literal.value = st_string_new (st_token_get_text (token));
 
-	next (parser, parser->lexer);
+	next (parser);
 	break;
 
     case ST_TOKEN_SYMBOL_CONST:
@@ -344,7 +339,7 @@ parse_primary (st_parser *parser)
 	node->line = st_token_get_line (token);
 	node->literal.value = st_symbol_new (st_token_get_text (token));
     
-	next (parser, parser->lexer);
+	next (parser);
 	break;
 
     case ST_TOKEN_CHARACTER_CONST:
@@ -353,7 +348,7 @@ parse_primary (st_parser *parser)
 	node->line = st_token_get_line (token);
 	node->literal.value = st_character_new (st_utf8_get_unichar (st_token_get_text (token)));
 
-	next (parser, parser->lexer);
+	next (parser);
 	break;
 
     case ST_TOKEN_BLOCK_BEGIN:
@@ -388,7 +383,7 @@ parse_unary_message (st_parser *parser, st_node *receiver)
     node->message.selector = st_symbol_new (st_token_get_text (token));
     node->message.arguments = NULL;
 
-    next (parser, parser->lexer);
+    next (parser);
 
     return node;
 }
@@ -420,7 +415,7 @@ parse_binary_message (st_parser *parser, st_node *receiver)
     selector = st_token_get_text (token);
 
     /* parse the primary */
-    token = next (parser, parser->lexer);
+    token = next (parser);
     if (st_token_get_type (token) == ST_TOKEN_LPAREN)
         argument = parse_subexpression (parser);
     else
@@ -481,7 +476,7 @@ parse_keyword_message (st_parser *parser, st_node *receiver)
 	st_free (string);
 	string = temp;
 
-	token = next (parser, parser->lexer);
+	token = next (parser);
 	
 	arg = parse_keyword_argument (parser, NULL);
 	arguments = st_node_list_append (arguments, arg);
@@ -541,7 +536,7 @@ parse_assign (st_parser *parser, st_node *assignee)
     st_token *token;
     st_node *node, *expression;
     
-    token = next (parser, parser->lexer);
+    token = next (parser);
 
     expression = parse_expression (parser);
 	
@@ -572,7 +567,7 @@ parse_cascade (st_parser *parser, st_node *first_message)
 
     while (st_token_get_type (token) == ST_TOKEN_SEMICOLON) {
     
-	next (parser, parser->lexer);
+	next (parser);
 
 	message = parse_message (parser, NULL);
 
@@ -648,7 +643,7 @@ parse_subexpression (st_parser *parser)
     st_token *token;
     st_node  *expression;
     
-    next (parser, parser->lexer);
+    next (parser);
     
     expression = parse_expression (parser);
     
@@ -656,7 +651,7 @@ parse_subexpression (st_parser *parser)
     if (st_token_get_type (token) != ST_TOKEN_RPAREN)
 	parse_error (parser,"expected ')' after expression", token);    
 	
-    next (parser, parser->lexer);
+    next (parser);
 
     return expression;
 }
@@ -667,7 +662,7 @@ parse_return (st_parser *parser)
     st_node *node;
     st_token *token;
    
-    token = next (parser, parser->lexer);
+    token = next (parser);
     
     node = st_node_new (ST_RETURN_NODE);
     node->line = st_token_get_line (token);
@@ -718,7 +713,7 @@ parse_statements (st_parser *parser)
          */
 	token = current (parser->lexer);
 	if (st_token_get_type (token) == ST_TOKEN_PERIOD) {   
-	    token = next (parser, parser->lexer);
+	    token = next (parser);
 	}
 	
     }
@@ -750,11 +745,11 @@ parse_primitive (st_parser *parser)
 	|| !streq (st_token_get_text (token), "<"))
 	return -1;
 
-    token = next (parser, parser->lexer);
+    token = next (parser);
     if (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR
 	&& streq (st_token_get_text (token), "primitive:")) {
 	
-	token = next (parser, parser->lexer);
+	token = next (parser);
 	if (st_token_get_type (token) != ST_TOKEN_STRING_CONST)
 	    parse_error (parser,"expected string literal", token); 
 
@@ -762,12 +757,12 @@ parse_primitive (st_parser *parser)
 	if (index < 0)
 	    parse_error (parser,"unknown primitive", token); 
 	
-	token = next (parser, parser->lexer);
+	token = next (parser);
 	if (st_token_get_type (token) != ST_TOKEN_BINARY_SELECTOR
 	    || !streq (st_token_get_text (token), ">"))
 	    parse_error (parser,"expected '>'", token);
 	
-	next (parser, parser->lexer);
+	next (parser);
 	
     } else {
 	parse_error (parser,"expected primitive declaration", token);
@@ -791,7 +786,7 @@ parse_temporaries (st_parser *parser)
 	|| !streq (st_token_get_text (token), "|")) 
 	return NULL;
    
-    token = next (parser, parser->lexer);
+    token = next (parser);
     while (st_token_get_type (token) == ST_TOKEN_IDENTIFIER) {
 
 	temp = st_node_new (ST_VARIABLE_NODE);
@@ -800,14 +795,14 @@ parse_temporaries (st_parser *parser)
 	
 	temporaries = st_node_list_append (temporaries, temp);
    
-	token = next (parser, parser->lexer);
+	token = next (parser);
     }
     
     if (st_token_get_type (token) != ST_TOKEN_BINARY_SELECTOR
 	|| !streq (st_token_get_text (token), "|"))
 	parse_error (parser,"expected '|'", token);
     
-    token = next (parser, parser->lexer);
+    token = next (parser);
    
     return temporaries;
 }
@@ -819,7 +814,7 @@ parse_message_pattern (st_parser *parser, st_node *method)
     st_token_type  type;
     st_node *arguments = NULL;
 
-    token = next (parser, parser->lexer);    
+    token = next (parser);    
     type  = st_token_get_type (token);
 
     if (type == ST_TOKEN_IDENTIFIER) {
@@ -827,13 +822,13 @@ parse_message_pattern (st_parser *parser, st_node *method)
         method->method.selector = st_symbol_new (st_token_get_text (token));
 	method->method.precedence = ST_UNARY_PRECEDENCE;
 
-	next (parser, parser->lexer);
+	next (parser);
     
     } else if (type == ST_TOKEN_BINARY_SELECTOR) {
 
 	method->method.selector = st_symbol_new (st_token_get_text (token));
 	
-	token = next (parser, parser->lexer);
+	token = next (parser);
 	if (st_token_get_type (token) != ST_TOKEN_IDENTIFIER)
 	    parse_error (parser,"argument name expected after binary selector", token);
 
@@ -843,7 +838,7 @@ parse_message_pattern (st_parser *parser, st_node *method)
 
 	method->method.precedence = ST_BINARY_PRECEDENCE;
 
-	next (parser, parser->lexer);
+	next (parser);
     
     } else if (type == ST_TOKEN_KEYWORD_SELECTOR) {
     
@@ -856,7 +851,7 @@ parse_message_pattern (st_parser *parser, st_node *method)
 	    st_free (string);
 	    string = temp;
 
-	    token = next (parser, parser->lexer);
+	    token = next (parser);
 	    if (st_token_get_type (token) != ST_TOKEN_IDENTIFIER)
 		parse_error (parser,"argument name expected after keyword", token);	
 	
@@ -865,7 +860,7 @@ parse_message_pattern (st_parser *parser, st_node *method)
 	    arg->variable.name = st_strdup (st_token_get_text (token));
 	    arguments = st_node_list_append (arguments, arg);
 
-	    token = next (parser, parser->lexer);
+	    token = next (parser);
 	} 
 	
 	method->method.selector = st_symbol_new (string);

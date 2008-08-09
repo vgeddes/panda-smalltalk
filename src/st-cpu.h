@@ -1,7 +1,7 @@
 
 
-#ifndef __ST_INTERPRETER_H__
-#define __ST_INTERPRETER_H__
+#ifndef __ST_CPU_H__
+#define __ST_CPU_H__
 
 #include <st-types.h>
 #include <setjmp.h>
@@ -63,7 +63,6 @@ void   st_cpu_initialize         (void);
 void   st_cpu_set_active_context (st_oop context);
 void   st_cpu_execute_method     (void);
 st_oop st_cpu_lookup_method      (st_oop class);
+void   st_cpu_clear_caches       (void);
 
-void   st_cpu_clear_caches (void);
-
-#endif /* __ST_INTERPRETER_H__ */
+#endif /* __ST_CPU_H__ */
