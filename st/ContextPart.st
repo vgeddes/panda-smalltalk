@@ -65,12 +65,15 @@ selector
 
 MethodContext method!
 printOn: aStream
-	| class selector |
+	| class selector methodClass |
 	
 	class := self receiver class.
+    methodClass := self method methodClass.
 	selector := self selector.
 
 	aStream nextPutAll: class name.
+	(methodClass isNotNil and: [methodClass ~~ class])
+		ifTrue: [aStream nextPutAll: '(', methodClass name, ')'].
 	aStream nextPutAll: '>>'.
 	aStream nextPutAll: selector!
 

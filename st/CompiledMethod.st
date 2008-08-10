@@ -17,6 +17,14 @@ CompiledMethod method!
 selector
 	^ selector!
 
+
+
+CompiledMethod method!
+methodClass
+	^ literals isNil
+		ifTrue: [nil]
+		ifFalse: [literals at: literals size]!
+
 "header"
 
 CompiledMethod method!
