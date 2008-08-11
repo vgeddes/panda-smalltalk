@@ -47,6 +47,11 @@ libpanda_la_SOURCES = \
 	src/st-memory.c \
 	src/st-system.h \
 	src/st-system.c \
+	src/st-identity-hashtable.h \
+	src/st-identity-hashtable.c \
+	src/st-heap.h \
+	src/st-heap.c \
+	src/st-system.c \
 	src/st-types.h
 
 libpanda_la_CPPFLAGS =          \

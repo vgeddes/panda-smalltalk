@@ -1365,7 +1365,7 @@ Object_identityHash (struct st_cpu *cpu)
 	hash = st_character_hash (object);
     else {
 	st_object_set_hashed (object, true);
-	hash = st_identity_ht_hash (memory->ht, object);
+	hash = st_identity_hashtable_hash (memory->ht, object);
     }
     ST_STACK_PUSH (cpu, st_smi_new (hash));
 }

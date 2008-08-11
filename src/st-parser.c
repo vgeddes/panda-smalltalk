@@ -295,6 +295,8 @@ parse_tuple (st_parser *parser)
     node->literal.value = tuple;
     node->line = st_token_get_line (token);
 
+    st_list_destroy (items);
+
     return node;
 }
 
@@ -476,8 +478,7 @@ parse_keyword_message (st_parser *parser, st_node *receiver)
 	st_free (string);
 	string = temp;
 
-	token = next (parser);
-	
+	token = next (parser);	
 	arg = parse_keyword_argument (parser, NULL);
 	arguments = st_node_list_append (arguments, arg);
 
@@ -490,6 +491,8 @@ parse_keyword_message (st_parser *parser, st_node *receiver)
     node->message.receiver = receiver;
     node->message.selector = st_symbol_new (string);
     node->message.arguments = arguments;
+
+    st_free (string);
 
     return node;
 }
@@ -865,6 +868,7 @@ parse_message_pattern (st_parser *parser, st_node *method)
 	
 	method->method.selector = st_symbol_new (string);
 	method->method.precedence = ST_KEYWORD_PRECEDENCE;
+	st_free (string);
 
     } else {
 	parse_error (parser,"invalid message pattern", token);

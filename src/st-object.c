@@ -89,7 +89,7 @@ st_object_hash (st_oop object)
     if (st_object_class (object) == ST_ASSOCIATION_CLASS)
 	return st_association_hash (object);
     
-    return st_identity_ht_hash (memory->ht, object);
+    return object >> 2;
 }
 
 st_oop

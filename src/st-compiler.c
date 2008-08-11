@@ -94,6 +94,7 @@ next_token (FileInParser *parser, st_lexer *lexer)
 static st_lexer *
 next_chunk (FileInParser *parser)
 {
+    st_lexer *lexer;
     char *chunk;
 
     parser->line = st_input_get_line (parser->input);
@@ -102,7 +103,10 @@ next_chunk (FileInParser *parser)
     if (!chunk)
 	return NULL;
     
-    return st_lexer_new (chunk);
+    lexer = st_lexer_new (chunk);
+
+    st_free (chunk);
+    return lexer;
 }
 
 static void
@@ -261,5 +265,7 @@ st_compile_file_in (const char *filename)
 
     parse_chunks (parser);
 
+    st_free (buffer);
+    st_input_destroy (parser->input);
     st_free (parser);
 }

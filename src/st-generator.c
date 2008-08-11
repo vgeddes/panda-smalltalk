@@ -217,6 +217,7 @@ generator_new (void)
 static void
 generator_destroy (Generator *gt)
 {
+    st_list_foreach (gt->instvars, st_free);
     st_list_destroy (gt->instvars);
     st_list_destroy (gt->temporaries);
     st_list_destroy (gt->literals);

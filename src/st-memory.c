@@ -1,5 +1,5 @@
 /*
- * st-object-memory.c
+ * st-memory.c
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -76,14 +76,6 @@ static void
 verify (st_oop object)
 {
     st_assert (st_object_is_mark (ST_OBJECT_MARK (object)));
-}
-
-#define PAGE_SIZE (st_system_pagesize ())
-
-static inline st_uint
-round_pagesize (st_uint size)
-{
-    return ((size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 }
 
 static void
@@ -170,7 +162,7 @@ st_memory_new (void)
     memory->free_context = 0;
     memory->free_context_large = 0;
 
-    memory->ht = st_identity_ht_new ();
+    memory->ht = st_identity_hashtable_new ();
 
     ensure_metadata ();
 
@@ -492,7 +484,7 @@ compact (void)
 	if (ismarked (tag (from))) {
 
 	    if (st_object_is_hashed (tag (from)))
-		st_identity_ht_rehash_object (memory->ht, tag (from), tag (to));
+		st_identity_hashtable_rehash_object (memory->ht, tag (from), tag (to));
 
 	    set_alloc_bit (tag (to));
 	    size = object_size (tag (from));
@@ -509,7 +501,7 @@ compact (void)
 	} else {
 	    basic_finalize (tag (from));
 	    if (st_object_is_hashed (tag (from)))
-	    	st_identity_ht_remove (memory->ht, tag (from));
+	    	st_identity_hashtable_remove (memory->ht, tag (from));
 	    from += object_size (tag (from));
 	}
     }
@@ -688,225 +680,4 @@ st_oop
 st_memory_remap_reference (st_oop reference)
 {
     return remap_oop (reference);
-}
-
-st_heap *
-st_heap_new (st_uint reserved_size)
-{
-    /* Create a new heap with a reserved address space.
-     * Returns NULL if address space could not be reserved
-     */
-    st_pointer result;
-    st_heap   *heap;
-    st_uint    size;
-
-    st_assert (reserved_size > 0);
-    size = round_pagesize (reserved_size);
-
-    result = st_system_reserve_memory (NULL, size);
-    if (result == NULL)
-	return NULL;
-
-    heap = st_new0 (st_heap);
-
-    heap->start = result;
-    heap->end = result + size;
-    heap->p = result;
-    
-    return heap;
-}
-
-bool
-st_heap_grow (st_heap *heap, st_uint grow_size)
-{
-    /* Grows the heap by the specified amount (in bytes).
-     * The primitive will not succeed if the heap runs out
-     * of reserved address space.
-     */
-    st_pointer result;
-    st_uint    size;
-
-    st_assert (grow_size > 0);
-    size = round_pagesize (grow_size);
-
-    if ((heap->p + size) >= heap->end)
-	return false;
-
-    result = st_system_commit_memory (heap->p, size);
-    if (result == NULL)
-	return false;
-
-    heap->p += size;
-
-    return true;
-}
-
-bool
-st_heap_shrink (st_heap *heap, st_uint shrink_size)
-{
-    /* Shrinks the heap by the specified amount (in bytes).
-     */
-    st_pointer result;
-    st_uint    size;
-    
-    st_assert (shrink_size > 0);
-    size = round_pagesize (shrink_size);
-    
-    if ((heap->p - size) < heap->start)
-	return false;
-    
-    result = st_system_decommit_memory (heap->p - size, size);
-    if (result == NULL)
-	return false;
-
-    heap->p -= size;
-
-    return true;
-}
-
-void
-st_heap_destroy (st_heap *heap)
-{
-    st_system_release_memory (heap->start, heap->end - heap->start);
-    st_free (heap);
-}
-
-
-// power of 2
-#define IDENTITY_HT_INITIAL_CAPACITY 256
-
-// prime number - 1
-#define ADVANCE_SIZE  10672
-
-identity_ht *
-st_identity_ht_new (void)
-{
-    identity_ht *ht;
-
-    ht = st_new (identity_ht);
-
-    ht->table = st_malloc0 (sizeof (struct cell) * IDENTITY_HT_INITIAL_CAPACITY);
-    ht->alloc = IDENTITY_HT_INITIAL_CAPACITY;
-    ht->size = 0;
-    ht->deleted = 0;
-    ht->current_hash = 0;
-
-    return ht;
-}
-
-static st_uint
-identity_ht_find (identity_ht *ht, st_oop object)
-{
-    /* use this probing function to find an object which may already be stored somewhere in table
-     */
-    st_uint mask, i;
-
-    mask = ht->alloc - 1;
-    i = (detag (object) - memory->start) & mask;
-
-    while (true) {
-	if (ht->table[i].object == 0 || object == ht->table[i].object)
-	    return i;
-	i = (i + ADVANCE_SIZE) & mask;
-    }
-}
-
-
-static st_uint
-identity_ht_find_available_cell (identity_ht *ht, st_oop object)
-{
-    /* use this probing function to find a place to insert object
-     */
-    st_uint mask, i;
-
-    mask = ht->alloc - 1;
-    i = (detag (object) - memory->start) & mask;
-
-    while (true) {
-	if (ht->table[i].object == 0 || ht->table[i].object == (st_oop) ht)
-	    return i;
-	i = (i + ADVANCE_SIZE) & mask;
-    }
-}
-
-static void
-identity_ht_check_grow (identity_ht *ht)
-{
-    st_uint alloc, index;
-    struct cell *table; 
-
-    /* ensure table is at least half-full */
-    if ((ht->size + ht->deleted) * 2 <= ht->alloc)
-	return;
-
-    alloc = ht->alloc;
-    table = ht->table;
-    ht->alloc *= 2;
-    ht->deleted = 0;
-    ht->table = st_malloc0 (sizeof (struct cell) * ht->alloc);
-
-    for (st_uint i = 0; i <= alloc; i++) {
-	if (table[i].object != 0 && (table[i].object != (st_oop) ht)) {
-	    index = identity_ht_find_available_cell (ht, table[i].object);
-	    ht->table[index].object = table[i].object;
-	    ht->table[index].hash   = table[i].hash;
-	}
-    }
-
-    st_free (table);
-}
-
-void
-st_identity_ht_remove (identity_ht *ht, st_oop object)
-{
-    st_uint index;
-
-    index = identity_ht_find (ht, object);
-
-    if (ht->table[index].object != 0) {
-	ht->table[index].object = (st_oop) ht;
-	ht->table[index].hash   = 0;
-	ht->size--;
-	ht->deleted++;
-    } else {
-	st_assert_not_reached ();
-    }
-}
-
-st_uint
-st_identity_ht_hash (identity_ht *ht, st_oop object)
-{
-    /* assigns an identity hash for an object
-     */
-    st_uint index;
-
-    index = identity_ht_find (ht, object);
-    if (ht->table[index].object == 0) {
-	ht->size++;
-	ht->table[index].object = object;
-	ht->table[index].hash   = ht->current_hash++;
-	identity_ht_check_grow (ht);
-    }
-
-    return ht->table[index].hash;
-}
-
-void
-st_identity_ht_rehash_object (identity_ht *ht, st_oop old, st_oop new)
-{
-    st_uint hash, index;
-
-    index = identity_ht_find (ht, old);
-    st_assert (ht->table[index].object != 0);
-    
-    hash = ht->table[index].hash;
-    ht->table[index].object = (st_oop) ht;
-    ht->table[index].hash   = 0;	
-    ht->deleted++;
-    
-    index = identity_ht_find_available_cell (ht, new);
-    if (ht->table[index].object == (st_oop) ht)
-	ht->deleted--;
-    ht->table[index].object = new;
-    ht->table[index].hash   = hash;
 }

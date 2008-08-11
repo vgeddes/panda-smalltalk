@@ -192,7 +192,7 @@ parse_variable_names (st_lexer *lexer, st_list **varnames)
 	return false;
 
     names = st_strdup (st_token_get_text (token));
-    ivarlexer = st_lexer_new (names); /* input valid at this stage */
+    ivarlexer = st_lexer_new (names);
     token = st_lexer_next_token (ivarlexer);
     
     while (st_token_get_type (token) != ST_TOKEN_EOF) {
@@ -204,6 +204,7 @@ parse_variable_names (st_lexer *lexer, st_list **varnames)
 	token = st_lexer_next_token (ivarlexer);
     }
 
+    st_free (names);
     st_lexer_destroy (ivarlexer);
 
     return true;
@@ -264,7 +265,11 @@ parse_class (st_lexer *lexer, st_token *token)
 
     token = st_lexer_next_token (lexer);
     initialize_class (class_name, superclass_name, ivarnames);
+
+    st_list_foreach (ivarnames, st_free);
     st_list_destroy (ivarnames);
+    st_free (class_name);
+    st_free (superclass_name);
     
     return;
 }
@@ -292,6 +297,9 @@ parse_classes (const char *filename)
 	parse_class (lexer, token);
 	token = st_lexer_next_token (lexer);
     }
+
+    st_free (contents);
+    st_lexer_destroy (lexer);
 }
 
 static void

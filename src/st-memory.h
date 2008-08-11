@@ -1,5 +1,5 @@
 /*
- * st-virtual-space.h
+ * st-memory.h
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -26,36 +26,14 @@
 #define __ST_MEMORY__
 
 #include <st-types.h>
+#include <st-identity-hashtable.h>
+#include <st-heap.h>
 #include <st-utils.h>
 #include <ptr_array.h>
 
 /* threshold is 8 Mb or 16 Mb depending on whether system is 32 or 64 bits */
 #define ST_COLLECTION_THRESHOLD (sizeof (st_oop) * 2 * 1024 * 1024)
 
-typedef struct
-{
-    struct cell *table;
-    st_uint  alloc;
-    st_uint  size;
-    st_uint  deleted;
-    
-    st_uint current_hash;
-
-} identity_ht;
-
-struct cell
-{
-    st_oop  object;
-    st_uint hash;
-};
-
-typedef struct st_heap
-{
-    st_uchar *start; /* start of reserved address space */
-    st_uchar *p;     /* end of committed address space (`start' to `p' is thus writeable memory) */
-    st_uchar *end;   /* end of reserved address space */
- 
-} st_heap;
 
 typedef struct st_memory
 {
@@ -86,7 +64,7 @@ typedef struct st_memory
     st_ulong bytes_allocated;             /* current number of allocated bytes */
     st_ulong bytes_collected;             /* number of bytes collected in last compaction */
 
-    identity_ht *ht;
+    st_identity_hashtable *ht;
 
 } st_memory;
 
@@ -103,14 +81,5 @@ void       st_memory_perform_gc      (void);
 
 st_oop     st_memory_remap_reference    (st_oop reference);
 
-st_heap  *st_heap_new       (st_uint reserved_size);
-bool      st_heap_grow      (st_heap *heap, st_uint grow_size);
-bool      st_heap_shrink    (st_heap *heap, st_uint shrink_size);
-void      st_heap_destroy   (st_heap *heap);
-
-st_uint      st_identity_ht_hash (identity_ht *ht, st_oop object);
-identity_ht *st_identity_ht_new (void);
-void         st_identity_ht_remove (identity_ht *ht, st_oop object);
-void         st_identity_ht_rehash_object (identity_ht *ht, st_oop old, st_oop new);
 
 #endif /* __ST_MEMORY__ */

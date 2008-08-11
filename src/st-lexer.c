@@ -319,6 +319,7 @@ out1:
 	string = st_input_range (lexer->input, l,
 				 st_input_index (lexer->input));				    
 	exponent = strtol (string, NULL, 10);
+	st_free (string);
     }
     
 out2:
@@ -832,6 +833,8 @@ destroy_token (st_token *token)
 {
     if (token->type != ST_TOKEN_NUMBER_CONST)
 	st_free (token->text);
+    else
+	st_free (token->number);	
 
     st_free (token);
 }
