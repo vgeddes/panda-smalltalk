@@ -395,12 +395,14 @@ lookup_method_in_cache (void)
 #define STACK_PUSH(oop)    (*sp++ = (oop))
 #define STACK_PEEK(oop)    (*(sp-1))
 #define STACK_UNPOP(count) (sp += count)
-#define STORE_REGISTERS()				\
-    cpu->ip = ip - cpu->bytecode;			\
-    cpu->sp = sp - cpu->stack;
-#define LOAD_REGISTERS()				\
-    ip = cpu->bytecode + cpu->ip;			\
-    sp = cpu->stack + cpu->sp;
+#define STORE_REGISTERS()					\
+    cpu->ip = ip - cpu->bytecode;				\
+    cpu->sp = sp - cpu->stack;					\
+    ST_CONTEXT_PART_IP (cpu->context) = st_smi_new (cpu->ip);
+#define LOAD_REGISTERS()					\
+    ip = cpu->bytecode + cpu->ip;				\
+    sp = cpu->stack + cpu->sp;					\
+    ST_CONTEXT_PART_SP (cpu->context) = st_smi_new (cpu->sp);
 
 void
 st_cpu_main (void)
@@ -997,8 +999,6 @@ st_cpu_main (void)
 	    ip += 3;
 	    
 	send_common:
-
-	    //printf ("%s\n", st_byte_array_bytes (cpu->message_selector));
 
 	    if (!lookup_method_in_cache ()) {
 		STORE_REGISTERS ();
