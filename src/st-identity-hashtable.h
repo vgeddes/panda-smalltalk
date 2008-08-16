@@ -26,6 +26,7 @@
 #define __ST_IDENTIY_HASH_TABLE_H__
 
 #include <st-types.h>
+#include <stdio.h>
 
 struct cell
 {
@@ -53,7 +54,6 @@ void                   st_identity_hashtable_remove        (st_identity_hashtabl
 void                   st_identity_hashtable_rehash_object (st_identity_hashtable *ht,
 							    st_oop old,
 							    st_oop new);
-
 
 #endif /* __ST_IDENTIY_HASH_TABLE_H__ */
 

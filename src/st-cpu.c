@@ -1029,17 +1029,8 @@ st_cpu_main (void)
 		arguments[i] =  sp[- cpu->message_argcount + i];
 	    sp -= cpu->message_argcount + 1;
 
-	    ST_CONTEXT_PART_IP (cpu->context) = st_smi_new (ip - cpu->bytecode);
-	    ST_CONTEXT_PART_SP (cpu->context) = st_smi_new (sp - cpu->stack);
-	    cpu->context  = context;
-	    cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
-	    cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
-	    cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-	    cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
-	    cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
-	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (context));
-	    cpu->ip       = st_smi_value (0);
-	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+	    STORE_REGISTERS ();
+	    st_cpu_set_active_context (context);
 	    LOAD_REGISTERS ();
 
 	    /* We have to nil these fields here. Its possible that
@@ -1127,27 +1118,8 @@ st_cpu_main (void)
 		NEXT ();
 	    }		
 
-	    if (ST_OBJECT_CLASS (sender) == ST_BLOCK_CONTEXT_CLASS) {
-		home = ST_BLOCK_CONTEXT_HOME (sender);
-		cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
-		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-		cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
-		cpu->stack    = ST_BLOCK_CONTEXT_STACK (sender);
-	    } else {
-		cpu->method   = ST_METHOD_CONTEXT_METHOD (sender);
-		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (sender);
-		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-		cpu->temps    = ST_METHOD_CONTEXT_STACK (sender);
-		cpu->stack    = ST_METHOD_CONTEXT_STACK (sender);
-	    }
-	    
-	    cpu->context  = sender;
-	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (sender));
-	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (sender));
-	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+	    st_cpu_set_active_context (sender);
 	    LOAD_REGISTERS ();
-
 	    STACK_PUSH (value);
 
 	    NEXT ();
@@ -1162,28 +1134,8 @@ st_cpu_main (void)
 	    caller = ST_BLOCK_CONTEXT_CALLER (cpu->context);
 	    value = STACK_PEEK ();
 
-	    if (ST_OBJECT_CLASS (caller) == ST_BLOCK_CONTEXT_CLASS) {
-		home = ST_BLOCK_CONTEXT_HOME (caller);
-		cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
-		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-		cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
-		cpu->stack    = ST_BLOCK_CONTEXT_STACK (caller);
-	    } else {
-		cpu->method   = ST_METHOD_CONTEXT_METHOD (caller);
-		cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (caller);
-		cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-		cpu->temps    = ST_METHOD_CONTEXT_STACK (caller);
-		cpu->stack    = ST_METHOD_CONTEXT_STACK (caller);
-	    }
-	    
-	    cpu->context  = caller;
-	    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (caller));
-	    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (caller));
-	    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+	    st_cpu_set_active_context (caller);
 	    LOAD_REGISTERS ();
-	    
-	    /* push returned value onto caller's stack */
 	    STACK_PUSH (value);
 	    
 	    NEXT ();

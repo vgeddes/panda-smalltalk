@@ -81,5 +81,4 @@ void       st_memory_perform_gc      (void);
 
 st_oop     st_memory_remap_reference    (st_oop reference);
 
-
 #endif /* __ST_MEMORY__ */

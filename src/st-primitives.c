@@ -2026,19 +2026,7 @@ BlockContext_value (struct st_cpu *cpu)
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
     ST_BLOCK_CONTEXT_CALLER (block) = cpu->context;
 
-    ST_CONTEXT_PART_IP (cpu->context) = st_smi_new (cpu->ip);
-    ST_CONTEXT_PART_SP (cpu->context) = st_smi_new (cpu->sp);
-
-    home = ST_BLOCK_CONTEXT_HOME (block);
-    cpu->context  = block;
-    cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
-    cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-    cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
-    cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
-    cpu->stack    = ST_BLOCK_CONTEXT_STACK (block);
-    cpu->sp       = st_smi_value (ST_CONTEXT_PART_SP (block));
-    cpu->ip       = st_smi_value (ST_CONTEXT_PART_IP (block));
-    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
+    st_cpu_set_active_context (block);
 }
 
 static void
