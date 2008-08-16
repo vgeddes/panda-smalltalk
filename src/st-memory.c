@@ -423,17 +423,15 @@ remap_oop (st_oop ref)
 }
 
 static void
-remap (void)
+st_memory_remap (void)
 {
+    /* Remaps all object references in the heap */
     st_oop *oops, *p;
     st_uint size;
 
     p = memory->start;
     while (p < memory->p) {
-
-	/* remap class field */
 	p[1] = remap_oop (p[1]);
-	/* remap ivars */
 	object_contents (tag (p), &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
 	    oops[i] = remap_oop (oops[i]);
@@ -451,7 +449,7 @@ basic_finalize (st_oop object)
 
 
 static void
-compact (void)
+st_memory_compact (void)
 {
     st_oop *p, *from, *to;
     st_uint  size;
@@ -523,7 +521,7 @@ grow_marking_stack (void)
 }
 
 static void
-mark (void)
+st_memory_mark (void)
 {
     st_oop   object;
     st_oop  *oops, *stack;
@@ -546,7 +544,7 @@ mark (void)
 	if (ST_UNLIKELY (sp >= stack_size)) {
 	    stack_size = grow_marking_stack ();
 	    stack = memory->mark_stack;
-	    st_message ("gc: increased size of marking stack"); 
+	    st_log ("gc", "increased size of marking stack"); 
 	}
 	stack[sp++] = ST_OBJECT_CLASS (object);
 	object_contents (object, &oops, &size);
@@ -554,7 +552,7 @@ mark (void)
 	    if (ST_UNLIKELY (sp >= stack_size)) {
 		stack_size = grow_marking_stack ();
 		stack = memory->mark_stack; 
-		st_message ("gc: increased size of marking stack"); 
+		st_log ("gc", "increased size of marking stack"); 
 	    }
 	    if (oops[i] != ST_NIL) {
 		stack[sp++] = oops[i];
@@ -639,7 +637,7 @@ garbage_collect (void)
 
     /* marking */
     timer_start (&tm);
-    mark ();
+    st_memory_mark ();
     timer_stop (&tm);
 
     times[0] = st_timespec_to_double_seconds (&tm);
@@ -647,7 +645,7 @@ garbage_collect (void)
 
     /* compaction */
     timer_start (&tm);
-    compact ();
+    st_memory_compact ();
     timer_stop (&tm);
 
     times[1] = st_timespec_to_double_seconds (&tm);
@@ -655,7 +653,7 @@ garbage_collect (void)
 
     /* remapping */
     timer_start (&tm);
-    remap ();
+    st_memory_remap ();
     remap_globals ();
     remap_cpu (&__cpu);
     timer_stop (&tm);
@@ -666,14 +664,14 @@ garbage_collect (void)
     st_cpu_clear_caches ();
     memory->counter = 0;
 
-    st_message ("gc: collected:       %uK\n"
-		"       heapSize:        %uK\n"
-		"       marking time:    %.6fs\n"
-		"       compaction time: %.6fs\n"
-		"       remapping time:  %.6fs\n",
-		memory->bytes_collected / 1024,
-		(memory->bytes_collected + memory->bytes_allocated) / 1024,
-		times[0], times[1], times[2]);
+    st_log ("gc", "collected:       %uK\n"
+	          "heapSize:        %uK\n"
+	          "marking time:    %.6fs\n"
+	          "compaction time: %.6fs\n"
+	          "remapping time:  %.6fs\n",
+	    memory->bytes_collected / 1024,
+	    (memory->bytes_collected + memory->bytes_allocated) / 1024,
+	    times[0], times[1], times[2]);
 }
 
 st_oop

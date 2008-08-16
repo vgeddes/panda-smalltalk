@@ -484,3 +484,21 @@ st_string_hash (const char *string)
 
     return h;
 }
+
+void
+st_log (const char * restrict domain, const char * restrict format, ...)
+{
+    char    *fmt;
+    va_list  args;
+
+    st_assert (domain != NULL);
+    if (!st_get_verbose_mode ())
+	return;
+
+    fmt = st_strconcat ("** ", domain, ": ", format, "\n", NULL);
+
+    va_start (args, format);
+    vfprintf (stderr, fmt, args);
+    va_end (args);
+    st_free (fmt);
+}

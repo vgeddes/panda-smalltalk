@@ -29,43 +29,43 @@
 #include <st-memory.h>
 #include <st-cpu.h>
 
-#define    ST_NIL                        __cpu.globals[0]
-#define    ST_TRUE                       __cpu.globals[1]
-#define    ST_FALSE                      __cpu.globals[2]
-#define    ST_SYMBOLS                    __cpu.globals[3]
-#define    ST_GLOBALS                    __cpu.globals[4]
-#define    ST_SMALLTALK                  __cpu.globals[5]
+#define ST_NIL                        __cpu.globals[0]
+#define ST_TRUE                       __cpu.globals[1]
+#define ST_FALSE                      __cpu.globals[2]
+#define ST_SYMBOLS                    __cpu.globals[3]
+#define ST_GLOBALS                    __cpu.globals[4]
+#define ST_SMALLTALK                  __cpu.globals[5]
 
-#define    ST_UNDEFINED_OBJECT_CLASS     __cpu.globals[6]
-#define    ST_METACLASS_CLASS            __cpu.globals[7]
-#define    ST_BEHAVIOR_CLASS             __cpu.globals[8]
-#define    ST_SMI_CLASS                  __cpu.globals[9]
-#define    ST_LARGE_INTEGER_CLASS        __cpu.globals[10]
-#define    ST_FLOAT_CLASS                __cpu.globals[11]
-#define    ST_CHARACTER_CLASS            __cpu.globals[12]
-#define    ST_TRUE_CLASS                 __cpu.globals[13]
-#define    ST_FALSE_CLASS                __cpu.globals[14]
-#define    ST_ARRAY_CLASS                __cpu.globals[15]
-#define    ST_BYTE_ARRAY_CLASS           __cpu.globals[16]
-#define    ST_WORD_ARRAY_CLASS           __cpu.globals[17]
-#define    ST_FLOAT_ARRAY_CLASS          __cpu.globals[18]
-#define    ST_SET_CLASS                  __cpu.globals[19]
-#define    ST_DICTIONARY_CLASS           __cpu.globals[20]
-#define    ST_ASSOCIATION_CLASS          __cpu.globals[21]
-#define    ST_STRING_CLASS               __cpu.globals[22]
-#define    ST_SYMBOL_CLASS               __cpu.globals[23]
-#define    ST_WIDE_STRING_CLASS          __cpu.globals[24]
-#define    ST_COMPILED_METHOD_CLASS      __cpu.globals[25]
-#define    ST_METHOD_CONTEXT_CLASS       __cpu.globals[26]
-#define    ST_BLOCK_CONTEXT_CLASS        __cpu.globals[27]
-#define    ST_SYSTEM_CLASS               __cpu.globals[28]
-#define    ST_HANDLE_CLASS               __cpu.globals[29]
-
-#define    ST_SELECTOR_DOESNOTUNDERSTAND __cpu.globals[30]
-#define    ST_SELECTOR_MUSTBEBOOLEAN     __cpu.globals[31]
-#define    ST_SELECTOR_STARTUPSYSTEM     __cpu.globals[32]
-#define    ST_SELECTOR_CANNOTRETURN      __cpu.globals[33]
-#define    ST_SELECTOR_OUTOFMEMORY       __cpu.globals[34]
+#define ST_UNDEFINED_OBJECT_CLASS     __cpu.globals[6]
+#define ST_METACLASS_CLASS            __cpu.globals[7]
+#define ST_BEHAVIOR_CLASS             __cpu.globals[8]
+#define ST_SMI_CLASS                  __cpu.globals[9]
+#define ST_LARGE_INTEGER_CLASS        __cpu.globals[10]
+#define ST_FLOAT_CLASS                __cpu.globals[11]
+#define ST_CHARACTER_CLASS            __cpu.globals[12]
+#define ST_TRUE_CLASS                 __cpu.globals[13]
+#define ST_FALSE_CLASS                __cpu.globals[14]
+#define ST_ARRAY_CLASS                __cpu.globals[15]
+#define ST_BYTE_ARRAY_CLASS           __cpu.globals[16]
+#define ST_WORD_ARRAY_CLASS           __cpu.globals[17]
+#define ST_FLOAT_ARRAY_CLASS          __cpu.globals[18]
+#define ST_SET_CLASS                  __cpu.globals[19]
+#define ST_DICTIONARY_CLASS           __cpu.globals[20]
+#define ST_ASSOCIATION_CLASS          __cpu.globals[21]
+#define ST_STRING_CLASS               __cpu.globals[22]
+#define ST_SYMBOL_CLASS               __cpu.globals[23]
+#define ST_WIDE_STRING_CLASS          __cpu.globals[24]
+#define ST_COMPILED_METHOD_CLASS      __cpu.globals[25]
+#define ST_METHOD_CONTEXT_CLASS       __cpu.globals[26]
+#define ST_BLOCK_CONTEXT_CLASS        __cpu.globals[27]
+#define ST_SYSTEM_CLASS               __cpu.globals[28]
+#define ST_HANDLE_CLASS               __cpu.globals[29]
+#define ST_MESSAGE_CLASS              __cpu.globals[30]
+#define ST_SELECTOR_DOESNOTUNDERSTAND __cpu.globals[31]
+#define ST_SELECTOR_MUSTBEBOOLEAN     __cpu.globals[32]
+#define ST_SELECTOR_STARTUPSYSTEM     __cpu.globals[33]
+#define ST_SELECTOR_CANNOTRETURN      __cpu.globals[34]
+#define ST_SELECTOR_OUTOFMEMORY       __cpu.globals[35]
 
 #define ST_SELECTOR_PLUS       __cpu.selectors[0]
 #define ST_SELECTOR_MINUS      __cpu.selectors[1]
@@ -94,16 +94,13 @@
 
 extern st_memory *memory;
 
+void   st_initialize (void);
 
-void   st_bootstrap_universe (void);
+st_oop st_global_get     (const char *name);
 
-st_oop st_global_get (const char *name);
+void   st_set_verbose_mode  (bool verbose);
 
-void st_set_verbosity (bool verbose);
-
-bool st_verbose_mode (void) ST_GNUC_PURE;
-
-void st_message (const char *format, ...);
+bool   st_get_verbose_mode  (void) ST_GNUC_PURE;
 
 
 #endif /* __ST_UNIVERSE_H__ */

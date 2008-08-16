@@ -1,3 +1,26 @@
+/*
+ * st-cpu.c
+ *
+ * Copyright (C) 2008 Vincent Geddes
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+*/
 
 #include "st-types.h"
 #include "st-compiler.h"
@@ -16,7 +39,11 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-static inline st_oop 
+#ifdef __GNUC__
+#define HAVE_COMPUTED_GOTO
+#endif
+
+static inline st_oop
 method_context_new (void)
 {
     register struct st_cpu *cpu = &__cpu;
@@ -91,18 +118,24 @@ create_actual_message (void)
     register struct st_cpu *cpu = &__cpu;
     st_oop *elements;
     st_oop  message;
-    st_oop array;
+    st_oop  array;
 
     array = st_object_new_arrayed (ST_ARRAY_CLASS, cpu->message_argcount);
-
     elements = st_array_elements (array);
     for (st_uint i = 0; i < cpu->message_argcount; i++)
 	elements[i] = cpu->stack[cpu->sp - cpu->message_argcount + i];
 
     cpu->sp -= cpu->message_argcount;
 
-    /* FIXME: remap ! */
-    message = st_message_new (cpu->message_selector, array);
+    message = st_object_new (ST_MESSAGE_CLASS);
+    if (message == 0) {
+	st_memory_perform_gc ();
+	message = st_object_new (ST_MESSAGE_CLASS);
+	st_assert (message != 0);
+    }
+
+    ST_OBJECT_FIELDS (message)[0] = cpu->message_selector;
+    ST_OBJECT_FIELDS (message)[1] = array;
 
     ST_STACK_PUSH (cpu, message);
 
@@ -186,7 +219,6 @@ st_cpu_execute_method (void)
     activate_method ();
 }
 
-
 void
 st_cpu_set_active_context (st_oop context)
 {
@@ -220,31 +252,16 @@ st_cpu_set_active_context (st_oop context)
     cpu->bytecode = st_method_bytecode_bytes (cpu->method);
 }
 
-void
-st_cpu_prologue (void)
-{
-    if (st_verbose_mode ()) {
-	fprintf (stderr, "** gc: totalPauseTime: %.6fs\n", st_timespec_to_double_seconds (&memory->total_pause_time));
-    }
-}
-
 #define SEND_SELECTOR(selector, argcount)			\
     cpu->message_argcount = argcount;				\
     cpu->message_receiver = sp[- argcount - 1];			\
     cpu->message_selector = selector;				\
     goto send_common;
-
-#define ACTIVATE_CONTEXT(context)		\
-    st_cpu_set_active_context (context);
               
 #define SEND_TEMPLATE()							\
     cpu->lookup_class = st_object_class (cpu->message_receiver);	\
     ip += 1;								\
     goto common;
-
-#ifdef __GNUC__
-#define HAVE_COMPUTED_GOTO
-#endif
 
 #ifdef HAVE_COMPUTED_GOTO
 #define SWITCH(ip)							\
@@ -1148,7 +1165,8 @@ st_cpu_main (void)
     }
 
 out:
-    st_cpu_prologue ();
+    st_log ("gc", "totalPauseTime: %.6fs\n",
+	    st_timespec_to_double_seconds (&memory->total_pause_time));
 }
 
 void

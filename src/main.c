@@ -71,9 +71,10 @@ main (int argc, char *argv[])
     opt_message ("Read Smalltalk expressions from standard input and evaluate them.");
     opt_parse ("Usage: %s [options]", options, argv);
     
-    st_set_verbosity (verbose);
+    st_set_verbose_mode (verbose);
 
-    st_bootstrap_universe ();
+    st_initialize ();
+
     read_compile_stdin ();
 
     st_cpu_initialize ();

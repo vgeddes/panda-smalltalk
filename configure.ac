@@ -31,8 +31,6 @@ AM_PROG_LIBTOOL
 # platform checks
 AC_CHECK_SIZEOF([void *])
 AC_CHECK_SIZEOF([int])
-AC_CHECK_SIZEOF([long])
-AC_CHECK_SIZEOF([long long int])
 AC_CHECK_ALIGNOF([void *])
 debug_default=yes
 AC_ARG_ENABLE(debug,

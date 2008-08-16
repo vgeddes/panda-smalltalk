@@ -107,7 +107,6 @@ st_object_allocate (st_oop class)
 	class = st_memory_remap_reference (class);
 	object = st_memory_allocate (size);
 	st_assert (object != 0);
-	st_message ("gc: remapping class field after compaction");
     }
 
     st_object_initialize_header (object, class);
@@ -133,7 +132,6 @@ st_handle_allocate (st_oop class)
 	class = st_memory_remap_reference (class);
 	object = st_memory_allocate (size);
 	st_assert (object != 0);
-	st_message ("gc: remapping class field after compaction");
     }
     st_object_initialize_header (object, class);
 

@@ -23,8 +23,7 @@ main (int argc, char *argv[])
 	buffer[i++] = c;
     buffer[i] = '\0';
 
-    /* the big bang */
-    st_bootstrap_universe ();
+    st_initialize ();
 
     st_lexer *lexer = st_lexer_new (buffer);
 

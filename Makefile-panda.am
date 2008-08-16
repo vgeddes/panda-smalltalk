@@ -26,7 +26,6 @@ libpanda_la_SOURCES = \
 	src/st-behavior.h \
 	src/st-behavior.c \
 	src/st-context.h \
-	src/st-context.c \
 	src/st-object.h \
 	src/st-object.c \
 	src/st-primitives.c \
@@ -55,12 +54,12 @@ libpanda_la_SOURCES = \
 	src/st-types.h
 
 libpanda_la_CPPFLAGS =          \
-	-I$(top_srcdir)       \
-	-I$(top_srcdir)/src   \
-	-I$(top_builddir)   \
+	-I$(top_srcdir)         \
+	-I$(top_srcdir)/src     \
+	-I$(top_builddir)       \
         -I$(top_srcdir)/libs/libtommath \
-        -I$(top_srcdir)/libs/libmpa \
-        -Isrc \
+        -I$(top_srcdir)/libs/libmpa     \
+        -Isrc                           \
         $(AM_CPPFLAGS)
 
 libpanda_la_CFLAGS = $(WARN_CFLAGS)

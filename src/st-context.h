@@ -58,8 +58,6 @@ struct st_block_context
     st_oop stack[];
 };
 
-st_oop  st_message_new (st_oop selector, st_oop arguments);
-
 #define ST_CONTEXT_PART(oop)       ((struct st_context_part *)   ST_POINTER (oop))
 #define ST_METHOD_CONTEXT(oop)     ((struct st_method_context *) ST_POINTER (oop))
 #define ST_BLOCK_CONTEXT(oop)      ((struct st_block_context *)  ST_POINTER (oop))
@@ -78,8 +76,5 @@ st_oop  st_message_new (st_oop selector, st_oop arguments);
 #define ST_BLOCK_CONTEXT_CALLER(oop)    (ST_BLOCK_CONTEXT (oop)->caller)
 #define ST_BLOCK_CONTEXT_HOME(oop)      (ST_BLOCK_CONTEXT (oop)->home)
 #define ST_BLOCK_CONTEXT_STACK(oop)     (ST_BLOCK_CONTEXT (oop)->stack)
-
-#define ST_MESSAGE_SELECTOR(oop)  (ST_OBJECT_FIELDS (oop)[0])
-#define ST_MESSAGE_ARGUMENTS(oop) (ST_OBJECT_FIELDS (oop)[1])
 
 #endif /* __ST_CONTEXT_H__ */

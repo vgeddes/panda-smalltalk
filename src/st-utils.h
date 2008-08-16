@@ -125,9 +125,6 @@ void st_timespec_difference (struct timespec *start, struct timespec *end, struc
 
 void st_timespec_add        (struct timespec *t1, struct timespec *t2, struct timespec *result);
 
-
-
-
 typedef struct st_list st_list;
 
 struct st_list
@@ -187,5 +184,7 @@ fprintf (stderr, "%s:%i: %s: should not reach here\n",			\
 abort ();								\
 ST_STMT_END
 #endif
+
+void st_log (const char * restrict domain, const char * restrict format, ...);
 
 #endif /* __ST_UTILS_H__ */

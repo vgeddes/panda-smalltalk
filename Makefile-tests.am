@@ -1,5 +1,5 @@
 
-noinst_PROGRAMS += tests/test-lexer tests/test-parser tests/test-generator tests/test-interpreter tests/test-heap
+noinst_PROGRAMS += tests/test-lexer tests/test-parser tests/test-generator tests/test-heap
 
 tests_test_lexer_SOURCES = tests/test-lexer.c
 
@@ -19,12 +19,6 @@ tests_test_generator_LDADD =    $(GLIB_LIBS) libpanda.la
 tests_test_generator_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
 tests_test_generator_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/src -I$(top_srcdir)/libs/libtommath -I$(top_srcdir)/libs/libmpa
 
-tests_test_interpreter_SOURCES = tests/test-interpreter.c
-
-tests_test_interpreter_LDADD =    $(GLIB_LIBS) libpanda.la
-tests_test_interpreter_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
-tests_test_interpreter_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/src -I$(top_srcdir)/libs/libtommath -I$(top_srcdir)/libs/libmpa
-
 tests_test_heap_SOURCES = tests/test-heap.c
 
 tests_test_heap_LDADD =    $(GLIB_LIBS) libpanda.la
@@ -32,5 +26,4 @@ tests_test_heap_CFLAGS =   $(AM_CFLAGS) $(WARN_CFLAGS)
 tests_test_heap_CPPFLAGS = $(GLIB_CFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/src -I$(top_srcdir)/libs/libtommath -I$(top_srcdir)/libs/libmpa
 
 
-
-DISTCLEANFILES += tests/test-lexer tests/test-parser tests/test-generator tests/test-interpreter tests/test-heap
+DISTCLEANFILES += tests/test-lexer tests/test-parser tests/test-generator tests/test-heap

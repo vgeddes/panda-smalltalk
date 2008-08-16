@@ -41,7 +41,6 @@ st_array_allocate (st_oop class, st_uint size)
 	class = st_memory_remap_reference (class);
 	array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size);
 	st_assert (array != 0);
-	st_message ("gc: remapping class field after compaction");
     }
     st_object_initialize_header (array, class);
 
@@ -73,7 +72,6 @@ st_byte_array_allocate (st_oop class, int size)
 	class = st_memory_remap_reference (class);
 	array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size_oops);
 	st_assert (array != 0);
-	st_message ("gc: remapping class field after compaction");
     }
 
     st_object_initialize_header (array, class);
@@ -128,7 +126,6 @@ st_word_array_allocate (st_oop class, int size)
 	class = st_memory_remap_reference (class);
 	array = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size_oops);
 	st_assert (array != 0);
-	st_message ("gc: remapping class field after compaction");
     }
     st_object_initialize_header (array, class);
 
@@ -160,7 +157,6 @@ st_float_array_allocate (st_oop class, int size)
 	class = st_memory_remap_reference (class);
 	object = st_memory_allocate (ST_SIZE_OOPS (struct st_array) + size_oops);
 	st_assert (object != 0);
-	st_message ("gc: remapping class field after compaction");
     }
     st_object_initialize_header (object, class);
 

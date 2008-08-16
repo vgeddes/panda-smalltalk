@@ -46,14 +46,15 @@
 #include <string.h>
 #include <stdio.h>
 
+static bool verbose_mode = false;
+
+st_memory *memory = NULL;
+
 st_oop
 st_global_get (const char *name)
 {
-    st_oop sym;
-
-    sym = st_symbol_new (name);
-
-    return st_dictionary_at (ST_GLOBALS, sym);
+    st_assert (name != NULL);
+    return st_dictionary_at (ST_GLOBALS, st_symbol_new (name));
 }
 
 enum
@@ -401,7 +402,6 @@ init_specials (void)
     ST_SELECTOR_BITAND    = st_symbol_new ("bitAnd:");
     ST_SELECTOR_BITOR     = st_symbol_new ("bitOr:");
     ST_SELECTOR_BITXOR    = st_symbol_new ("bitXor:");
-
     ST_SELECTOR_AT        = st_symbol_new ("at:");
     ST_SELECTOR_ATPUT     = st_symbol_new ("at:put:");
     ST_SELECTOR_SIZE      = st_symbol_new ("size");
@@ -411,7 +411,6 @@ init_specials (void)
     ST_SELECTOR_CLASS     = st_symbol_new ("class");
     ST_SELECTOR_NEW       = st_symbol_new ("new");
     ST_SELECTOR_NEW_ARG   = st_symbol_new ("new:");
-
     ST_SELECTOR_DOESNOTUNDERSTAND   = st_symbol_new ("doesNotUnderstand:");
     ST_SELECTOR_MUSTBEBOOLEAN       = st_symbol_new ("mustBeBoolean");
     ST_SELECTOR_STARTUPSYSTEM       = st_symbol_new ("startupSystem");
@@ -419,10 +418,8 @@ init_specials (void)
     ST_SELECTOR_OUTOFMEMORY         = st_symbol_new ("outOfMemory");
 }
 
-st_memory *memory;
-
 void
-st_bootstrap_universe (void)
+bootstrap_universe (void)
 {
     st_oop smalltalk;
     st_oop st_object_class_, st_class_class_;
@@ -457,6 +454,7 @@ st_bootstrap_universe (void)
     ST_BLOCK_CONTEXT_CLASS    = class_new (ST_FORMAT_CONTEXT, 7);
     ST_SYSTEM_CLASS           = class_new (ST_FORMAT_OBJECT, INSTANCE_SIZE_SYSTEM);
     ST_HANDLE_CLASS           = class_new (ST_FORMAT_HANDLE, 0);
+    ST_MESSAGE_CLASS          = class_new (ST_FORMAT_OBJECT, 2);
 
     ST_OBJECT_CLASS (ST_NIL)  = ST_UNDEFINED_OBJECT_CLASS;
 
@@ -495,6 +493,7 @@ st_bootstrap_universe (void)
     add_global ("MethodContext", ST_METHOD_CONTEXT_CLASS);
     add_global ("BlockContext", ST_BLOCK_CONTEXT_CLASS);
     add_global ("Handle", ST_HANDLE_CLASS);
+    add_global ("Message", ST_MESSAGE_CLASS);
     add_global ("System", ST_SYSTEM_CLASS);
     add_global ("Smalltalk", ST_SMALLTALK);
 
@@ -507,35 +506,22 @@ st_bootstrap_universe (void)
     st_memory_add_root (ST_SMALLTALK);
 }
 
-static bool verbosity;
+void
+st_initialize (void)
+{
+    bootstrap_universe ();
+}
 
 void
-st_set_verbosity (bool verbose)
+st_set_verbose_mode (bool verbose)
 {
-    verbosity = verbose;
+    verbose_mode = verbose;
 }
 
 bool
-st_verbose_mode (void)
+st_get_verbose_mode (void)
 {
-    return verbosity;
+    return verbose_mode;
 }
 
 
-void
-st_message (const char *format, ...)
-{
-    char *new_format;
-    va_list args;
-
-    if (!st_verbose_mode ())
-	return;
-
-    new_format = st_strconcat ("** ", format, NULL);
-
-    va_start (args, format);
-    vfprintf (stderr, new_format, args);
-    fputc ('\n', stderr);
-    va_end (args);
-    st_free (new_format);
-}
