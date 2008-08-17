@@ -78,16 +78,12 @@ st_array_elements (st_oop object)
 static inline st_oop
 st_array_at (st_oop object, int i)
 {
-    st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-    
     return (ST_ARRAY (object)->elements - 1)[i];
 }
 
 static inline void
 st_array_at_put (st_oop object, int i, st_oop value)
-{
-    st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-    
+{    
     (ST_ARRAY (object)->elements - 1)[i] = value;
 }
 
@@ -100,16 +96,12 @@ st_word_array_elements (st_oop object)
 static inline st_uint
 st_word_array_at (st_oop object, int i)
 {
-    st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-
     return ST_WORD_ARRAY (object)->elements[i - 1];
 }
 
 static inline void
 st_word_array_at_put (st_oop object, int i, st_uint value)
 {
-    st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-
     ST_WORD_ARRAY (object)->elements[i - 1] = value;
 }
 
@@ -122,16 +114,12 @@ st_byte_array_bytes (st_oop object)
 static inline st_uchar
 st_byte_array_at (st_oop object, int i)
 {
-    st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-
     return st_byte_array_bytes (object)[i - 1];
 }
 
 static inline void
 st_byte_array_at_put (st_oop object, int i, st_uchar value)
 {
-    st_assert (1 <= i && i <= st_smi_value (st_arrayed_object_size (object)));
-
     st_byte_array_bytes (object)[i - 1] = value;
 }
 

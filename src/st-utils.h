@@ -59,7 +59,7 @@
 #define ST_GNUC_PRINTF(format_index, argument_index)
 #endif
 
-/* A comile-time assertion */
+/* A compile-time assertion */
 #define assert_static(e)                \
    do {                                 \
       enum { assert_static__ = 1/(e) }; \
