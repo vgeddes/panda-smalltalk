@@ -103,9 +103,7 @@ st_uint st_object_hash        (st_oop object);
 #define ST_OBJECT_FIELDS(oop) (ST_HEADER (oop)->fields)
 
 st_oop st_object_allocate (st_oop class);
-st_oop st_handle_allocate (st_oop class);
 
-#define ST_HANDLE_VALUE(oop) (ST_HANDLE (oop)->value)
 
 static inline void
 st_object_set_format (st_oop object, st_format format)

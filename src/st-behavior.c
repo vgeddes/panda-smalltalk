@@ -39,7 +39,7 @@ st_behavior_all_instance_variables (st_oop class)
     st_list *list = NULL;
     st_oop names;
     int    size;
-    
+
     if (class == ST_NIL)
 	return NULL;
 
