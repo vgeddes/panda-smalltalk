@@ -117,125 +117,113 @@ typedef enum
  *       2:              6
  */
 
-#define SET_BITFIELD(bits, field, value) \
-    (((bits) & ~st_##field##_mask_aligned) | ((value & st_##field##_mask) << st_##field##_shift))
+#define _ST_METHOD_SET_BITFIELD(bitfield, field, value) 	  		\
+    (((bitfield) & ~(_ST_METHOD_##field##_MASK << _ST_METHOD_##field##_SHIFT)) \
+     | (((value) & _ST_METHOD_##field##_MASK) << _ST_METHOD_##field##_SHIFT))
 
-#define GET_BITFIELD(bits, field) \
-    (((bits) >> st_##field##_shift) & st_##field##_mask)
+#define _ST_METHOD_GET_BITFIELD(bitfield, field)			\
+    (((bitfield) >> _ST_METHOD_##field##_SHIFT) & _ST_METHOD_##field##_MASK)
 
 enum
 {
-    st_flag_bits        = 3,
-    st_arg_bits         = 5,
-    st_temp_bits        = 6,
-    st_method_unused_bits = 7,
-    st_large_bits       = 1,
-    st_instvar_bits     = 16,  
-    st_literal_bits     = 4,
-    st_primitive_bits   = 8,
+    _ST_METHOD_FLAG_BITS           = 3,
+    _ST_METHOD_ARG_BITS            = 5,
+    _ST_METHOD_TEMP_BITS           = 6,
+    _ST_METHOD_UNUSED_BITS         = 7,
+    _ST_METHOD_LARGE_BITS          = 1,
+    _ST_METHOD_INSTVAR_BITS        = 16,  
+    _ST_METHOD_LITERAL_BITS        = 4,
+    _ST_METHOD_PRIMITIVE_BITS      = 8,
     
-    st_primitive_shift  = ST_TAG_SIZE,
-    st_instvar_shift    = ST_TAG_SIZE,
-    st_literal_shift    = ST_TAG_SIZE,
-    st_large_shift      = st_primitive_bits + st_primitive_shift,
-    st_method_unused_shift  = st_large_bits + st_large_shift,
-    st_temp_shift       = st_method_unused_bits + st_method_unused_shift,
-    st_arg_shift        = st_temp_bits + st_temp_shift,
-    st_flag_shift       = st_arg_bits + st_arg_shift,
+    _ST_METHOD_PRIMITIVE_SHIFT     =  ST_TAG_SIZE,
+    _ST_METHOD_INSTVAR_SHIFT       =  ST_TAG_SIZE,
+    _ST_METHOD_LITERAL_SHIFT       =  ST_TAG_SIZE,
+    _ST_METHOD_LARGE_SHIFT         = _ST_METHOD_PRIMITIVE_BITS + _ST_METHOD_PRIMITIVE_SHIFT,
+    _ST_METHOD_UNUSED_SHIFT        = _ST_METHOD_LARGE_BITS     + _ST_METHOD_LARGE_SHIFT,
+    _ST_METHOD_TEMP_SHIFT          = _ST_METHOD_UNUSED_BITS    + _ST_METHOD_UNUSED_SHIFT,
+    _ST_METHOD_ARG_SHIFT           = _ST_METHOD_TEMP_BITS      + _ST_METHOD_TEMP_SHIFT,
+    _ST_METHOD_FLAG_SHIFT          = _ST_METHOD_ARG_BITS       + _ST_METHOD_ARG_SHIFT,
     
-    st_primitive_mask           = ST_NTH_MASK (st_primitive_bits),
-    st_primitive_mask_aligned   = st_primitive_mask << st_primitive_shift,
-    
-    st_large_mask               = ST_NTH_MASK (st_large_bits),
-    st_large_mask_aligned       = st_large_mask << st_large_shift,
-    
-    st_instvar_mask             = ST_NTH_MASK (st_instvar_bits),
-    st_instvar_mask_aligned     = st_instvar_mask << st_instvar_shift,
-    
-    st_literal_mask             = ST_NTH_MASK (st_literal_bits),
-    st_literal_mask_aligned     = st_literal_mask << st_literal_shift,
-    
-    st_temp_mask                = ST_NTH_MASK (st_temp_bits),
-    st_temp_mask_aligned        = st_temp_mask << st_temp_shift,
-    
-    st_arg_mask                 = ST_NTH_MASK (st_arg_bits),
-    st_arg_mask_aligned         = st_arg_mask << st_arg_shift,
-    
-    st_flag_mask                = ST_NTH_MASK (st_flag_bits),
-    st_flag_mask_aligned        = st_flag_mask << st_flag_shift,
+    _ST_METHOD_PRIMITIVE_MASK      = ST_NTH_MASK (_ST_METHOD_PRIMITIVE_BITS),
+    _ST_METHOD_LARGE_MASK          = ST_NTH_MASK (_ST_METHOD_LARGE_BITS),
+    _ST_METHOD_INSTVAR_MASK        = ST_NTH_MASK (_ST_METHOD_INSTVAR_BITS),
+    _ST_METHOD_LITERAL_MASK        = ST_NTH_MASK (_ST_METHOD_LITERAL_BITS),
+    _ST_METHOD_TEMP_MASK           = ST_NTH_MASK (_ST_METHOD_TEMP_BITS),
+    _ST_METHOD_ARG_MASK            = ST_NTH_MASK (_ST_METHOD_ARG_BITS),
+    _ST_METHOD_FLAG_MASK           = ST_NTH_MASK (_ST_METHOD_FLAG_BITS),
 };
 
 
 static inline int
 st_method_get_temp_count (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD_HEADER (method), temp);
+    return _ST_METHOD_GET_BITFIELD (ST_METHOD_HEADER (method), TEMP);
 }
 
 static inline int
 st_method_get_arg_count (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD_HEADER (method), arg);
+    return _ST_METHOD_GET_BITFIELD (ST_METHOD_HEADER (method), ARG);
 }
 
 static inline int
 st_method_get_large_context (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD_HEADER (method), large);
+    return _ST_METHOD_GET_BITFIELD (ST_METHOD_HEADER (method), LARGE);
 }
 
 static inline int
 st_method_get_primitive_index (st_oop method)
 {
-    return GET_BITFIELD (ST_METHOD_HEADER (method), primitive);
+    return _ST_METHOD_GET_BITFIELD (ST_METHOD_HEADER (method), PRIMITIVE);
 }
 
 static inline st_method_flags
 st_method_get_flags (st_oop method)
 {   
-    return GET_BITFIELD (ST_METHOD_HEADER (method), flag);
+    return _ST_METHOD_GET_BITFIELD (ST_METHOD_HEADER (method), FLAG);
 }
 
 static inline void
 st_method_set_flags (st_oop method, st_method_flags flags)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), flag, flags);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), FLAG, flags);
 }
 
 static inline void
 st_method_set_arg_count (st_oop method, int count)
 {	
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), arg, count);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), ARG, count);
 }
 
 static inline void
 st_method_set_temp_count (st_oop method, int count)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), temp, count);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), TEMP, count);
 }
 
 static inline void
 st_method_set_large_context (st_oop method, bool is_large)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), large, is_large);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), LARGE, is_large);
 }
 
 static inline void
 st_method_set_primitive_index (st_oop method, int index)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), primitive, index);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), PRIMITIVE, index);
 }
 
 static inline void
 st_method_set_instvar_index (st_oop method, int index)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), instvar, index);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), INSTVAR, index);
 }
 
 static inline void
 st_method_set_literal_type (st_oop method, st_method_literal_type literal_type)
 {
-    ST_METHOD_HEADER (method) = SET_BITFIELD (ST_METHOD_HEADER (method), literal, literal_type);
+    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), LITERAL, literal_type);
 }
 
 

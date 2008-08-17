@@ -31,8 +31,6 @@
 #include <st-universe.h>
 
 #define  ST_HEADER(oop)           ((struct st_header *) ST_POINTER (oop))
-#define  ST_ARRAYED_OBJECT(oop)   ((struct st_arrayed_object *) ST_POINTER (oop))
-#define  ST_HANDLE(oop)           ((struct st_handle *) ST_POINTER (oop))
 
 /* Every heap-allocated object starts with this header word */
 /* format of mark oop
@@ -51,45 +49,32 @@ struct st_header
     st_oop fields[];
 };
 
-struct st_arrayed_object
-{
-    struct st_header header;
-    st_oop           size;
-};
+#define _ST_OBJECT_SET_BITFIELD(bitfield, field, value) 	  		\
+    (((bitfield) & ~(_ST_OBJECT_##field##_MASK << _ST_OBJECT_##field##_SHIFT)) \
+     | (((value) & _ST_OBJECT_##field##_MASK) << _ST_OBJECT_##field##_SHIFT))
 
-struct st_handle
-{
-    struct st_header header;
-
-    uintptr_t value;
-};
+#define _ST_OBJECT_GET_BITFIELD(bitfield, field)			\
+    (((bitfield) >> _ST_OBJECT_##field##_SHIFT) & _ST_OBJECT_##field##_MASK)
 
 enum
 {
-    st_unused_bits     = 15,
-    st_hash_bits       = 1,
-    st_object_large_bits = 1,
-    st_size_bits       = 8,
-    st_format_bits     = 6,
-    st_tag_bits        = 2,
+    _ST_OBJECT_UNUSED_BITS     = 15,
+    _ST_OBJECT_HASH_BITS       = 1,
+    _ST_OBJECT_LARGE_BITS      = 1,
+    _ST_OBJECT_SIZE_BITS       = 8,
+    _ST_OBJECT_FORMAT_BITS     = 6,
 
-    st_tag_shift       = 0,
-    st_format_shift    = st_tag_bits + st_tag_shift,
-    st_size_shift      = st_format_bits + st_format_shift,
-    st_object_large_shift     = st_size_bits + st_size_shift,
-    st_hash_shift      = st_object_large_bits + st_object_large_shift,
-    st_unused_shift    = st_hash_bits + st_hash_shift,
+    _ST_OBJECT_FORMAT_SHIFT    =  ST_TAG_SIZE,
+    _ST_OBJECT_SIZE_SHIFT      = _ST_OBJECT_FORMAT_BITS + _ST_OBJECT_FORMAT_SHIFT,
+    _ST_OBJECT_LARGE_SHIFT     = _ST_OBJECT_SIZE_BITS   + _ST_OBJECT_SIZE_SHIFT,
+    _ST_OBJECT_HASH_SHIFT      = _ST_OBJECT_LARGE_BITS  + _ST_OBJECT_LARGE_SHIFT,
+    _ST_OBJECT_UNUSED_SHIFT    = _ST_OBJECT_HASH_BITS   + _ST_OBJECT_HASH_SHIFT,
 
-    st_format_mask          = ST_NTH_MASK (st_format_bits),
-    st_format_mask_in_place = st_format_mask << st_format_shift,
-    st_size_mask            = ST_NTH_MASK (st_size_bits),
-    st_size_mask_in_place   = st_size_mask << st_size_shift,
-    st_object_large_mask    = ST_NTH_MASK (st_object_large_bits),
-    st_object_large_mask_in_place  = st_object_large_mask << st_object_large_shift,
-    st_hash_mask            = ST_NTH_MASK (st_hash_bits),
-    st_hash_mask_in_place   = st_hash_mask << st_hash_shift,
-    st_unused_mask          = ST_NTH_MASK (st_unused_bits),
-    st_unused_mask_in_place = st_unused_mask << st_unused_shift,
+    _ST_OBJECT_FORMAT_MASK     = ST_NTH_MASK (_ST_OBJECT_FORMAT_BITS),
+    _ST_OBJECT_SIZE_MASK       = ST_NTH_MASK (_ST_OBJECT_SIZE_BITS),
+    _ST_OBJECT_LARGE_MASK      = ST_NTH_MASK (_ST_OBJECT_LARGE_BITS),
+    _ST_OBJECT_HASH_MASK       = ST_NTH_MASK (_ST_OBJECT_HASH_BITS),
+    _ST_OBJECT_UNUSED_MASK     = ST_NTH_MASK (_ST_OBJECT_UNUSED_BITS),
 };
 
 /* Make sure to update all cased code in VM when adding a new format */
@@ -110,8 +95,8 @@ typedef enum st_format
 } st_format;
 
 
-bool           st_object_equal       (st_oop object, st_oop other);
-st_uint        st_object_hash        (st_oop object);
+bool    st_object_equal       (st_oop object, st_oop other);
+st_uint st_object_hash        (st_oop object);
 
 #define ST_OBJECT_MARK(oop)   (ST_HEADER (oop)->mark)
 #define ST_OBJECT_CLASS(oop)  (ST_HEADER (oop)->class)
@@ -125,59 +110,53 @@ st_oop st_handle_allocate (st_oop class);
 static inline void
 st_object_set_format (st_oop object, st_format format)
 {
-    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_format_mask_in_place) | (format << st_format_shift); 
+    ST_OBJECT_MARK (object) = _ST_OBJECT_SET_BITFIELD (ST_OBJECT_MARK (object), FORMAT, format);
 }
 
 static inline st_format
 st_object_format (st_oop object)
 {
-    return (ST_HEADER (object)->mark >> st_format_shift) & st_format_mask;
+    return _ST_OBJECT_GET_BITFIELD (ST_OBJECT_MARK (object), FORMAT);
 }
 
 static inline void
 st_object_set_large_context (st_oop object, bool is_large)
 {
-    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_object_large_mask_in_place) | (is_large << st_object_large_shift); 
+    ST_OBJECT_MARK (object) = _ST_OBJECT_SET_BITFIELD (ST_OBJECT_MARK (object), LARGE, is_large);
 }
 
 static inline bool
 st_object_large_context (st_oop object)
 {
-    return (ST_OBJECT_MARK (object) >> st_object_large_shift) & st_object_large_mask;
+    return _ST_OBJECT_GET_BITFIELD (ST_OBJECT_MARK (object), LARGE);
 }
 
 static inline void
 st_object_set_hashed (st_oop object, bool hashed)
 {
-    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_hash_mask_in_place) | (hashed << st_hash_shift); 
+    ST_OBJECT_MARK (object) = _ST_OBJECT_SET_BITFIELD (ST_OBJECT_MARK (object), HASH, hashed);
 }
 
 static inline bool
 st_object_is_hashed (st_oop object)
 {
-    return (ST_OBJECT_MARK (object) >> st_hash_shift) & st_hash_mask;
+    return _ST_OBJECT_GET_BITFIELD (ST_OBJECT_MARK (object), HASH);
 }
 
 
 static inline st_uint
 st_object_instance_size (st_oop object)
 {
-    return (ST_OBJECT_MARK (object) >> st_size_shift) & st_size_mask;
+    return _ST_OBJECT_GET_BITFIELD (ST_OBJECT_MARK (object), SIZE);
 }
 
 static inline st_uint
 st_object_set_instance_size (st_oop object, st_uint size)
 {
-    ST_OBJECT_MARK (object) = (ST_OBJECT_MARK (object) & ~st_size_mask_in_place) | (size << st_size_shift); 
+    ST_OBJECT_MARK (object) = _ST_OBJECT_SET_BITFIELD (ST_OBJECT_MARK (object), SIZE, size);
 }
 
 void st_object_initialize_header (st_oop object, st_oop class);
-
-static inline st_oop
-st_arrayed_object_size (st_oop object)
-{
-    return ST_ARRAYED_OBJECT (object)->size;
-}
 
 static inline int
 st_object_tag (st_oop object)

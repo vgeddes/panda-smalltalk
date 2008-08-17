@@ -30,6 +30,7 @@
 #include "st-object.h"
 #include "st-array.h"
 #include "st-array.h"
+#include "st-handle.h"
 
 
 st_list *

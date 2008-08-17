@@ -37,6 +37,7 @@
 #include "st-dictionary.h"
 #include "st-unicode.h"
 #include "st-compiler.h"
+#include "st-handle.h"
 
 #include <math.h>
 #include <string.h>

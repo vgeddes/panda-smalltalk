@@ -33,6 +33,7 @@
 #include "st-symbol.h"
 #include "st-object.h"
 #include "st-character.h"
+#include "st-handle.h"
 #include "st-unicode.h"
 
 void

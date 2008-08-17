@@ -35,6 +35,7 @@
 #include "st-association.h"
 #include "st-array.h"
 #include "st-system.h"
+#include "st-handle.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -664,11 +665,12 @@ garbage_collect (void)
     st_cpu_clear_caches ();
     memory->counter = 0;
 
-    st_log ("gc", "collected:       %uK\n"
-	          "heapSize:        %uK\n"
-	          "marking time:    %.6fs\n"
-	          "compaction time: %.6fs\n"
-	          "remapping time:  %.6fs\n",
+    st_log ("gc", "\n"
+	    "collected:       %uK\n"
+	    "heapSize:        %uK\n"
+	    "marking time:    %.6fs\n"
+	    "compaction time: %.6fs\n"
+	    "remapping time:  %.6fs\n",
 	    memory->bytes_collected / 1024,
 	    (memory->bytes_collected + memory->bytes_allocated) / 1024,
 	    times[0], times[1], times[2]);

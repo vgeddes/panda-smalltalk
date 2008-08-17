@@ -28,10 +28,17 @@
 #include <st-types.h>
 #include <st-object.h>
 
-#define ST_ARRAY(oop) ((struct st_array *) ST_POINTER (oop))
-#define ST_FLOAT_ARRAY(oop) ((struct st_float_array *) ST_POINTER (oop))
-#define ST_WORD_ARRAY(oop) ((struct st_word_array *) ST_POINTER (oop))
-#define ST_BYTE_ARRAY(oop) ((struct st_byte_array *) ST_POINTER (oop))
+#define ST_ARRAYED_OBJECT(oop) ((struct st_arrayed_object *) ST_POINTER (oop))
+#define ST_ARRAY(oop)          ((struct st_array *) ST_POINTER (oop))
+#define ST_FLOAT_ARRAY(oop)    ((struct st_float_array *) ST_POINTER (oop))
+#define ST_WORD_ARRAY(oop)     ((struct st_word_array *) ST_POINTER (oop))
+#define ST_BYTE_ARRAY(oop)     ((struct st_byte_array *) ST_POINTER (oop))
+
+struct st_arrayed_object
+{
+    struct st_header header;
+    st_oop           size;
+};
 
 struct st_array
 {
@@ -61,13 +68,19 @@ struct st_byte_array
     st_uchar bytes[];
 };
 
-bool      st_byte_array_equal   (st_oop object, st_oop other);
-st_uint   st_byte_array_hash    (st_oop object);
-
-st_oop  st_array_allocate (st_oop class, st_uint size);
+bool    st_byte_array_equal     (st_oop object, st_oop other);
+st_uint st_byte_array_hash      (st_oop object);
+st_oop  st_array_allocate       (st_oop class, st_uint size);
 st_oop  st_float_array_allocate (st_oop class, int size);
-st_oop  st_word_array_allocate (st_oop class, int size);
-st_oop  st_byte_array_allocate (st_oop class, int size);
+st_oop  st_word_array_allocate  (st_oop class, int size);
+st_oop  st_byte_array_allocate  (st_oop class, int size);
+
+static inline st_oop
+st_arrayed_object_size (st_oop object)
+{
+    return ST_ARRAYED_OBJECT (object)->size;
+}
+
 
 static inline st_oop *
 st_array_elements (st_oop object)

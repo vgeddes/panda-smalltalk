@@ -30,8 +30,6 @@
 #include <config.h>
 #include <stddef.h>
 
-#define ST_TAG_SIZE 2
-
 /* Check host data model. We only support LP64 at the moment.
  */
 #if (SIZEOF_VOID_P == 4 && SIZEOF_INT == 4)
@@ -57,6 +55,8 @@ enum {
     ST_CHARACTER_TAG,
     ST_MARK_TAG,
 };
+
+#define ST_TAG_SIZE 2
 
 /* basic oop pointer:
  * integral type wide enough to hold a C pointer.
