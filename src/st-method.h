@@ -118,8 +118,8 @@ typedef enum
  */
 
 #define _ST_METHOD_SET_BITFIELD(bitfield, field, value) 	  		\
-    (((bitfield) & ~(_ST_METHOD_##field##_MASK << _ST_METHOD_##field##_SHIFT)) \
-     | (((value) & _ST_METHOD_##field##_MASK) << _ST_METHOD_##field##_SHIFT))
+    ((bitfield) = ((bitfield) & ~(_ST_METHOD_##field##_MASK << _ST_METHOD_##field##_SHIFT)) \
+	 | (((value) & _ST_METHOD_##field##_MASK) << _ST_METHOD_##field##_SHIFT))
 
 #define _ST_METHOD_GET_BITFIELD(bitfield, field)			\
     (((bitfield) >> _ST_METHOD_##field##_SHIFT) & _ST_METHOD_##field##_MASK)
@@ -187,43 +187,43 @@ st_method_get_flags (st_oop method)
 static inline void
 st_method_set_flags (st_oop method, st_method_flags flags)
 {
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), FLAG, flags);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), FLAG, flags);
 }
 
 static inline void
 st_method_set_arg_count (st_oop method, int count)
 {	
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), ARG, count);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), ARG, count);
 }
 
 static inline void
 st_method_set_temp_count (st_oop method, int count)
 {
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), TEMP, count);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), TEMP, count);
 }
 
 static inline void
 st_method_set_large_context (st_oop method, bool is_large)
 {
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), LARGE, is_large);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), LARGE, is_large);
 }
 
 static inline void
 st_method_set_primitive_index (st_oop method, int index)
 {
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), PRIMITIVE, index);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), PRIMITIVE, index);
 }
 
 static inline void
 st_method_set_instvar_index (st_oop method, int index)
 {
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), INSTVAR, index);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), INSTVAR, index);
 }
 
 static inline void
 st_method_set_literal_type (st_oop method, st_method_literal_type literal_type)
 {
-    ST_METHOD_HEADER (method) = _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), LITERAL, literal_type);
+    _ST_METHOD_SET_BITFIELD (ST_METHOD_HEADER (method), LITERAL, literal_type);
 }
 
 

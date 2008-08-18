@@ -79,6 +79,7 @@ main (int argc, char *argv[])
 {
     st_lexer *lexer;
     st_token *token;
+    st_token_type type;
     
     printf ("Enter or pipe some Smalltalk code on stdin:\n\n");
 
@@ -92,13 +93,9 @@ main (int argc, char *argv[])
 
     lexer = st_lexer_new (buffer);
 
-    st_token_type type;
-
     do {
-
 	token = st_lexer_next_token (lexer);
 	type = st_token_get_type (token);
-
 	print_token (lexer, token);
 
     } while (type != ST_TOKEN_EOF);

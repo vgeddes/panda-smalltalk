@@ -343,7 +343,6 @@ file_in_classes (void)
 	    "ByteString.st",
 	    "WideString.st",
 	    "Character.st",
-	    "UnicodeTables.st",
 	    "Behavior.st",
 	    "Boolean.st",
 	    "True.st",

@@ -35,24 +35,21 @@ struct st_float
     struct st_header header;
 
     double value;
-
 };
 
-st_oop  st_float_new       (double value);
-
-st_oop  st_float_allocate (st_oop class);
-
+st_oop st_float_new       (double value);
+st_oop st_float_allocate  (st_oop class);
 
 static inline double
-st_float_value (st_oop f)
+st_float_value (st_oop object)
 {
-    return ST_FLOAT (f)->value;
+    return ST_FLOAT (object)->value;
 }
 
 static inline void
-st_float_set_value (st_oop f, double value)
+st_float_set_value (st_oop object, double value)
 {
-    ST_FLOAT (f)->value = value;
+    ST_FLOAT (object)->value = value;
 }
 
 static inline bool
@@ -69,6 +66,5 @@ st_float_hash (st_oop object)
 {
     return (st_uint) st_float_value (object);
 }
-
 
 #endif /* __ST_FLOAT_H__ */

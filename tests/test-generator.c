@@ -15,10 +15,13 @@
 int
 main (int argc, char *argv[])
 {
-    /* read input from stdin */
-    char buffer[BUF_SIZE];
-    char c;
-    int i = 0;
+    st_compiler_error error;
+    st_lexer *lexer;
+    st_node  *node;
+    st_oop    method;
+    char      buffer[BUF_SIZE];
+    char      c;
+    int       i = 0;
 
     printf ("Enter a Smalltalk method (for the Association class):\n");
 
@@ -28,11 +31,7 @@ main (int argc, char *argv[])
 
     st_initialize ();
     
-    /* compile */
-    st_lexer *lexer = st_lexer_new (buffer);
-    st_compiler_error error;
-    st_node  *node;
-    st_oop   method;
+    lexer = st_lexer_new (buffer);
 
     node = st_parser_parse (lexer, &error);
     if (!node) {
