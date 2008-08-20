@@ -204,7 +204,7 @@ st_memory_allocate (st_uint size)
     memory->p += size;
     memory->counter += (size * sizeof (st_oop));
 
-    return ST_OOP (chunk);
+    return st_tag_pointer (chunk);
 }
 
 st_oop
@@ -250,18 +250,6 @@ st_memory_recycle_context  (st_oop context)
     }
 }
 
-static inline st_oop
-tag (st_oop *ptr)
-{
-    return ST_OOP (ptr);
-}
-
-static inline st_oop *
-detag (st_oop oop)
-{
-    return (st_oop *) ST_POINTER (oop);
-}
-
 static inline bool
 get_bit (st_uchar *bits, st_uint index)
 {
@@ -277,7 +265,7 @@ set_bit (st_uchar *bits, st_uint index)
 static inline st_uint
 bit_index (st_oop object)
 {
-    return detag (object) - memory->start;
+    return st_detag_pointer (object) - memory->start;
 }
 
 static inline bool
@@ -407,13 +395,13 @@ remap_oop (st_oop ref)
 	return ref;
 
     ordinal = compute_ordinal_number (memory, ref); 
-    offset  = memory->offsets[get_block_index (detag (ref))];
-    b = bit_index (tag (offset));
+    offset  = memory->offsets[get_block_index (st_detag_pointer (ref))];
+    b = bit_index (st_tag_pointer (offset));
 
     while (true) {
 	if (get_bit (memory->alloc_bits, b + i)) {
 	    if (++j == ordinal) {
-		return tag (offset + i);
+		return st_tag_pointer (offset + i);
 	    }
 	}
 	i++;
@@ -433,11 +421,11 @@ st_memory_remap (void)
     p = memory->start;
     while (p < memory->p) {
 	p[1] = remap_oop (p[1]);
-	object_contents (tag (p), &oops, &size);
+	object_contents (st_tag_pointer (p), &oops, &size);
 	for (st_uint i = 0; i < size; i++) {
 	    oops[i] = remap_oop (oops[i]);
 	}
-	p += object_size (tag (p));
+	p += object_size (st_tag_pointer (p));
     }
 }
 
@@ -458,20 +446,20 @@ st_memory_compact (void)
 
     p = memory->start;
     
-    while (ismarked (tag (p)) && p < memory->p) {
-	set_alloc_bit (tag (p));
+    while (ismarked (st_tag_pointer (p)) && p < memory->p) {
+	set_alloc_bit (st_tag_pointer (p));
 	if (block < (get_block_index (p) + 1)) {
 	    block = get_block_index (p);
 	    memory->offsets[block] = p;
 	    block += 1;
 	}
-	p += object_size (tag (p));
+	p += object_size (st_tag_pointer (p));
     }
     to = p;
 
-    while (!ismarked (tag (p)) && p < memory->p) {
-	basic_finalize (tag (p));
-	p += object_size (tag (p));
+    while (!ismarked (st_tag_pointer (p)) && p < memory->p) {
+	basic_finalize (st_tag_pointer (p));
+	p += object_size (st_tag_pointer (p));
     }
     from = p;
 
@@ -480,13 +468,13 @@ st_memory_compact (void)
 
     while (from < memory->p) {
 
-	if (ismarked (tag (from))) {
+	if (ismarked (st_tag_pointer (from))) {
 
-	    if (st_object_is_hashed (tag (from)))
-		st_identity_hashtable_rehash_object (memory->ht, tag (from), tag (to));
+	    if (st_object_is_hashed (st_tag_pointer (from)))
+		st_identity_hashtable_rehash_object (memory->ht, st_tag_pointer (from), st_tag_pointer (to));
 
-	    set_alloc_bit (tag (to));
-	    size = object_size (tag (from));
+	    set_alloc_bit (st_tag_pointer (to));
+	    size = object_size (st_tag_pointer (from));
 	    st_oops_move (to, from, size);
 
 	    if (block < (get_block_index (from) + 1)) {
@@ -498,10 +486,10 @@ st_memory_compact (void)
 	    to   += size;
 	    from += size;
 	} else {
-	    basic_finalize (tag (from));
-	    if (st_object_is_hashed (tag (from)))
-	    	st_identity_hashtable_remove (memory->ht, tag (from));
-	    from += object_size (tag (from));
+	    basic_finalize (st_tag_pointer (from));
+	    if (st_object_is_hashed (st_tag_pointer (from)))
+	    	st_identity_hashtable_remove (memory->ht, st_tag_pointer (from));
+	    from += object_size (st_tag_pointer (from));
 	}
     }
 

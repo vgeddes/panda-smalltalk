@@ -71,7 +71,16 @@ typedef unsigned int     st_uint;
 typedef void *           st_pointer;
 typedef st_uint          st_unichar;
 
-#define ST_POINTER(oop)          ((st_pointer) ((oop) - ST_POINTER_TAG))
-#define ST_OOP(ptr)              (((st_oop) (ptr)) + ST_POINTER_TAG)
+static inline st_oop
+st_tag_pointer (st_pointer p)
+{
+    return ((st_oop) p) + ST_POINTER_TAG;
+}
+
+static inline st_oop *
+st_detag_pointer (st_oop oop)
+{
+    return (st_oop *) (oop - ST_POINTER_TAG);
+}
 
 #endif /* __ST_TYPES_H__ */

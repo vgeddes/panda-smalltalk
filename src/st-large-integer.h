@@ -29,7 +29,7 @@
 #include <st-object.h>
 #include <st-types.h>
 
-#define ST_LARGE_INTEGER(oop) ((struct st_large_integer *) ST_POINTER (oop))
+#define ST_LARGE_INTEGER(oop) ((struct st_large_integer *) st_detag_pointer (oop))
 
 struct st_large_integer
 {

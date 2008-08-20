@@ -58,9 +58,9 @@ struct st_block_context
     st_oop stack[];
 };
 
-#define ST_CONTEXT_PART(oop)       ((struct st_context_part *)   ST_POINTER (oop))
-#define ST_METHOD_CONTEXT(oop)     ((struct st_method_context *) ST_POINTER (oop))
-#define ST_BLOCK_CONTEXT(oop)      ((struct st_block_context *)  ST_POINTER (oop))
+#define ST_CONTEXT_PART(oop)       ((struct st_context_part *)   st_detag_pointer (oop))
+#define ST_METHOD_CONTEXT(oop)     ((struct st_method_context *) st_detag_pointer (oop))
+#define ST_BLOCK_CONTEXT(oop)      ((struct st_block_context *)  st_detag_pointer (oop))
 
 
 #define ST_CONTEXT_PART_SENDER(oop)  (ST_CONTEXT_PART (oop)->sender)

@@ -33,9 +33,9 @@
 #include <st-float.h>
 #include <st-large-integer.h>
 
-#define ST_BEHAVIOR(oop)  ((struct st_behavior *)  ST_POINTER (oop))
-#define ST_CLASS(oop)     ((struct st_class *)     ST_POINTER (oop))
-#define ST_METACLASS(oop) ((struct st_metaclass *) ST_POINTER (oop))
+#define ST_BEHAVIOR(oop)  ((struct st_behavior *)  st_detag_pointer (oop))
+#define ST_CLASS(oop)     ((struct st_class *)     st_detag_pointer (oop))
+#define ST_METACLASS(oop) ((struct st_metaclass *) st_detag_pointer (oop))
 
 struct st_behavior
 {

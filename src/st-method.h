@@ -29,7 +29,7 @@
 #include <st-object.h>
 #include <st-array.h>
 
-#define ST_METHOD(oop) ((struct st_method *) (ST_POINTER (oop)))
+#define ST_METHOD(oop) ((struct st_method *) (st_detag_pointer (oop)))
 
 struct st_method
 {

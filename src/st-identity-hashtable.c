@@ -24,25 +24,12 @@
 
 #include "st-identity-hashtable.h"
 #include "st-utils.h"
+#include "st-dictionary.h"
 #include "st-universe.h"
 
 // power of 2
 #define INITIAL_CAPACITY 256
 
-// prime number - 1
-#define ADVANCE_SIZE  10672
-
-static inline st_oop
-tag (st_oop *ptr)
-{
-    return ST_OOP (ptr);
-}
-
-static inline st_oop *
-detag (st_oop oop)
-{
-    return (st_oop *) ST_POINTER (oop);
-}
 
 st_identity_hashtable *
 st_identity_hashtable_new (void)
@@ -68,12 +55,12 @@ identity_hashtable_find (st_identity_hashtable *ht, st_oop object)
     st_uint mask, i;
 
     mask = ht->alloc - 1;
-    i = (detag (object) - memory->start) & mask;
+    i = (st_detag_pointer (object) - memory->start) & mask;
 
     while (true) {
 	if (ht->table[i].object == 0 || object == ht->table[i].object)
 	    return i;
-	i = (i + ADVANCE_SIZE) & mask;
+	i = (i + ST_ADVANCE_SIZE) & mask;
     }
 }
 
@@ -86,12 +73,12 @@ identity_hashtable_find_available_cell (st_identity_hashtable *ht, st_oop object
     st_uint mask, i;
 
     mask = ht->alloc - 1;
-    i = (detag (object) - memory->start) & mask;
+    i = (st_detag_pointer (object) - memory->start) & mask;
 
     while (true) {
 	if (ht->table[i].object == 0 || ht->table[i].object == (st_oop) ht)
 	    return i;
-	i = (i + ADVANCE_SIZE) & mask;
+	i = (i + ST_ADVANCE_SIZE) & mask;
     }
 }
 

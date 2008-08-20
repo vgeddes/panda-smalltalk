@@ -38,10 +38,7 @@
 #define ARRAY(collection)    (ST_HASHED_COLLECTION (collection)->array)
 #define ARRAY_SIZE(array)    (st_smi_value (ST_ARRAYED_OBJECT (array)->size))
 
-// prime number - 1
-#define ADVANCE_SIZE         106720 
-
-#define ST_HASHED_COLLECTION(oop) ((struct st_hashed_collection *) ST_POINTER (oop))
+#define ST_HASHED_COLLECTION(oop) ((struct st_hashed_collection *) st_detag_pointer (oop))
 
 struct st_hashed_collection
 {
@@ -57,8 +54,6 @@ static st_uint  dict_find (st_oop dict, st_oop object);
 static st_uint  set_find  (st_oop set, st_oop object);
 static void     dict_no_check_add    (st_oop dict, st_oop object);
 static void     set_no_check_add     (st_oop set, st_oop object);
-
-
 
 /* Common methods */
 
@@ -131,7 +126,7 @@ dict_find (st_oop dict, st_oop key)
 	el = st_array_at (ARRAY (dict), i);
 	if (el == ST_NIL || key == ST_ASSOCIATION_KEY (el))
 	    return i;
-	i = ((i + ADVANCE_SIZE) & mask) + 1;
+	i = ((i + ST_ADVANCE_SIZE) & mask) + 1;
     }
 }
 
@@ -206,7 +201,7 @@ set_find_cstring (st_oop set, const char *string)
 	el = st_array_at (ARRAY (set), i);
 	if (el == ST_NIL || (strcmp (st_byte_array_bytes (el), string) == 0))
 	    return i;
-	i = ((i + ADVANCE_SIZE) & mask) + 1;
+	i = ((i + ST_ADVANCE_SIZE) & mask) + 1;
     }
 }
 
@@ -223,7 +218,7 @@ set_find (st_oop set, st_oop object)
 	el = st_array_at (ARRAY (set), i);
 	if (el == ST_NIL || el == object)
 	    return i;
-	i = ((i + ADVANCE_SIZE) & mask) + 1;
+	i = ((i + ST_ADVANCE_SIZE) & mask) + 1;
     }
 }
 

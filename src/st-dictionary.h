@@ -27,6 +27,9 @@
 
 #include <st-types.h>
 
+// prime number - 1
+#define ST_ADVANCE_SIZE 106720
+
 st_oop  st_dictionary_new        (void);
 st_oop  st_dictionary_new_with_capacity (int capacity);
 st_oop  st_dictionary_at         (st_oop dict, st_oop key);

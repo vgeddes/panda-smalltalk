@@ -147,14 +147,30 @@ static st_oop
 lookup_method (st_oop class)
 {
     register struct st_cpu *cpu = &__cpu;
-    st_oop method;
-    st_oop parent = class;
-    st_uint index;
+    st_oop  method, dict, parent;
+    st_uint hash;
+
+    parent = class;
+    hash = st_byte_array_hash (cpu->message_selector);
 
     while (parent != ST_NIL) {
-	method = st_dictionary_at (ST_BEHAVIOR_METHOD_DICTIONARY (parent), cpu->message_selector);
-	if (method != ST_NIL)
-	    return method;
+
+	st_oop el;
+	st_uint mask, i;
+
+	dict = ST_BEHAVIOR_METHOD_DICTIONARY (parent);
+	mask = st_smi_value (st_arrayed_object_size (ST_OBJECT_FIELDS (dict)[2])) - 1;
+	i    = (hash & mask) + 1;
+
+	while (true) {
+	    el = st_array_at (ST_OBJECT_FIELDS (dict)[2], i);
+	    if (el == ST_NIL || el == (uintptr_t) ST_OBJECT_FIELDS (dict)[2])
+		break;
+	    if (cpu->message_selector == ST_ASSOCIATION_KEY (el))
+		return ST_ASSOCIATION_VALUE (el);
+	    i = ((i + ST_ADVANCE_SIZE) & mask) + 1;
+	}
+
 	parent = ST_BEHAVIOR_SUPERCLASS (parent);
     }
 

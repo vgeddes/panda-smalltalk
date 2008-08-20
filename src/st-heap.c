@@ -27,7 +27,6 @@
 #include "st-utils.h"
 #include "st-system.h"
 
-
 #define PAGE_SIZE (st_system_pagesize ())
 
 static inline st_uint

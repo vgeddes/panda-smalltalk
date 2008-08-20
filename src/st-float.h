@@ -28,7 +28,7 @@
 #include <st-types.h>
 #include <st-object.h>
 
-#define ST_FLOAT(oop) ((struct st_float *) ST_POINTER (oop))
+#define ST_FLOAT(oop) ((struct st_float *) st_detag_pointer (oop))
 
 struct st_float
 {

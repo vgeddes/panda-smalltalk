@@ -30,7 +30,7 @@
 #include <st-utils.h>
 #include <st-universe.h>
 
-#define ST_HEADER(oop)           ((struct st_header *) ST_POINTER (oop))
+#define ST_HEADER(oop)        ((struct st_header *) st_detag_pointer (oop))
 #define ST_OBJECT_MARK(oop)   (ST_HEADER (oop)->mark)
 #define ST_OBJECT_CLASS(oop)  (ST_HEADER (oop)->class)
 #define ST_OBJECT_FIELDS(oop) (ST_HEADER (oop)->fields)

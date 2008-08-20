@@ -28,11 +28,11 @@
 #include <st-types.h>
 #include <st-object.h>
 
-#define ST_ARRAYED_OBJECT(oop) ((struct st_arrayed_object *) ST_POINTER (oop))
-#define ST_ARRAY(oop)          ((struct st_array *) ST_POINTER (oop))
-#define ST_FLOAT_ARRAY(oop)    ((struct st_float_array *) ST_POINTER (oop))
-#define ST_WORD_ARRAY(oop)     ((struct st_word_array *) ST_POINTER (oop))
-#define ST_BYTE_ARRAY(oop)     ((struct st_byte_array *) ST_POINTER (oop))
+#define ST_ARRAYED_OBJECT(oop) ((struct st_arrayed_object *) st_detag_pointer (oop))
+#define ST_ARRAY(oop)          ((struct st_array *) st_detag_pointer (oop))
+#define ST_FLOAT_ARRAY(oop)    ((struct st_float_array *) st_detag_pointer (oop))
+#define ST_WORD_ARRAY(oop)     ((struct st_word_array *) st_detag_pointer (oop))
+#define ST_BYTE_ARRAY(oop)     ((struct st_byte_array *) st_detag_pointer (oop))
 
 struct st_arrayed_object
 {
