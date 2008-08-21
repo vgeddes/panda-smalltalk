@@ -48,7 +48,7 @@ read_compile_stdin (void)
     string = st_strconcat ("doIt ^ [", buffer, "] value", NULL);
 
     if (!st_compile_string (ST_UNDEFINED_OBJECT_CLASS, string, &error)) {
-	fprintf (stderr, "test-processor:%i: %s\n",
+	fprintf (stderr, "panda:%i: %s\n",
 		 error.line, error.message);
 	exit (1);
     }
