@@ -1000,8 +1000,8 @@ generate_message_send (Generator *gt, st_bytecode *code, st_node *node)
     }
 
     /* check if message is a special */
-    for (int i = 0; i < ST_N_ELEMENTS (__cpu.selectors); i++) {
-	if (!node->message.super_send && node->message.selector == __cpu.selectors[i]) {
+    for (int i = 0; i < ST_N_ELEMENTS (__machine.selectors); i++) {
+	if (!node->message.super_send && node->message.selector == __machine.selectors[i]) {
 	    emit (code, SEND_PLUS + i);
 	    goto out;
 	}
@@ -1627,7 +1627,7 @@ print_bytecodes (st_oop literals, st_uchar *codes, int len)
 	case SEND_NEW_ARG:
 
 	    printf (FORMAT (ip), ip[0]);
-	    printf ("sendSpecial: #%s", st_byte_array_bytes (__cpu.selectors[ip[0] - SEND_PLUS]));
+	    printf ("sendSpecial: #%s", st_byte_array_bytes (__machine.selectors[ip[0] - SEND_PLUS]));
 
 	    NEXT (ip);
 

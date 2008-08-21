@@ -520,7 +520,7 @@ st_memory_mark (void)
 
     for (st_uint i = 0; i < memory->roots->length; i++)
 	stack[sp++] = (st_oop) ptr_array_get_index (memory->roots, i);
-    stack[sp++] = __cpu.context;
+    stack[sp++] = __machine.context;
 
     while (sp > 0) {
 	object = stack[--sp];
@@ -549,29 +549,29 @@ st_memory_mark (void)
 }
 
 static void
-remap_cpu (struct st_cpu *cpu)
+remap_machine (struct st_machine *machine)
 {
     st_oop context, home;
 
-    context = remap_oop (cpu->context);
+    context = remap_oop (machine->context);
     if (ST_OBJECT_CLASS (context) == ST_BLOCK_CONTEXT_CLASS) {
 	home = ST_BLOCK_CONTEXT_HOME (context);
-	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
-	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-	cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
-	cpu->stack    = ST_BLOCK_CONTEXT_STACK (context);
+	machine->method   = ST_METHOD_CONTEXT_METHOD (home);
+	machine->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
+	machine->temps    = ST_METHOD_CONTEXT_STACK (home);
+	machine->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
-	cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
-	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
-	cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
-	cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
+	machine->method   = ST_METHOD_CONTEXT_METHOD (context);
+	machine->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
+	machine->temps    = ST_METHOD_CONTEXT_STACK (context);
+	machine->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
 
-    cpu->context  = context;
-    cpu->bytecode = st_method_bytecode_bytes (cpu->method);
-    cpu->message_receiver = remap_oop (cpu->message_receiver);
-    cpu->message_selector = remap_oop (cpu->message_selector);
-    cpu->new_method = remap_oop (cpu->new_method);
+    machine->context  = context;
+    machine->bytecode = st_method_bytecode_bytes (machine->method);
+    machine->message_receiver = remap_oop (machine->message_receiver);
+    machine->message_selector = remap_oop (machine->message_selector);
+    machine->new_method = remap_oop (machine->new_method);
 }
 
 static void
@@ -579,11 +579,11 @@ remap_globals (void)
 {
     st_uint i;
 
-    for (i = 0; i < ST_N_ELEMENTS (__cpu.globals); i++)
-	__cpu.globals[i] = remap_oop (__cpu.globals[i]);
+    for (i = 0; i < ST_N_ELEMENTS (__machine.globals); i++)
+	__machine.globals[i] = remap_oop (__machine.globals[i]);
 
-    for (i = 0; i < ST_N_ELEMENTS (__cpu.selectors); i++)
-	__cpu.selectors[i] = remap_oop (__cpu.selectors[i]);
+    for (i = 0; i < ST_N_ELEMENTS (__machine.selectors); i++)
+	__machine.selectors[i] = remap_oop (__machine.selectors[i]);
 
     for (i = 0; i < memory->roots->length; i++) {
 	ptr_array_set_index (memory->roots, i,
@@ -640,13 +640,13 @@ garbage_collect (void)
     timer_start (&tm);
     st_memory_remap ();
     remap_globals ();
-    remap_cpu (&__cpu);
+    remap_machine (&__machine);
     timer_stop (&tm);
 
     times[2] = st_timespec_to_double_seconds (&tm);
     st_timespec_add (&memory->total_pause_time, &tm, &memory->total_pause_time);
 
-    st_cpu_clear_caches ();
+    st_machine_clear_caches (&__machine);
     memory->counter = 0;
 
     st_log ("gc", "\n"

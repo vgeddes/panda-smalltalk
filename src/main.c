@@ -2,7 +2,7 @@
 #include <st-types.h>
 #include <st-symbol.h>
 #include <st-compiler.h>
-#include <st-cpu.h>
+#include <st-machine.h>
 #include <st-array.h>
 #include <st-lexer.h>
 #include <st-node.h>
@@ -77,15 +77,15 @@ main (int argc, char *argv[])
 
     read_compile_stdin ();
 
-    st_cpu_initialize ();
-    st_cpu_main ();
+    st_machine_initialize (&__machine);
+    st_machine_main (&__machine);
     
     /* inspect the returned value on top of the stack */
-    value = ST_STACK_PEEK ((&__cpu));
+    value = ST_STACK_PEEK ((&__machine));
     if (st_object_format (value) != ST_FORMAT_BYTE_ARRAY)
 	abort ();
 
-    if (__cpu.success) {
+    if (__machine.success) {
 	putchar ('\n');
 	printf ("result: %s\n", (char *) st_byte_array_bytes (value));
     }

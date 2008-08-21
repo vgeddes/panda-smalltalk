@@ -1,5 +1,5 @@
 /*
- * st-cpu.h
+ * st-machine.h
  *
  * Copyright (C) 2008 Vincent Geddes
  *
@@ -45,7 +45,10 @@ typedef struct st_method_cache
 
 } st_method_cache;
 
-struct st_cpu {
+
+typedef struct st_machine st_machine;
+
+struct st_machine {
 
     st_oop  context;
     st_oop  receiver;
@@ -75,18 +78,18 @@ struct st_cpu {
     st_oop globals[ST_NUM_GLOBALS];
     st_oop selectors[ST_NUM_SELECTORS];
 
-} __cpu;
+} __machine;
 
-#define ST_STACK_POP(cpu)          (cpu->stack[--cpu->sp])
-#define ST_STACK_PUSH(cpu, oop)    (cpu->stack[cpu->sp++] = oop)
-#define ST_STACK_PEEK(cpu)         (cpu->stack[cpu->sp-1])
-#define ST_STACK_UNPOP(cpu, count) (cpu->sp += count)
+#define ST_STACK_POP(machine)          (machine->stack[--machine->sp])
+#define ST_STACK_PUSH(machine, oop)    (machine->stack[machine->sp++] = oop)
+#define ST_STACK_PEEK(machine)         (machine->stack[machine->sp-1])
+#define ST_STACK_UNPOP(machine, count) (machine->sp += count)
 
-void   st_cpu_main               (void);
-void   st_cpu_initialize         (void);
-void   st_cpu_set_active_context (st_oop context);
-void   st_cpu_execute_method     (void);
-st_oop st_cpu_lookup_method      (st_oop class);
-void   st_cpu_clear_caches       (void);
+void   st_machine_main               (st_machine *machine);
+void   st_machine_initialize         (st_machine *machine);
+void   st_machine_set_active_context (st_machine *machine, st_oop context);
+void   st_machine_execute_method     (st_machine *machine);
+st_oop st_machine_lookup_method      (st_machine *machine, st_oop class);
+void   st_machine_clear_caches       (st_machine *machine);
 
 #endif /* __ST_CPU_H__ */

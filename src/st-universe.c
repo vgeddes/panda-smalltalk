@@ -40,7 +40,7 @@
 #include "st-compiler.h"
 #include "st-memory.h"
 #include "st-context.h"
-#include "st-cpu.h"
+#include "st-machine.h"
 
 #include <stdlib.h>
 #include <string.h>
