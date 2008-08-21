@@ -30,7 +30,7 @@
 
 struct st_association
 {
-    struct st_header header;
+    struct st_header __parent__;
 
     st_oop key;
     st_oop value;

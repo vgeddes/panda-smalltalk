@@ -33,7 +33,7 @@
 
 struct st_method
 {
-    struct st_header object_header;
+    struct st_header __parent__;
 
     st_oop header;
     st_oop bytecode;

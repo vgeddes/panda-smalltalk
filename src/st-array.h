@@ -36,34 +36,34 @@
 
 struct st_arrayed_object
 {
-    struct st_header header;
+    struct st_header __parent__;
     st_oop           size;
 };
 
 struct st_array
 {
-    struct st_arrayed_object header;
+    struct st_arrayed_object __parent__;
 
     st_oop elements[];
 };
 
 struct st_word_array
 {
-    struct st_arrayed_object header;
+    struct st_arrayed_object __parent__;
 
     st_uint elements[];
 };
 
 struct st_float_array
 {
-    struct st_arrayed_object header;
+    struct st_arrayed_object __parent__;
 
     double elements[];
 };
 
 struct st_byte_array
 {
-    struct st_arrayed_object header;
+    struct st_arrayed_object __parent__;
 
     st_uchar bytes[];
 };

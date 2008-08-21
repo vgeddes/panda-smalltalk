@@ -53,9 +53,7 @@ struct st_cpu {
 
     st_uchar *bytecode;
 
-    st_oop *literals;
     st_oop *temps;
-
     st_oop *stack;
 
     st_oop  lookup_class;

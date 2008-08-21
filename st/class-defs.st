@@ -150,7 +150,7 @@ Class named: 'MethodContext'
 
 Class named: 'BlockContext'
 	  superclass: 'ContextPart'
-	  instanceVariableNames: 'initialIP argcount caller home'!
+	  instanceVariableNames: 'initialIP argcount home'!
 
 Class named: 'CompiledMethod'
 	  superclass: 'Object'

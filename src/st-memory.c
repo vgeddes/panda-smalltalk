@@ -366,22 +366,20 @@ object_contents (st_oop object, st_oop **oops, st_uint *size)
 static inline st_uint
 compute_ordinal_number (st_memory *memory, st_oop ref)
 {
-    st_uint i, ordinal = 0;
-    st_ulong b, k;
+    st_uint i, k, ordinal;
 
-    b = bit_index (ref) & ~(BLOCK_SIZE_OOPS - 1);
+    ordinal = 0;
     k = bit_index (ref);
-    
-    for (i = 0; i < BLOCK_SIZE_OOPS; i++) {
-	if (get_bit (memory->mark_bits, b + i)) {
+    i = k & ~(BLOCK_SIZE_OOPS - 1);
+
+    while (true) {
+	if (get_bit (memory->mark_bits, i)) {
 	    ordinal++;
-	    if ((b + i) == k)
+	    if (i == k)
 		return ordinal;
 	}
+	i++;
     }
-
-    abort ();
-    return 0;
 }
 
 static inline st_oop
@@ -560,13 +558,11 @@ remap_cpu (struct st_cpu *cpu)
 	home = ST_BLOCK_CONTEXT_HOME (context);
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
 	cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
 	cpu->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
-	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
 	cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
 	cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
     }

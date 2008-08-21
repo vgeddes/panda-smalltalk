@@ -32,7 +32,7 @@
 
 struct st_float
 {
-    struct st_header header;
+    struct st_header __parent__;
 
     double value;
 };

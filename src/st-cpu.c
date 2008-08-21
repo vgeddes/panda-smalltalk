@@ -104,10 +104,7 @@ block_context_new (st_uint initial_ip, st_uint argcount)
 
     ST_BLOCK_CONTEXT_INITIALIP (context) = st_smi_new (initial_ip);
     ST_BLOCK_CONTEXT_ARGCOUNT (context)  = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (context)    = ST_NIL;
     ST_BLOCK_CONTEXT_HOME (context)      = home;
-
-    /* don't nil stack, not needed */
     
     return context;
 }
@@ -251,13 +248,11 @@ st_cpu_set_active_context (st_oop context)
 	home = ST_BLOCK_CONTEXT_HOME (context);
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (home);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (home);
-	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
 	cpu->temps    = ST_METHOD_CONTEXT_STACK (home);
 	cpu->stack    = ST_BLOCK_CONTEXT_STACK (context);
     } else {
 	cpu->method   = ST_METHOD_CONTEXT_METHOD (context);
 	cpu->receiver = ST_METHOD_CONTEXT_RECEIVER (context);
-	cpu->literals = st_array_elements (ST_METHOD_LITERALS (cpu->method));
 	cpu->temps    = ST_METHOD_CONTEXT_STACK (context);
 	cpu->stack    = ST_METHOD_CONTEXT_STACK (context);
     }
@@ -501,15 +496,15 @@ st_cpu_main (void)
 	
 	CASE (STORE_LITERAL_VAR) {
 	    
-	    ST_ASSOCIATION_VALUE (cpu->literals[ip[1]]) = STACK_PEEK ();
-	    
+	    ST_ASSOCIATION_VALUE (st_array_elements (ST_METHOD_LITERALS (cpu->method))[ip[1]]) = STACK_PEEK ();
+
 	    ip += 2;
 	    NEXT ();
 	}
 	    
 	CASE (STORE_POP_LITERAL_VAR) {
 	    
-	    ST_ASSOCIATION_VALUE (cpu->literals[ip[1]]) = STACK_POP ();
+	    ST_ASSOCIATION_VALUE (st_array_elements (ST_METHOD_LITERALS (cpu->method))[ip[1]]) = STACK_POP ();
 	    
 	    ip += 2;
 	    NEXT ();
@@ -565,7 +560,7 @@ st_cpu_main (void)
 
 	CASE (PUSH_LITERAL_CONST) {
     
-	    STACK_PUSH (cpu->literals[ip[1]]);
+	    STACK_PUSH (st_array_elements (ST_METHOD_LITERALS (cpu->method))[ip[1]]);
 	    
 	    ip += 2;
 	    NEXT ();
@@ -575,7 +570,7 @@ st_cpu_main (void)
 	    
 	    st_oop var;
 	    
-	    var = ST_ASSOCIATION_VALUE (cpu->literals[ip[1]]);
+	    var = ST_ASSOCIATION_VALUE (st_array_elements (ST_METHOD_LITERALS (cpu->method))[ip[1]]);
 	    
 	    STACK_PUSH (var);	    
 	    
@@ -1026,7 +1021,7 @@ st_cpu_main (void)
 	    st_oop *arguments;
 
 	    cpu->message_argcount = ip[1];
-	    cpu->message_selector = cpu->literals[ip[2]];
+	    cpu->message_selector = st_array_elements (ST_METHOD_LITERALS (cpu->method))[ip[2]];
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 	    cpu->lookup_class = st_object_class (cpu->message_receiver);
 	    ip += 3;
@@ -1082,11 +1077,11 @@ st_cpu_main (void)
 	    st_oop index;
 
 	    cpu->message_argcount = ip[1];
-	    cpu->message_selector = cpu->literals[ip[2]];
+	    cpu->message_selector = st_array_elements (ST_METHOD_LITERALS (cpu->method))[ip[2]];
 	    cpu->message_receiver = sp[- cpu->message_argcount - 1];
 
 	    index = st_smi_value (st_arrayed_object_size (ST_METHOD_LITERALS (cpu->method))) - 1;
-	    cpu->lookup_class = ST_BEHAVIOR_SUPERCLASS (cpu->literals[index]);
+	    cpu->lookup_class = ST_BEHAVIOR_SUPERCLASS (st_array_elements (ST_METHOD_LITERALS (cpu->method))[index]);
 
 	    ip += 3;
 
@@ -1164,7 +1159,7 @@ st_cpu_main (void)
 	    st_oop value;
 	    st_oop home;
 	    
-	    caller = ST_BLOCK_CONTEXT_CALLER (cpu->context);
+	    caller = ST_CONTEXT_PART_SENDER (cpu->context);
 	    value = STACK_PEEK ();
 
 	    st_cpu_set_active_context (caller);

@@ -33,7 +33,7 @@
 
 struct st_large_integer
 {
-    struct st_header header;
+    struct st_header __parent__;
 
     mp_int value;
 };

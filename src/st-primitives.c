@@ -2025,7 +2025,7 @@ BlockContext_value (struct st_cpu *cpu)
     
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (block) = cpu->context;
+    ST_CONTEXT_PART_SENDER (block) = cpu->context;
 
     st_cpu_set_active_context (block);
 }
@@ -2059,7 +2059,7 @@ BlockContext_valueWithArguments (struct st_cpu *cpu)
 
     ST_CONTEXT_PART_IP (block) = ST_BLOCK_CONTEXT_INITIALIP (block);
     ST_CONTEXT_PART_SP (block) = st_smi_new (argcount);
-    ST_BLOCK_CONTEXT_CALLER (block) = cpu->context;
+    ST_CONTEXT_PART_SENDER (block) = cpu->context;
 
     st_cpu_set_active_context (block);
 }

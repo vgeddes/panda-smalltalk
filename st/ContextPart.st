@@ -50,6 +50,16 @@ printTraceBack
 	^ stream contents!
 
 
+ContextPart method!
+terminate
+	sender := nil.
+	ip := nil!
+
+ContextPart method!
+cannotReturn
+	self error: 'cannot return'!
+
+
 MethodContext method!
 receiver
 	^ receiver!
@@ -83,7 +93,7 @@ argumentCount
 
 BlockContext method!
 caller
-	^ caller!
+	^ sender!
 
 BlockContext method!
 home

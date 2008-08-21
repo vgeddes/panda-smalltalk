@@ -30,7 +30,7 @@
 
 struct st_context_part
 {
-    struct st_header header;
+    struct st_header __parent__;
 
     st_oop sender;
     st_oop ip;
@@ -52,7 +52,6 @@ struct st_block_context
     struct st_context_part __parent__;
     st_oop initial_ip;
     st_oop argcount;
-    st_oop caller;
     st_oop home;
 
     st_oop stack[];
@@ -73,7 +72,6 @@ struct st_block_context
 
 #define ST_BLOCK_CONTEXT_INITIALIP(oop) (ST_BLOCK_CONTEXT (oop)->initial_ip)
 #define ST_BLOCK_CONTEXT_ARGCOUNT(oop)  (ST_BLOCK_CONTEXT (oop)->argcount)
-#define ST_BLOCK_CONTEXT_CALLER(oop)    (ST_BLOCK_CONTEXT (oop)->caller)
 #define ST_BLOCK_CONTEXT_HOME(oop)      (ST_BLOCK_CONTEXT (oop)->home)
 #define ST_BLOCK_CONTEXT_STACK(oop)     (ST_BLOCK_CONTEXT (oop)->stack)
 
