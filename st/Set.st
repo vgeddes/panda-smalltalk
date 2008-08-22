@@ -42,7 +42,7 @@ include: anObject
 
 "removing"
 
-HashedCollection method!
+Set method!
 remove: anObject ifAbsent: aBlock
 	| index |
 
@@ -53,6 +53,11 @@ remove: anObject ifAbsent: aBlock
 	self removeAtIndex: index.
 
 	^ anObject!
+
+"converting"
+Set method!
+asSet
+	^ self!
 
 
 "private"

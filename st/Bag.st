@@ -60,3 +60,14 @@ size
 Bag method!
 initialize: requestedCapacity
 	contents := Dictionary new: (self class minimumCapacity max: requestedCapacity)!
+
+
+"converting"
+
+Bag method!
+asBag
+	^ self!
+
+Bag method!
+asSet
+	^ contents keys!

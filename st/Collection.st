@@ -30,6 +30,10 @@ with: firstObject with: secondObject with: thirdObject with: fourthObject
 	add: fourthObject;
 	yourself!
 
+Collection classMethod!
+withAll: aCollection
+	^ (self new: aCollection size) addAll: aCollection; yourself!
+
 "adding"
 
 Collection method!
@@ -113,6 +117,26 @@ select: aBlock
 	newCollection := self species new.
 	self do: [ :each | (aBlock value: each) ifTrue: [newCollection add: each ]].
 	^ newCollection!
+
+
+"converting"
+
+Collection method!
+asBag
+	^ Bag withAll: self!
+
+Collection method!
+asSet
+	^ Set withAll: self!
+
+Collection method!
+asArray
+	| array index |
+	array := Array new: self size.
+	index := 0.
+	self do: [ :item | array at: (index := index + 1) put: item ].
+	^ array!
+
 
 "printing"
 Collection method!

@@ -18,3 +18,7 @@ at: anInteger put: anObject
 	anInteger isNumber
 		ifTrue: [ self at: anInteger asInteger put: anObject]
 		ifFalse: [self error: 'non-integer index']!
+
+Array method!
+asArray
+	^ self!

@@ -36,6 +36,10 @@ with: firstObject with: secondObject with: thirdObject with: fourthObject
 	at: 4 put: fourthObject;
 	yourself!
 
+ArrayedCollection classMethod!
+withAll: aCollection
+	^  (self new: aCollection size) replaceFrom: 1 to: aCollection size with: aCollection startingAt: 1! 
+
 "adding"
 
 ArrayedCollection method!
