@@ -1548,7 +1548,7 @@ Object_perform_withArguments (st_machine *machine)
 	method = ST_METHOD_CONTEXT_METHOD (machine->context);
 
     array_size = st_smi_value (st_arrayed_object_size (array));
-    set_success (machine, (machine->sp + array_size - 1) < (st_method_get_large_context (method) ? 32 : 12));
+    set_success (machine, (machine->sp + array_size - 1) < 32);
 
     if (machine->success) {
 	

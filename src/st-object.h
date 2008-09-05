@@ -63,19 +63,16 @@ enum
 {
     _ST_OBJECT_UNUSED_BITS   = 15,
     _ST_OBJECT_HASH_BITS     = 1,
-    _ST_OBJECT_LARGE_BITS    = 1,
     _ST_OBJECT_SIZE_BITS     = 8,
     _ST_OBJECT_FORMAT_BITS   = 6,
 
     _ST_OBJECT_FORMAT_SHIFT  =  ST_TAG_SIZE,
     _ST_OBJECT_SIZE_SHIFT    = _ST_OBJECT_FORMAT_BITS + _ST_OBJECT_FORMAT_SHIFT,
-    _ST_OBJECT_LARGE_SHIFT   = _ST_OBJECT_SIZE_BITS   + _ST_OBJECT_SIZE_SHIFT,
-    _ST_OBJECT_HASH_SHIFT    = _ST_OBJECT_LARGE_BITS  + _ST_OBJECT_LARGE_SHIFT,
+    _ST_OBJECT_HASH_SHIFT    = _ST_OBJECT_SIZE_BITS  + _ST_OBJECT_SIZE_SHIFT,
     _ST_OBJECT_UNUSED_SHIFT  = _ST_OBJECT_HASH_BITS   + _ST_OBJECT_HASH_SHIFT,
 
     _ST_OBJECT_FORMAT_MASK   = ST_NTH_MASK (_ST_OBJECT_FORMAT_BITS),
     _ST_OBJECT_SIZE_MASK     = ST_NTH_MASK (_ST_OBJECT_SIZE_BITS),
-    _ST_OBJECT_LARGE_MASK    = ST_NTH_MASK (_ST_OBJECT_LARGE_BITS),
     _ST_OBJECT_HASH_MASK     = ST_NTH_MASK (_ST_OBJECT_HASH_BITS),
     _ST_OBJECT_UNUSED_MASK   = ST_NTH_MASK (_ST_OBJECT_UNUSED_BITS),
 };
@@ -111,18 +108,6 @@ static inline st_format
 st_object_format (st_oop object)
 {
     return _ST_OBJECT_GET_BITFIELD (ST_OBJECT_MARK (object), FORMAT);
-}
-
-static inline void
-st_object_set_large_context (st_oop object, bool is_large)
-{
-    _ST_OBJECT_SET_BITFIELD (ST_OBJECT_MARK (object), LARGE, is_large);
-}
-
-static inline bool
-st_object_large_context (st_oop object)
-{
-    return _ST_OBJECT_GET_BITFIELD (ST_OBJECT_MARK (object), LARGE);
 }
 
 static inline void

@@ -161,7 +161,6 @@ st_memory_new (void)
     memory->offsets     = NULL;
 
     memory->free_context = 0;
-    memory->free_context_large = 0;
 
     memory->ht = st_identity_hashtable_new ();
 
@@ -208,32 +207,23 @@ st_memory_allocate (st_uint size)
 }
 
 st_oop
-st_memory_allocate_context (bool large)
+st_memory_allocate_context (void)
 {
     st_oop context;
 
-    if (large) {
-	if (ST_LIKELY (memory->free_context_large)) {
-	    context = memory->free_context_large;
-	    memory->free_context_large = ST_CONTEXT_PART_SENDER (memory->free_context_large);
+    if (ST_LIKELY (memory->free_context)) {
+	context = memory->free_context;
+	memory->free_context = ST_CONTEXT_PART_SENDER (memory->free_context);
 	    return context;
-	}
-    } else {
-	if (ST_LIKELY (memory->free_context)) {
-	    context = memory->free_context;
-	    memory->free_context = ST_CONTEXT_PART_SENDER (memory->free_context);
-	    return context;
-	}
     }
 
-    context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+    context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + 32);
     if (context == 0) {
 	st_memory_perform_gc ();
-	context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + (large ? 32 : 12));
+	context = st_memory_allocate (ST_SIZE_OOPS (struct st_method_context) + 32);
 	st_assert (context != 0);
     }
     st_object_initialize_header (context, ST_METHOD_CONTEXT_CLASS);
-    st_object_set_large_context (context, large);
 
     return context;
 }
@@ -241,13 +231,8 @@ st_memory_allocate_context (bool large)
 void
 st_memory_recycle_context  (st_oop context)
 {
-    if (st_object_large_context (context)) {
-	ST_CONTEXT_PART_SENDER (context) = memory->free_context_large;
-	memory->free_context_large = context;
-    } else {
-	ST_CONTEXT_PART_SENDER (context) = memory->free_context;
-	memory->free_context = context;
-    }
+    ST_CONTEXT_PART_SENDER (context) = memory->free_context;
+    memory->free_context = context;
 }
 
 static inline bool
@@ -324,7 +309,7 @@ object_size (st_oop object)
 	abort ();
 	break;
     case ST_FORMAT_CONTEXT:
-	return ST_SIZE_OOPS (struct st_header) + st_object_instance_size (object) + (st_object_large_context (object) ? 32 : 12);
+	return ST_SIZE_OOPS (struct st_header) + st_object_instance_size (object) + 32;
     }
     /* should not reach */
     abort ();
@@ -614,7 +599,6 @@ garbage_collect (void)
     
     /* clear context pool */
     memory->free_context = 0;
-    memory->free_context_large = 0;
 
     memory->bytes_allocated += memory->counter;
 

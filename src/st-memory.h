@@ -56,7 +56,6 @@ typedef struct st_memory
     st_uint    counter;
 
     /* free context pool */
-    st_oop     free_context_large;
     st_oop     free_context;
 
     /* statistics */
@@ -74,11 +73,11 @@ void       st_memory_add_root        (st_oop object);
 void       st_memory_remove_root     (st_oop object);
 st_oop     st_memory_allocate        (st_uint size);
 
-st_oop     st_memory_allocate_context (bool large);
+st_oop     st_memory_allocate_context (void);
 void       st_memory_recycle_context  (st_oop context);
 
-void       st_memory_perform_gc      (void);
+void       st_memory_perform_gc       (void);
 
-st_oop     st_memory_remap_reference    (st_oop reference);
+st_oop     st_memory_remap_reference  (st_oop reference);
 
 #endif /* __ST_MEMORY__ */

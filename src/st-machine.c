@@ -51,10 +51,9 @@ method_context_new (st_machine *machine)
     st_oop *stack;
     bool    large;
 
-    large = st_method_get_large_context (machine->new_method);
     temp_count = st_method_get_arg_count (machine->new_method) + st_method_get_temp_count (machine->new_method);
 
-    context = st_memory_allocate_context (large);
+    context = st_memory_allocate_context ();
 
     ST_CONTEXT_PART_SENDER (context)     = machine->context;
     ST_CONTEXT_PART_IP (context)         = st_smi_new (0);
@@ -89,7 +88,6 @@ block_context_new (st_machine *machine, st_uint initial_ip, st_uint argcount)
     }
 
     st_object_initialize_header (context, ST_BLOCK_CONTEXT_CLASS);
-    st_object_set_large_context (context, true);
     
     if (ST_OBJECT_CLASS (machine->context) == ST_BLOCK_CONTEXT_CLASS)
 	home = ST_BLOCK_CONTEXT_HOME (machine->context);
