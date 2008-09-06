@@ -177,43 +177,35 @@ static void
 parse_chunk (FileInParser *parser, st_lexer *lexer)
 {
     st_token *token;
-    char *name;
+    char     *name;
 
     token = next_token (parser, lexer);
 
     if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER) {
 
 	name = st_strdup (st_token_get_text (token));
-
 	token = next_token (parser, lexer);
 
 	if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER
-	    && (streq (st_token_get_text (token), "method")))
+	    && (streq (st_token_get_text (token), "method"))) {
 	
 	    parse_method (parser, lexer, name, false);
 	
-	else if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER
-		 || streq (st_token_get_text (token), "classMethod"))
+	} else if (st_token_get_type (token) == ST_TOKEN_IDENTIFIER
+		   || streq (st_token_get_text (token), "classMethod")) {
 
 	    parse_method (parser, lexer, name, true);
 	    
-	else if (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR
-		 && streq (st_token_get_text (token), "subclass:"))
-
+	} else if (st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR
+		   && streq (st_token_get_text (token), "subclass:")) {
+	    
 	    parse_class (parser, lexer, name);
-
-	else if (streq (name, "Annotation") &&
-		 st_token_get_type (token) == ST_TOKEN_KEYWORD_SELECTOR &&
-		 streq (st_token_get_text (token), "key:")) {
-
-	    return;
-		 
-	}
-	else
+	} else  {
 	    goto error;
-
-    } else
-	goto error;
+	}
+    } else {
+	goto error; 
+    }
 
     return;
     
