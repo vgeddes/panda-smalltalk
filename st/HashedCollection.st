@@ -8,10 +8,6 @@ HashedCollection classMethod!
 new: initialCapacity
 	^ self basicNew initialize: initialCapacity!
 
-HashedCollection classMethod!
-with: an
-	^ self new: self defaultCapacity!
-
 HashedCollection method!
 at: index include: anObject
 	| index |
