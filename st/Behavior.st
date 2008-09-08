@@ -93,7 +93,7 @@ canUnderstand: aSymbol
 	class := self.
 	[class ~~ nil]
 		whileTrue:
-			[(methodDictionary includesKey: aSymbol) ifTrue: [^ true].
+			[(class methodDictionary includesKey: aSymbol) ifTrue: [^ true].
 			 class := class superclass].
 
 	^ false!
