@@ -415,11 +415,12 @@ lookup_method_in_cache (st_machine  *machine)
 #define STORE_REGISTERS()						\
     machine->ip = ip - machine->bytecode;				\
     machine->sp = sp - machine->stack;					\
-    ST_CONTEXT_PART_IP (machine->context) = st_smi_new (machine->ip);
+    ST_CONTEXT_PART_IP (machine->context) = st_smi_new (machine->ip);   \
+    ST_CONTEXT_PART_SP (machine->context) = st_smi_new (machine->sp);
 #define LOAD_REGISTERS()						\
     ip = machine->bytecode + machine->ip;				\
-    sp = machine->stack + machine->sp;					\
-    ST_CONTEXT_PART_SP (machine->context) = st_smi_new (machine->sp);
+    sp = machine->stack + machine->sp;
+
 
 void
 st_machine_main (st_machine *machine)
