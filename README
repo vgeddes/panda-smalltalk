@@ -1,25 +1,70 @@
 
-Panda is a new Smalltalk implementation, written from scratch in C99. Its still
-in early development, certainly not suitable for production use.
+Panda is a new Smalltalk implementation, written from scratch in C99.
 
-Current features:
+Implemented features:
 * All Smalltalk-80 syntax supported.
 * Fast bytecode interpreter (optionally uses gcc's computed goto)
 * Mark-Compact garbage collector
-* Includes a small class library
+* A small class library, with language core, data structures, and streams
+* Basic support for reading code from command line
 
-Next Milestone:
-* Full Closures
-* Allocating contexts on the stack rather than the heap.
-* Image
-* Finish Stream and IO classes
-* WeakRef/Finalization support
+Next on the TODO:
+* Image support
+* Interactive command line client and better script file support
 
-Usage: 
+Building
+========
+
+$ ./configure && make
+
+Panda isn't installable right now. The `panda' executable runs in the
+directory in which it was built ("src/"), and expects the kernel library files
+to be in "../st".
+
+Usage
+=====
+ 
 The main executable `panda', reads Smalltalk statements from stdin, interprets
 them and outputs the result of the last statement. Variables can be declared
 in the usual Smalltalk way.
 
-Panda isn't installable right now. The `panda' executable can only run in the
-directory in which it was built ("src/"), and expects the kernel library files
-to be in "../st". Don't try separate build dirs.
+Examples
+========
+
+Here are some short examples. Make sure to browse through the class library in "st/" 
+to see all the implemented classes.
+
+1. Sort a constant array of SmallIntegers
+
+   $ echo "#(3 7 5 7 12 1) sort" | ./panda
+
+2. Bignum arithmetic
+
+   $ echo "1000000000000000000000000 + 1" | ./panda
+
+3. Data Structures: Put a pair #key -> 'foo' into a dictionary and attempt retrieval  
+
+   echo "|map| 
+         map := Dictionary new. 
+         map at: #key put: 'foo'.
+         map at: #key." | ./panda
+
+4. Fun with blocks: Use block to select elements of array which are greater than 5
+
+   $ echo "#(3 7 5 7 12 1) select: [ :x | x > 5 ]" | ./panda
+
+
+5. Errors: Panda prints a useful traceback if there is an runtime error
+
+   $ echo "#(3 7 5 7 12 1) reverse" | ./panda
+    An error occurred during program execution
+    message: reverse
+
+    Traceback:
+    Array(Object)>>error:
+    Array(Object)>>doesNotUnderstand:
+    UndefinedObject>>doIt[]
+    UndefinedObject>>doIt
+    System>>startupSystem
+
+
